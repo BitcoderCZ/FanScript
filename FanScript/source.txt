@@ -1,0 +1,10 @@
+float a = 2.5
+float b = 10
+
+bool c = a != b
+
+if (c)
+    a += b
+else {
+    b -= a
+}

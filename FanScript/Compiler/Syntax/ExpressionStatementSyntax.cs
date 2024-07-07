@@ -1,0 +1,20 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace FanScript.Compiler.Syntax
+{
+    public sealed partial class ExpressionStatementSyntax : StatementSyntax
+    {
+        internal ExpressionStatementSyntax(SyntaxTree syntaxTree, ExpressionSyntax expression)
+            : base(syntaxTree)
+        {
+            Expression = expression;
+        }
+
+        public override SyntaxKind Kind => SyntaxKind.ExpressionStatement;
+        public ExpressionSyntax Expression { get; }
+    }
+}
