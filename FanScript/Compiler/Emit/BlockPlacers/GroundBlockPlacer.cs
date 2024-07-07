@@ -12,11 +12,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
     public class GroundBlockPlacer : IBlockPlacer
     {
         const int assemblyXOffset = 5;
-        const int childYOffset = 1;
-        const int blockXOffset = 3;
-        const int blockZOffset = 1;
-
-        public Vector3I StartPos { get; set; } = new Vector3I(4, 0, 4);
+        const int blockXOffset = 4;
 
         public int CurrentCodeBlockBlocks => expressions.Count != 0 ? expressions.Peek().BlockCount : statements.Peek().BlockCount;
 
@@ -48,7 +44,10 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         }
         public void ExitStatementBlock()
         {
-            statements.Pop();
+            StatementBlock statement = statements.Pop();
+
+            if (statements.Count != 0)
+                statements.Peek().HandlePopChild(statement);
         }
 
         public void EnterExpression()
@@ -58,7 +57,10 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         }
         public void ExitExpression()
         {
-            expressions.Pop();
+            ExpressionBlock expression = expressions.Pop();
+
+            if (expressions.Count != 0)
+                expressions.Peek().HandlePopChild(expression);
         }
 
         protected StatementBlock createAssembly()
@@ -67,75 +69,104 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             int x = highestX;
             highestX += blockXOffset;
 
-            return new StatementBlock(new Vector3I(x, 0, 0), new TreeNode<int>(0));
+            return new StatementBlock(new Vector3I(x, 0, 0), new TreeNode<List<int>>([int.MaxValue]));
         }
 
         protected abstract class CodeBlock
         {
+            protected abstract int BlockZOffset { get; }
+
             public int BlockCount { get; protected set; }
 
             public readonly Vector3I StartPos;
             protected Vector3I blockPos;
+            public Vector3I BlockPos => blockPos;
 
             protected DefBlock? lastPlacedBlock;
 
-            protected TreeNode<int> heightNode;
+            protected TreeNode<List<int>> HeightNode;
 
-            public CodeBlock(Vector3I _pos, TreeNode<int> _heightNode)
+            public CodeBlock(Vector3I _pos, TreeNode<List<int>> _heightNode)
             {
                 StartPos = _pos;
                 blockPos = StartPos;
-                heightNode = _heightNode;
+                HeightNode = _heightNode;
             }
 
             public abstract CodeBlock CreateChild();
+            public virtual void HandlePopChild(CodeBlock child)
+            {
+                int childBranch = child switch
+                {
+                    ExpressionBlock => 0,
+                    StatementBlock => 1,
+                    _ => throw new InvalidDataException($"Unknown CodeBlock type '{child.GetType().FullName}'"),
+                };
+
+                HeightNode[childBranch].Value[child.StartPos.Y] = Math.Min(child.BlockPos.Z, HeightNode[childBranch].Value[child.StartPos.Y]); // the min shouldn't be necessary, but I'll do it just in case
+            }
 
             public virtual Vector3I PlaceBlock(DefBlock defBlock)
             {
                 if (BlockCount != 0)
-                    blockPos.Z -= defBlock.Size.Y + blockZOffset;
+                    blockPos.Z -= defBlock.Size.Y + BlockZOffset;
+                else
+                    blockPos.Z -= defBlock.Size.Y - 1;
 
                 lastPlacedBlock = defBlock;
                 BlockCount++;
                 return blockPos;
             }
+
+            protected virtual Vector3I nextChildPos(int childBranch, int xPos)
+            {
+                List<int> maxZs = HeightNode.GetOrCreateChild(childBranch, [int.MaxValue]).Value;
+
+                int acceptableZ = blockPos.Z + BlockZOffset + (lastPlacedBlock is null ? 0 : lastPlacedBlock.Size.Y - 1);
+
+                for (int i = 0; i < maxZs.Count; i++)
+                    if (maxZs[i] > acceptableZ)
+                        return createPos(i);
+
+                maxZs.Add(blockPos.Z);
+
+                return createPos(maxZs.Count - 1);
+
+                Vector3I createPos(int y)
+                    => new Vector3I(xPos, y, blockPos.Z + (lastPlacedBlock is null ? 0 : lastPlacedBlock.Size.Y - 1));
+            }
         }
 
         protected class StatementBlock : CodeBlock
         {
-            public StatementBlock(Vector3I _pos, TreeNode<int> _heightNode) : base(_pos, _heightNode)
+            protected override int BlockZOffset => 2;
+
+            public StatementBlock(Vector3I _pos, TreeNode<List<int>> _heightNode) : base(_pos, _heightNode)
             {
             }
 
             public override StatementBlock CreateChild()
             {
-                var childNode = heightNode.GetOrCreateChild(1, 0);
-                int yLevel = childNode.Value;
-                childNode.Value += childYOffset;
-                return new StatementBlock(new Vector3I(blockPos.X + blockXOffset * 3, yLevel, blockPos.Z), childNode);
+                return new StatementBlock(nextChildPos(1, blockPos.X + blockXOffset * 3), HeightNode[1]);
             }
 
             public ExpressionBlock CreateExpression()
             {
-                var childNode = heightNode.GetOrCreateChild(0, 0);
-                int yLevel = childNode.Value;
-                childNode.Value += childYOffset;
-                return new ExpressionBlock(new Vector3I(blockPos.X - blockXOffset, yLevel, blockPos.Z), childNode);
+                return new ExpressionBlock(nextChildPos(0, blockPos.X - blockXOffset), HeightNode[0]);
             }
         }
 
         protected class ExpressionBlock : CodeBlock
         {
-            public ExpressionBlock(Vector3I _pos, TreeNode<int> _heightNode) : base(_pos, _heightNode)
+            protected override int BlockZOffset => 0;
+
+            public ExpressionBlock(Vector3I _pos, TreeNode<List<int>> _heightNode) : base(_pos, _heightNode)
             {
             }
 
             public override ExpressionBlock CreateChild()
             {
-                var childNode = heightNode.GetOrCreateChild(0, 0);
-                int yLevel = childNode.Value;
-                childNode.Value += childYOffset;
-                return new ExpressionBlock(new Vector3I(blockPos.X - blockXOffset, yLevel, blockPos.Z), childNode);
+                return new ExpressionBlock(nextChildPos(0, blockPos.X - blockXOffset), HeightNode[0]);
             }
         }
     }

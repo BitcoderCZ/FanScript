@@ -10,7 +10,6 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 {
     public class TowerBlockPlacer : IBlockPlacer
     {
-        public Vector3I StartPos { get; set; } = new Vector3I(4, 0, 4);
         public int CurrentCodeBlockBlocks => blockCount;
 
         public int MaxHeight { get; set; } = 10;

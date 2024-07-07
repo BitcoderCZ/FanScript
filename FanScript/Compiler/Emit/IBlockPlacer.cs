@@ -10,7 +10,6 @@ namespace FanScript.Compiler.Emit
 {
     public interface IBlockPlacer
     {
-        Vector3I StartPos { get; }
         int CurrentCodeBlockBlocks { get; }
 
         Vector3I Place(DefBlock defBlock);

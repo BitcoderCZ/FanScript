@@ -114,14 +114,14 @@ namespace FanScript.Compiler.Emit.CodeBuilders
         {
         }
 
-        public override object Build(params object[] args)
+        public override object Build(Vector3I startPos, params object[] args)
         {
+            PreBuild(startPos);
+
             Compression compression = Compression.Base64;
 
             if (args.Length > 0 && args[0] is Compression comp)
                 compression = comp;
-
-            PreBuild();
 
             switch (compression)
             {

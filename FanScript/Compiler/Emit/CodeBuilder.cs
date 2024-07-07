@@ -50,9 +50,9 @@ namespace FanScript.Compiler.Emit
         public virtual void SetBlockValue(Block block, int valueIndex, object value)
             => setValues.Add(new SetValue(block, valueIndex, value));
 
-        public abstract object Build(params object[] args);
+        public abstract object Build(Vector3I startPos, params object[] args);
 
-        protected void PreBuild()
+        protected void PreBuild(Vector3I startPos)
         {
             Vector3I lowestPos = new Vector3I(int.MaxValue, int.MaxValue, int.MaxValue);
             for (int i = 0; i < setBlocks.Count; i++)
@@ -67,7 +67,7 @@ namespace FanScript.Compiler.Emit
                     lowestPos.Z = pos.Z;
             }
 
-            lowestPos -= BlockPlacer.StartPos; 
+            lowestPos -= startPos; 
 
             for (int i = 0; i < setBlocks.Count; i++)
                 setBlocks[i].Block.Pos -= lowestPos;

@@ -94,14 +94,14 @@ namespace FanScript.Compiler.Binding
                     switch (statement.Kind)
                     {
                         case BoundNodeKind.LabelStatement:
-                            StartBlock();
+                            startBlock();
                             _statements.Add(statement);
                             break;
                         case BoundNodeKind.GotoStatement:
                         case BoundNodeKind.ConditionalGotoStatement:
                         case BoundNodeKind.ReturnStatement:
                             _statements.Add(statement);
-                            StartBlock();
+                            startBlock();
                             break;
                         case BoundNodeKind.IfStatement:
                         case BoundNodeKind.NopStatement:
@@ -114,17 +114,17 @@ namespace FanScript.Compiler.Binding
                     }
                 }
 
-                EndBlock();
+                endBlock();
 
                 return _blocks.ToList();
             }
 
-            private void StartBlock()
+            private void startBlock()
             {
-                EndBlock();
+                endBlock();
             }
 
-            private void EndBlock()
+            private void endBlock()
             {
                 if (_statements.Count > 0)
                 {
@@ -147,9 +147,9 @@ namespace FanScript.Compiler.Binding
             public ControlFlowGraph Build(List<BasicBlock> blocks)
             {
                 if (!blocks.Any())
-                    Connect(_start, _end);
+                    connect(_start, _end);
                 else
-                    Connect(_start, blocks.First());
+                    connect(_start, blocks.First());
 
                 foreach (BasicBlock block in blocks)
                 {
@@ -174,7 +174,7 @@ namespace FanScript.Compiler.Binding
                             case BoundNodeKind.GotoStatement:
                                 BoundGotoStatement gs = (BoundGotoStatement)statement;
                                 BasicBlock toBlock = _blockFromLabel[gs.Label];
-                                Connect(current, toBlock);
+                                connect(current, toBlock);
                                 break;
                             case BoundNodeKind.ConditionalGotoStatement:
                                 BoundConditionalGotoStatement cgs = (BoundConditionalGotoStatement)statement;
@@ -183,11 +183,11 @@ namespace FanScript.Compiler.Binding
                                 BoundExpression negatedCondition = Negate(cgs.Condition);
                                 BoundExpression thenCondition = cgs.JumpIfTrue ? cgs.Condition : negatedCondition;
                                 BoundExpression elseCondition = cgs.JumpIfTrue ? negatedCondition : cgs.Condition;
-                                Connect(current, thenBlock, thenCondition);
-                                Connect(current, elseBlock, elseCondition);
+                                connect(current, thenBlock, thenCondition);
+                                connect(current, elseBlock, elseCondition);
                                 break;
                             case BoundNodeKind.ReturnStatement:
-                                Connect(current, _end);
+                                connect(current, _end);
                                 break;
                             case BoundNodeKind.IfStatement:
                             case BoundNodeKind.NopStatement:
@@ -195,7 +195,7 @@ namespace FanScript.Compiler.Binding
                             case BoundNodeKind.LabelStatement:
                             case BoundNodeKind.ExpressionStatement:
                                 if (isLastStatementInBlock)
-                                    Connect(current, next);
+                                    connect(current, next);
                                 break;
                             default:
                                 throw new Exception($"Unexpected statement: {statement.Kind}");
@@ -208,7 +208,7 @@ namespace FanScript.Compiler.Binding
                 {
                     if (!block.Incoming.Any())
                     {
-                        RemoveBlock(blocks, block);
+                        removeBlock(blocks, block);
                         goto ScanAgain;
                     }
                 }
@@ -219,7 +219,7 @@ namespace FanScript.Compiler.Binding
                 return new ControlFlowGraph(_start, _end, blocks, _branches);
             }
 
-            private void Connect(BasicBlock from, BasicBlock to, BoundExpression? condition = null)
+            private void connect(BasicBlock from, BasicBlock to, BoundExpression? condition = null)
             {
                 if (condition is BoundLiteralExpression l)
                 {
@@ -236,7 +236,7 @@ namespace FanScript.Compiler.Binding
                 _branches.Add(branch);
             }
 
-            private void RemoveBlock(List<BasicBlock> blocks, BasicBlock block)
+            private void removeBlock(List<BasicBlock> blocks, BasicBlock block)
             {
                 foreach (BasicBlockBranch branch in block.Incoming)
                 {
