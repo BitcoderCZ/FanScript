@@ -93,7 +93,7 @@ namespace FanScript.Compiler.Binding
                 {
                     switch (statement.Kind)
                     {
-                        /*case BoundNodeKind.LabelStatement:
+                        case BoundNodeKind.LabelStatement:
                             StartBlock();
                             _statements.Add(statement);
                             break;
@@ -102,7 +102,7 @@ namespace FanScript.Compiler.Binding
                         case BoundNodeKind.ReturnStatement:
                             _statements.Add(statement);
                             StartBlock();
-                            break;*/
+                            break;
                         case BoundNodeKind.IfStatement:
                         case BoundNodeKind.NopStatement:
                         case BoundNodeKind.VariableDeclaration:
@@ -156,8 +156,8 @@ namespace FanScript.Compiler.Binding
                     foreach (BoundStatement statement in block.Statements)
                     {
                         _blockFromStatement.Add(statement, block);
-                        //if (statement is BoundLabelStatement labelStatement)
-                        //    _blockFromLabel.Add(labelStatement.Label, block);
+                        if (statement is BoundLabelStatement labelStatement)
+                            _blockFromLabel.Add(labelStatement.Label, block);
                     }
                 }
 
@@ -171,28 +171,28 @@ namespace FanScript.Compiler.Binding
                         bool isLastStatementInBlock = statement == current.Statements.Last();
                         switch (statement.Kind)
                         {
-                            /*case BoundNodeKind.GotoStatement:
-                                var gs = (BoundGotoStatement)statement;
-                                var toBlock = _blockFromLabel[gs.Label];
+                            case BoundNodeKind.GotoStatement:
+                                BoundGotoStatement gs = (BoundGotoStatement)statement;
+                                BasicBlock toBlock = _blockFromLabel[gs.Label];
                                 Connect(current, toBlock);
                                 break;
                             case BoundNodeKind.ConditionalGotoStatement:
-                                var cgs = (BoundConditionalGotoStatement)statement;
-                                var thenBlock = _blockFromLabel[cgs.Label];
-                                var elseBlock = next;
-                                var negatedCondition = Negate(cgs.Condition);
-                                var thenCondition = cgs.JumpIfTrue ? cgs.Condition : negatedCondition;
-                                var elseCondition = cgs.JumpIfTrue ? negatedCondition : cgs.Condition;
+                                BoundConditionalGotoStatement cgs = (BoundConditionalGotoStatement)statement;
+                                BasicBlock thenBlock = _blockFromLabel[cgs.Label];
+                                BasicBlock elseBlock = next;
+                                BoundExpression negatedCondition = Negate(cgs.Condition);
+                                BoundExpression thenCondition = cgs.JumpIfTrue ? cgs.Condition : negatedCondition;
+                                BoundExpression elseCondition = cgs.JumpIfTrue ? negatedCondition : cgs.Condition;
                                 Connect(current, thenBlock, thenCondition);
                                 Connect(current, elseBlock, elseCondition);
                                 break;
                             case BoundNodeKind.ReturnStatement:
                                 Connect(current, _end);
-                                break;*/
+                                break;
                             case BoundNodeKind.IfStatement:
                             case BoundNodeKind.NopStatement:
                             case BoundNodeKind.VariableDeclaration:
-                            //case BoundNodeKind.LabelStatement:
+                            case BoundNodeKind.LabelStatement:
                             case BoundNodeKind.ExpressionStatement:
                                 if (isLastStatementInBlock)
                                     Connect(current, next);
@@ -223,7 +223,7 @@ namespace FanScript.Compiler.Binding
             {
                 if (condition is BoundLiteralExpression l)
                 {
-                    var value = (bool)l.Value;
+                    bool value = (bool)l.Value;
                     if (value)
                         condition = null;
                     else
@@ -289,9 +289,9 @@ namespace FanScript.Compiler.Binding
 
             foreach (var branch in Branches)
             {
-                var fromId = blockIds[branch.From];
-                var toId = blockIds[branch.To];
-                var label = Quote(branch.ToString());
+                string fromId = blockIds[branch.From];
+                string toId = blockIds[branch.To];
+                string label = Quote(branch.ToString());
                 writer.WriteLine($"    {fromId} -> {toId} [label = {label}]");
             }
 
@@ -313,8 +313,8 @@ namespace FanScript.Compiler.Binding
 
             foreach (BasicBlockBranch branch in graph.End.Incoming)
             {
-                BoundStatement lastStatement = branch.From.Statements.LastOrDefault();
-                if (lastStatement is null/* || lastStatement.Kind != BoundNodeKind.ReturnStatement*/)
+                BoundStatement? lastStatement = branch.From.Statements.LastOrDefault();
+                if (lastStatement is null || lastStatement.Kind != BoundNodeKind.ReturnStatement)
                     return false;
             }
 

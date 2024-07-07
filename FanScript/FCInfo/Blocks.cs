@@ -48,12 +48,11 @@ namespace FanScript.FCInfo
                 fields.Remove(info.Id);
             }
 
-            Nop = Control.PlaySensor;
             PositionsLoaded = true;
         }
 
-        // Not nop, but fancade doesn't have one
-        public static DefBlock Nop { get; private set; } = Control.PlaySensor;
+        // Fake block, used by labels
+        public static DefBlock Nop { get; private set; } = new DefBlock("Nop", ushort.MaxValue, (BlockType)(-1), new Vector2I(-1, -1), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Void, TerminalType.In));
 
         public static class Objects
         {

@@ -204,13 +204,13 @@ namespace FanScript.Compiler.Syntax
                 yield return OptionalAssignment;
         }
     }
-    //partial class WhileStatementSyntax
-    //{
-    //    public override IEnumerable<SyntaxNode> GetChildren()
-    //    {
-    //        yield return WhileKeyword;
-    //        yield return Condition;
-    //        yield return Body;
-    //    }
-    //}
+    partial class WhileStatementSyntax
+    {
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return WhileKeyword;
+            yield return Condition;
+            yield return Body;
+        }
+    }
 }

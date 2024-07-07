@@ -24,6 +24,7 @@ namespace FanScript.FCInfo
         }
         public Terminal(int _index, WireType _wireType, TerminalType _type)
             : this(_index, _wireType, _type, string.Empty)
-        { }
+        {
+        }
     }
 }

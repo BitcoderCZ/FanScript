@@ -112,17 +112,18 @@ namespace FanScript.Compiler
         //    return new EvaluationResult(program.Diagnostics, value);
         //}
 
-        /*public void EmitTree(TextWriter writer)
+        public void EmitTree(TextWriter writer)
         {
-            if (GlobalScope.MainFunction is not null)
+            /*if (GlobalScope.MainFunction is not null)
                 EmitTree(GlobalScope.MainFunction, writer);
-            else if (GlobalScope.ScriptFunction is not null)
+            else */
+            if (GlobalScope.ScriptFunction is not null)
                 EmitTree(GlobalScope.ScriptFunction, writer);
         }
 
         public void EmitTree(FunctionSymbol symbol, TextWriter writer)
         {
-            var program = GetProgram();
+            BoundProgram program = GetProgram();
             symbol.WriteTo(writer);
             writer.WriteLine();
             if (!program.Functions.TryGetValue(symbol, out var body))
@@ -131,7 +132,7 @@ namespace FanScript.Compiler
         }
 
         // TODO: References should be part of the compilation, not arguments for Emit
-        public ImmutableArray<Diagnostic> Emit(string moduleName, string[] references, string outputPath)
+        /*public ImmutableArray<Diagnostic> Emit(string moduleName, string[] references, string outputPath)
         {
             var parseDiagnostics = SyntaxTrees.SelectMany(st => st.Diagnostics);
 

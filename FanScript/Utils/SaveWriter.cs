@@ -33,7 +33,7 @@ namespace FanScript.Utils
         public SaveWriter(string _path, bool clear)
         {
             if (!File.Exists(_path) || clear)
-                File.WriteAllBytes(_path, new byte[] { });
+                File.WriteAllBytes(_path, Array.Empty<byte>());
 
             stream = new FileStream(_path, FileMode.OpenOrCreate, FileAccess.Write);
             if (!stream.CanWrite)

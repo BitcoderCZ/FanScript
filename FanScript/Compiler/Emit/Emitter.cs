@@ -20,6 +20,10 @@ namespace FanScript.Compiler.Emit
         private CodeBuilder builder = null!;
         private BoundProgram program = null!;
 
+        // key - label name
+        private Dictionary<string, GotoEmitStore> Gotos = new Dictionary<string, GotoEmitStore>();
+        private Dictionary<string, LabelEmitStore> Labels = new Dictionary<string, LabelEmitStore>();
+
         public static ImmutableArray<Diagnostic> Emit(BoundProgram program, CodeBuilder builder)
         {
             if (program.Diagnostics.HasErrors())
@@ -38,9 +42,46 @@ namespace FanScript.Compiler.Emit
 
             builder.BlockPlacer.EnterStatementBlock();
             emitStatement(program.Functions.First().Value);
+
+            processGotos();
             builder.BlockPlacer.ExitStatementBlock();
 
             return diagnostics.ToImmutableArray();
+        }
+
+        private void processGotos()
+        {
+            // make sure last label works
+            foreach (KeyValuePair<string, LabelEmitStore> item in Labels)
+                if (item.Value.Out == null)
+                {
+                    Block nop = builder.AddBlock(Blocks.Nop);
+
+                    item.Value.Out = [nop];
+                    item.Value.OutTerminal = [nop.Type.Before];
+                }
+
+            foreach (KeyValuePair<string, GotoEmitStore> item in Gotos)
+                if (Labels.TryGetValue(item.Key, out LabelEmitStore? label))
+                {
+                    if (item.Value is ConditionalGotoEmitStore conditional)
+                        builder.ConnectBlocks(conditional.OnCondition, conditional.OnConditionConnector,
+                            label.Out[0], label.OutTerminal[0]);
+                    else
+                        builder.ConnectBlocks(item.Value.In, item.Value.InTerminal, label.Out[0], label.OutTerminal[0]);
+                }
+                else
+                    throw new Exception($"Label '{item.Key}' wasn't found.");
+
+            foreach (KeyValuePair<string, LabelEmitStore> item in Labels)
+            {
+                LabelEmitStore label = item.Value;
+                if (label.In != null && label.Out != null)
+                    builder.ConnectBlocks(label.In, label.InTerminal, label.Out[0], label.OutTerminal[0]);
+            }
+
+            Gotos.Clear();
+            Labels.Clear();
         }
 
         private EmitStore emitStatement(BoundStatement statement)
@@ -58,6 +99,12 @@ namespace FanScript.Compiler.Emit
             }
             else if (statement is BoundIfStatement isStatement)
                 store = emitIfStatement(isStatement);
+            else if (statement is BoundGotoStatement gotoStatement)
+                store = emitGotoStatement(gotoStatement);
+            else if (statement is BoundConditionalGotoStatement conditionalGotoStatement)
+                store = emitConditionalGotoStatement(conditionalGotoStatement);
+            else if (statement is BoundLabelStatement labelStatement)
+                store = emitLabelStatement(labelStatement);
             else if (statement is BoundExpressionStatement expression)
                 store = emitExpression(expression.Expression);
             else
@@ -97,7 +144,7 @@ namespace FanScript.Compiler.Emit
                     store.InTerminal = __store.InTerminal;
                 }
                 else if (__store is not null)
-                    builder.ConnectBlocks(_store, __store);
+                    connectBlocks(_store, __store);
 
                 if (__store is not null)
                     _store = __store;
@@ -133,12 +180,43 @@ namespace FanScript.Compiler.Emit
                 builder.BlockPlacer.ExitStatementBlock();
             }
 
-            builder.ConnectBlocks(condition.Out, condition.OutTerminal, block, block.Type.Terminals[3]);
-            builder.ConnectBlocks(block, block.Type.Terminals[2], ifTrue.In, ifTrue.InTerminal);
+            connectBlocks(condition, EmitStore.CIn(block, block.Type.Terminals[3]));
+            connectBlocks(EmitStore.COut(block, block.Type.Terminals[2]), ifTrue);
             if (ifFalse is not null)
-                builder.ConnectBlocks(block, block.Type.Terminals[1], ifFalse.In, ifFalse.InTerminal);
+                connectBlocks(EmitStore.COut(block, block.Type.Terminals[1]), ifFalse);
 
             return new EmitStore(block);
+        }
+
+        private EmitStore emitGotoStatement(BoundGotoStatement gotoStatement)
+        {
+            GotoEmitStore store = new GotoEmitStore();
+            Gotos.Add(gotoStatement.Label.Name, store);
+            return store;
+        }
+
+        private EmitStore emitConditionalGotoStatement(BoundConditionalGotoStatement gotoStatement)
+        {
+            Block block = builder.AddBlock(Blocks.Control.If);
+
+            builder.BlockPlacer.EnterExpression();
+            EmitStore condition = emitExpression(gotoStatement.Condition);
+            builder.BlockPlacer.ExitExpression();
+            connectBlocks(condition, EmitStore.CIn(block, block.Type.Terminals[3]));
+
+            ConditionalGotoEmitStore store = new ConditionalGotoEmitStore(block, block.Type.Before,
+                block, block.Type.Terminals[gotoStatement.JumpIfTrue ? 2 : 1], block,
+                block.Type.Terminals[gotoStatement.JumpIfTrue ? 1 : 2]);
+            Gotos.Add(gotoStatement.Label.Name, store);
+            return store;
+
+        }
+
+        private EmitStore emitLabelStatement(BoundLabelStatement labelStatement)
+        {
+            LabelEmitStore store = new LabelEmitStore(labelStatement.Label.Name);
+            Labels.Add(labelStatement.Label.Name, store);
+            return store;
         }
 
         private EmitStore emitExpression(BoundExpression expression)
@@ -173,7 +251,7 @@ namespace FanScript.Compiler.Emit
             EmitStore _store = emitExpression(assignment.Expression);
             builder.BlockPlacer.ExitExpression();
 
-            builder.ConnectBlocks(_store, EmitStore.CIn(block, block.Type.Terminals[1]));
+            connectBlocks(_store, EmitStore.CIn(block, block.Type.Terminals[1]));
 
             return new EmitStore(block);
         }
@@ -201,7 +279,7 @@ namespace FanScript.Compiler.Emit
                         EmitStore _store = emitExpression(unary.Operand);
                         builder.BlockPlacer.ExitExpression();
 
-                        builder.ConnectBlocks(_store, EmitStore.CIn(block, block.Type.Terminals[1]));
+                        connectBlocks(_store, EmitStore.CIn(block, block.Type.Terminals[1]));
 
                         return EmitStore.COut(block, block.Type.Terminals[0]);
                     }
@@ -213,7 +291,7 @@ namespace FanScript.Compiler.Emit
                         EmitStore _store = emitExpression(unary.Operand);
                         builder.BlockPlacer.ExitExpression();
 
-                        builder.ConnectBlocks(_store, EmitStore.CIn(block, block.Type.Terminals[1]));
+                        connectBlocks(_store, EmitStore.CIn(block, block.Type.Terminals[1]));
 
                         return EmitStore.COut(block, block.Type.Terminals[0]);
                     }
@@ -281,20 +359,16 @@ namespace FanScript.Compiler.Emit
                 builder.BlockPlacer.EnterExpression();
 
                 Block block = builder.AddBlock(op);
-
                 builder.BlockPlacer.EnterExpression();
                 EmitStore store0 = emitExpression(binary.Left);
-                builder.BlockPlacer.ExitExpression();
-                builder.BlockPlacer.EnterExpression();
                 EmitStore store1 = emitExpression(binary.Right);
                 builder.BlockPlacer.ExitExpression();
-
                 builder.BlockPlacer.ExitExpression();
 
-                builder.ConnectBlocks(EmitStore.COut(block, block.Type.Terminals[0]),
+                connectBlocks(EmitStore.COut(block, block.Type.Terminals[0]),
                     EmitStore.CIn(not, not.Type.Terminals[1]));
-                builder.ConnectBlocks(store0, EmitStore.CIn(block, block.Type.Terminals[2]));
-                builder.ConnectBlocks(store1, EmitStore.CIn(block, block.Type.Terminals[1]));
+                connectBlocks(store0, EmitStore.CIn(block, block.Type.Terminals[2]));
+                connectBlocks(store1, EmitStore.CIn(block, block.Type.Terminals[1]));
 
                 return EmitStore.COut(not, not.Type.Terminals[0]);
             }
@@ -303,13 +377,11 @@ namespace FanScript.Compiler.Emit
                 Block block = builder.AddBlock(op);
                 builder.BlockPlacer.EnterExpression();
                 EmitStore store0 = emitExpression(binary.Left);
-                builder.BlockPlacer.ExitExpression();
-                builder.BlockPlacer.EnterExpression();
                 EmitStore store1 = emitExpression(binary.Right);
                 builder.BlockPlacer.ExitExpression();
 
-                builder.ConnectBlocks(store0, EmitStore.CIn(block, block.Type.Terminals[2]));
-                builder.ConnectBlocks(store1, EmitStore.CIn(block, block.Type.Terminals[1]));
+                connectBlocks(store0, EmitStore.CIn(block, block.Type.Terminals[2]));
+                connectBlocks(store1, EmitStore.CIn(block, block.Type.Terminals[1]));
 
                 return EmitStore.COut(block, block.Type.Terminals[0]);
             }
@@ -348,6 +420,30 @@ namespace FanScript.Compiler.Emit
 
             symbol = null;
             return false;
+        }
+
+        private void connectBlocks(EmitStore from, EmitStore to)
+        {
+            if (to is GotoEmitStore gotoEmit && to is not ConditionalGotoEmitStore)
+            {
+                gotoEmit.In = from.Out[0];
+                gotoEmit.InTerminal = from.OutTerminal[0];
+            }
+            else if (to is LabelEmitStore toLabel)
+            {
+                if (from.Out != null)
+                {
+                    toLabel.In = from.Out[0];
+                    toLabel.InTerminal = from.OutTerminal[0];
+                }
+            }
+            else if (from is LabelEmitStore fromLabel)
+            {
+                fromLabel.Out = [to.In];
+                fromLabel.OutTerminal = [to.InTerminal];
+            }
+            else
+                builder.ConnectBlocks(from, to);
         }
     }
 }

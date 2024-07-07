@@ -50,6 +50,7 @@ namespace FanScript.Compiler.Syntax
         ExpressionStatement,
         IfStatement,
         ElseClause,
+        WhileStatement,
         VariableDeclaration,
 
         AssignmentExpression,

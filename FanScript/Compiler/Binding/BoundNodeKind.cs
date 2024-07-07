@@ -13,6 +13,11 @@ namespace FanScript.Compiler.Binding
         NopStatement,
         VariableDeclaration,
         IfStatement,
+        WhileStatement,
+        ReturnStatement,
+        GotoStatement,
+        ConditionalGotoStatement,
+        LabelStatement,
 
         // Expressions
         ErrorExpression,

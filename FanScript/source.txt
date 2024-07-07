@@ -1,10 +1,7 @@
-float a = 2.5
-float b = 10
+float a = 0
 
-bool c = a != b
-
-if (c)
-    a += b
-else {
-    b -= a
+while (a < 10) {
+    a += 1
 }
+
+a = -5

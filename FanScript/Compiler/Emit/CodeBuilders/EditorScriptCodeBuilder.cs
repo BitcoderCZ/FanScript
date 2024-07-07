@@ -108,6 +108,8 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 {
     public class EditorScriptCodeBuilder : CodeBuilder
     {
+        public override BuildPlatformInfo PlatformInfo => 0;
+
         public EditorScriptCodeBuilder(IBlockPlacer blockPlacer) : base(blockPlacer)
         {
         }

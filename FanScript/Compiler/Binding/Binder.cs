@@ -246,8 +246,8 @@ namespace FanScript.Compiler.Binding
                     return BindVariableDeclaration((VariableDeclarationSyntax)syntax);
                 case SyntaxKind.IfStatement:
                     return BindIfStatement((IfStatementSyntax)syntax);
-                //case SyntaxKind.WhileStatement:
-                //    return BindWhileStatement((WhileStatementSyntax)syntax);
+                case SyntaxKind.WhileStatement:
+                    return BindWhileStatement((WhileStatementSyntax)syntax);
                 //case SyntaxKind.DoWhileStatement:
                 //    return BindDoWhileStatement((DoWhileStatementSyntax)syntax);
                 //case SyntaxKind.ForStatement:
@@ -309,13 +309,37 @@ namespace FanScript.Compiler.Binding
             BoundStatement? elseStatement = syntax.ElseClause is null ? null : BindStatement(syntax.ElseClause.ElseStatement);
             return new BoundIfStatement(syntax, condition, thenStatement, elseStatement);
         }
+        private BoundStatement BindWhileStatement(WhileStatementSyntax syntax)
+        {
+            BoundExpression condition = BindExpression(syntax.Condition, TypeSymbol.Bool);
+
+            if (condition.ConstantValue != null)
+                if (!(bool)condition.ConstantValue.Value)
+                    _diagnostics.ReportUnreachableCode(syntax.Body);
+
+            BoundStatement body = BindLoopBody(syntax.Body, out var breakLabel, out var continueLabel);
+            return new BoundWhileStatement(syntax, condition, body, breakLabel, continueLabel);
+        }
+
+        private BoundStatement BindLoopBody(StatementSyntax body, out BoundLabel breakLabel, out BoundLabel continueLabel)
+        {
+            _labelCounter++;
+            breakLabel = new BoundLabel($"break{_labelCounter}");
+            continueLabel = new BoundLabel($"continue{_labelCounter}");
+
+            _loopStack.Push((breakLabel, continueLabel));
+            var boundBody = BindStatement(body);
+            _ = _loopStack.Pop();
+
+            return boundBody;
+        }
 
         private TypeSymbol? BindTypeClause(SyntaxToken? syntax)
         {
             if (syntax is null)
                 return null;
 
-            var type = LookupType(syntax.Text);
+            TypeSymbol? type = LookupType(syntax.Text);
             if (type is null)
                 _diagnostics.ReportUndefinedType(syntax.Location, syntax.Text);
 
@@ -324,7 +348,7 @@ namespace FanScript.Compiler.Binding
 
         private BoundStatement BindExpressionStatement(ExpressionStatementSyntax syntax)
         {
-            var expression = BindExpression(syntax.Expression, canBeVoid: true);
+            BoundExpression expression = BindExpression(syntax.Expression, canBeVoid: true);
             return new BoundExpressionStatement(syntax, expression);
         }
 
@@ -335,7 +359,7 @@ namespace FanScript.Compiler.Binding
 
         private BoundExpression BindExpression(ExpressionSyntax syntax, bool canBeVoid = false)
         {
-            var result = BindExpressionInternal(syntax);
+            BoundExpression result = BindExpressionInternal(syntax);
             if (!canBeVoid && result.Type == TypeSymbol.Void)
             {
                 _diagnostics.ReportExpressionMustHaveValue(syntax.Location);

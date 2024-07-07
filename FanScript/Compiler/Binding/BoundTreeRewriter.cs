@@ -21,19 +21,19 @@ namespace FanScript.Compiler.Binding
                     return RewriteVariableDeclaration((BoundVariableDeclaration)node);
                 case BoundNodeKind.IfStatement:
                     return RewriteIfStatement((BoundIfStatement)node);
-                //case BoundNodeKind.WhileStatement:
-                //    return RewriteWhileStatement((BoundWhileStatement)node);
+                case BoundNodeKind.WhileStatement:
+                    return RewriteWhileStatement((BoundWhileStatement)node);
                 //case BoundNodeKind.DoWhileStatement:
                 //    return RewriteDoWhileStatement((BoundDoWhileStatement)node);
                 //case BoundNodeKind.ForStatement:
                 //    return RewriteForStatement((BoundForStatement)node);
-                //case BoundNodeKind.LabelStatement:
-                //    return RewriteLabelStatement((BoundLabelStatement)node);
-                //case BoundNodeKind.GotoStatement:
-                //    return RewriteGotoStatement((BoundGotoStatement)node);
-                //case BoundNodeKind.ConditionalGotoStatement:
-                //    return RewriteConditionalGotoStatement((BoundConditionalGotoStatement)node);
-                //case BoundNodeKind.ReturnStatement:
+                case BoundNodeKind.LabelStatement:
+                    return RewriteLabelStatement((BoundLabelStatement)node);
+                case BoundNodeKind.GotoStatement:
+                    return RewriteGotoStatement((BoundGotoStatement)node);
+                case BoundNodeKind.ConditionalGotoStatement:
+                    return RewriteConditionalGotoStatement((BoundConditionalGotoStatement)node);
+                case BoundNodeKind.ReturnStatement:
                 //    return RewriteReturnStatement((BoundReturnStatement)node);
                 case BoundNodeKind.ExpressionStatement:
                     return RewriteExpressionStatement((BoundExpressionStatement)node);
@@ -94,6 +94,31 @@ namespace FanScript.Compiler.Binding
                 return node;
 
             return new BoundIfStatement(node.Syntax, condition, thenStatement, elseStatement);
+        }
+
+        protected virtual BoundStatement RewriteWhileStatement(BoundWhileStatement node)
+        {
+            BoundExpression condition = RewriteExpression(node.Condition);
+            BoundStatement body = RewriteStatement(node.Body);
+            if (condition == node.Condition && body == node.Body)
+                return node;
+
+            return new BoundWhileStatement(node.Syntax, condition, body, node.BreakLabel, node.ContinueLabel);
+        }
+
+        protected virtual BoundStatement RewriteLabelStatement(BoundLabelStatement node)
+            => node;
+
+        protected virtual BoundStatement RewriteGotoStatement(BoundGotoStatement node)
+            => node;
+
+        protected virtual BoundStatement RewriteConditionalGotoStatement(BoundConditionalGotoStatement node)
+        {
+            BoundExpression condition = RewriteExpression(node.Condition);
+            if (condition == node.Condition)
+                return node;
+
+            return new BoundConditionalGotoStatement(node.Syntax, node.Label, condition, node.JumpIfTrue);
         }
 
         protected virtual BoundStatement RewriteExpressionStatement(BoundExpressionStatement node)

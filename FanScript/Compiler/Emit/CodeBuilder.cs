@@ -10,6 +10,8 @@ namespace FanScript.Compiler.Emit
 {
     public abstract class CodeBuilder
     {
+        public abstract BuildPlatformInfo PlatformInfo { get; }
+
         public IBlockPlacer BlockPlacer { get; protected set; }
 
         protected List<SetBlock> setBlocks = new();

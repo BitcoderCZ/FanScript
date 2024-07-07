@@ -17,7 +17,7 @@ namespace FanScript.Compiler.Emit
         public Block[] Out;
         public Terminal[] OutTerminal;
 
-        private EmitStore()
+        protected EmitStore()
         {
             In = null!;
             InTerminal = null!;
@@ -27,7 +27,8 @@ namespace FanScript.Compiler.Emit
 
         public EmitStore(Block block)
             : this(block, block.Type.Before, block, block.Type.After)
-        { }
+        {
+        }
         public EmitStore(Block _in, Terminal _inTerminal, Block _out, Terminal _outTerminal)
         {
             In = _in;
@@ -63,5 +64,42 @@ namespace FanScript.Compiler.Emit
         /// <returns></returns>
         public static EmitStore COut(Block block, Terminal terminal)
             => new EmitStore(null!, null!, block, terminal);
+    }
+
+    internal class GotoEmitStore : EmitStore
+    {
+        public GotoEmitStore()
+            : base()
+        {
+        }
+
+        public GotoEmitStore(Block _in, Terminal _inConnector, Block _out, Terminal _outConnector)
+            : base(_in, _inConnector, _out, _outConnector)
+        {
+        }
+    }
+
+    internal sealed class ConditionalGotoEmitStore : GotoEmitStore
+    {
+        public Block OnCondition;
+        public Terminal OnConditionConnector;
+
+        public ConditionalGotoEmitStore(Block _in, Terminal _inConnector, Block _onCondition,
+            Terminal _onConditionConnector, Block _out, Terminal _outConnector)
+            : base(_in, _inConnector, _out, _outConnector)
+        {
+            OnCondition = _onCondition;
+            OnConditionConnector = _onConditionConnector;
+        }
+    }
+
+    internal sealed class LabelEmitStore : EmitStore
+    {
+        public readonly string Name;
+
+        public LabelEmitStore(string _name)
+        {
+            Name = _name;
+        }
     }
 }

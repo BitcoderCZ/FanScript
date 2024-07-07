@@ -47,18 +47,13 @@ namespace FanScript.Compiler.Lowering
                         stack.Push(s);
                 }
                 else
-                {
                     builder.Add(current);
-                }
             }
 
             if (function.Type == TypeSymbol.Void)
             {
-                throw new NotImplementedException();
-                /*if (builder.Count == 0 || CanFallThrough(builder.Last()))
-                {
+                if (builder.Count == 0 || CanFallThrough(builder.Last()))
                     builder.Add(new BoundReturnStatement(statement.Syntax, null));
-                }*/
             }
 
             return new BoundBlockStatement(statement.Syntax, builder.ToImmutable());
@@ -66,13 +61,13 @@ namespace FanScript.Compiler.Lowering
 
         private static bool CanFallThrough(BoundStatement boundStatement)
         {
-            return true;/* boundStatement.Kind != BoundNodeKind.ReturnStatement &&
-                   boundStatement.Kind != BoundNodeKind.GotoStatement;*/
+            return boundStatement.Kind != BoundNodeKind.ReturnStatement &&
+                   boundStatement.Kind != BoundNodeKind.GotoStatement;
         }
 
         private static BoundBlockStatement RemoveDeadCode(BoundBlockStatement node)
         {
-            var controlFlow = ControlFlowGraph.Create(node);
+            ControlFlowGraph controlFlow = ControlFlowGraph.Create(node);
             HashSet<BoundStatement> reachableStatements = new HashSet<BoundStatement>(
                 controlFlow.Blocks.SelectMany(b => b.Statements));
 
@@ -84,9 +79,50 @@ namespace FanScript.Compiler.Lowering
             return new BoundBlockStatement(node.Syntax, builder.ToImmutable());
         }
 
+        protected override BoundExpression RewriteBinaryExpression(BoundBinaryExpression node)
+        {
+            if (node.ConstantValue != null)
+                return Literal(node.Syntax, node.ConstantValue.Value);
+
+            return node;
+        }
+
+        protected override BoundExpression RewriteUnaryExpression(BoundUnaryExpression node)
+        {
+            if (node.ConstantValue != null)
+                return Literal(node.Syntax, node.ConstantValue.Value);
+
+            return node;
+        }
+
+        protected override BoundStatement RewriteWhileStatement(BoundWhileStatement node)
+        {
+            // while <condition>
+            //      <body>
+            //
+            // ----->
+            //
+            // continue:
+            // gotoFalse <condition> break
+            // <body>
+            // goto continue
+            // break:
+
+            BoundBlockStatement result = Block(
+                node.Syntax,
+                Label(node.Syntax, node.ContinueLabel),
+                GotoFalse(node.Syntax, node.BreakLabel, node.Condition),
+                node.Body,
+                Goto(node.Syntax, node.ContinueLabel),
+                Label(node.Syntax, node.BreakLabel)
+            );
+
+            return RewriteStatement(result);
+        }
+
         protected override BoundExpression RewriteCompoundAssignmentExpression(BoundCompoundAssignmentExpression node)
         {
-            var newNode = (BoundCompoundAssignmentExpression)base.RewriteCompoundAssignmentExpression(node);
+            BoundCompoundAssignmentExpression newNode = (BoundCompoundAssignmentExpression)base.RewriteCompoundAssignmentExpression(node);
 
             // a <op>= b
             //
@@ -94,7 +130,7 @@ namespace FanScript.Compiler.Lowering
             //
             // a = (a <op> b)
 
-            var result = Assignment(
+            BoundAssignmentExpression result = Assignment(
                 newNode.Syntax,
                 newNode.Variable,
                 Binary(

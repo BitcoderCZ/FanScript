@@ -197,18 +197,18 @@ namespace FanScript.Compiler.Syntax
                     return ParseVariableDeclaration();
                 case SyntaxKind.KeywordIf:
                     return ParseIfStatement();
-                /*case SyntaxKind.WhileKeyword:
+                case SyntaxKind.KeywordWhile:
                     return ParseWhileStatement();
-                case SyntaxKind.DoKeyword:
-                    return ParseDoWhileStatement();
-                case SyntaxKind.ForKeyword:
-                    return ParseForStatement();
-                case SyntaxKind.BreakKeyword:
-                    return ParseBreakStatement();
-                case SyntaxKind.ContinueKeyword:
-                    return ParseContinueStatement();
-                case SyntaxKind.ReturnKeyword:
-                    return ParseReturnStatement();*/
+                //case SyntaxKind.DoKeyword:
+                //    return ParseDoWhileStatement();
+                //case SyntaxKind.ForKeyword:
+                //    return ParseForStatement();
+                //case SyntaxKind.BreakKeyword:
+                //    return ParseBreakStatement();
+                //case SyntaxKind.ContinueKeyword:
+                //    return ParseContinueStatement();
+                //case SyntaxKind.ReturnKeyword:
+                //    return ParseReturnStatement();
                 default:
                     return ParseExpressionStatement();
             }
@@ -295,13 +295,13 @@ namespace FanScript.Compiler.Syntax
             return new ElseClauseSyntax(_syntaxTree, keyword, statement);
         }
 
-        //private StatementSyntax ParseWhileStatement()
-        //{
-        //    var keyword = MatchToken(SyntaxKind.WhileKeyword);
-        //    var condition = ParseExpression();
-        //    var body = ParseStatement();
-        //    return new WhileStatementSyntax(_syntaxTree, keyword, condition, body);
-        //}
+        private StatementSyntax ParseWhileStatement()
+        {
+            SyntaxToken keyword = MatchToken(SyntaxKind.KeywordWhile);
+            ExpressionSyntax condition = ParseExpression();
+            StatementSyntax body = ParseStatement();
+            return new WhileStatementSyntax(_syntaxTree, keyword, condition, body);
+        }
 
         //private StatementSyntax ParseDoWhileStatement()
         //{

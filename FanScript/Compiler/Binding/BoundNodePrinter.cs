@@ -37,24 +37,24 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.IfStatement:
                     WriteIfStatement((BoundIfStatement)node, writer);
                     break;
-                //case BoundNodeKind.WhileStatement:
-                //    WriteWhileStatement((BoundWhileStatement)node, writer);
-                //    break;
+                case BoundNodeKind.WhileStatement:
+                    WriteWhileStatement((BoundWhileStatement)node, writer);
+                    break;
                 //case BoundNodeKind.DoWhileStatement:
                 //    WriteDoWhileStatement((BoundDoWhileStatement)node, writer);
                 //    break;
                 //case BoundNodeKind.ForStatement:
                 //    WriteForStatement((BoundForStatement)node, writer);
                 //    break;
-                //case BoundNodeKind.LabelStatement:
-                //    WriteLabelStatement((BoundLabelStatement)node, writer);
-                //    break;
-                //case BoundNodeKind.GotoStatement:
-                //    WriteGotoStatement((BoundGotoStatement)node, writer);
-                //    break;
-                //case BoundNodeKind.ConditionalGotoStatement:
-                //    WriteConditionalGotoStatement((BoundConditionalGotoStatement)node, writer);
-                //    break;
+                case BoundNodeKind.LabelStatement:
+                    WriteLabelStatement((BoundLabelStatement)node, writer);
+                    break;
+                case BoundNodeKind.GotoStatement:
+                    WriteGotoStatement((BoundGotoStatement)node, writer);
+                    break;
+                case BoundNodeKind.ConditionalGotoStatement:
+                    WriteConditionalGotoStatement((BoundConditionalGotoStatement)node, writer);
+                    break;
                 //case BoundNodeKind.ReturnStatement:
                 //    WriteReturnStatement((BoundReturnStatement)node, writer);
                 //    break;
@@ -182,14 +182,14 @@ namespace FanScript.Compiler.Binding
             }
         }
 
-        //private static void WriteWhileStatement(BoundWhileStatement node, IndentedTextWriter writer)
-        //{
-        //    writer.WriteKeyword(SyntaxKind.WhileKeyword);
-        //    writer.WriteSpace();
-        //    node.Condition.WriteTo(writer);
-        //    writer.WriteLine();
-        //    writer.WriteNestedStatement(node.Body);
-        //}
+        private static void WriteWhileStatement(BoundWhileStatement node, IndentedTextWriter writer)
+        {
+            writer.WriteKeyword(SyntaxKind.KeywordWhile);
+            writer.WriteSpace();
+            node.Condition.WriteTo(writer);
+            writer.WriteLine();
+            writer.WriteNestedStatement(node.Body);
+        }
 
         //private static void WriteDoWhileStatement(BoundDoWhileStatement node, IndentedTextWriter writer)
         //{
@@ -219,39 +219,39 @@ namespace FanScript.Compiler.Binding
         //    writer.WriteNestedStatement(node.Body);
         //}
 
-        //private static void WriteLabelStatement(BoundLabelStatement node, IndentedTextWriter writer)
-        //{
-        //    var unindent = writer.Indent > 0;
-        //    if (unindent)
-        //        writer.Indent--;
+        private static void WriteLabelStatement(BoundLabelStatement node, IndentedTextWriter writer)
+        {
+            var unindent = writer.Indent > 0;
+            if (unindent)
+                writer.Indent--;
 
-        //    writer.WritePunctuation(node.Label.Name);
-        //    writer.WritePunctuation(SyntaxKind.ColonToken);
-        //    writer.WriteLine();
+            writer.WritePunctuation(node.Label.Name);
+            writer.WritePunctuation(SyntaxKind.ColonToken);
+            writer.WriteLine();
 
-        //    if (unindent)
-        //        writer.Indent++;
-        //}
+            if (unindent)
+                writer.Indent++;
+        }
 
-        //private static void WriteGotoStatement(BoundGotoStatement node, IndentedTextWriter writer)
-        //{
-        //    writer.WriteKeyword("goto"); // There is no SyntaxKind for goto
-        //    writer.WriteSpace();
-        //    writer.WriteIdentifier(node.Label.Name);
-        //    writer.WriteLine();
-        //}
+        private static void WriteGotoStatement(BoundGotoStatement node, IndentedTextWriter writer)
+        {
+            writer.WriteKeyword("goto"); // There is no SyntaxKind for goto
+            writer.WriteSpace();
+            writer.WriteIdentifier(node.Label.Name);
+            writer.WriteLine();
+        }
 
-        //private static void WriteConditionalGotoStatement(BoundConditionalGotoStatement node, IndentedTextWriter writer)
-        //{
-        //    writer.WriteKeyword("goto"); // There is no SyntaxKind for goto
-        //    writer.WriteSpace();
-        //    writer.WriteIdentifier(node.Label.Name);
-        //    writer.WriteSpace();
-        //    writer.WriteKeyword(node.JumpIfTrue ? "if" : "unless");
-        //    writer.WriteSpace();
-        //    node.Condition.WriteTo(writer);
-        //    writer.WriteLine();
-        //}
+        private static void WriteConditionalGotoStatement(BoundConditionalGotoStatement node, IndentedTextWriter writer)
+        {
+            writer.WriteKeyword("goto"); // There is no SyntaxKind for goto
+            writer.WriteSpace();
+            writer.WriteIdentifier(node.Label.Name);
+            writer.WriteSpace();
+            writer.WriteKeyword(node.JumpIfTrue ? "if" : "unless");
+            writer.WriteSpace();
+            node.Condition.WriteTo(writer);
+            writer.WriteLine();
+        }
 
         //private static void WriteReturnStatement(BoundReturnStatement node, IndentedTextWriter writer)
         //{
