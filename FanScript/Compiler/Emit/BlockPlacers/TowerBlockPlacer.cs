@@ -20,7 +20,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         private int y = 0;
         private int blockCount = 0;
 
-        public Vector3I Place(DefBlock defBlock)
+        public Block Place(DefBlock defBlock)
         {
             const int move = 4;
 
@@ -50,7 +50,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                 }
             }
 
-            return _pos;
+            return new Block(_pos, defBlock);
         }
 
         public void EnterStatementBlock()

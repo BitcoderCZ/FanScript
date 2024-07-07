@@ -12,7 +12,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
     public class GroundBlockPlacer : IBlockPlacer
     {
         const int assemblyXOffset = 5;
-        const int blockXOffset = 4;
+        const int blockXOffset = 3;
 
         public int CurrentCodeBlockBlocks => expressions.Count != 0 ? expressions.Peek().BlockCount : statements.Peek().BlockCount;
 
@@ -21,18 +21,18 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
         protected int highestX = 0;
 
-        public Vector3I Place(DefBlock defBlock)
+        public Block Place(DefBlock defBlock)
         {
-            Vector3I pos;
+            Block block;
 
-            if (expressions.Count != 0) pos = expressions.Peek().PlaceBlock(defBlock);
-            else pos = statements.Peek().PlaceBlock(defBlock);
+            if (expressions.Count != 0) block = expressions.Peek().PlaceBlock(defBlock);
+            else block = statements.Peek().PlaceBlock(defBlock);
 
-            int x = pos.X + defBlock.Size.X - 1;
+            int x = block.Pos.X + defBlock.Size.X - 1;
             if (x > highestX)
                 highestX = x;
 
-            return pos;
+            return block;
         }
 
         public void EnterStatementBlock()
@@ -61,6 +61,8 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             if (expressions.Count != 0)
                 expressions.Peek().HandlePopChild(expression);
+            else
+                statements.Peek().HandlePopChild(expression);
         }
 
         protected StatementBlock createAssembly()
@@ -82,7 +84,11 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             protected Vector3I blockPos;
             public Vector3I BlockPos => blockPos;
 
+            public int MinX { get; protected set; }
+
             protected DefBlock? lastPlacedBlock;
+
+            protected readonly List<Block> Blocks = new();
 
             protected TreeNode<List<int>> HeightNode;
 
@@ -91,11 +97,16 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                 StartPos = _pos;
                 blockPos = StartPos;
                 HeightNode = _heightNode;
+
+                MinX = StartPos.X;
             }
 
             public abstract CodeBlock CreateChild();
             public virtual void HandlePopChild(CodeBlock child)
             {
+                if (child.MinX < MinX)
+                    MinX = child.MinX;
+
                 int childBranch = child switch
                 {
                     ExpressionBlock => 0,
@@ -104,9 +115,11 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                 };
 
                 HeightNode[childBranch].Value[child.StartPos.Y] = Math.Min(child.BlockPos.Z, HeightNode[childBranch].Value[child.StartPos.Y]); // the min shouldn't be necessary, but I'll do it just in case
+
+                Blocks.AddRange(child.Blocks);
             }
 
-            public virtual Vector3I PlaceBlock(DefBlock defBlock)
+            public virtual Block PlaceBlock(DefBlock defBlock)
             {
                 if (BlockCount != 0)
                     blockPos.Z -= defBlock.Size.Y + BlockZOffset;
@@ -115,7 +128,10 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
                 lastPlacedBlock = defBlock;
                 BlockCount++;
-                return blockPos;
+
+                Block block = new Block(blockPos, defBlock);
+                Blocks.Add(block);
+                return block;
             }
 
             protected virtual Vector3I nextChildPos(int childBranch, int xPos)
@@ -147,12 +163,27 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             public override StatementBlock CreateChild()
             {
-                return new StatementBlock(nextChildPos(1, blockPos.X + blockXOffset * 3), HeightNode[1]);
+                return new StatementBlock(nextChildPos(1, blockPos.X + blockXOffset), HeightNode[1]);
             }
 
             public ExpressionBlock CreateExpression()
             {
                 return new ExpressionBlock(nextChildPos(0, blockPos.X - blockXOffset), HeightNode[0]);
+            }
+
+            public override void HandlePopChild(CodeBlock child)
+            {
+                int appropriateX = StartPos.X + blockXOffset;
+
+                if (child is StatementBlock statement && child.MinX < appropriateX)
+                {
+                    int move = appropriateX - child.MinX;
+
+                    for (int i = 0; i < statement.Blocks.Count; i++)
+                        statement.Blocks[i].Pos.X += move;
+                }
+
+                base.HandlePopChild(child);
             }
         }
 

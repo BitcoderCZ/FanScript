@@ -25,7 +25,7 @@ namespace FanScript.Compiler.Emit
 
         public virtual Block AddBlock(DefBlock defBlock)
         {
-            Block block = new Block(BlockPlacer.Place(defBlock), defBlock);
+            Block block = BlockPlacer.Place(defBlock);
 
             setBlocks.Add(new SetBlock(defBlock.Id, block));
 
@@ -54,6 +54,9 @@ namespace FanScript.Compiler.Emit
 
         protected void PreBuild(Vector3I startPos)
         {
+            if (startPos.X < 0 || startPos.Y < 0 || startPos.Z < 0)
+                throw new ArgumentOutOfRangeException(nameof(startPos), $"{nameof(startPos)} must be >= 0");
+
             Vector3I lowestPos = new Vector3I(int.MaxValue, int.MaxValue, int.MaxValue);
             for (int i = 0; i < setBlocks.Count; i++)
             {

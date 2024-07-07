@@ -12,7 +12,7 @@ namespace FanScript.Compiler.Emit
     {
         int CurrentCodeBlockBlocks { get; }
 
-        Vector3I Place(DefBlock defBlock);
+        Block Place(DefBlock defBlock);
 
         void EnterStatementBlock();
         void ExitStatementBlock();

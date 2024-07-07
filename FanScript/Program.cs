@@ -8,6 +8,7 @@ using System.Collections.Immutable;
 using FanScript.Compiler.Emit.CodeBuilders;
 using FanScript.Compiler.Emit.BlockPlacers;
 using TextCopy;
+using MathUtils.Vectors;
 
 namespace FanScript
 {
@@ -40,7 +41,7 @@ namespace FanScript
             }
             else
             {
-                string code = (string)builder.Build();
+                string code = (string)builder.Build(new Vector3I(4, 0, 4));
                 Console.WriteLine(code);
 
                 ClipboardService.SetText(code);
