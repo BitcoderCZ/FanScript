@@ -76,7 +76,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
         protected abstract class CodeBlock
         {
-            protected abstract int BlockZOffset { get; }
+            protected abstract int blockZOffset { get; }
 
             public int BlockCount { get; protected set; }
 
@@ -122,7 +122,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             public virtual Block PlaceBlock(DefBlock defBlock)
             {
                 if (BlockCount != 0)
-                    blockPos.Z -= defBlock.Size.Y + BlockZOffset;
+                    blockPos.Z -= defBlock.Size.Y + blockZOffset;
                 else
                     blockPos.Z -= defBlock.Size.Y - 1;
 
@@ -134,11 +134,11 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                 return block;
             }
 
-            protected virtual Vector3I nextChildPos(int childBranch, int xPos)
+            protected virtual Vector3I nextChildPos(int childBranch, int xPos, int blockZOffset)
             {
                 List<int> maxZs = HeightNode.GetOrCreateChild(childBranch, [int.MaxValue]).Value;
 
-                int acceptableZ = blockPos.Z + BlockZOffset + (lastPlacedBlock is null ? 0 : lastPlacedBlock.Size.Y - 1);
+                int acceptableZ = blockPos.Z + blockZOffset + (lastPlacedBlock is null ? 0 : lastPlacedBlock.Size.Y - 1);
 
                 for (int i = 0; i < maxZs.Count; i++)
                     if (maxZs[i] > acceptableZ)
@@ -155,7 +155,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
         protected class StatementBlock : CodeBlock
         {
-            protected override int BlockZOffset => 2;
+            protected override int blockZOffset => 2;
 
             public StatementBlock(Vector3I _pos, TreeNode<List<int>> _heightNode) : base(_pos, _heightNode)
             {
@@ -163,12 +163,12 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             public override StatementBlock CreateChild()
             {
-                return new StatementBlock(nextChildPos(1, blockPos.X + blockXOffset), HeightNode[1]);
+                return new StatementBlock(nextChildPos(1, blockPos.X + blockXOffset, blockZOffset), HeightNode[1]);
             }
 
             public ExpressionBlock CreateExpression()
             {
-                return new ExpressionBlock(nextChildPos(0, blockPos.X - blockXOffset), HeightNode[0]);
+                return new ExpressionBlock(nextChildPos(0, blockPos.X - blockXOffset, ExpressionBlock.BlockZOffset), HeightNode[0]);
             }
 
             public override void HandlePopChild(CodeBlock child)
@@ -189,7 +189,8 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
         protected class ExpressionBlock : CodeBlock
         {
-            protected override int BlockZOffset => 0;
+            public static readonly int BlockZOffset = 0;
+            protected override int blockZOffset => BlockZOffset;
 
             public ExpressionBlock(Vector3I _pos, TreeNode<List<int>> _heightNode) : base(_pos, _heightNode)
             {
@@ -197,7 +198,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             public override ExpressionBlock CreateChild()
             {
-                return new ExpressionBlock(nextChildPos(0, blockPos.X - blockXOffset), HeightNode[0]);
+                return new ExpressionBlock(nextChildPos(0, blockPos.X - blockXOffset, BlockZOffset), HeightNode[0]);
             }
         }
     }

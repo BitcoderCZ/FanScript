@@ -28,7 +28,7 @@ namespace FanScript.Compiler.Lowering
         {
             Lowerer lowerer = new Lowerer();
             BoundStatement result = lowerer.RewriteStatement(statement);
-            return RemoveDeadCode(Flatten(function, result));
+            return /*result is BoundBlockStatement block ? block : new BoundBlockStatement(result.Syntax, [result]);*/RemoveDeadCode(Flatten(function, result));
         }
 
         private static BoundBlockStatement Flatten(FunctionSymbol function, BoundStatement statement)

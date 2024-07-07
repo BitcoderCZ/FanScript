@@ -236,25 +236,18 @@ namespace FanScript.Compiler.Lexing
                     break;
                 case '+':
                     _position++;
-                    if (Current == '+')
-                    {
-                        _kind = SyntaxKind.PlusPlusToken;
-                        _position++;
-                    }
-                    else if (Current == '=')
+                    if (Current != '=')
+                        _kind = SyntaxKind.PlusToken;
+                    else
                     {
                         _kind = SyntaxKind.PlusEqualsToken;
                         _position++;
                     }
-                    else
-                        _kind = SyntaxKind.PlusToken;
                     break;
                 case '-':
                     _position++;
                     if (Current != '=')
-                    {
                         _kind = SyntaxKind.MinusToken;
-                    }
                     else
                     {
                         _kind = SyntaxKind.MinusEqualsToken;
@@ -264,9 +257,7 @@ namespace FanScript.Compiler.Lexing
                 case '*':
                     _position++;
                     if (Current != '=')
-                    {
                         _kind = SyntaxKind.StarToken;
-                    }
                     else
                     {
                         _kind = SyntaxKind.StarEqualsToken;
@@ -276,12 +267,20 @@ namespace FanScript.Compiler.Lexing
                 case '/':
                     _position++;
                     if (Current != '=')
-                    {
                         _kind = SyntaxKind.SlashToken;
-                    }
                     else
                     {
                         _kind = SyntaxKind.SlashEqualsToken;
+                        _position++;
+                    }
+                    break;
+                case '%':
+                    _position++;
+                    if (Current != '=')
+                        _kind = SyntaxKind.PercentToken;
+                    else
+                    {
+                        _kind = SyntaxKind.PercentEqualsToken;
                         _position++;
                     }
                     break;

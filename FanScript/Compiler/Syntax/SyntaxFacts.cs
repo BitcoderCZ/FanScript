@@ -28,6 +28,7 @@ namespace FanScript.Compiler.Syntax
             {
                 case SyntaxKind.StarToken:
                 case SyntaxKind.SlashToken:
+                case SyntaxKind.PercentToken:
                     return 5;
 
                 case SyntaxKind.PlusToken:
@@ -93,14 +94,24 @@ namespace FanScript.Compiler.Syntax
             {
                 SyntaxKind.PlusToken =>
                     "+",
+                SyntaxKind.PlusEqualsToken =>
+                    "+=",
                 SyntaxKind.MinusToken =>
                     "-",
+                SyntaxKind.MinusEqualsToken =>
+                    "-=",
                 SyntaxKind.StarToken =>
                     "*",
+                SyntaxKind.StarEqualsToken =>
+                    "*=",
                 SyntaxKind.SlashToken =>
                     "/",
+                SyntaxKind.SlashEqualsToken =>
+                    "/=",
                 SyntaxKind.PercentToken =>
                     "%",
+                SyntaxKind.PercentEqualsToken =>
+                    "%=",
                 SyntaxKind.OpenParenthesisToken =>
                     "(",
                 SyntaxKind.CloseParenthesisToken =>

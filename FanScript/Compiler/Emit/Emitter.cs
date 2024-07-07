@@ -171,14 +171,12 @@ namespace FanScript.Compiler.Emit
             builder.BlockPlacer.ExitExpression();
             builder.BlockPlacer.EnterStatementBlock();
             EmitStore ifTrue = emitStatement(ifStatement.ThenStatement);
-            builder.BlockPlacer.ExitStatementBlock();
+
             EmitStore? ifFalse = null;
             if (ifStatement.ElseStatement is not null)
-            {
-                builder.BlockPlacer.EnterStatementBlock();
                 ifFalse = emitStatement(ifStatement.ElseStatement);
-                builder.BlockPlacer.ExitStatementBlock();
-            }
+
+            builder.BlockPlacer.ExitStatementBlock();
 
             connectBlocks(condition, EmitStore.CIn(block, block.Type.Terminals[3]));
             connectBlocks(EmitStore.COut(block, block.Type.Terminals[2]), ifTrue);
@@ -325,9 +323,9 @@ namespace FanScript.Compiler.Emit
                 case BoundBinaryOperatorKind.Division:
                     op = Blocks.Math.Divide_Number;
                     break;
-                //case BoundBinaryOperatorKind.Modulo:
-                //    op = Blocks.Math.Modulo_Number;
-                //    break;
+                case BoundBinaryOperatorKind.Modulo:
+                    op = Blocks.Math.Modulo_Number;
+                    break;
                 case BoundBinaryOperatorKind.Equals:
                 case BoundBinaryOperatorKind.NotEquals:
                     op = Blocks.Math.GetEquals(binary.Left.Type!.ToWireType());

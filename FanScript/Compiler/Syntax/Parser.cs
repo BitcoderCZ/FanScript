@@ -365,6 +365,7 @@ namespace FanScript.Compiler.Syntax
                     case SyntaxKind.MinusEqualsToken:
                     case SyntaxKind.StarEqualsToken:
                     case SyntaxKind.SlashEqualsToken:
+                    case SyntaxKind.PercentEqualsToken:
                     case SyntaxKind.EqualsToken:
                         SyntaxToken identifierToken = NextToken();
                         SyntaxToken operatorToken = NextToken();

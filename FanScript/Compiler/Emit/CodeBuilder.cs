@@ -14,7 +14,7 @@ namespace FanScript.Compiler.Emit
 
         public IBlockPlacer BlockPlacer { get; protected set; }
 
-        protected List<SetBlock> setBlocks = new();
+        protected List<Block> setBlocks = new();
         protected List<MakeConnection> makeConnections = new();
         protected List<SetValue> setValues = new();
 
@@ -27,7 +27,7 @@ namespace FanScript.Compiler.Emit
         {
             Block block = BlockPlacer.Place(defBlock);
 
-            setBlocks.Add(new SetBlock(defBlock.Id, block));
+            setBlocks.Add(block);
 
             return block;
         }
@@ -60,7 +60,7 @@ namespace FanScript.Compiler.Emit
             Vector3I lowestPos = new Vector3I(int.MaxValue, int.MaxValue, int.MaxValue);
             for (int i = 0; i < setBlocks.Count; i++)
             {
-                Vector3I pos = setBlocks[i].Block.Pos;
+                Vector3I pos = setBlocks[i].Pos;
 
                 if (pos.X < lowestPos.X)
                     lowestPos.X = pos.X;
@@ -73,19 +73,16 @@ namespace FanScript.Compiler.Emit
             lowestPos -= startPos; 
 
             for (int i = 0; i < setBlocks.Count; i++)
-                setBlocks[i].Block.Pos -= lowestPos;
+                setBlocks[i].Pos -= lowestPos;
 
             setBlocks.Sort((a, b) =>
             {
-                int comp = a.Block.Pos.Z.CompareTo(b.Block.Pos.Z);
+                int comp = a.Pos.Z.CompareTo(b.Pos.Z);
                 if (comp == 0)
-                    return a.Block.Pos.X.CompareTo(b.Block.Pos.X);
+                    return a.Pos.X.CompareTo(b.Pos.X);
                 else
                     return comp;
             });
-
-            if (setBlocks.Count > 0 && setBlocks[0].Block.Pos != Vector3I.Zero)
-                setBlocks.Insert(0, new SetBlock(1, new Block(Vector3I.Zero, null!)));
         }
 
         protected void Clear()
@@ -93,10 +90,6 @@ namespace FanScript.Compiler.Emit
             setBlocks.Clear();
             makeConnections.Clear();
             setValues.Clear();
-        }
-
-        protected record SetBlock(ushort Id, Block Block)
-        {
         }
 
         protected record MakeConnection(Block Block1, Terminal Terminal1, Block Block2, Terminal Terminal2)

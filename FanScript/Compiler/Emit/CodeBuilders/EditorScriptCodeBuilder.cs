@@ -118,6 +118,9 @@ namespace FanScript.Compiler.Emit.CodeBuilders
         {
             PreBuild(startPos);
 
+            if (setBlocks.Count > 0 && setBlocks[0].Pos != Vector3I.Zero)
+                setBlocks.Insert(0, new Block(Vector3I.Zero, new DefBlock(string.Empty, 1, default, Vector2I.One)));
+
             Compression compression = Compression.Base64;
 
             if (args.Length > 0 && args[0] is Compression comp)
@@ -140,8 +143,8 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 
             for (int i = 0; i < setBlocks.Count; i++)
             {
-                SetBlock set = setBlocks[i];
-                builder.AppendLine($"setBlock({set.Block.Pos.X},{set.Block.Pos.Y},{set.Block.Pos.Z}, {set.Id});");
+                Block block = setBlocks[i];
+                builder.AppendLine($"setBlock({block.Pos.X},{block.Pos.Y},{block.Pos.Z}, {block.Type.Id});");
             }
 
             builder.AppendLine("updateChanges();");
@@ -173,11 +176,11 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                 writer.WriteInt32(setBlocks.Count);
                 for (int i = 0; i < setBlocks.Count; i++)
                 {
-                    SetBlock val = setBlocks[i];
-                    writer.WriteInt32(val.Block.Pos.X);
-                    writer.WriteInt32(val.Block.Pos.Y);
-                    writer.WriteInt32(val.Block.Pos.Z);
-                    writer.WriteInt32(val.Id);
+                    Block block = setBlocks[i];
+                    writer.WriteInt32(block.Pos.X);
+                    writer.WriteInt32(block.Pos.Y);
+                    writer.WriteInt32(block.Pos.Z);
+                    writer.WriteInt32(block.Type.Id);
                 }
 
                 writer.WriteInt32(setValues.Count);

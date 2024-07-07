@@ -10,4 +10,9 @@ if (a < 0) {
     a = -a
     if (a > 2)
         a -= 10
-}
+} else if (a > 5)
+    a = 10
+else
+    a = -5
+
+float b = (a + 25) % 7

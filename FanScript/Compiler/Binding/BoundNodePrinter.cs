@@ -177,8 +177,16 @@ namespace FanScript.Compiler.Binding
             if (node.ElseStatement is not null)
             {
                 writer.WriteKeyword(SyntaxKind.KeywordElse);
-                writer.WriteLine();
-                writer.WriteNestedStatement(node.ElseStatement);
+                if (node.ElseStatement is BoundIfStatement)
+                {
+                    writer.WriteSpace(); // "else if"
+                    node.ElseStatement.WriteTo(writer);
+                }
+                else
+                {
+                    writer.WriteLine();
+                    writer.WriteNestedStatement(node.ElseStatement);
+                }
             }
         }
 

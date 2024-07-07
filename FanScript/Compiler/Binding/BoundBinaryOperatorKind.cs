@@ -12,6 +12,7 @@ namespace FanScript.Compiler.Binding
         Subtraction,
         Multiplication,
         Division,
+        Modulo,
         LogicalAnd,
         LogicalOr,
         Equals,
