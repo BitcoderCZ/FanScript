@@ -33,6 +33,8 @@ namespace FanScript.Compiler.Binding
                     return RewriteLabelStatement((BoundLabelStatement)node);
                 case BoundNodeKind.GotoStatement:
                     return RewriteGotoStatement((BoundGotoStatement)node);
+                case BoundNodeKind.RollbackGotoStatement:
+                    return RewriteRollbackGotoStatement((BoundRollbackGotoStatement)node);
                 case BoundNodeKind.ConditionalGotoStatement:
                     return RewriteConditionalGotoStatement((BoundConditionalGotoStatement)node);
                 case BoundNodeKind.ReturnStatement:
@@ -123,8 +125,14 @@ namespace FanScript.Compiler.Binding
         protected virtual BoundStatement RewriteGotoStatement(BoundGotoStatement node)
             => node;
 
+        protected virtual BoundStatement RewriteRollbackGotoStatement(BoundRollbackGotoStatement node)
+            => node;
+
         protected virtual BoundStatement RewriteConditionalGotoStatement(BoundConditionalGotoStatement node)
         {
+            if (node.Condition is BoundSpecialBlockCondition)
+                return node;
+
             BoundExpression condition = RewriteExpression(node.Condition);
             if (condition == node.Condition)
                 return node;

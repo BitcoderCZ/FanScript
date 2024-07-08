@@ -55,6 +55,9 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.GotoStatement:
                     WriteGotoStatement((BoundGotoStatement)node, writer);
                     break;
+                case BoundNodeKind.RollbackGotoStatement:
+                    WriteRollbackGotoStatement((BoundRollbackGotoStatement)node, writer);
+                    break;
                 case BoundNodeKind.ConditionalGotoStatement:
                     WriteConditionalGotoStatement((BoundConditionalGotoStatement)node, writer);
                     break;
@@ -90,6 +93,9 @@ namespace FanScript.Compiler.Binding
                     break;
                 case BoundNodeKind.ConversionExpression:
                     WriteConversionExpression((BoundConversionExpression)node, writer);
+                    break;
+                case BoundNodeKind.SpecialBlockCondition:
+                    WriteSpecialBlockCondition((BoundSpecialBlockCondition)node, writer);
                     break;
                 default:
                     throw new Exception($"Unexpected node {node.Kind}");
@@ -148,7 +154,7 @@ namespace FanScript.Compiler.Binding
 
         private static void WriteSpecialBlockStatement(BoundSpecialBlockStatement node, IndentedTextWriter writer)
         {
-            writer.WriteKeyword(node.Keyword);
+            writer.WriteKeyword(node.Keyword.Kind);
             writer.WriteLine();
             WriteBlockStatement(node.Block, writer);
         }
@@ -256,6 +262,16 @@ namespace FanScript.Compiler.Binding
             writer.WriteKeyword("goto"); // There is no SyntaxKind for goto
             writer.WriteSpace();
             writer.WriteIdentifier(node.Label.Name);
+            writer.WriteLine();
+        }
+
+        private static void WriteRollbackGotoStatement(BoundRollbackGotoStatement node, IndentedTextWriter writer)
+        {
+            writer.WriteKeyword("goto"); // There is no SyntaxKind for goto
+            writer.WriteSpace();
+            writer.WriteIdentifier(node.Label.Name);
+            writer.WriteSpace();
+            writer.WriteKeyword("[rollback]");
             writer.WriteLine();
         }
 
@@ -379,10 +395,15 @@ namespace FanScript.Compiler.Binding
 
         private static void WriteConversionExpression(BoundConversionExpression node, IndentedTextWriter writer)
         {
-            writer.WriteIdentifier(node.Type.Name);
+            writer.WriteIdentifier(node.Type?.Name);
             writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
             node.Expression.WriteTo(writer);
             writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
+        }
+
+        private static void WriteSpecialBlockCondition(BoundSpecialBlockCondition node, IndentedTextWriter writer)
+        {
+            writer.WriteKeyword(node.Keyword);
         }
     }
 }

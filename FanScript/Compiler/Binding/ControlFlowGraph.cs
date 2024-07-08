@@ -98,12 +98,9 @@ namespace FanScript.Compiler.Binding
                             _statements.Add(statement);
                             break;
                         case BoundNodeKind.GotoStatement:
+                        case BoundNodeKind.RollbackGotoStatement:
                         case BoundNodeKind.ConditionalGotoStatement:
                         case BoundNodeKind.ReturnStatement:
-                            _statements.Add(statement);
-                            startBlock();
-                            break;
-                        case BoundNodeKind.SpecialBlockStatement:
                             _statements.Add(statement);
                             startBlock();
                             break;
@@ -175,6 +172,7 @@ namespace FanScript.Compiler.Binding
                         switch (statement.Kind)
                         {
                             case BoundNodeKind.GotoStatement:
+                            case BoundNodeKind.RollbackGotoStatement:
                                 BoundGotoStatement gs = (BoundGotoStatement)statement;
                                 BasicBlock toBlock = _blockFromLabel[gs.Label];
                                 connect(current, toBlock);
@@ -183,6 +181,14 @@ namespace FanScript.Compiler.Binding
                                 BoundConditionalGotoStatement cgs = (BoundConditionalGotoStatement)statement;
                                 BasicBlock thenBlock = _blockFromLabel[cgs.Label];
                                 BasicBlock elseBlock = next;
+
+                                if (cgs.Condition is BoundSpecialBlockCondition)
+                                {
+                                    connect(current, thenBlock, null);
+                                    connect(current, elseBlock, null);
+                                    break;
+                                }
+
                                 BoundExpression negatedCondition = Negate(cgs.Condition);
                                 BoundExpression thenCondition = cgs.JumpIfTrue ? cgs.Condition : negatedCondition;
                                 BoundExpression elseCondition = cgs.JumpIfTrue ? negatedCondition : cgs.Condition;
@@ -196,7 +202,6 @@ namespace FanScript.Compiler.Binding
                             case BoundNodeKind.VariableDeclaration:
                             case BoundNodeKind.LabelStatement:
                             case BoundNodeKind.ExpressionStatement:
-                            case BoundNodeKind.SpecialBlockStatement:
                                 if (isLastStatementInBlock)
                                     connect(current, next);
                                 break;

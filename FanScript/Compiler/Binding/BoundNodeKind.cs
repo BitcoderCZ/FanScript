@@ -17,6 +17,7 @@ namespace FanScript.Compiler.Binding
         WhileStatement,
         ReturnStatement,
         GotoStatement,
+        RollbackGotoStatement,
         ConditionalGotoStatement,
         LabelStatement,
 
@@ -31,5 +32,7 @@ namespace FanScript.Compiler.Binding
         ExpressionStatement,
         ConversionExpression,
         CompoundAssignmentExpression,
+
+        SpecialBlockCondition,
     }
 }

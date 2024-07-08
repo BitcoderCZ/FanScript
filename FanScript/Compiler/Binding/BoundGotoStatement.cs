@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FanScript.Compiler.Binding
 {
-    internal sealed class BoundGotoStatement : BoundStatement
+    internal class BoundGotoStatement : BoundStatement
     {
         public BoundGotoStatement(SyntaxNode syntax, BoundLabel label)
             : base(syntax)

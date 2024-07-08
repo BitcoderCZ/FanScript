@@ -9,7 +9,7 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class BoundSpecialBlockStatement : BoundStatement
     {
-        public BoundSpecialBlockStatement(SyntaxNode syntax, SyntaxKind keyword, BoundBlockStatement block)
+        public BoundSpecialBlockStatement(SyntaxNode syntax, SyntaxToken keyword, BoundBlockStatement block)
             : base(syntax)
         {
             Keyword = keyword;
@@ -17,7 +17,7 @@ namespace FanScript.Compiler.Binding
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.SpecialBlockStatement;
-        public SyntaxKind Keyword { get; }
+        public SyntaxToken Keyword { get; }
         public BoundBlockStatement Block { get; }
     }
 }

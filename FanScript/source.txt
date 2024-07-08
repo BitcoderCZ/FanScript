@@ -1,7 +1,7 @@
+float a = 0
+
 onPlay
 {
-    float a = 0
-
     while (a < 10) {
         a += 1
         { }
@@ -13,3 +13,5 @@ onPlay
 
     a = -5
 }
+
+a = 5.5

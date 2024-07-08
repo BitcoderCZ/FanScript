@@ -81,7 +81,7 @@ namespace FanScript.Compiler.Binding
             FunctionSymbol? scriptFunction;
 
             if (globalStatements.Any())
-                scriptFunction = new FunctionSymbol("$eval", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Any, null);
+                scriptFunction = new FunctionSymbol("$eval", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Void, null);
             else
                 scriptFunction = null;
 
@@ -286,7 +286,7 @@ namespace FanScript.Compiler.Binding
         private BoundStatement BindSpecialBlockStatement(SpecialBlockStatementSyntax syntax)
         {
             BoundBlockStatement block = (BoundBlockStatement)BindBlockStatement(syntax.Block);
-            return new BoundSpecialBlockStatement(syntax, syntax.KeywordToken.Kind, block);
+            return new BoundSpecialBlockStatement(syntax, syntax.KeywordToken, block);
         }
 
         private BoundStatement BindVariableDeclaration(VariableDeclarationSyntax syntax)

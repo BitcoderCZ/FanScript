@@ -37,6 +37,9 @@ namespace FanScript.Compiler.Binding
         public static BoundGotoStatement Goto(SyntaxNode syntax, BoundLabel label)
             => new BoundGotoStatement(syntax, label);
 
+        public static BoundRollbackGotoStatement RollbackGoto(SyntaxNode syntax, BoundLabel label)
+            => new BoundRollbackGotoStatement(syntax, label);
+
         public static BoundConditionalGotoStatement GotoTrue(SyntaxNode syntax, BoundLabel label, BoundExpression condition)
             => new BoundConditionalGotoStatement(syntax, label, condition, jumpIfTrue: true);
 

@@ -13,6 +13,7 @@ namespace FanScript.Compiler.Lowering
     internal sealed class Lowerer : BoundTreeRewriter
     {
         private int _labelCount;
+        private Dictionary<string, int> customLabelCount = new();
 
         private Lowerer()
         {
@@ -22,6 +23,18 @@ namespace FanScript.Compiler.Lowering
         {
             string name = $"Label{++_labelCount}";
             return new BoundLabel(name);
+        }
+
+        private BoundLabel GenerateLabel(string name)
+        {
+            int count;
+            if (!customLabelCount.TryGetValue(name, out count))
+                count = 1;
+
+            customLabelCount[name] = count + 1;
+
+            string labelName = name + count;
+            return new BoundLabel(labelName);
         }
 
         public static BoundBlockStatement Lower(FunctionSymbol function, BoundStatement statement)
@@ -53,7 +66,8 @@ namespace FanScript.Compiler.Lowering
             if (function.Type == TypeSymbol.Void)
             {
                 if (builder.Count == 0 || CanFallThrough(builder.Last()))
-                    builder.Add(new BoundReturnStatement(statement.Syntax, null));
+                    Console.WriteLine("Implement return");
+                    //builder.Add(new BoundReturnStatement(statement.Syntax, null));
             }
 
             return new BoundBlockStatement(statement.Syntax, builder.ToImmutable());
@@ -108,7 +122,7 @@ namespace FanScript.Compiler.Lowering
                 // <then>
                 // end:
 
-                BoundLabel endLabel = GenerateLabel();
+                BoundLabel endLabel = GenerateLabel("ifEnd");
                 BoundBlockStatement result = Block(
                     node.Syntax,
                     GotoFalse(node.Syntax, endLabel, node.Condition),
@@ -134,8 +148,8 @@ namespace FanScript.Compiler.Lowering
                 // <else>
                 // end:
 
-                BoundLabel elseLabel = GenerateLabel();
-                BoundLabel endLabel = GenerateLabel();
+                BoundLabel elseLabel = GenerateLabel("else");
+                BoundLabel endLabel = GenerateLabel("ifEnd");
                 var result = Block(
                     node.Syntax,
                     GotoFalse(node.Syntax, elseLabel, node.Condition),
@@ -148,6 +162,35 @@ namespace FanScript.Compiler.Lowering
 
                 return RewriteStatement(result);
             }
+        }
+
+        protected override BoundStatement RewriteSpecialBlockStatement(BoundSpecialBlockStatement node)
+        {
+            // onPlay
+            //      <body>
+            //
+            // ----->
+            //
+            // gotoTrue <onPlay (handeled by emiter)> onTrue
+            // goto end
+            // onTrue:
+            // <body>
+            // goto end [rollback] // special "label" that doesn't really exist, neccesary because once body is finished the goto end will execute anyway bacause of how the special block blocks work (exec body, exec after)
+            // end:
+
+            BoundLabel onTrueLabel = GenerateLabel("onSpecial");
+            BoundLabel endLabel = GenerateLabel("end");
+            BoundBlockStatement result = Block(
+                node.Syntax,
+                GotoTrue(node.Syntax, onTrueLabel, new BoundSpecialBlockCondition(node.Keyword, node.Keyword.Kind)),
+                Goto(node.Syntax, endLabel),
+                Label(node.Syntax, onTrueLabel),
+                node.Block,
+                RollbackGoto(node.Syntax, endLabel),
+                Label(node.Syntax, endLabel)
+            );
+
+            return RewriteStatement(result);
         }
 
         protected override BoundStatement RewriteWhileStatement(BoundWhileStatement node)

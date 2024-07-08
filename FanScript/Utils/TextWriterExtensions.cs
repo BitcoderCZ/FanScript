@@ -64,10 +64,10 @@ namespace FanScript.Utils
             writer.ResetColor();
         }
 
-        public static void WriteIdentifier(this TextWriter writer, string text)
+        public static void WriteIdentifier(this TextWriter writer, string? text)
         {
             writer.SetForeground(ConsoleColor.DarkYellow);
-            writer.Write(text);
+            writer.Write(text ?? "null");
             writer.ResetColor();
         }
 

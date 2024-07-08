@@ -21,9 +21,11 @@ namespace FanScript.Compiler.Emit
         private CodeBuilder builder = null!;
         private BoundProgram program = null!;
 
+        // key - a label before antoher label, item - the label after key
+        private Dictionary<string, string> sameTargetLabels = new();
         // key - label name
-        private Dictionary<string, List<EmitStore>> ConnectToLabel = new();
-        private Dictionary<string, EmitStore> AfterLabel = new();
+        private Dictionary<string, List<EmitStore>> gotosToConnect = new(); // not necessarily gotos
+        private Dictionary<string, EmitStore> afterLabel = new();
 
         public static ImmutableArray<Diagnostic> Emit(BoundProgram program, CodeBuilder builder)
         {
@@ -52,19 +54,36 @@ namespace FanScript.Compiler.Emit
 
         private void processLabelsAndGotos()
         {
-            // TODO: ConditionalGotos connect condition to label
-
-            foreach (var (labelName, stores) in ConnectToLabel)
+            foreach (var (labelName, stores) in gotosToConnect)
             {
-                if (!AfterLabel.TryGetValue(labelName, out EmitStore? afterLabel))
+                if (!tryGetAfterLabel(labelName, out EmitStore? afterLabel))
                     continue;
 
                 foreach (EmitStore store in stores)
-                    connectBlocks(store, afterLabel);
+                    builder.ConnectBlocks(store, afterLabel);
             }
 
-            ConnectToLabel.Clear();
-            AfterLabel.Clear();
+            sameTargetLabels.Clear();
+            gotosToConnect.Clear();
+            afterLabel.Clear();
+
+            bool tryGetAfterLabel(string name, [NotNullWhen(true)] out EmitStore? emitStore)
+            {
+                if (afterLabel.TryGetValue(name, out emitStore))
+                {
+                    if (emitStore is GotoEmitStore gotoEmit)
+                        return tryGetAfterLabel(gotoEmit.LabelName, out emitStore);
+                    else
+                        return true;
+                }
+                else if (sameTargetLabels.TryGetValue(name, out string? target))
+                    return tryGetAfterLabel(target, out emitStore);
+                else
+                {
+                    emitStore = null;
+                    return false;
+                }
+            }
         }
 
         private EmitStore emitStatement(BoundStatement statement)
@@ -73,8 +92,6 @@ namespace FanScript.Compiler.Emit
 
             if (statement is BoundBlockStatement block)
                 store = emitBlockStatement(block);
-            else if (statement is BoundSpecialBlockStatement specialBlock)
-                store = emitSpecialBlockStatement(specialBlock);
             else if (statement is BoundVariableDeclaration variableDeclaration)
             {
                 if (variableDeclaration.OptionalAssignment is not null)
@@ -87,7 +104,12 @@ namespace FanScript.Compiler.Emit
             else if (statement is BoundGotoStatement gotoStatement)
                 store = emitGotoStatement(gotoStatement);
             else if (statement is BoundConditionalGotoStatement conditionalGotoStatement)
-                store = emitConditionalGotoStatement(conditionalGotoStatement);
+            {
+                if (conditionalGotoStatement.Condition is BoundSpecialBlockCondition condition)
+                    store = emitSpecialBlockStatement(condition.Keyword, conditionalGotoStatement.Label);
+                else
+                    store = emitConditionalGotoStatement(conditionalGotoStatement);
+            }
             else if (statement is BoundLabelStatement labelStatement)
                 store = emitLabelStatement(labelStatement);
             else if (statement is BoundExpressionStatement expression)
@@ -112,18 +134,10 @@ namespace FanScript.Compiler.Emit
             if (newCodeBlock)
                 builder.BlockPlacer.EnterStatementBlock();
 
-            //if (block.Statements[0] is BoundLabelStatement)
-            //{
-            //    EmitStore __store = new EmitStore(builder.AddBlock(Blocks.Nop));
-            //    store.In = __store.In;
-            //    store.InTerminal = __store.InTerminal;
-            //    _store = __store;
-            //}
-
             for (int i = 0; i < block.Statements.Length; i++)
             {
                 EmitStore __store = emitStatement(block.Statements[i]);
-                if (store.InStore is NopEmitStore/*i == 0*/ /*&& _store is null*/ && __store is not NopEmitStore)
+                if (store.InStore is NopEmitStore && __store is not NopEmitStore)
                     store.InStore = __store;
                 else if (__store is not NopEmitStore)
                     connectBlocks(lastStore, __store);
@@ -133,7 +147,7 @@ namespace FanScript.Compiler.Emit
             }
 
             if (lastStore is NopEmitStore)
-                return new NopEmitStore(); 
+                return new NopEmitStore();
 
             store.OutStore = lastStore;
 
@@ -143,25 +157,21 @@ namespace FanScript.Compiler.Emit
             return store;
         }
 
-        private EmitStore emitSpecialBlockStatement(BoundSpecialBlockStatement specialBlock)
+        private EmitStore emitSpecialBlockStatement(SyntaxKind keyword, BoundLabel onTrueLabel)
         {
             DefBlock def;
-            switch (specialBlock.Keyword)
+            switch (keyword)
             {
                 case SyntaxKind.KeywordOnPlay:
                     def = Blocks.Control.PlaySensor;
                     break;
                 default:
-                    throw new Exception($"Unsupported Keyword: {specialBlock.Keyword}");
+                    throw new Exception($"Unsupported Keyword: {keyword}");
             }
 
             Block block = builder.AddBlock(def);
 
-            builder.BlockPlacer.EnterStatementBlock();
-            EmitStore store = emitBlockStatement(specialBlock.Block);
-            builder.BlockPlacer.ExitStatementBlock();
-
-            connectBlocks(BlockEmitStore.COut(block, block.Type.Terminals[1]), store);
+            connectToLabel(onTrueLabel.Name, BlockEmitStore.COut(block, block.Type.Terminals[1]));
 
             return new BlockEmitStore(block);
         }
@@ -192,8 +202,8 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitGotoStatement(BoundGotoStatement gotoStatement)
         {
-            GotoEmitStore store = new GotoEmitStore(gotoStatement.Label.Name);
-            return store;
+            if (gotoStatement is BoundRollbackGotoStatement) return new RollbackEmitStore();
+            else return new GotoEmitStore(gotoStatement.Label.Name);
         }
 
         private EmitStore emitConditionalGotoStatement(BoundConditionalGotoStatement gotoStatement)
@@ -430,14 +440,17 @@ namespace FanScript.Compiler.Emit
             while (to is MultiEmitStore multi)
                 to = multi.InStore;
 
-            if (from is LabelEmitStore && to is LabelEmitStore)
-                throw new NotImplementedException();
+            if (from is RollbackEmitStore || to is RollbackEmitStore)
+                return;
+
+            if (from is LabelEmitStore sameFrom && to is LabelEmitStore sameTo)
+                sameTargetLabels.Add(sameFrom.Name, sameTo.Name);
             else if (from is GotoEmitStore fromGoto)
             {
                 // ignore, the going to is handeled if to is GotoEmitStore
             }
             else if (from is LabelEmitStore fromLabel)
-                AfterLabel.Add(fromLabel.Name, to);
+                afterLabel.Add(fromLabel.Name, to);
             else if (to is LabelEmitStore toLabel)
                 connectToLabel(toLabel.Name, from); // normal block before label, connect to block after the label
             else if (to is GotoEmitStore toGoto)
@@ -447,10 +460,10 @@ namespace FanScript.Compiler.Emit
         }
         private void connectToLabel(string labelName, EmitStore store)
         {
-            if (!ConnectToLabel.TryGetValue(labelName, out var stores))
+            if (!gotosToConnect.TryGetValue(labelName, out var stores))
             {
                 stores = new List<EmitStore>();
-                ConnectToLabel.Add(labelName, stores);
+                gotosToConnect.Add(labelName, stores);
             }
 
             stores.Add(store);

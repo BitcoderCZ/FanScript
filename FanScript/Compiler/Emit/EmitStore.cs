@@ -135,4 +135,15 @@ namespace FanScript.Compiler.Emit
             Name = _name;
         }
     }
+
+    /// <summary>
+    /// Used by goto rollback, neccesary because special block blocks (play sensor, late update) execute after even if they execute the body, so the after would get executed twice
+    /// </summary>
+    internal sealed class RollbackEmitStore : EmitStore
+    {
+        public Block In => new Block(new Vector3I(-1, -1, -1), Blocks.Nop);
+        public Terminal InTerminal => Blocks.Nop.Before;
+        public IEnumerable<Block> Out => Enumerable.Empty<Block>();
+        public IEnumerable<Terminal> OutTerminal => Enumerable.Empty<Terminal>();
+    }
 }
