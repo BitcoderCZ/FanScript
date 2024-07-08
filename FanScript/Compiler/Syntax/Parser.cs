@@ -95,6 +95,15 @@ namespace FanScript.Compiler.Syntax
             _diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, kind);
             return new SyntaxToken(_syntaxTree, kind, Current.Position, null, null, ImmutableArray<SyntaxTrivia>.Empty, ImmutableArray<SyntaxTrivia>.Empty);
         }
+        private SyntaxToken MatchToken(params SyntaxKind[] kinds)
+        {
+            foreach (SyntaxKind kind in kinds)
+                if (Current.Kind == kind)
+                    return NextToken();
+
+            _diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, kinds);
+            return new SyntaxToken(_syntaxTree, kinds[0], Current.Position, null, null, ImmutableArray<SyntaxTrivia>.Empty, ImmutableArray<SyntaxTrivia>.Empty);
+        }
 
         public CompilationUnitSyntax ParseCompilationUnit()
         {
@@ -246,8 +255,7 @@ namespace FanScript.Compiler.Syntax
 
         private StatementSyntax ParseVariableDeclaration()
         {
-            SyntaxToken keyword = MatchToken(Current.Kind == SyntaxKind.KeywordFloat ? SyntaxKind.KeywordFloat
-                : SyntaxKind.KeywordBool);
+            SyntaxToken keyword = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
 
             AssignmentExpressionSyntax? assignment = null;

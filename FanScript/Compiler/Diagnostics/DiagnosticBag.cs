@@ -59,6 +59,11 @@ namespace FanScript.Compiler.Diagnostics
             var message = $"Unexpected token <{actualKind}>, expected <{expectedKind}>.";
             ReportError(location, message);
         }
+        public void ReportUnexpectedToken(TextLocation location, SyntaxKind actualKind, SyntaxKind[] expectedKinds)
+        {
+            var message = $"Unexpected token <{actualKind}>, expected one of <{string.Join(", ", expectedKinds)}>.";
+            ReportError(location, message);
+        }
 
         public void ReportUndefinedUnaryOperator(TextLocation location, string operatorText, TypeSymbol? operandType)
         {
