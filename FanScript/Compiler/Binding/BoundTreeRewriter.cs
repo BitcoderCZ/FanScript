@@ -15,6 +15,8 @@ namespace FanScript.Compiler.Binding
             {
                 case BoundNodeKind.BlockStatement:
                     return RewriteBlockStatement((BoundBlockStatement)node);
+                case BoundNodeKind.SpecialBlockStatement:
+                    return RewriteSpecialBlockStatement((BoundSpecialBlockStatement)node);
                 case BoundNodeKind.NopStatement:
                     return RewriteNopStatement((BoundNopStatement)node);
                 case BoundNodeKind.VariableDeclaration:
@@ -69,6 +71,15 @@ namespace FanScript.Compiler.Binding
                 return node;
 
             return new BoundBlockStatement(node.Syntax, builder.MoveToImmutable());
+        }
+
+        protected virtual BoundStatement RewriteSpecialBlockStatement(BoundSpecialBlockStatement node)
+        {
+            BoundBlockStatement block = (BoundBlockStatement)RewriteBlockStatement(node.Block);
+            if (block == node.Block)
+                return node;
+
+            return new BoundSpecialBlockStatement(node.Syntax, node.Keyword, block);
         }
 
         protected virtual BoundStatement RewriteNopStatement(BoundNopStatement node)

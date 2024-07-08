@@ -28,6 +28,9 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.BlockStatement:
                     WriteBlockStatement((BoundBlockStatement)node, writer);
                     break;
+                case BoundNodeKind.SpecialBlockStatement:
+                    WriteSpecialBlockStatement((BoundSpecialBlockStatement)node, writer);
+                    break;
                 case BoundNodeKind.NopStatement:
                     WriteNopStatement((BoundNopStatement)node, writer);
                     break;
@@ -143,6 +146,13 @@ namespace FanScript.Compiler.Binding
             writer.WriteLine();
         }
 
+        private static void WriteSpecialBlockStatement(BoundSpecialBlockStatement node, IndentedTextWriter writer)
+        {
+            writer.WriteKeyword(node.Keyword);
+            writer.WriteLine();
+            WriteBlockStatement(node.Block, writer);
+        }
+
         private static void WriteNopStatement(BoundNopStatement node, IndentedTextWriter writer)
         {
             writer.WriteKeyword("nop");
@@ -177,9 +187,9 @@ namespace FanScript.Compiler.Binding
             if (node.ElseStatement is not null)
             {
                 writer.WriteKeyword(SyntaxKind.KeywordElse);
-                if (node.ElseStatement is BoundIfStatement)
+                if (node.ElseStatement is BoundIfStatement) // "else if"
                 {
-                    writer.WriteSpace(); // "else if"
+                    writer.WriteSpace();
                     node.ElseStatement.WriteTo(writer);
                 }
                 else

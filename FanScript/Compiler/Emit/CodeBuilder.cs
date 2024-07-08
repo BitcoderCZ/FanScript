@@ -34,9 +34,18 @@ namespace FanScript.Compiler.Emit
 
         internal virtual void ConnectBlocks(EmitStore? from, EmitStore to)
         {
+            if (from is NopEmitStore || to is NopEmitStore)
+            {
+                Console.WriteLine("Tried to connect nop store");
+                return;
+            }
+
+            if (to.In is null)
+                return;
+
             if (from?.Out is not null)
-                for (int i = 0; i < from.Out.Length; i++)
-                    ConnectBlocks(from.Out[i], from.OutTerminal[i], to.In, to.InTerminal);
+                foreach (var (block, terminal) in from.Out.Zip(from.OutTerminal))
+                    ConnectBlocks(block, terminal, to.In, to.InTerminal);
         }
         public virtual void ConnectBlocks(Block[] from, Terminal[] fromTerminal, Block to, Terminal toTerminal)
         {

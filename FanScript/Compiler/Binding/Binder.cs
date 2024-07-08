@@ -242,6 +242,8 @@ namespace FanScript.Compiler.Binding
             {
                 case SyntaxKind.BlockStatement:
                     return BindBlockStatement((BlockStatementSyntax)syntax);
+                case SyntaxKind.SpecialBlockStatement:
+                    return BindSpecialBlockStatement((SpecialBlockStatementSyntax)syntax);
                 case SyntaxKind.VariableDeclaration:
                     return BindVariableDeclaration((VariableDeclarationSyntax)syntax);
                 case SyntaxKind.IfStatement:
@@ -279,6 +281,12 @@ namespace FanScript.Compiler.Binding
             _scope = _scope.Parent!;
 
             return new BoundBlockStatement(syntax, statements.ToImmutable());
+        }
+
+        private BoundStatement BindSpecialBlockStatement(SpecialBlockStatementSyntax syntax)
+        {
+            BoundBlockStatement block = (BoundBlockStatement)BindBlockStatement(syntax.Block);
+            return new BoundSpecialBlockStatement(syntax, syntax.KeywordToken.Kind, block);
         }
 
         private BoundStatement BindVariableDeclaration(VariableDeclarationSyntax syntax)

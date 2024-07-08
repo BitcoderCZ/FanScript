@@ -21,19 +21,17 @@ namespace FanScript.Compiler.Syntax
 
         public Parser(SyntaxTree syntaxTree)
         {
-            var tokens = new List<SyntaxToken>();
-            var badTokens = new List<SyntaxToken>();
+            List<SyntaxToken> tokens = new();
+            List<SyntaxToken> badTokens = new();
 
-            var lexer = new Lexer(syntaxTree);
+            Lexer lexer = new Lexer(syntaxTree);
             SyntaxToken token;
             do
             {
                 token = lexer.Lex();
 
                 if (token.Kind == SyntaxKind.BadToken)
-                {
                     badTokens.Add(token);
-                }
                 else
                 {
                     if (badTokens.Count > 0)
@@ -139,7 +137,7 @@ namespace FanScript.Compiler.Syntax
 
         private MemberSyntax ParseMember()
         {
-            if (Current.Kind == SyntaxKind.FunctionKeyword)
+            if (Current.Kind == SyntaxKind.KeywordFunction)
                 throw new NotImplementedException();//return ParseFunctionDeclaration();
 
             return ParseGlobalStatement();
@@ -201,6 +199,8 @@ namespace FanScript.Compiler.Syntax
             {
                 case SyntaxKind.OpenBraceToken:
                     return ParseBlockStatement();
+                case SyntaxKind.KeywordOnPlay:
+                    return ParseSpecialBlockStatement();
                 case SyntaxKind.KeywordFloat:
                 case SyntaxKind.KeywordBool:
                     return ParseVariableDeclaration();
@@ -251,6 +251,14 @@ namespace FanScript.Compiler.Syntax
             SyntaxToken closeBraceToken = MatchToken(SyntaxKind.CloseBraceToken);
 
             return new BlockStatementSyntax(_syntaxTree, openBraceToken, statements.ToImmutable(), closeBraceToken);
+        }
+
+        private StatementSyntax ParseSpecialBlockStatement()
+        {
+            SyntaxToken keyword = MatchToken(SyntaxKind.KeywordOnPlay);
+            BlockStatementSyntax block = ParseBlockStatement();
+
+            return new SpecialBlockStatementSyntax(_syntaxTree, keyword, block);
         }
 
         private StatementSyntax ParseVariableDeclaration()
@@ -377,7 +385,7 @@ namespace FanScript.Compiler.Syntax
                     case SyntaxKind.EqualsToken:
                         SyntaxToken identifierToken = NextToken();
                         SyntaxToken operatorToken = NextToken();
-                        ExpressionSyntax right = ParseAssignmentExpression();
+                        ExpressionSyntax right = ParseExpression();
                         return new AssignmentExpressionSyntax(_syntaxTree, identifierToken, operatorToken, right);
                 }
 

@@ -10,6 +10,7 @@ namespace FanScript.Compiler.Binding
     { 
         // Statements
         BlockStatement,
+        SpecialBlockStatement,
         NopStatement,
         VariableDeclaration,
         IfStatement,

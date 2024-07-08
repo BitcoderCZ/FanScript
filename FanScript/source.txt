@@ -1,18 +1,11 @@
-float a = 0
+onPlay
+{
+    float a = 0
 
-while (a < 10) {
-    a += 1
-}
+    while (a < 10) {
+        float b = 6
+        a += 1
+    }
 
-a = -5
-
-if (a < 0) {
-    a = -a
-    if (a > 2)
-        a -= 10
-} else if (a > 5)
-    a = 10
-else
     a = -5
-
-float b = (a + 25) % 7
+}

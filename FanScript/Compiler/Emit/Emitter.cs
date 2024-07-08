@@ -1,6 +1,7 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Syntax;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using System;
@@ -21,8 +22,8 @@ namespace FanScript.Compiler.Emit
         private BoundProgram program = null!;
 
         // key - label name
-        private Dictionary<string, GotoEmitStore> Gotos = new Dictionary<string, GotoEmitStore>();
-        private Dictionary<string, LabelEmitStore> Labels = new Dictionary<string, LabelEmitStore>();
+        private Dictionary<string, List<EmitStore>> ConnectToLabel = new();
+        private Dictionary<string, EmitStore> AfterLabel = new();
 
         public static ImmutableArray<Diagnostic> Emit(BoundProgram program, CodeBuilder builder)
         {
@@ -43,53 +44,37 @@ namespace FanScript.Compiler.Emit
             builder.BlockPlacer.EnterStatementBlock();
             emitStatement(program.Functions.First().Value);
 
-            processGotos();
+            processLabelsAndGotos();
             builder.BlockPlacer.ExitStatementBlock();
 
             return diagnostics.ToImmutableArray();
         }
 
-        private void processGotos()
+        private void processLabelsAndGotos()
         {
-            // make sure last label works
-            foreach (KeyValuePair<string, LabelEmitStore> item in Labels)
-                if (item.Value.Out == null)
-                {
-                    Block nop = builder.AddBlock(Blocks.Nop);
+            // TODO: ConditionalGotos connect condition to label
 
-                    item.Value.Out = [nop];
-                    item.Value.OutTerminal = [nop.Type.Before];
-                }
-
-            foreach (KeyValuePair<string, GotoEmitStore> item in Gotos)
-                if (Labels.TryGetValue(item.Key, out LabelEmitStore? label))
-                {
-                    if (item.Value is ConditionalGotoEmitStore conditional)
-                        builder.ConnectBlocks(conditional.OnCondition, conditional.OnConditionConnector,
-                            label.Out[0], label.OutTerminal[0]);
-                    else
-                        builder.ConnectBlocks(item.Value.In, item.Value.InTerminal, label.Out[0], label.OutTerminal[0]);
-                }
-                else
-                    throw new Exception($"Label '{item.Key}' wasn't found.");
-
-            foreach (KeyValuePair<string, LabelEmitStore> item in Labels)
+            foreach (var (labelName, stores) in ConnectToLabel)
             {
-                LabelEmitStore label = item.Value;
-                if (label.In != null && label.Out != null)
-                    builder.ConnectBlocks(label.In, label.InTerminal, label.Out[0], label.OutTerminal[0]);
+                if (!AfterLabel.TryGetValue(labelName, out EmitStore? afterLabel))
+                    continue;
+
+                foreach (EmitStore store in stores)
+                    connectBlocks(store, afterLabel);
             }
 
-            Gotos.Clear();
-            Labels.Clear();
+            ConnectToLabel.Clear();
+            AfterLabel.Clear();
         }
 
         private EmitStore emitStatement(BoundStatement statement)
         {
-            EmitStore store = EmitStore.Default;
+            EmitStore store = new NopEmitStore();
 
             if (statement is BoundBlockStatement block)
                 store = emitBlockStatement(block);
+            else if (statement is BoundSpecialBlockStatement specialBlock)
+                store = emitSpecialBlockStatement(specialBlock);
             else if (statement is BoundVariableDeclaration variableDeclaration)
             {
                 if (variableDeclaration.OptionalAssignment is not null)
@@ -116,12 +101,12 @@ namespace FanScript.Compiler.Emit
         private EmitStore emitBlockStatement(BoundBlockStatement block)
         {
             if (block.Statements.Length == 0)
-                return EmitStore.Default;
+                return new NopEmitStore();
             else if (block.Statements.Length == 1 && block.Statements[0] is BoundBlockStatement inBlock)
                 return emitBlockStatement(inBlock);
 
-            EmitStore store = EmitStore.Default;
-            EmitStore? _store = null;
+            MultiEmitStore store = MultiEmitStore.Empty;
+            EmitStore? lastStore = new NopEmitStore();
 
             bool newCodeBlock = builder.BlockPlacer.CurrentCodeBlockBlocks > 0;
             if (newCodeBlock)
@@ -138,28 +123,47 @@ namespace FanScript.Compiler.Emit
             for (int i = 0; i < block.Statements.Length; i++)
             {
                 EmitStore __store = emitStatement(block.Statements[i]);
-                if (store.In == null/*i == 0*/ && _store == null && __store is not null)
-                {
-                    store.In = __store.In;
-                    store.InTerminal = __store.InTerminal;
-                }
-                else if (__store is not null)
-                    connectBlocks(_store, __store);
+                if (store.InStore is NopEmitStore/*i == 0*/ /*&& _store is null*/ && __store is not NopEmitStore)
+                    store.InStore = __store;
+                else if (__store is not NopEmitStore)
+                    connectBlocks(lastStore, __store);
 
-                if (__store is not null)
-                    _store = __store;
+                if (__store is not NopEmitStore)
+                    lastStore = __store;
             }
 
-            if (_store == null)
-                return EmitStore.Default;
+            if (lastStore is NopEmitStore)
+                return BlockEmitStore.Default;
 
-            store.Out = _store.Out;
-            store.OutTerminal = _store.OutTerminal;
+            store.OutStore = lastStore;
 
             if (newCodeBlock)
                 builder.BlockPlacer.ExitStatementBlock();
 
             return store;
+        }
+
+        private EmitStore emitSpecialBlockStatement(BoundSpecialBlockStatement specialBlock)
+        {
+            DefBlock def;
+            switch (specialBlock.Keyword)
+            {
+                case SyntaxKind.KeywordOnPlay:
+                    def = Blocks.Control.PlaySensor;
+                    break;
+                default:
+                    throw new Exception($"Unsupported Keyword: {specialBlock.Keyword}");
+            }
+
+            Block block = builder.AddBlock(def);
+
+            builder.BlockPlacer.EnterStatementBlock();
+            EmitStore store = emitBlockStatement(specialBlock.Block);
+            builder.BlockPlacer.ExitStatementBlock();
+
+            connectBlocks(BlockEmitStore.COut(block, block.Type.Terminals[1]), store);
+
+            return new BlockEmitStore(block);
         }
 
         private EmitStore emitIfStatement(BoundIfStatement ifStatement)
@@ -178,18 +182,17 @@ namespace FanScript.Compiler.Emit
 
             builder.BlockPlacer.ExitStatementBlock();
 
-            connectBlocks(condition, EmitStore.CIn(block, block.Type.Terminals[3]));
-            connectBlocks(EmitStore.COut(block, block.Type.Terminals[2]), ifTrue);
+            connectBlocks(condition, BlockEmitStore.CIn(block, block.Type.Terminals[3]));
+            connectBlocks(BlockEmitStore.COut(block, block.Type.Terminals[2]), ifTrue);
             if (ifFalse is not null)
-                connectBlocks(EmitStore.COut(block, block.Type.Terminals[1]), ifFalse);
+                connectBlocks(BlockEmitStore.COut(block, block.Type.Terminals[1]), ifFalse);
 
-            return new EmitStore(block);
+            return new BlockEmitStore(block);
         }
 
         private EmitStore emitGotoStatement(BoundGotoStatement gotoStatement)
         {
-            GotoEmitStore store = new GotoEmitStore();
-            Gotos.Add(gotoStatement.Label.Name, store);
+            GotoEmitStore store = new GotoEmitStore(gotoStatement.Label.Name);
             return store;
         }
 
@@ -200,12 +203,13 @@ namespace FanScript.Compiler.Emit
             builder.BlockPlacer.EnterExpression();
             EmitStore condition = emitExpression(gotoStatement.Condition);
             builder.BlockPlacer.ExitExpression();
-            connectBlocks(condition, EmitStore.CIn(block, block.Type.Terminals[3]));
+            connectBlocks(condition, BlockEmitStore.CIn(block, block.Type.Terminals[3]));
 
             ConditionalGotoEmitStore store = new ConditionalGotoEmitStore(block, block.Type.Before,
                 block, block.Type.Terminals[gotoStatement.JumpIfTrue ? 2 : 1], block,
                 block.Type.Terminals[gotoStatement.JumpIfTrue ? 1 : 2]);
-            Gotos.Add(gotoStatement.Label.Name, store);
+
+            connectToLabel(gotoStatement.Label.Name, BlockEmitStore.COut(store.OnCondition, store.OnConditionTerminal));
             return store;
 
         }
@@ -213,13 +217,12 @@ namespace FanScript.Compiler.Emit
         private EmitStore emitLabelStatement(BoundLabelStatement labelStatement)
         {
             LabelEmitStore store = new LabelEmitStore(labelStatement.Label.Name);
-            Labels.Add(labelStatement.Label.Name, store);
             return store;
         }
 
         private EmitStore emitExpression(BoundExpression expression)
         {
-            EmitStore store = EmitStore.Default;
+            EmitStore store = new NopEmitStore();
 
             if (expression is BoundAssignmentExpression assigment)
                 store = emitAssigmentExpression(assigment);
@@ -249,9 +252,9 @@ namespace FanScript.Compiler.Emit
             EmitStore _store = emitExpression(assignment.Expression);
             builder.BlockPlacer.ExitExpression();
 
-            connectBlocks(_store, EmitStore.CIn(block, block.Type.Terminals[1]));
+            connectBlocks(_store, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
 
-            return new EmitStore(block);
+            return new BlockEmitStore(block);
         }
 
         private EmitStore emitLiteralExpression(BoundLiteralExpression literal)
@@ -260,7 +263,7 @@ namespace FanScript.Compiler.Emit
 
             builder.SetBlockValue(block, 0, literal.Value);
 
-            return EmitStore.COut(block, block.Type.Terminals[0]);
+            return BlockEmitStore.COut(block, block.Type.Terminals[0]);
         }
 
         private EmitStore emitUnaryExpression(BoundUnaryExpression unary)
@@ -277,9 +280,9 @@ namespace FanScript.Compiler.Emit
                         EmitStore _store = emitExpression(unary.Operand);
                         builder.BlockPlacer.ExitExpression();
 
-                        connectBlocks(_store, EmitStore.CIn(block, block.Type.Terminals[1]));
+                        connectBlocks(_store, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
 
-                        return EmitStore.COut(block, block.Type.Terminals[0]);
+                        return BlockEmitStore.COut(block, block.Type.Terminals[0]);
                     }
                 case BoundUnaryOperatorKind.LogicalNegation:
                     {
@@ -289,9 +292,9 @@ namespace FanScript.Compiler.Emit
                         EmitStore _store = emitExpression(unary.Operand);
                         builder.BlockPlacer.ExitExpression();
 
-                        connectBlocks(_store, EmitStore.CIn(block, block.Type.Terminals[1]));
+                        connectBlocks(_store, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
 
-                        return EmitStore.COut(block, block.Type.Terminals[0]);
+                        return BlockEmitStore.COut(block, block.Type.Terminals[0]);
                     }
                 default:
                     throw new Exception($"Unsuported BoundUnaryOperatorKind: '{unary.Op.Kind}'.");
@@ -363,12 +366,12 @@ namespace FanScript.Compiler.Emit
                 builder.BlockPlacer.ExitExpression();
                 builder.BlockPlacer.ExitExpression();
 
-                connectBlocks(EmitStore.COut(block, block.Type.Terminals[0]),
-                    EmitStore.CIn(not, not.Type.Terminals[1]));
-                connectBlocks(store0, EmitStore.CIn(block, block.Type.Terminals[2]));
-                connectBlocks(store1, EmitStore.CIn(block, block.Type.Terminals[1]));
+                connectBlocks(BlockEmitStore.COut(block, block.Type.Terminals[0]),
+                    BlockEmitStore.CIn(not, not.Type.Terminals[1]));
+                connectBlocks(store0, BlockEmitStore.CIn(block, block.Type.Terminals[2]));
+                connectBlocks(store1, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
 
-                return EmitStore.COut(not, not.Type.Terminals[0]);
+                return BlockEmitStore.COut(not, not.Type.Terminals[0]);
             }
             else
             {
@@ -378,10 +381,10 @@ namespace FanScript.Compiler.Emit
                 EmitStore store1 = emitExpression(binary.Right);
                 builder.BlockPlacer.ExitExpression();
 
-                connectBlocks(store0, EmitStore.CIn(block, block.Type.Terminals[2]));
-                connectBlocks(store1, EmitStore.CIn(block, block.Type.Terminals[1]));
+                connectBlocks(store0, BlockEmitStore.CIn(block, block.Type.Terminals[2]));
+                connectBlocks(store1, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
 
-                return EmitStore.COut(block, block.Type.Terminals[0]);
+                return BlockEmitStore.COut(block, block.Type.Terminals[0]);
             }
         }
 
@@ -392,7 +395,7 @@ namespace FanScript.Compiler.Emit
 
             builder.SetBlockValue(block, 0, symbol.Name);
 
-            return EmitStore.COut(block, block.Type.Terminals[0]);
+            return BlockEmitStore.COut(block, block.Type.Terminals[0]);
         }
 
         private EmitStore emitCallExpression(BoundCallExpression call)
@@ -402,7 +405,7 @@ namespace FanScript.Compiler.Emit
                 default:
                     {
                         diagnostics.ReportUndefinedFunction(call.Syntax.Location, call.Function.Name);
-                        return EmitStore.Default;
+                        return BlockEmitStore.Default;
                     }
             }
         }
@@ -422,26 +425,35 @@ namespace FanScript.Compiler.Emit
 
         private void connectBlocks(EmitStore from, EmitStore to)
         {
-            if (to is GotoEmitStore gotoEmit && to is not ConditionalGotoEmitStore)
+            while (from is MultiEmitStore multi)
+                from = multi.OutStore;
+            while (to is MultiEmitStore multi)
+                to = multi.InStore;
+
+            if (from is LabelEmitStore && to is LabelEmitStore)
+                throw new NotImplementedException();
+            else if (from is GotoEmitStore fromGoto)
             {
-                gotoEmit.In = from.Out[0];
-                gotoEmit.InTerminal = from.OutTerminal[0];
-            }
-            else if (to is LabelEmitStore toLabel)
-            {
-                if (from.Out != null)
-                {
-                    toLabel.In = from.Out[0];
-                    toLabel.InTerminal = from.OutTerminal[0];
-                }
+                // ignore, the going to is handeled if to is GotoEmitStore
             }
             else if (from is LabelEmitStore fromLabel)
-            {
-                fromLabel.Out = [to.In];
-                fromLabel.OutTerminal = [to.InTerminal];
-            }
+                AfterLabel.Add(fromLabel.Name, to);
+            else if (to is LabelEmitStore toLabel)
+                connectToLabel(toLabel.Name, from); // normal block before label, connect to block after the label
+            else if (to is GotoEmitStore toGoto)
+                connectToLabel(toGoto.LabelName, from);
             else
                 builder.ConnectBlocks(from, to);
+        }
+        private void connectToLabel(string labelName, EmitStore store)
+        {
+            if (!ConnectToLabel.TryGetValue(labelName, out var stores))
+            {
+                stores = new List<EmitStore>();
+                ConnectToLabel.Add(labelName, stores);
+            }
+
+            stores.Add(store);
         }
     }
 }

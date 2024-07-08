@@ -1,5 +1,6 @@
 ﻿using MathUtils.Vectors;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,11 @@ namespace FanScript.FCInfo
     public static class Blocks
     {
         public static bool PositionsLoaded { get; private set; } = false;
+
+        static Blocks()
+        {
+            LoadPositions();
+        }
 
         public static void LoadPositions()
         {
@@ -35,15 +41,17 @@ namespace FanScript.FCInfo
             for (int i = 0; i < infos.Length; i++)
             {
                 TerminalInfo info = infos[i];
-                if (!fields.ContainsKey(info.Id))
+                if (!fields.TryGetValue(info.Id, out DefBlock? block))
                     continue;
 
-                DefBlock block = fields[info.Id];
                 if (block.Terminals.Length != info.Positions.Length)
                     throw new Exception($"Terminals.Length ({block.Terminals.Length}) != Positions.Length ({info.Positions.Length}) for block: {block}");
 
                 for (int j = 0; j < info.Positions.Length; j++)
-                    block.Terminals[j].Pos = info.Positions[j];
+                {
+                    JObject jo = info.Positions[j];
+                    block.Terminals[j].Pos = new Vector3I(jo["X"]!.ToObject<int>(), jo["Y"]!.ToObject<int>(), jo["Z"]!.ToObject<int>());
+                }
 
                 fields.Remove(info.Id);
             }
@@ -51,8 +59,8 @@ namespace FanScript.FCInfo
             PositionsLoaded = true;
         }
 
-        // Fake block, used by labels
-        public static DefBlock Nop { get; private set; } = new DefBlock("Nop", ushort.MaxValue, (BlockType)(-1), new Vector2I(-1, -1), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Void, TerminalType.In));
+        // Fake block, used by some EmitStores
+        public static readonly DefBlock Nop = new DefBlock("Nop", ushort.MaxValue, (BlockType)(-1), new Vector2I(-1, -1), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Void, TerminalType.In));
 
         public static class Objects
         {
@@ -266,7 +274,7 @@ namespace FanScript.FCInfo
         private class TerminalInfo
         {
             public ushort Id;
-            public Vector3I[] Positions = null!;
+            public JObject[] Positions = null!;
         }
     }
 }

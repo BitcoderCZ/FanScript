@@ -103,6 +103,10 @@ namespace FanScript.Compiler.Binding
                             _statements.Add(statement);
                             startBlock();
                             break;
+                        case BoundNodeKind.SpecialBlockStatement:
+                            _statements.Add(statement);
+                            startBlock();
+                            break;
                         case BoundNodeKind.IfStatement:
                         case BoundNodeKind.NopStatement:
                         case BoundNodeKind.VariableDeclaration:
@@ -194,6 +198,7 @@ namespace FanScript.Compiler.Binding
                             case BoundNodeKind.VariableDeclaration:
                             case BoundNodeKind.LabelStatement:
                             case BoundNodeKind.ExpressionStatement:
+                            case BoundNodeKind.SpecialBlockStatement:
                                 if (isLastStatementInBlock)
                                     connect(current, next);
                                 break;

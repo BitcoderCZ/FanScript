@@ -74,8 +74,6 @@ namespace FanScript.Compiler.Syntax
                     return SyntaxKind.KeywordIf;
                 case "else":
                     return SyntaxKind.KeywordElse;
-                case "onplay":
-                    return SyntaxKind.KeywordOnPlay;
                 case "float":
                     return SyntaxKind.KeywordFloat;
                 case "vec3":
@@ -84,6 +82,8 @@ namespace FanScript.Compiler.Syntax
                     return SyntaxKind.KeywordBool;
                 case "while":
                     return SyntaxKind.KeywordWhile;
+                case "onPlay":
+                    return SyntaxKind.KeywordOnPlay;
                 default:
                     return SyntaxKind.IdentifierToken;
             }
@@ -121,7 +121,7 @@ namespace FanScript.Compiler.Syntax
                 SyntaxKind.CloseBraceToken =>
                     "}",
                 SyntaxKind.ColonToken =>
-                    " =>",
+                    ":",
                 SyntaxKind.SemicolonToken =>
                     ",",
                 SyntaxKind.CommaToken =>
@@ -154,8 +154,6 @@ namespace FanScript.Compiler.Syntax
                     "if",
                 SyntaxKind.KeywordElse =>
                     "else",
-                SyntaxKind.KeywordOnPlay =>
-                    "onplay",
                 SyntaxKind.KeywordFloat =>
                     "float",
                 SyntaxKind.KeywordVector3 =>
@@ -164,6 +162,10 @@ namespace FanScript.Compiler.Syntax
                     "bool",
                 SyntaxKind.KeywordWhile =>
                     "while",
+                SyntaxKind.KeywordFunction =>
+                    "function",
+                SyntaxKind.KeywordOnPlay =>
+                    "onPlay",
                 _ =>
                     null
             };

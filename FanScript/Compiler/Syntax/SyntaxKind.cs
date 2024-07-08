@@ -46,6 +46,7 @@ namespace FanScript.Compiler.Syntax
         CompilationUnit,
         GlobalStatement,
         BlockStatement,
+        SpecialBlockStatement,
         ExpressionStatement,
         IfStatement,
         ElseClause,
@@ -71,11 +72,12 @@ namespace FanScript.Compiler.Syntax
         KeywordFor,
         KeywordIf,
         KeywordElse,
-        KeywordOnPlay,
         KeywordFloat,
         KeywordVector3,
         KeywordBool,
         KeywordWhile,
+
+        KeywordOnPlay,
 
         SkippedTextTrivia,
         LineBreakTrivia,
@@ -85,7 +87,6 @@ namespace FanScript.Compiler.Syntax
 
         FunctionDeclaration,
 
-        // TO remove
-        FunctionKeyword, 
+        KeywordFunction, 
     }
 }

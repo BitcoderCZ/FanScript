@@ -37,7 +37,7 @@ namespace FanScript.Compiler.Symbols
 
         private static void WriteFunctionTo(FunctionSymbol symbol, TextWriter writer)
         {
-            writer.WriteKeyword(SyntaxKind.FunctionKeyword);
+            writer.WriteKeyword(SyntaxKind.KeywordFunction);
             writer.WriteSpace();
             writer.WriteIdentifier(symbol.Name);
             writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);

@@ -66,6 +66,8 @@ namespace FanScript.Compiler.Binding
                     return new BoundConstant((float)l * (float)r);
                 case BoundBinaryOperatorKind.Division:
                     return new BoundConstant((float)l / (float)r);
+                case BoundBinaryOperatorKind.Modulo:
+                    return new BoundConstant((float)l % (float)r);
                 case BoundBinaryOperatorKind.LogicalAnd:
                     return new BoundConstant((bool)l && (bool)r);
                 case BoundBinaryOperatorKind.LogicalOr:

@@ -30,7 +30,7 @@ namespace FanScript.FCInfo
         }
 
         public override string ToString()
-            => $"{{Name: {Name}, Id: {Id}, Type: {Type}, Size: {Size}}}";
+            => $"{{LabelName: {Name}, Id: {Id}, Type: {Type}, Size: {Size}}}";
 
         public static bool operator ==(DefBlock a, DefBlock b)
             => a?.Equals(b) ?? b is null;

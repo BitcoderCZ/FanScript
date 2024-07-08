@@ -213,4 +213,12 @@ namespace FanScript.Compiler.Syntax
             yield return Body;
         }
     }
+    partial class SpecialBlockStatementSyntax
+    {
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return KeywordToken;
+            yield return Block;
+        }
+    }
 }

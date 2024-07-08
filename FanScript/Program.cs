@@ -32,6 +32,8 @@ namespace FanScript
             for (int i = 0; i < scope.Statements.Length; i++)
                 Console.WriteLine(scope.Statements[i]);
 
+            compilation.EmitTree(Console.Out);
+
             CodeBuilder builder = new EditorScriptCodeBuilder(new GroundBlockPlacer());
             ImmutableArray<Diagnostic> diagnostics = compilation.Emit(builder);
             if (diagnostics.Any())
