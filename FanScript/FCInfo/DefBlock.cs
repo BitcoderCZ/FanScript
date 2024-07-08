@@ -10,9 +10,9 @@ namespace FanScript.FCInfo
         public readonly BlockType Type;
         public readonly Vector2I Size;
 
-        public Terminal Before => Terminals[Terminals.Length - 1];
+        public Terminal Before => Type == BlockType.Active ? Terminals[Terminals.Length - 1] : throw new InvalidOperationException("Only active blocks have Before and After");
         public readonly Terminal[] Terminals;
-        public Terminal After => Terminals[0];
+        public Terminal After => Type == BlockType.Active ? Terminals[0] : throw new InvalidOperationException("Only active blocks have Before and After");
 
         public DefBlock(string _name, ushort _id, BlockType _type, Vector2I _size, params Terminal[] _terminals)
         {
