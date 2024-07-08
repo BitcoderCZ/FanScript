@@ -1,12 +1,7 @@
 ﻿using MathUtils.Vectors;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FanScript.FCInfo
 {
@@ -100,7 +95,7 @@ namespace FanScript.FCInfo
             public static readonly DefBlock Subtract_Number = new DefBlock("Subtract Numbers", 100, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Float, TerminalType.Out, "Num1 - Num2"), new Terminal(1, WireType.Float, TerminalType.In, "Num2"), new Terminal(2, WireType.Float, TerminalType.In, "Num1"));
             public static readonly DefBlock Subtract_Vector = new DefBlock("Subtract Vectors", 104, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Vec3, TerminalType.Out, "Vec1 - Vec2"), new Terminal(1, WireType.Vec3, TerminalType.In, "Vec2"), new Terminal(2, WireType.Vec3, TerminalType.In, "Vec1"));
             public static readonly DefBlock Multiply_Number = new DefBlock("Multiply", 108, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Float, TerminalType.Out, "Num1 * Num2"), new Terminal(1, WireType.Float, TerminalType.In, "Num2"), new Terminal(2, WireType.Float, TerminalType.In, "Num1"));
-            public static readonly DefBlock Multiply_Vector = new DefBlock("Scale", 112, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Vec3, TerminalType.Out, "Vec * Num"), new Terminal(1, WireType.Float, TerminalType.In, "Num"),  new Terminal(2, WireType.Vec3, TerminalType.In, "Vec"));
+            public static readonly DefBlock Multiply_Vector = new DefBlock("Scale", 112, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Vec3, TerminalType.Out, "Vec * Num"), new Terminal(1, WireType.Float, TerminalType.In, "Num"), new Terminal(2, WireType.Vec3, TerminalType.In, "Vec"));
             public static readonly DefBlock Multiply_Rotation = new DefBlock("Combine", 120, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Rot, TerminalType.Out, "Rot1 * Rot2"), new Terminal(1, WireType.Rot, TerminalType.In, "Rot2"), new Terminal(2, WireType.Rot, TerminalType.In, "Rot1"));
             public static readonly DefBlock Divide_Number = new DefBlock("Divide", 124, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Float, TerminalType.Out, "Num1 + Num2"), new Terminal(1, WireType.Float, TerminalType.In, "Num2"), new Terminal(2, WireType.Float, TerminalType.In, "Num1"));
             public static readonly DefBlock Modulo_Number = new DefBlock("Modulo", 172, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Float, TerminalType.Out, "mod(a,b)"), new Terminal(1, WireType.Float, TerminalType.In, "b"), new Terminal(2, WireType.Float, TerminalType.In, "a"));

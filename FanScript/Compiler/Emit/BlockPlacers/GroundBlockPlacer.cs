@@ -1,11 +1,6 @@
 ﻿using FanScript.Collections;
 using FanScript.FCInfo;
 using MathUtils.Vectors;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FanScript.Compiler.Emit.BlockPlacers
 {

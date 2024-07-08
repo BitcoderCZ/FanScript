@@ -1,10 +1,5 @@
 ﻿using FanScript.FCInfo;
 using MathUtils.Vectors;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FanScript.Compiler.Emit
 {
@@ -79,7 +74,7 @@ namespace FanScript.Compiler.Emit
                     lowestPos.Z = pos.Z;
             }
 
-            lowestPos -= startPos; 
+            lowestPos -= startPos;
 
             for (int i = 0; i < setBlocks.Count; i++)
                 setBlocks[i].Pos -= lowestPos;

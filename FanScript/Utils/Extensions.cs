@@ -1,13 +1,8 @@
 ﻿using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.FCInfo;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
 using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FanScript.Utils
 {

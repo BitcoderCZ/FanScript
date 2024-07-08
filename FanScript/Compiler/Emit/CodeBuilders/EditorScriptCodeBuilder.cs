@@ -1,12 +1,8 @@
 ﻿using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Numerics;
 using System.Text;
-using System.Threading.Tasks;
 
 /*
  function con(nChr) {

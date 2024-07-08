@@ -1,14 +1,14 @@
-﻿using FanScript.Compiler.Binding;
-using FanScript.Compiler.Syntax;
-using FanScript.Compiler;
-using FanScript.Utils;
+﻿using FanScript.Compiler;
+using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Emit;
-using System.Collections.Immutable;
-using FanScript.Compiler.Emit.CodeBuilders;
 using FanScript.Compiler.Emit.BlockPlacers;
-using TextCopy;
+using FanScript.Compiler.Emit.CodeBuilders;
+using FanScript.Compiler.Syntax;
+using FanScript.Utils;
 using MathUtils.Vectors;
+using System.Collections.Immutable;
+using TextCopy;
 
 namespace FanScript
 {

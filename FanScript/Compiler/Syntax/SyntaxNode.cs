@@ -1,13 +1,4 @@
-﻿using FanScript.Compiler.Syntax;
-using FanScript.Compiler.Text;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+﻿using FanScript.Compiler.Text;
 
 namespace FanScript.Compiler.Syntax
 {

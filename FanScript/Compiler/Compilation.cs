@@ -3,14 +3,7 @@ using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Emit;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace FanScript.Compiler
 {

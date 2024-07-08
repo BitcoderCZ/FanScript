@@ -1,11 +1,4 @@
-﻿using FanScript.Compiler.Symbols;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FanScript.Compiler.Binding
+﻿namespace FanScript.Compiler.Binding
 {
     internal static class ConstantFolding
     {
@@ -58,8 +51,8 @@ namespace FanScript.Compiler.Binding
                 case BoundBinaryOperatorKind.Addition:
                     //if (left.Type == TypeSymbol.Float)
                     return new BoundConstant((float)l + (float)r);
-                    //else
-                    //    return new BoundConstant((string)l + (string)r);
+                //else
+                //    return new BoundConstant((string)l + (string)r);
                 case BoundBinaryOperatorKind.Subtraction:
                     return new BoundConstant((float)l - (float)r);
                 case BoundBinaryOperatorKind.Multiplication:

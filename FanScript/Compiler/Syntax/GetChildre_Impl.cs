@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FanScript.Compiler.Syntax
+﻿namespace FanScript.Compiler.Syntax
 {
     partial class AssignmentExpressionSyntax
     {
@@ -199,7 +192,7 @@ namespace FanScript.Compiler.Syntax
         {
             yield return Keyword;
             if (OptionalAssignment is null)
-            yield return Identifier;
+                yield return Identifier;
             else
                 yield return OptionalAssignment;
         }

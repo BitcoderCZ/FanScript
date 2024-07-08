@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FanScript.Collections
+﻿namespace FanScript.Collections
 {
     // from: https://stackoverflow.com/a/10442244/15878562
     public class TreeNode<T>

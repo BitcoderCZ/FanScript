@@ -1,12 +1,7 @@
 ﻿using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
-using System;
 using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FanScript.Compiler.Diagnostics
 {
@@ -177,9 +172,9 @@ namespace FanScript.Compiler.Diagnostics
                 case SyntaxKind.IfStatement:
                     ReportUnreachableCode(((IfStatementSyntax)node).IfKeyword.Location);
                     return;
-                //case SyntaxKind.WhileStatement:
-                //    ReportUnreachableCode(((WhileStatementSyntax)node).WhileKeyword.Location);
-                //    return;
+                case SyntaxKind.WhileStatement:
+                    ReportUnreachableCode(((WhileStatementSyntax)node).WhileKeyword.Location);
+                    return;
                 //case SyntaxKind.DoWhileStatement:
                 //    ReportUnreachableCode(((DoWhileStatementSyntax)node).DoKeyword.Location);
                 //    return;
