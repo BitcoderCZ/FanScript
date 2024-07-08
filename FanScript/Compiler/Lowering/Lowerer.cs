@@ -28,7 +28,7 @@ namespace FanScript.Compiler.Lowering
         {
             Lowerer lowerer = new Lowerer();
             BoundStatement result = lowerer.RewriteStatement(statement);
-            return /*result is BoundBlockStatement block ? block : new BoundBlockStatement(result.Syntax, [result]);*/RemoveDeadCode(Flatten(function, result));
+            return RemoveDeadCode(Flatten(function, result));
         }
 
         private static BoundBlockStatement Flatten(FunctionSymbol function, BoundStatement statement)
@@ -95,6 +95,61 @@ namespace FanScript.Compiler.Lowering
             return node;
         }
 
+        protected override BoundStatement RewriteIfStatement(BoundIfStatement node)
+        {
+            if (node.ElseStatement == null)
+            {
+                // if <condition>
+                //      <then>
+                //
+                // ---->
+                //
+                // gotoFalse <condition> end
+                // <then>
+                // end:
+
+                BoundLabel endLabel = GenerateLabel();
+                BoundBlockStatement result = Block(
+                    node.Syntax,
+                    GotoFalse(node.Syntax, endLabel, node.Condition),
+                    node.ThenStatement,
+                    Label(node.Syntax, endLabel)
+                );
+
+                return RewriteStatement(result);
+            }
+            else
+            {
+                // if <condition>
+                //      <then>
+                // else
+                //      <else>
+                //
+                // ---->
+                //
+                // gotoFalse <condition> else
+                // <then>
+                // goto end
+                // else:
+                // <else>
+                // end:
+
+                BoundLabel elseLabel = GenerateLabel();
+                BoundLabel endLabel = GenerateLabel();
+                var result = Block(
+                    node.Syntax,
+                    GotoFalse(node.Syntax, elseLabel, node.Condition),
+                    node.ThenStatement,
+                    Goto(node.Syntax, endLabel),
+                    Label(node.Syntax, elseLabel),
+                    node.ElseStatement,
+                    Label(node.Syntax, endLabel)
+                );
+
+                return RewriteStatement(result);
+            }
+        }
+
         protected override BoundStatement RewriteWhileStatement(BoundWhileStatement node)
         {
             // while <condition>
@@ -118,6 +173,21 @@ namespace FanScript.Compiler.Lowering
             );
 
             return RewriteStatement(result);
+        }
+
+        protected override BoundStatement RewriteConditionalGotoStatement(BoundConditionalGotoStatement node)
+        {
+            if (node.Condition.ConstantValue is not null)
+            {
+                bool condition = (bool)node.Condition.ConstantValue.Value;
+                condition = node.JumpIfTrue ? condition : !condition;
+                if (condition)
+                    return RewriteStatement(Goto(node.Syntax, node.Label));
+                else
+                    return RewriteStatement(Nop(node.Syntax));
+            }
+
+            return base.RewriteConditionalGotoStatement(node);
         }
 
         protected override BoundExpression RewriteCompoundAssignmentExpression(BoundCompoundAssignmentExpression node)

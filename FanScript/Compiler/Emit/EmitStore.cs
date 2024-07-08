@@ -46,20 +46,10 @@ namespace FanScript.Compiler.Emit
 
     internal class BlockEmitStore : EmitStore
     {
-        public static BlockEmitStore Default => new BlockEmitStore();
-
         public Block In { get; set; }
         public Terminal InTerminal { get; set; }
         public IEnumerable<Block> Out { get; set; }
         public IEnumerable<Terminal> OutTerminal { get; set; }
-
-        protected BlockEmitStore()
-        {
-            In = null!;
-            InTerminal = null!;
-            Out = null!;
-            OutTerminal = null!;
-        }
 
         public BlockEmitStore(Block block)
             : this(block, block.Type.Before, block, block.Type.After)

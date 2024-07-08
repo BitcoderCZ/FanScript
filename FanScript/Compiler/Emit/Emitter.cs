@@ -133,7 +133,7 @@ namespace FanScript.Compiler.Emit
             }
 
             if (lastStore is NopEmitStore)
-                return BlockEmitStore.Default;
+                return new NopEmitStore(); 
 
             store.OutStore = lastStore;
 
@@ -405,7 +405,7 @@ namespace FanScript.Compiler.Emit
                 default:
                     {
                         diagnostics.ReportUndefinedFunction(call.Syntax.Location, call.Function.Name);
-                        return BlockEmitStore.Default;
+                        return new NopEmitStore();
                     }
             }
         }
