@@ -89,18 +89,18 @@ namespace FanScript.Compiler.Emit
             });
         }
 
-        protected void Clear()
+        public virtual void Clear()
         {
             setBlocks.Clear();
             makeConnections.Clear();
             setValues.Clear();
         }
 
-        protected record MakeConnection(Block Block1, Terminal Terminal1, Block Block2, Terminal Terminal2)
+        protected readonly record struct MakeConnection(Block Block1, Terminal Terminal1, Block Block2, Terminal Terminal2)
         {
         }
 
-        protected record SetValue(Block Block, int ValueIndex, object Value)
+        protected readonly record struct SetValue(Block Block, int ValueIndex, object Value)
         {
         }
     }

@@ -46,7 +46,10 @@ namespace FanScript
 
             compilation.EmitTree(Console.Out);
 
-            CodeBuilder builder = new EditorScriptCodeBuilder(new GroundBlockPlacer());
+            CodeBuilder builder = new EditorScriptCodeBuilder(new GroundBlockPlacer()
+            {
+                BlockXOffset = 3,
+            });
             ImmutableArray<Diagnostic> diagnostics = compilation.Emit(builder);
             if (diagnostics.Any())
             {

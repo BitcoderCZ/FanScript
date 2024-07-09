@@ -9,9 +9,21 @@ namespace FanScript.Compiler.Emit
         Block Place(DefBlock defBlock);
 
         void EnterStatementBlock();
+        virtual void StatementBlock(Action action)
+        {
+            EnterStatementBlock();
+            action();
+            ExitStatementBlock();
+        }
         void ExitStatementBlock();
 
         void EnterExpressionBlock();
+        virtual void ExpressionBlock(Action action)
+        {
+            EnterExpressionBlock();
+            action();
+            ExitExpressionBlock();
+        }
         void ExitExpressionBlock();
     }
 }

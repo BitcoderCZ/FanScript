@@ -1,18 +1,24 @@
-float x = 5
+onPlay {
+    float x = 5
 
-vec3 v = vec3(x, 2, 3)
+    if (x > 10) {
+        x = 8
+    }
 
-vec3 a = vec3(2, 2, 2)
+    vec3 v = vec3(x, 2, 3)
 
-a *= 3
+    vec3 a = vec3(2, 2, 2)
 
-a += v
+    a *= 3
 
-a %= 7
+    a += v
 
-rot ra = rot(45, 45, 45)
-rot rb = rot(180, 180, 180)
+    a %= 7
 
-rot r1 = ra + rb
-rot r2 = ra - rb
-rot r3 = ra * rb
+    rot ra = rot(45, 45, 45)
+    rot rb = rot(180, 180, 180)
+
+    rot r1 = ra + rb
+    rot r2 = ra - rb
+    rot r3 = ra * rb
+}
