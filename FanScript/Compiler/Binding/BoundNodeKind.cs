@@ -26,6 +26,7 @@
         ExpressionStatement,
         ConversionExpression,
         CompoundAssignmentExpression,
+        ConstructorExpression,
 
         SpecialBlockCondition,
     }

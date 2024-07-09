@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
+using MathUtils.Vectors;
 
 namespace FanScript.Compiler.Binding
 {
@@ -12,11 +13,13 @@ namespace FanScript.Compiler.Binding
                 Type = TypeSymbol.Bool;
             else if (value is float)
                 Type = TypeSymbol.Float;
-            //else if (value is string)
-            //    Type = TypeSymbol.String;
+            else if (value is Vector3F)
+                Type = TypeSymbol.Vector3;
+            else if (value is Rotation)
+                Type = TypeSymbol.Rotation;
             else
                 throw new Exception($"Unexpected literal '{value}' of type {value.GetType()}");
-
+            
             ConstantValue = new BoundConstant(value);
         }
 

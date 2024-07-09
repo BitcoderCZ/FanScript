@@ -54,6 +54,7 @@
         LiteralExpression,
         CallExpression,
         NameExpression,
+        ConstructorExpression,
 
         Parameter,
         TypeClause,
@@ -68,6 +69,7 @@
         KeywordElse,
         KeywordFloat,
         KeywordVector3,
+        KeywordRotation,
         KeywordBool,
         KeywordWhile,
 

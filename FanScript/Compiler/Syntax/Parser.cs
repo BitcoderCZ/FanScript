@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Lexing;
+using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Text;
 using System.Collections.Immutable;
 
@@ -196,6 +197,8 @@ namespace FanScript.Compiler.Syntax
                 case SyntaxKind.KeywordOnPlay:
                     return ParseSpecialBlockStatement();
                 case SyntaxKind.KeywordFloat:
+                case SyntaxKind.KeywordVector3:
+                case SyntaxKind.KeywordRotation:
                 case SyntaxKind.KeywordBool:
                     return ParseVariableDeclaration();
                 case SyntaxKind.KeywordIf:
@@ -257,7 +260,7 @@ namespace FanScript.Compiler.Syntax
 
         private StatementSyntax ParseVariableDeclaration()
         {
-            SyntaxToken keyword = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool);
+            SyntaxToken keyword = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordBool);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
 
             AssignmentExpressionSyntax? assignment = null;
@@ -398,9 +401,7 @@ namespace FanScript.Compiler.Syntax
                 left = new UnaryExpressionSyntax(_syntaxTree, operatorToken, operand);
             }
             else
-            {
                 left = ParsePrimaryExpression();
-            }
 
             while (true)
             {
@@ -430,8 +431,12 @@ namespace FanScript.Compiler.Syntax
                 case SyntaxKind.FloatToken:
                     return ParseNumberLiteral();
 
-                case SyntaxKind.StringToken:
-                    return ParseStringLiteral();
+                case SyntaxKind.KeywordVector3:
+                case SyntaxKind.KeywordRotation:
+                    return ParseVectorConstructor();
+
+                //case SyntaxKind.StringToken:
+                //    return ParseStringLiteral();
 
                 case SyntaxKind.IdentifierToken:
                 default:
@@ -449,16 +454,31 @@ namespace FanScript.Compiler.Syntax
 
         private ExpressionSyntax ParseBooleanLiteral()
         {
-            bool isTrue = Current.Kind == SyntaxKind.KeywordTrue;
-            SyntaxToken keywordToken = isTrue ? MatchToken(SyntaxKind.KeywordTrue) : MatchToken(SyntaxKind.KeywordFalse);
+            SyntaxToken keywordToken = MatchToken(SyntaxKind.KeywordTrue, SyntaxKind.KeywordFalse);
+            bool isTrue = keywordToken.Kind == SyntaxKind.KeywordTrue;
             return new LiteralExpressionSyntax(_syntaxTree, keywordToken, isTrue);
         }
 
         private ExpressionSyntax ParseNumberLiteral()
             => new LiteralExpressionSyntax(_syntaxTree, MatchToken(SyntaxKind.FloatToken));
 
-        private ExpressionSyntax ParseStringLiteral()
-            => new LiteralExpressionSyntax(_syntaxTree, MatchToken(SyntaxKind.StringToken));
+        private ExpressionSyntax ParseVectorConstructor()
+        {
+            SyntaxToken keywordToken = MatchToken(SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation);
+
+            SyntaxToken openParenthesisToken = MatchToken(SyntaxKind.OpenParenthesisToken);
+            ExpressionSyntax expressionX = ParseExpression();
+            SyntaxToken comma0Token = MatchToken(SyntaxKind.CommaToken);
+            ExpressionSyntax expressionY = ParseExpression();
+            SyntaxToken comma1Token = MatchToken(SyntaxKind.CommaToken);
+            ExpressionSyntax expressionZ = ParseExpression();
+            SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
+
+            return new ConstructorExpressionSyntax(_syntaxTree, keywordToken, openParenthesisToken, expressionX, comma0Token, expressionY, comma1Token, expressionZ, closeParenthesisToken);
+        }
+
+        //private ExpressionSyntax ParseStringLiteral()
+        //    => new LiteralExpressionSyntax(_syntaxTree, MatchToken(SyntaxKind.StringToken));
 
         private ExpressionSyntax ParseNameOrCallExpression()
         {

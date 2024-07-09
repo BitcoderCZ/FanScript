@@ -64,6 +64,8 @@ namespace FanScript.Utils
             writer.ResetColor();
         }
 
+        public static void WriteNumber(this TextWriter writer, float value)
+            => WriteNumber(writer, value.ToString());
         public static void WriteNumber(this TextWriter writer, string text)
         {
             writer.SetForeground(ConsoleColor.Cyan);
@@ -100,7 +102,7 @@ namespace FanScript.Utils
 
         public static void WriteDiagnostics(this TextWriter writer, IEnumerable<Diagnostic> diagnostics)
         {
-            foreach (var diagnostic in diagnostics.Where(d => d.Location.Text is null))
+            foreach (Diagnostic? diagnostic in diagnostics.Where(d => d.Location.Text is null))
             {
                 ConsoleColor messageColor = diagnostic.IsWarning ? ConsoleColor.DarkYellow : ConsoleColor.DarkRed;
                 writer.SetForeground(messageColor);
@@ -108,7 +110,7 @@ namespace FanScript.Utils
                 writer.ResetColor();
             }
 
-            foreach (var diagnostic in diagnostics.Where(d => d.Location.Text is not null)
+            foreach (Diagnostic? diagnostic in diagnostics.Where(d => d.Location.Text is not null)
                                                   .OrderBy(d => d.Location.FileName)
                                                   .ThenBy(d => d.Location.Span.Start)
                                                   .ThenBy(d => d.Location.Span.Length))

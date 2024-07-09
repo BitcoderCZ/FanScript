@@ -45,12 +45,12 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                 statements.Peek().HandlePopChild(statement);
         }
 
-        public void EnterExpression()
+        public void EnterExpressionBlock()
         {
             if (expressions.Count == 0) expressions.Push(statements.Peek().CreateExpression());
             else expressions.Push(expressions.Peek().CreateChild());
         }
-        public void ExitExpression()
+        public void ExitExpressionBlock()
         {
             ExpressionBlock expression = expressions.Pop();
 

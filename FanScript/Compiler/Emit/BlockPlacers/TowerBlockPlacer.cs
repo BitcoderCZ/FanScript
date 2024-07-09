@@ -55,10 +55,10 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         {
         }
 
-        public void EnterExpression()
+        public void EnterExpressionBlock()
         {
         }
-        public void ExitExpression()
+        public void ExitExpressionBlock()
         {
         }
 

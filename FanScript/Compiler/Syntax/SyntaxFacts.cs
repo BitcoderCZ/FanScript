@@ -72,6 +72,8 @@
                     return SyntaxKind.KeywordFloat;
                 case "vec3":
                     return SyntaxKind.KeywordVector3;
+                case "rot":
+                    return SyntaxKind.KeywordRotation;
                 case "bool":
                     return SyntaxKind.KeywordBool;
                 case "while":
@@ -152,6 +154,8 @@
                     "float",
                 SyntaxKind.KeywordVector3 =>
                     "vec3",
+                SyntaxKind.KeywordRotation =>
+                    "rot",
                 SyntaxKind.KeywordBool =>
                     "bool",
                 SyntaxKind.KeywordWhile =>
@@ -198,6 +202,8 @@
                     return SyntaxKind.StarToken;
                 case SyntaxKind.SlashEqualsToken:
                     return SyntaxKind.SlashToken;
+                case SyntaxKind.PercentEqualsToken:
+                    return SyntaxKind.PercentToken;
                 default:
                     throw new Exception($"Unexpected syntax: '{kind}'");
             }

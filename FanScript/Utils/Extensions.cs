@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using FanScript.Compiler;
+using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.FCInfo;
 using System.Globalization;
@@ -14,8 +15,10 @@ namespace FanScript.Utils
             {
                 case SyntaxKind.KeywordFloat:
                     return WireType.Float;
-                /*case SyntaxKind.Vector3Keyword:
-                    return WireType.Vec3;*/
+                case SyntaxKind.KeywordVector3:
+                    return WireType.Vec3;
+                case SyntaxKind.KeywordRotation:
+                    return WireType.Rot;
                 case SyntaxKind.KeywordBool:
                     return WireType.Bool;
                 default:
@@ -28,8 +31,10 @@ namespace FanScript.Utils
             {
                 case SyntaxKind.KeywordFloat:
                     return TypeSymbol.Float;
-                /*case SyntaxKind.Vector3Keyword:
-                    return TypeSymbol.Vector3;*/
+                case SyntaxKind.KeywordVector3:
+                    return TypeSymbol.Vector3;
+                case SyntaxKind.KeywordRotation:
+                    return TypeSymbol.Rotation;
                 case SyntaxKind.KeywordBool:
                     return TypeSymbol.Bool;
                 default:
@@ -37,21 +42,23 @@ namespace FanScript.Utils
             }
         }
 
-        public static WireType ToWireType(this TypeSymbol syntax)
+        public static WireType ToWireType(this TypeSymbol type)
         {
-            if (syntax == TypeSymbol.Float)
+            if (type == TypeSymbol.Float)
                 return WireType.Float;
-            /*else if (syntax == TypeSymbol.Vector3)
-                return WireType.Vec3;*/
-            else if (syntax == TypeSymbol.Bool)
+            else if (type == TypeSymbol.Vector3)
+                return WireType.Vec3;
+            else if (type == TypeSymbol.Rotation)
+                return WireType.Rot;
+            else if (type == TypeSymbol.Bool)
                 return WireType.Bool;
             else
-                throw new Exception($"Cannot convert TypeSymbol \"{Enum.GetName(typeof(TypeSymbol), syntax)}\" to WireType");
+                throw new Exception($"Cannot convert TypeSymbol \"{Enum.GetName(typeof(TypeSymbol), type)}\" to WireType");
         }
 
         public static string ToBlockValue(this object o)
         {
-            if (o == null)
+            if (o is null)
                 return "Null";
             else if (o is string s)
                 return $"\"{s}\"";
@@ -61,6 +68,8 @@ namespace FanScript.Utils
                 return b.ToString().ToLower();
             else if (o is Vector3 v)
                 return $"[{v.X.ToString(CultureInfo.InvariantCulture)},{v.Y.ToString(CultureInfo.InvariantCulture)},{v.Z.ToString(CultureInfo.InvariantCulture)}]";
+            else if (o is Rotation r)
+                return $"[{r.Value.X.ToString(CultureInfo.InvariantCulture)},{r.Value.Y.ToString(CultureInfo.InvariantCulture)},{r.Value.Z.ToString(CultureInfo.InvariantCulture)}]";
             else
                 throw new Exception($"Cannot convert object of type: \"{o.GetType()}\" to Block Value");
         }

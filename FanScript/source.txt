@@ -1,17 +1,18 @@
-float a = 0
+float x = 5
 
-onPlay
-{
-    while (a < 10) {
-        a += 1
+vec3 v = vec3(x, 2, 3)
 
-        if (a > 5)
-            a = 20
-        else
-            a += 1
-    }
+vec3 a = vec3(2, 2, 2)
 
-    a = -5
-}
+a *= 3
 
-a = 5.5
+a += v
+
+a %= 7
+
+rot ra = rot(45, 45, 45)
+rot rb = rot(180, 180, 180)
+
+rot r1 = ra + rb
+rot r2 = ra - rb
+rot r3 = ra * rb

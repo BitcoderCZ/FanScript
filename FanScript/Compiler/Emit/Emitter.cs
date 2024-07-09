@@ -175,9 +175,9 @@ namespace FanScript.Compiler.Emit
         {
             Block block = builder.AddBlock(Blocks.Control.If);
 
-            builder.BlockPlacer.EnterExpression();
+            builder.BlockPlacer.EnterExpressionBlock();
             EmitStore condition = emitExpression(ifStatement.Condition);
-            builder.BlockPlacer.ExitExpression();
+            builder.BlockPlacer.ExitExpressionBlock();
             builder.BlockPlacer.EnterStatementBlock();
             EmitStore ifTrue = emitStatement(ifStatement.ThenStatement);
 
@@ -205,9 +205,9 @@ namespace FanScript.Compiler.Emit
         {
             Block block = builder.AddBlock(Blocks.Control.If);
 
-            builder.BlockPlacer.EnterExpression();
+            builder.BlockPlacer.EnterExpressionBlock();
             EmitStore condition = emitExpression(gotoStatement.Condition);
-            builder.BlockPlacer.ExitExpression();
+            builder.BlockPlacer.ExitExpressionBlock();
             connectBlocks(condition, BlockEmitStore.CIn(block, block.Type.Terminals[3]));
 
             ConditionalGotoEmitStore store = new ConditionalGotoEmitStore(block, block.Type.Before,
@@ -221,8 +221,7 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitLabelStatement(BoundLabelStatement labelStatement)
         {
-            LabelEmitStore store = new LabelEmitStore(labelStatement.Label.Name);
-            return store;
+            return new LabelEmitStore(labelStatement.Label.Name);
         }
 
         private EmitStore emitExpression(BoundExpression expression)
@@ -233,6 +232,8 @@ namespace FanScript.Compiler.Emit
                 store = emitAssigmentExpression(assigment);
             else if (expression is BoundLiteralExpression literal)
                 store = emitLiteralExpression(literal);
+            else if (expression is BoundConstructorExpression constructor)
+                store = emitConstructorExpression(constructor);
             else if (expression is BoundUnaryExpression unary)
                 store = emitUnaryExpression(unary);
             else if (expression is BoundBinaryExpression binary)
@@ -249,13 +250,13 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitAssigmentExpression(BoundAssignmentExpression assignment)
         {
-            Block block = builder.AddBlock(Blocks.Variables.GetSet_Variable(assignment.Variable.Type!.ToWireType()));
+            Block block = builder.AddBlock(Blocks.Variables.Set_VariableByType(assignment.Variable.Type!.ToWireType()));
 
             builder.SetBlockValue(block, 0, assignment.Variable.Name);
 
-            builder.BlockPlacer.EnterExpression();
+            builder.BlockPlacer.EnterExpressionBlock();
             EmitStore _store = emitExpression(assignment.Expression);
-            builder.BlockPlacer.ExitExpression();
+            builder.BlockPlacer.ExitExpressionBlock();
 
             connectBlocks(_store, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
 
@@ -263,12 +264,35 @@ namespace FanScript.Compiler.Emit
         }
 
         private EmitStore emitLiteralExpression(BoundLiteralExpression literal)
+            => emitLiteralExpression(literal.Value);
+        private EmitStore emitLiteralExpression(object value)
         {
-            Block block = builder.AddBlock(Blocks.Values.GetValue(literal.Value));
+            Block block = builder.AddBlock(Blocks.Values.ValueByType(value));
 
-            builder.SetBlockValue(block, 0, literal.Value);
+            builder.SetBlockValue(block, 0, value);
 
             return BlockEmitStore.COut(block, block.Type.Terminals[0]);
+        }
+
+        private EmitStore emitConstructorExpression(BoundConstructorExpression constructor)
+        {
+            if (constructor.ConstantValue is not null)
+                return emitLiteralExpression(constructor.ConstantValue.Value);
+
+            DefBlock def = Blocks.Math.MakeByType(constructor.Type.ToWireType());
+            Block block = builder.AddBlock(def);
+
+            builder.BlockPlacer.EnterExpressionBlock();
+            EmitStore xStore = emitExpression(constructor.ExpressionX);
+            EmitStore yStore = emitExpression(constructor.ExpressionY);
+            EmitStore zStore = emitExpression(constructor.ExpressionZ);
+            builder.BlockPlacer.ExitExpressionBlock();
+
+            connectBlocks(xStore, BlockEmitStore.CIn(block, def.Terminals[3]));
+            connectBlocks(yStore, BlockEmitStore.CIn(block, def.Terminals[2]));
+            connectBlocks(zStore, BlockEmitStore.CIn(block, def.Terminals[1]));
+
+            return BlockEmitStore.COut(block, def.Terminals[0]);
         }
 
         private EmitStore emitUnaryExpression(BoundUnaryExpression unary)
@@ -281,9 +305,9 @@ namespace FanScript.Compiler.Emit
                     {
                         Block block = builder.AddBlock(Blocks.Math.Negate);
 
-                        builder.BlockPlacer.EnterExpression();
+                        builder.BlockPlacer.EnterExpressionBlock();
                         EmitStore _store = emitExpression(unary.Operand);
-                        builder.BlockPlacer.ExitExpression();
+                        builder.BlockPlacer.ExitExpressionBlock();
 
                         connectBlocks(_store, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
 
@@ -293,9 +317,9 @@ namespace FanScript.Compiler.Emit
                     {
                         Block block = builder.AddBlock(Blocks.Math.Not);
 
-                        builder.BlockPlacer.EnterExpression();
+                        builder.BlockPlacer.EnterExpressionBlock();
                         EmitStore _store = emitExpression(unary.Operand);
-                        builder.BlockPlacer.ExitExpression();
+                        builder.BlockPlacer.ExitExpressionBlock();
 
                         connectBlocks(_store, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
 
@@ -312,7 +336,7 @@ namespace FanScript.Compiler.Emit
                 && binary.Left.Type == binary.Right.Type)
                 return emitBinaryExpression_FloatOrBool(binary);
             else
-                throw new NotImplementedException();//return emitBinaryExpression_VecOrRot(binary);
+                return emitBinaryExpression_VecOrRot(binary);
         }
         private EmitStore emitBinaryExpression_FloatOrBool(BoundBinaryExpression binary)
         {
@@ -336,7 +360,7 @@ namespace FanScript.Compiler.Emit
                     break;
                 case BoundBinaryOperatorKind.Equals:
                 case BoundBinaryOperatorKind.NotEquals:
-                    op = Blocks.Math.GetEquals(binary.Left.Type!.ToWireType());
+                    op = Blocks.Math.EqualsByType(binary.Left.Type!.ToWireType());
                     break;
                 case BoundBinaryOperatorKind.LogicalAnd:
                     op = Blocks.Math.LogicalAnd;
@@ -362,14 +386,14 @@ namespace FanScript.Compiler.Emit
             {
                 // invert output, >= or <=, >= can be accomplished as inverted <
                 Block not = builder.AddBlock(Blocks.Math.Not);
-                builder.BlockPlacer.EnterExpression();
+                builder.BlockPlacer.EnterExpressionBlock();
 
                 Block block = builder.AddBlock(op);
-                builder.BlockPlacer.EnterExpression();
+                builder.BlockPlacer.EnterExpressionBlock();
                 EmitStore store0 = emitExpression(binary.Left);
                 EmitStore store1 = emitExpression(binary.Right);
-                builder.BlockPlacer.ExitExpression();
-                builder.BlockPlacer.ExitExpression();
+                builder.BlockPlacer.ExitExpressionBlock();
+                builder.BlockPlacer.ExitExpressionBlock();
 
                 connectBlocks(BlockEmitStore.COut(block, block.Type.Terminals[0]),
                     BlockEmitStore.CIn(not, not.Type.Terminals[1]));
@@ -381,10 +405,10 @@ namespace FanScript.Compiler.Emit
             else
             {
                 Block block = builder.AddBlock(op);
-                builder.BlockPlacer.EnterExpression();
+                builder.BlockPlacer.EnterExpressionBlock();
                 EmitStore store0 = emitExpression(binary.Left);
                 EmitStore store1 = emitExpression(binary.Right);
-                builder.BlockPlacer.ExitExpression();
+                builder.BlockPlacer.ExitExpressionBlock();
 
                 connectBlocks(store0, BlockEmitStore.CIn(block, block.Type.Terminals[2]));
                 connectBlocks(store1, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
@@ -392,11 +416,175 @@ namespace FanScript.Compiler.Emit
                 return BlockEmitStore.COut(block, block.Type.Terminals[0]);
             }
         }
+        private EmitStore emitBinaryExpression_VecOrRot(BoundBinaryExpression binary)
+        {
+            DefBlock? defOp = null;
+            switch (binary.Op.Kind)
+            {
+                case BoundBinaryOperatorKind.Addition:
+                    if (binary.Left.Type == TypeSymbol.Vector3)
+                        defOp = Blocks.Math.Add_Vector;
+                    break;
+                case BoundBinaryOperatorKind.Subtraction:
+                    if (binary.Left.Type == TypeSymbol.Vector3)
+                        defOp = Blocks.Math.Subtract_Vector;
+                    break;
+                case BoundBinaryOperatorKind.Multiplication:
+                    if (binary.Left.Type == TypeSymbol.Vector3)
+                        defOp = Blocks.Math.Multiply_Vector;
+                    else if (binary.Left.Type == TypeSymbol.Rotation)
+                        defOp = Blocks.Math.Multiply_Rotation;
+                    else
+                        throw new Exception($"Unexpected BoundBinaryOperatorKind: '{binary.Op.Kind}'.");
+                    break;
+                case BoundBinaryOperatorKind.Division:
+                case BoundBinaryOperatorKind.Modulo:
+                    break; // supported, but not one block
+                case BoundBinaryOperatorKind.Equals:
+                    if (binary.Left.Type == TypeSymbol.Vector3)
+                        defOp = Blocks.Math.Equals_Vector;
+                    else
+                        throw new Exception($"Unexpected BoundBinaryOperatorKind: '{binary.Op.Kind}'.");
+                    // rotation doesn't have equals???
+                    break;
+                case BoundBinaryOperatorKind.NotEquals:
+                    break; // supported, but not one block
+                default:
+                    throw new Exception($"Unexpected BoundBinaryOperatorKind: '{binary.Op.Kind}'.");
+            }
+
+            if (defOp is null)
+            {
+                switch (binary.Op.Kind)
+                {
+                    case BoundBinaryOperatorKind.Addition: // Rotation
+                        return buildOperatorWithBreak(Blocks.Math.Break_Rotation, Blocks.Math.Make_Rotation,
+                            Blocks.Math.Add_Number);
+                    case BoundBinaryOperatorKind.Subtraction: // Rotation
+                        return buildOperatorWithBreak(Blocks.Math.Break_Rotation, Blocks.Math.Make_Rotation,
+                            Blocks.Math.Subtract_Number);
+                    case BoundBinaryOperatorKind.Division: // Vector3
+                        return buildOperatorWithBreak(Blocks.Math.Break_Vector, Blocks.Math.Make_Vector,
+                            Blocks.Math.Divide_Number);
+                    case BoundBinaryOperatorKind.Modulo: // Vector3
+                        return buildOperatorWithBreak(Blocks.Math.Break_Vector, Blocks.Math.Make_Vector,
+                            Blocks.Math.Modulo_Number);
+                    case BoundBinaryOperatorKind.NotEquals:
+                        {
+                            if (binary.Left.Type == TypeSymbol.Vector3)
+                                defOp = Blocks.Math.Equals_Vector;
+                            else
+                                throw new Exception($"Unexpected BoundBinaryOperatorKind: '{binary.Op.Kind}'.");
+
+                            Block not = builder.AddBlock(Blocks.Math.Not);
+                            builder.BlockPlacer.EnterExpressionBlock();
+                            Block op = builder.AddBlock(defOp);
+                            builder.BlockPlacer.EnterExpressionBlock();
+                            EmitStore store0 = emitExpression(binary.Left);
+                            EmitStore store1 = emitExpression(binary.Right);
+                            builder.BlockPlacer.ExitExpressionBlock();
+                            builder.BlockPlacer.ExitExpressionBlock();
+
+                            connectBlocks(store0, BlockEmitStore.CIn(op, op.Type.Terminals[2]));
+                            connectBlocks(store1, BlockEmitStore.CIn(op, op.Type.Terminals[1]));
+                            connectBlocks(BlockEmitStore.COut(op, op.Type.Terminals[0]),
+                                BlockEmitStore.CIn(not, not.Type.Terminals[1]));
+
+                            return BlockEmitStore.COut(not, not.Type.Terminals[0]);
+                        }
+                    default:
+                        throw new Exception($"Unexpected BoundBinaryOperatorKind: '{binary.Op.Kind}'.");
+                }
+            }
+            else
+            {
+                Block op = builder.AddBlock(defOp);
+                builder.BlockPlacer.EnterExpressionBlock();
+                EmitStore store0 = emitExpression(binary.Left);
+                EmitStore store1 = emitExpression(binary.Right);
+                builder.BlockPlacer.ExitExpressionBlock();
+
+                connectBlocks(store0, BlockEmitStore.CIn(op, op.Type.Terminals[2]));
+                connectBlocks(store1, BlockEmitStore.CIn(op, op.Type.Terminals[1]));
+
+                return BlockEmitStore.COut(op, op.Type.Terminals[0]);
+            }
+
+            // TODO: break cache ****
+            EmitStore buildOperatorWithBreak(DefBlock defBreak, DefBlock defMake, DefBlock defOp)
+            {
+                Block make = builder.AddBlock(defMake);
+                Block op1;
+                Block op2;
+                Block op3;
+                Block break1;
+                Block? break2 = null;
+                EmitStore right;
+
+                builder.BlockPlacer.EnterExpressionBlock();
+                {
+                    op1 = builder.AddBlock(defOp);
+                    builder.BlockPlacer.EnterExpressionBlock();
+                    {
+                        break1 = builder.AddBlock(defBreak);
+
+                        builder.BlockPlacer.EnterExpressionBlock();
+                        EmitStore left = emitExpression(binary.Left);
+                        connectBlocks(left, BlockEmitStore.CIn(break1, break1.Type.Terminals[3]));
+                        builder.BlockPlacer.ExitExpressionBlock();
+                    }
+                    builder.BlockPlacer.ExitExpressionBlock();
+
+                    op2 = builder.AddBlock(defOp);
+
+                    builder.BlockPlacer.EnterExpressionBlock();
+                    {
+                        if (binary.Right.Type == TypeSymbol.Vector3 || binary.Right.Type == TypeSymbol.Rotation)
+                            break2 = builder.AddBlock(defBreak);
+
+                        builder.BlockPlacer.EnterExpressionBlock();
+                        right = emitExpression(binary.Right);
+                        if (break2 is not null)
+                            connectBlocks(right, BlockEmitStore.CIn(break2, break2.Type.Terminals[3]));
+                        builder.BlockPlacer.ExitExpressionBlock();
+                    }
+                    builder.BlockPlacer.ExitExpressionBlock();
+                    op3 = builder.AddBlock(defOp);
+                }
+                builder.BlockPlacer.ExitExpressionBlock();
+
+                // left to op
+                connectBlocks(BlockEmitStore.COut(break1, break1.Type.Terminals[2]),
+                    BlockEmitStore.CIn(op1, op1.Type.Terminals[2]));
+                connectBlocks(BlockEmitStore.COut(break1, break1.Type.Terminals[1]),
+                    BlockEmitStore.CIn(op2, op2.Type.Terminals[2]));
+                connectBlocks(BlockEmitStore.COut(break1, break1.Type.Terminals[0]),
+                    BlockEmitStore.CIn(op3, op3.Type.Terminals[2]));
+
+                // right to op
+                connectBlocks(break2 is null ? right : BlockEmitStore.COut(break2, break2.Type.Terminals[2]),
+                    BlockEmitStore.CIn(op1, op1.Type.Terminals[1]));
+                connectBlocks(break2 is null ? right : BlockEmitStore.COut(break2, break2.Type.Terminals[1]),
+                    BlockEmitStore.CIn(op2, op2.Type.Terminals[1]));
+                connectBlocks(break2 is null ? right : BlockEmitStore.COut(break2, break2.Type.Terminals[0]),
+                    BlockEmitStore.CIn(op3, op3.Type.Terminals[1]));
+
+                // op to make
+                connectBlocks(BlockEmitStore.COut(op1, op1.Type.Terminals[0]),
+                    BlockEmitStore.CIn(make, make.Type.Terminals[3]));
+                connectBlocks(BlockEmitStore.COut(op2, op2.Type.Terminals[0]),
+                    BlockEmitStore.CIn(make, make.Type.Terminals[2]));
+                connectBlocks(BlockEmitStore.COut(op3, op3.Type.Terminals[0]),
+                    BlockEmitStore.CIn(make, make.Type.Terminals[1]));
+
+                return BlockEmitStore.COut(make, make.Type.Terminals[0]);
+            }
+        }
 
         private EmitStore emitVariableExpression(BoundVariableExpression name)
         {
             VariableSymbol symbol = name.Variable;
-            Block block = builder.AddBlock(Blocks.Variables.Get_Variable(symbol.Type!.ToWireType()));
+            Block block = builder.AddBlock(Blocks.Variables.VariableByType(symbol.Type!.ToWireType()));
 
             builder.SetBlockValue(block, 0, symbol.Name);
 

@@ -1,6 +1,7 @@
 ﻿using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
+using MathUtils.Vectors;
 using System.CodeDom.Compiler;
 
 namespace FanScript.Compiler.Binding
@@ -87,6 +88,9 @@ namespace FanScript.Compiler.Binding
                     break;
                 case BoundNodeKind.ConversionExpression:
                     WriteConversionExpression((BoundConversionExpression)node, writer);
+                    break;
+                case BoundNodeKind.ConstructorExpression:
+                    WriteConstructorExpression((BoundConstructorExpression)node, writer);
                     break;
                 case BoundNodeKind.SpecialBlockCondition:
                     WriteSpecialBlockCondition((BoundSpecialBlockCondition)node, writer);
@@ -311,6 +315,32 @@ namespace FanScript.Compiler.Binding
                 writer.WriteKeyword((bool)node.Value ? SyntaxKind.KeywordTrue : SyntaxKind.KeywordFalse);
             else if (node.Type == TypeSymbol.Float)
                 writer.WriteNumber(value);
+            else if (node.Type == TypeSymbol.Vector3 || node.Type == TypeSymbol.Rotation)
+            {
+                Vector3F val;
+                SyntaxKind keyword;
+                if (node.Type == TypeSymbol.Rotation)
+                {
+                    val = ((Rotation)node.Value).Value;
+                    keyword = SyntaxKind.KeywordRotation;
+                }
+                else
+                {
+                    val = (Vector3F)node.Value;
+                    keyword = SyntaxKind.KeywordVector3;
+                }
+
+                writer.WriteKeyword(keyword);
+                writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
+                writer.WriteNumber(val.X);
+                writer.WritePunctuation(SyntaxKind.CommaToken);
+                writer.WriteSpace();
+                writer.WriteNumber(val.Y);
+                writer.WritePunctuation(SyntaxKind.CommaToken);
+                writer.WriteSpace();
+                writer.WriteNumber(val.Z);
+                writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
+            }
             //else if (node.Type == TypeSymbol.String)
             //{
             //    value = "\"" + value.Replace("\"", "\"\"") + "\"";
@@ -392,6 +422,20 @@ namespace FanScript.Compiler.Binding
             writer.WriteIdentifier(node.Type?.Name);
             writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
             node.Expression.WriteTo(writer);
+            writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
+        }
+
+        private static void WriteConstructorExpression(BoundConstructorExpression node, IndentedTextWriter writer)
+        {
+            writer.WriteKeyword(node.Type.Name);
+            writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
+            node.ExpressionX.WriteTo(writer);
+            writer.WritePunctuation(SyntaxKind.CommaToken);
+            writer.WriteSpace();
+            node.ExpressionY.WriteTo(writer);
+            writer.WritePunctuation(SyntaxKind.CommaToken);
+            writer.WriteSpace();
+            node.ExpressionZ.WriteTo(writer);
             writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
         }
 

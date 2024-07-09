@@ -85,17 +85,11 @@ namespace FanScript.Compiler.Lexing
                         break;
                     case '/':
                         if (Lookahead == '/')
-                        {
                             ReadSingleLineComment();
-                        }
                         else if (Lookahead == '*')
-                        {
                             ReadMultiLineComment();
-                        }
                         else
-                        {
                             done = true;
-                        }
                         break;
                     case '\n':
                     case '\r':
@@ -128,13 +122,9 @@ namespace FanScript.Compiler.Lexing
         private void ReadLineBreak()
         {
             if (Current == '\r' && Lookahead == '\n')
-            {
                 _position += 2;
-            }
             else
-            {
                 _position++;
-            }
 
             _kind = SyntaxKind.LineBreakTrivia;
         }
@@ -352,9 +342,9 @@ namespace FanScript.Compiler.Lexing
                         _position++;
                     }
                     break;
-                case '"':
-                    ReadString();
-                    break;
+                //case '"':
+                //    ReadString();
+                //    break;
                 case '.':
                 case '0':
                 case '1':

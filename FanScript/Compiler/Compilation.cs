@@ -124,19 +124,6 @@ namespace FanScript.Compiler
             body.WriteTo(writer);
         }
 
-        // TODO: References should be part of the compilation, not arguments for Emit
-        /*public ImmutableArray<Diagnostic> Emit(string moduleName, string[] references, string outputPath)
-        {
-            var parseDiagnostics = SyntaxTrees.SelectMany(st => st.Diagnostics);
-
-            var diagnostics = parseDiagnostics.Concat(GlobalScope.Diagnostics).ToImmutableArray();
-            if (diagnostics.HasErrors())
-                return diagnostics;
-
-            var program = GetProgram();
-            return Emitter.Emit(program, moduleName, references, outputPath);
-        }*/
-
         public ImmutableArray<Diagnostic> Emit(CodeBuilder builder)
         {
             IEnumerable<Diagnostic> parseDiagnostics = SyntaxTrees.SelectMany(st => st.Diagnostics);

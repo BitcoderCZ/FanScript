@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
+using MathUtils.Vectors;
 using System.Collections.Immutable;
 using System.Diagnostics;
 
@@ -89,7 +90,7 @@ namespace FanScript.Compiler.Binding
 
         public static BoundLiteralExpression Literal(SyntaxNode syntax, object literal)
         {
-            Debug.Assert(literal is string || literal is bool || literal is float);
+            Debug.Assert(literal is string || literal is bool || literal is float || literal is Vector3F || literal is Rotation);
 
             return new BoundLiteralExpression(syntax, literal);
         }

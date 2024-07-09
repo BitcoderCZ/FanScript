@@ -1,4 +1,5 @@
-﻿using MathUtils.Vectors;
+﻿using FanScript.Compiler;
+using MathUtils.Vectors;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Reflection;
@@ -70,7 +71,7 @@ namespace FanScript.FCInfo
 
         public static class Math
         {
-            public static DefBlock GetEquals(WireType type)
+            public static DefBlock EqualsByType(WireType type)
             {
                 switch (type)
                 {
@@ -82,6 +83,30 @@ namespace FanScript.FCInfo
                         return Equals_Bool;
                     case WireType.Obj:
                         return Equals_Object;
+                    default:
+                        throw new Exception($"Unsuported WireType: {type}");
+                }
+            }
+            public static DefBlock BreakByType(WireType type)
+            {
+                switch (type)
+                {
+                    case WireType.Vec3:
+                        return Break_Vector;
+                    case WireType.Rot:
+                        return Break_Rotation;
+                    default:
+                        throw new Exception($"Unsuported WireType: {type}");
+                }
+            }
+            public static DefBlock MakeByType(WireType type)
+            {
+                switch (type)
+                {
+                    case WireType.Vec3:
+                        return Make_Vector;
+                    case WireType.Rot:
+                        return Make_Rotation;
                     default:
                         throw new Exception($"Unsuported WireType: {type}");
                 }
@@ -111,24 +136,28 @@ namespace FanScript.FCInfo
             public static readonly DefBlock Less = new DefBlock("Less Than", 128, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Bool, TerminalType.Out, "Num1 < Num2"), new Terminal(1, WireType.Float, TerminalType.In, "Num2"), new Terminal(2, WireType.Float, TerminalType.In, "Num1"));
             public static readonly DefBlock Greater = new DefBlock("Greater Than", 481, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Bool, TerminalType.Out, "Num1 > Num2"), new Terminal(1, WireType.Float, TerminalType.In, "Num2"), new Terminal(2, WireType.Float, TerminalType.In, "Num1"));
 
-            public static readonly DefBlock Make_Vector = new DefBlock("Make Vector", 150, BlockType.Pasive, new Vector2I(2, 3), new Terminal(0, WireType.Vec3, TerminalType.Out, "Vector"), new Terminal(1, WireType.Float, TerminalType.In, "Z"), new Terminal(2, WireType.Float, TerminalType.In, "y"), new Terminal(3, WireType.Float, TerminalType.In, "X"));
-            public static readonly DefBlock Break_Vector = new DefBlock("Break Vector", 156, BlockType.Pasive, new Vector2I(2, 3), new Terminal(0, WireType.Float, TerminalType.Out, "Z"), new Terminal(1, WireType.Float, TerminalType.Out, "y"), new Terminal(2, WireType.Float, TerminalType.Out, "X"), new Terminal(3, WireType.Vec3, TerminalType.In, "Vector"));
+            public static readonly DefBlock Make_Vector = new DefBlock("Make Vector", 150, BlockType.Pasive, new Vector2I(2, 3), new Terminal(0, WireType.Vec3, TerminalType.Out, "Vector"), new Terminal(1, WireType.Float, TerminalType.In, "Z"), new Terminal(2, WireType.Float, TerminalType.In, "Y"), new Terminal(3, WireType.Float, TerminalType.In, "X"));
+            public static readonly DefBlock Break_Vector = new DefBlock("Break Vector", 156, BlockType.Pasive, new Vector2I(2, 3), new Terminal(0, WireType.Float, TerminalType.Out, "Z"), new Terminal(1, WireType.Float, TerminalType.Out, "Y"), new Terminal(2, WireType.Float, TerminalType.Out, "X"), new Terminal(3, WireType.Vec3, TerminalType.In, "Vector"));
             public static readonly DefBlock Make_Rotation = new DefBlock("Make Rotation", 162, BlockType.Pasive, new Vector2I(2, 3), new Terminal(0, WireType.Rot, TerminalType.Out, "Rotation"), new Terminal(1, WireType.Float, TerminalType.In, "Z angle"), new Terminal(2, WireType.Float, TerminalType.In, "y angle"), new Terminal(3, WireType.Float, TerminalType.In, "X angle"));
             public static readonly DefBlock Break_Rotation = new DefBlock("Break Rotation", 442, BlockType.Pasive, new Vector2I(2, 3), new Terminal(0, WireType.Float, TerminalType.Out, "Z angle"), new Terminal(1, WireType.Float, TerminalType.Out, "y angle"), new Terminal(2, WireType.Float, TerminalType.Out, "X angle"), new Terminal(3, WireType.Rot, TerminalType.In, "Rotation"));
         }
 
         public static class Values
         {
-            public static DefBlock GetValue(object value)
+            public static DefBlock ValueByType(object value)
             {
                 if (value is float)
                     return Number;
                 else if (value is bool b)
                     return b ? True : False;
+                else if (value is Vector3F)
+                    return Vector;
+                else if (value is Rotation)
+                    return Rotation;
                 else
                     throw new Exception($"Value doesn't exist for Type '{value.GetType()}',");
             }
-            public static DefBlock GetInspect(WireType type)
+            public static DefBlock InspectByType(WireType type)
             {
                 switch (type)
                 {
@@ -159,7 +188,7 @@ namespace FanScript.FCInfo
 
         public static class Variables
         {
-            public static DefBlock Get_Variable(WireType type)
+            public static DefBlock VariableByType(WireType type)
             {
                 switch (type)
                 {
@@ -177,7 +206,7 @@ namespace FanScript.FCInfo
                         throw new Exception($"Get_variable doesn't exist for WireType \"{Enum.GetName(typeof(WireType), type)}\"");
                 }
             }
-            public static DefBlock GetSet_Variable(WireType type)
+            public static DefBlock Set_VariableByType(WireType type)
             {
                 switch (type)
                 {
@@ -195,7 +224,7 @@ namespace FanScript.FCInfo
                         throw new Exception($"Set_Variable doesn't exist for WireType \"{Enum.GetName(typeof(WireType), type)}\"");
                 }
             }
-            public static DefBlock GetList(WireType type)
+            public static DefBlock ListByType(WireType type)
             {
                 switch (type)
                 {
@@ -213,7 +242,7 @@ namespace FanScript.FCInfo
                         throw new Exception($"List doesn't exist for WireType \"{Enum.GetName(typeof(WireType), type)}\"");
                 }
             }
-            public static DefBlock GetSet_Ptr(WireType type)
+            public static DefBlock Set_PtrByType(WireType type)
             {
                 switch (type)
                 {

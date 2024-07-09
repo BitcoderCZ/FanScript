@@ -198,12 +198,19 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                         writer.WriteInt32(1);
                         writer.WriteString(s);
                     }
-                    else if (val.Value is Vector3 v3)
+                    else if (val.Value is Vector3F v3)
                     {
                         writer.WriteInt32(2);
                         writer.WriteSingle(v3.X);
                         writer.WriteSingle(v3.Y);
                         writer.WriteSingle(v3.Z);
+                    }
+                    else if (val.Value is Rotation rot)
+                    {
+                        writer.WriteInt32(2);
+                        writer.WriteSingle(rot.Value.X);
+                        writer.WriteSingle(rot.Value.Y);
+                        writer.WriteSingle(rot.Value.Z);
                     }
                     else if (val.Value is bool b)
                     {

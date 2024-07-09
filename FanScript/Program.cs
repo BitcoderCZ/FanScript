@@ -17,8 +17,16 @@ namespace FanScript
         static void Main(string[] args)
         {
             SyntaxTree source = SyntaxTree.Load(@"C:\dev\VSProjects\FanScript.Core\FanScript\source.txt");
-            Console.WriteLine(source.Root);
 
+            if (source.Diagnostics.Any())
+            {
+                Console.Out.WriteDiagnostics(source.Diagnostics);
+                Console.ReadKey(true);
+                if (source.Diagnostics.HasErrors())
+                    return;
+            }
+
+            Console.WriteLine(source.Root);
             Console.WriteLine();
 
             Compilation compilation = Compilation.CreateScript(null, source);
@@ -28,9 +36,13 @@ namespace FanScript
             {
                 Console.Out.WriteDiagnostics(scope.Diagnostics);
                 Console.ReadKey(true);
+                if (scope.Diagnostics.HasErrors())
+                    return;
             }
             for (int i = 0; i < scope.Statements.Length; i++)
-                Console.WriteLine(scope.Statements[i]);
+                scope.Statements[i].WriteTo(Console.Out);
+
+            Console.WriteLine();
 
             compilation.EmitTree(Console.Out);
 
@@ -40,16 +52,16 @@ namespace FanScript
             {
                 Console.Out.WriteDiagnostics(diagnostics);
                 Console.ReadKey(true);
+                if (scope.Diagnostics.HasErrors())
+                    return;
             }
-            else
-            {
-                string code = (string)builder.Build(new Vector3I(4, 0, 4));
-                Console.WriteLine(code);
 
-                ClipboardService.SetText(code);
+            string code = (string)builder.Build(new Vector3I(4, 0, 4));
+            Console.WriteLine(code);
 
-                Console.WriteLine("Copied to console");
-            }
+            ClipboardService.SetText(code);
+
+            Console.WriteLine("Copied to console");
 
             Console.WriteLine("Done");
             Console.ReadKey(true);

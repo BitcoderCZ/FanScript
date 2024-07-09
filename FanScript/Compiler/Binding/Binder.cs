@@ -3,7 +3,10 @@ using FanScript.Compiler.Lowering;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
+using FanScript.Utils;
+using MathUtils.Vectors;
 using System.Collections.Immutable;
+using System.Linq.Expressions;
 
 namespace FanScript.Compiler.Binding
 {
@@ -312,6 +315,7 @@ namespace FanScript.Compiler.Binding
             BoundStatement? elseStatement = syntax.ElseClause is null ? null : BindStatement(syntax.ElseClause.ElseStatement);
             return new BoundIfStatement(syntax, condition, thenStatement, elseStatement);
         }
+
         private BoundStatement BindWhileStatement(WhileStatementSyntax syntax)
         {
             BoundExpression condition = BindExpression(syntax.Condition, TypeSymbol.Bool);
@@ -390,6 +394,8 @@ namespace FanScript.Compiler.Binding
                     return BindBinaryExpression((BinaryExpressionSyntax)syntax);
                 case SyntaxKind.CallExpression:
                     return BindCallExpression((CallExpressionSyntax)syntax);
+                case SyntaxKind.ConstructorExpression:
+                    return BindConstructorExpression((ConstructorExpressionSyntax)syntax);
                 default:
                     throw new Exception($"Unexpected syntax {syntax.Kind}");
             }
@@ -446,7 +452,7 @@ namespace FanScript.Compiler.Binding
                     return new BoundErrorExpression(syntax);
                 }
 
-                BoundExpression convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, variable.Type);
+                BoundExpression convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, boundOperator.RightType/*variable.Type*/);
 
                 return new BoundCompoundAssignmentExpression(syntax, variable, boundOperator, convertedExpression);
             }
@@ -549,6 +555,26 @@ namespace FanScript.Compiler.Binding
             return new BoundCallExpression(syntax, function, boundArguments.ToImmutable());
         }
 
+        private BoundExpression BindConstructorExpression(ConstructorExpressionSyntax syntax)
+        {
+            BoundExpression expressionX = BindExpression(syntax.ExpressionX, TypeSymbol.Float);
+            BoundExpression expressionY = BindExpression(syntax.ExpressionY, TypeSymbol.Float);
+            BoundExpression expressionZ = BindExpression(syntax.ExpressionZ, TypeSymbol.Float);
+
+            TypeSymbol type = syntax.KeywordToken.Kind.ToTypeSymbol();
+
+            if (expressionX.ConstantValue is not null && expressionY.ConstantValue is not null && expressionZ.ConstantValue is not null)
+            {
+                Vector3F val = new Vector3F((float)expressionX.ConstantValue.Value, (float)expressionY.ConstantValue.Value, (float)expressionZ.ConstantValue.Value);
+                if (type == TypeSymbol.Rotation)
+                    return new BoundLiteralExpression(syntax, new Rotation(val));
+                else
+                    return new BoundLiteralExpression(syntax, val);
+            }
+
+            return new BoundConstructorExpression(syntax, type, expressionX, expressionY, expressionZ);
+        }
+
         private BoundExpression BindConversion(ExpressionSyntax syntax, TypeSymbol type, bool allowExplicit = false)
         {
             BoundExpression expression = BindExpression(syntax);
@@ -618,6 +644,10 @@ namespace FanScript.Compiler.Binding
                     return TypeSymbol.Bool;
                 case "float":
                     return TypeSymbol.Float;
+                case "vec3":
+                    return TypeSymbol.Vector3;
+                case "rot":
+                    return TypeSymbol.Rotation;
                 //case "string":
                 //    return TypeSymbol.String;
                 default:

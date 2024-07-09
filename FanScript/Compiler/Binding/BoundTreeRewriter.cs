@@ -166,6 +166,8 @@ namespace FanScript.Compiler.Binding
                     return RewriteCallExpression((BoundCallExpression)node);
                 case BoundNodeKind.ConversionExpression:
                     return RewriteConversionExpression((BoundConversionExpression)node);
+                case BoundNodeKind.ConstructorExpression:
+                    return RewriteConstructorExpression((BoundConstructorExpression)node);
                 default:
                     throw new Exception($"Unexpected node: {node.Kind}");
             }
@@ -253,6 +255,26 @@ namespace FanScript.Compiler.Binding
                 return node;
 
             return new BoundConversionExpression(node.Syntax, node.Type, expression);
+        }
+
+        protected virtual BoundExpression RewriteConstructorExpression(BoundConstructorExpression node)
+        {
+            BoundExpression expressionX = RewriteExpression(node.ExpressionX);
+            BoundExpression expressionY = RewriteExpression(node.ExpressionY);
+            BoundExpression expressionZ = RewriteExpression(node.ExpressionZ);
+
+            bool xDiff = expressionX != node.ExpressionX,
+                yDiff = expressionY != node.ExpressionY,
+                zDiff = expressionZ != node.ExpressionZ;
+
+            if (xDiff || yDiff || zDiff)
+                return new BoundConstructorExpression(node.Syntax, node.Type,
+                    xDiff ? expressionX : node.ExpressionX,
+                    yDiff ? expressionY : node.ExpressionY,
+                    zDiff ? expressionZ : node.ExpressionZ
+                );
+            else
+                return node;
         }
     }
 }

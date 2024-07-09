@@ -69,7 +69,7 @@ namespace FanScript.Compiler.Emit
         }
 
         /// <summary>
-        /// Creates an <see cref="EmitStore"/> with <see cref="In"/> and <see cref="InTerminal"/> assigned
+        /// Creates an <see cref="BlockEmitStore"/> with <see cref="In"/> and <see cref="InTerminal"/> assigned
         /// </summary>
         /// <param name="block"></param>
         /// <param name="terminal"></param>
@@ -78,7 +78,7 @@ namespace FanScript.Compiler.Emit
             => new BlockEmitStore(block, terminal, null!, null!);
 
         /// <summary>
-        /// Creates an <see cref="EmitStore"/> with <see cref="Out"/> and <see cref="OutTerminal"/> assigned
+        /// Creates an <see cref="BlockEmitStore"/> with <see cref="Out"/> and <see cref="OutTerminal"/> assigned
         /// </summary>
         /// <param name="block"></param>
         /// <param name="terminal"></param>

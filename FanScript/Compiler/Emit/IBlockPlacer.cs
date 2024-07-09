@@ -11,7 +11,7 @@ namespace FanScript.Compiler.Emit
         void EnterStatementBlock();
         void ExitStatementBlock();
 
-        void EnterExpression();
-        void ExitExpression();
+        void EnterExpressionBlock();
+        void ExitExpressionBlock();
     }
 }

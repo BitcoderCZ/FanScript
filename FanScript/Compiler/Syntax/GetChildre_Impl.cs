@@ -214,4 +214,18 @@
             yield return Block;
         }
     }
+    partial class ConstructorExpressionSyntax
+    {
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return KeywordToken;
+            yield return OpenParenthesisToken;
+            yield return ExpressionX;
+            yield return Comma0Token;
+            yield return ExpressionY;
+            yield return Comma1Token;
+            yield return ExpressionZ;
+            yield return CloseParenthesisToken;
+        }
+    }
 }
