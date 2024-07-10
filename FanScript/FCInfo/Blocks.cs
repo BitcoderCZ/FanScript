@@ -10,13 +10,10 @@ namespace FanScript.FCInfo
     {
         public static bool PositionsLoaded { get; private set; } = false;
 
-        static Blocks()
-        {
-            LoadPositions();
-        }
-
         public static void LoadPositions()
         {
+            if (PositionsLoaded) return;
+
             List<FieldInfo> _fields = new List<FieldInfo>();
             Type[] innerTypes = typeof(Blocks).GetNestedTypes(BindingFlags.Static | BindingFlags.Public);
             for (int i = 0; i < innerTypes.Length; i++)

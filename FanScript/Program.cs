@@ -1,4 +1,7 @@
-﻿using FanScript.Compiler;
+﻿//#define EDITOR_SCRIPT
+
+using FancadeLoaderLib;
+using FanScript.Compiler;
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Emit;
@@ -48,10 +51,17 @@ namespace FanScript
 
             compilation.EmitTree(Console.Out);
 
+#if EDITOR_SCRIPT
             CodeBuilder builder = new EditorScriptCodeBuilder(new GroundBlockPlacer()
             {
                 BlockXOffset = 3,
             });
+#else
+            CodeBuilder builder = new GameFileCodeBuilder(new GroundBlockPlacer()
+            {
+                BlockXOffset = 3,
+            });
+#endif
             ImmutableArray<Diagnostic> diagnostics = compilation.Emit(builder);
             if (diagnostics.Any())
             {
@@ -62,12 +72,19 @@ namespace FanScript
                     return;
             }
 
+#if EDITOR_SCRIPT
             string code = (string)builder.Build(new Vector3I(4, 0, 4));
             Console.WriteLine(code);
 
             ClipboardService.SetText(code);
 
             Console.WriteLine("Copied to console");
+#else
+            Game game = (Game)builder.Build(Vector3I.Zero);
+
+            using (FileStream fs = File.OpenWrite("658B97B57E427478"))
+                game.Save(fs);
+#endif
 
             Console.WriteLine("Done");
             Console.ReadKey(true);

@@ -110,6 +110,13 @@ namespace FanScript.Compiler.Emit.CodeBuilders
         {
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="startPos"></param>
+        /// <param name="args">0: [optional] <see cref="Compression"/></param>
+        /// <returns>The editor script (js) to build the code</returns>
+        /// <exception cref="Exception"></exception>
         public override object Build(Vector3I startPos, params object[] args)
         {
             PreBuild(startPos);
