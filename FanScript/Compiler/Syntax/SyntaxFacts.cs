@@ -78,6 +78,10 @@
                     return SyntaxKind.KeywordBool;
                 case "while":
                     return SyntaxKind.KeywordWhile;
+                case "break":
+                    return SyntaxKind.KeywordBreak;
+                case "continue":
+                    return SyntaxKind.KeywordContinue;
                 case "onPlay":
                     return SyntaxKind.KeywordOnPlay;
                 default:
@@ -160,6 +164,10 @@
                     "bool",
                 SyntaxKind.KeywordWhile =>
                     "while",
+                SyntaxKind.KeywordBreak =>
+                    "break",
+                SyntaxKind.KeywordContinue =>
+                    "continue",
                 SyntaxKind.KeywordFunction =>
                     "function",
                 SyntaxKind.KeywordOnPlay =>

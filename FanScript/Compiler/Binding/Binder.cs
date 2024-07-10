@@ -252,10 +252,10 @@ namespace FanScript.Compiler.Binding
                 //    return BindDoWhileStatement((DoWhileStatementSyntax)syntax);
                 //case SyntaxKind.ForStatement:
                 //    return BindForStatement((ForStatementSyntax)syntax);
-                //case SyntaxKind.BreakStatement:
-                //    return BindBreakStatement((BreakStatementSyntax)syntax);
-                //case SyntaxKind.ContinueStatement:
-                //    return BindContinueStatement((ContinueStatementSyntax)syntax);
+                case SyntaxKind.BreakStatement:
+                    return BindBreakStatement((BreakStatementSyntax)syntax);
+                case SyntaxKind.ContinueStatement:
+                    return BindContinueStatement((ContinueStatementSyntax)syntax);
                 //case SyntaxKind.ReturnStatement:
                 //    return BindReturnStatement((ReturnStatementSyntax)syntax);
                 case SyntaxKind.ExpressionStatement:
@@ -335,10 +335,34 @@ namespace FanScript.Compiler.Binding
             continueLabel = new BoundLabel($"continue{_labelCounter}");
 
             _loopStack.Push((breakLabel, continueLabel));
-            var boundBody = BindStatement(body);
+            BoundStatement boundBody = BindStatement(body);
             _ = _loopStack.Pop();
 
             return boundBody;
+        }
+
+        private BoundStatement BindBreakStatement(BreakStatementSyntax syntax)
+        {
+            if (_loopStack.Count == 0)
+            {
+                _diagnostics.ReportInvalidBreakOrContinue(syntax.Keyword.Location, syntax.Keyword.Text);
+                return BindErrorStatement(syntax);
+            }
+
+            BoundLabel breakLabel = _loopStack.Peek().BreakLabel;
+            return new BoundGotoStatement(syntax, breakLabel);
+        }
+
+        private BoundStatement BindContinueStatement(ContinueStatementSyntax syntax)
+        {
+            if (_loopStack.Count == 0)
+            {
+                _diagnostics.ReportInvalidBreakOrContinue(syntax.Keyword.Location, syntax.Keyword.Text);
+                return BindErrorStatement(syntax);
+            }
+
+            BoundLabel continueLabel = _loopStack.Peek().ContinueLabel;
+            return new BoundGotoStatement(syntax, continueLabel);
         }
 
         private TypeSymbol? BindTypeClause(SyntaxToken? syntax)

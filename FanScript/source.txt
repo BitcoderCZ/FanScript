@@ -1,24 +1,17 @@
 onPlay {
-    float x = 5
-
-    if (x > 10) {
-        x = 8
+    float i = 0
+    while (true) {
+        if (i >= 10) {
+            i += 4
+            continue
+        }
+        if (i > 99)
+            break
+        
+        i += 2
     }
 
-    vec3 v = vec3(x, 2, 3)
-
-    vec3 a = vec3(2, 2, 2)
-
-    a *= 3
-
-    a += v
-
-    a %= 7
-
-    rot ra = rot(45, 45, 45)
-    rot rb = rot(180, 180, 180)
-
-    rot r1 = ra + rb
-    rot r2 = ra - rb
-    rot r3 = ra * rb
+    float f = 0
 }
+
+float outOfOP = 0

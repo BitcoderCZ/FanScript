@@ -119,7 +119,7 @@ namespace FanScript.Compiler
             BoundProgram program = GetProgram();
             symbol.WriteTo(writer);
             writer.WriteLine();
-            if (!program.Functions.TryGetValue(symbol, out var body))
+            if (!program.Functions.TryGetValue(symbol, out BoundBlockStatement? body))
                 return;
             body.WriteTo(writer);
         }

@@ -20,6 +20,7 @@ namespace FanScript
 
             if (source.Diagnostics.Any())
             {
+                Console.WriteLine("Lexer/Parser error(s)");
                 Console.Out.WriteDiagnostics(source.Diagnostics);
                 Console.ReadKey(true);
                 if (source.Diagnostics.HasErrors())
@@ -34,6 +35,7 @@ namespace FanScript
 
             if (scope.Diagnostics.Any())
             {
+                Console.WriteLine("Binder error(s)");
                 Console.Out.WriteDiagnostics(scope.Diagnostics);
                 Console.ReadKey(true);
                 if (scope.Diagnostics.HasErrors())
@@ -53,6 +55,7 @@ namespace FanScript
             ImmutableArray<Diagnostic> diagnostics = compilation.Emit(builder);
             if (diagnostics.Any())
             {
+                Console.WriteLine("Emitter error(s)");
                 Console.Out.WriteDiagnostics(diagnostics);
                 Console.ReadKey(true);
                 if (scope.Diagnostics.HasErrors())

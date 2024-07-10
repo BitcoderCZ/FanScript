@@ -110,6 +110,8 @@ namespace FanScript.Compiler.Emit
                 store = emitLabelStatement(labelStatement);
             else if (statement is BoundExpressionStatement expression)
                 store = emitExpression(expression.Expression);
+            else if (statement is BoundNopStatement)
+                store = new NopEmitStore();
             else
                 throw new Exception($"Unsuported statement '{statement}'.");
 

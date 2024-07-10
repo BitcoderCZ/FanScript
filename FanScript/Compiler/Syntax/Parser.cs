@@ -209,10 +209,10 @@ namespace FanScript.Compiler.Syntax
                 //    return ParseDoWhileStatement();
                 //case SyntaxKind.ForKeyword:
                 //    return ParseForStatement();
-                //case SyntaxKind.BreakKeyword:
-                //    return ParseBreakStatement();
-                //case SyntaxKind.ContinueKeyword:
-                //    return ParseContinueStatement();
+                case SyntaxKind.KeywordBreak:
+                    return ParseBreakStatement();
+                case SyntaxKind.KeywordContinue:
+                    return ParseContinueStatement();
                 //case SyntaxKind.ReturnKeyword:
                 //    return ParseReturnStatement();
                 default:
@@ -337,17 +337,17 @@ namespace FanScript.Compiler.Syntax
         //    return new ForStatementSyntax(_syntaxTree, keyword, identifier, equalsToken, lowerBound, toKeyword, upperBound, body);
         //}
 
-        //private StatementSyntax ParseBreakStatement()
-        //{
-        //    var keyword = MatchToken(SyntaxKind.BreakKeyword);
-        //    return new BreakStatementSyntax(_syntaxTree, keyword);
-        //}
+        private StatementSyntax ParseBreakStatement()
+        {
+            SyntaxToken keyword = MatchToken(SyntaxKind.KeywordBreak);
+            return new BreakStatementSyntax(_syntaxTree, keyword);
+        }
 
-        //private StatementSyntax ParseContinueStatement()
-        //{
-        //    var keyword = MatchToken(SyntaxKind.ContinueKeyword);
-        //    return new ContinueStatementSyntax(_syntaxTree, keyword);
-        //}
+        private StatementSyntax ParseContinueStatement()
+        {
+            SyntaxToken keyword = MatchToken(SyntaxKind.KeywordContinue);
+            return new ContinueStatementSyntax(_syntaxTree, keyword);
+        }
 
         //private StatementSyntax ParseReturnStatement()
         //{

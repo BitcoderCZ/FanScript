@@ -28,13 +28,13 @@
             yield return CloseBraceToken;
         }
     }
-    //partial class BreakStatementSyntax
-    //{
-    //    public override IEnumerable<SyntaxNode> GetChildren()
-    //    {
-    //        yield return Keyword;
-    //    }
-    //}
+    partial class BreakStatementSyntax
+    {
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return Keyword;
+        }
+    }
     partial class CallExpressionSyntax
     {
         public override IEnumerable<SyntaxNode> GetChildren()
@@ -55,13 +55,13 @@
             yield return EndOfFileToken;
         }
     }
-    //partial class ContinueStatementSyntax
-    //{
-    //    public override IEnumerable<SyntaxNode> GetChildren()
-    //    {
-    //        yield return Keyword;
-    //    }
-    //}
+    partial class ContinueStatementSyntax
+    {
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return Keyword;
+        }
+    }
     //partial class DoWhileStatementSyntax
     //{
     //    public override IEnumerable<SyntaxNode> GetChildren()

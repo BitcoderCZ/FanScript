@@ -45,6 +45,8 @@
         IfStatement,
         ElseClause,
         WhileStatement,
+        BreakStatement,
+        ContinueStatement,
         VariableDeclaration,
 
         AssignmentExpression,
@@ -72,6 +74,8 @@
         KeywordRotation,
         KeywordBool,
         KeywordWhile,
+        KeywordBreak,
+        KeywordContinue,
 
         KeywordOnPlay,
 

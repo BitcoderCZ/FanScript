@@ -181,12 +181,12 @@ namespace FanScript.Compiler.Diagnostics
                 //case SyntaxKind.ForStatement:
                 //    ReportUnreachableCode(((ForStatementSyntax)node).Keyword.Location);
                 //    return;
-                //case SyntaxKind.BreakStatement:
-                //    ReportUnreachableCode(((BreakStatementSyntax)node).Keyword.Location);
-                //    return;
-                //case SyntaxKind.ContinueStatement:
-                //    ReportUnreachableCode(((ContinueStatementSyntax)node).Keyword.Location);
-                //    return;
+                case SyntaxKind.BreakStatement:
+                    ReportUnreachableCode(((BreakStatementSyntax)node).Keyword.Location);
+                    return;
+                case SyntaxKind.ContinueStatement:
+                    ReportUnreachableCode(((ContinueStatementSyntax)node).Keyword.Location);
+                    return;
                 //case SyntaxKind.ReturnStatement:
                 //    ReportUnreachableCode(((ReturnStatementSyntax)node).ReturnKeyword.Location);
                 //    return;
@@ -194,7 +194,7 @@ namespace FanScript.Compiler.Diagnostics
                     ReportUnreachableCode(node.Location);
                     return;
                 case SyntaxKind.ExpressionStatement:
-                    var expression = ((ExpressionStatementSyntax)node).Expression;
+                    ExpressionSyntax expression = ((ExpressionStatementSyntax)node).Expression;
                     ReportUnreachableCode(expression);
                     return;
                 case SyntaxKind.CallExpression:
@@ -204,5 +204,8 @@ namespace FanScript.Compiler.Diagnostics
                     throw new Exception($"Unexpected syntax {node.Kind}");
             }
         }
+
+        public void ReportInvalidBreakOrContinue(TextLocation location, string text)
+          => ReportError(location, $"The keyword '{text}' can only be used inside of loops.");
     }
 }
