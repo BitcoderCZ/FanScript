@@ -294,6 +294,26 @@ namespace FanScript.Compiler.Lexing
                     _kind = SyntaxKind.CommaToken;
                     _position++;
                     break;
+                case '&':
+                    _position++;
+                    if (Current != '&')
+                        _diagnostics.ReportBadCharacter(new TextLocation(_text, new TextSpan(_position, 1)), Current);
+                    else
+                    {
+                        _kind = SyntaxKind.AmpersandAmpersandToken;
+                        _position++;
+                    }
+                    break;
+                case '|':
+                    _position++;
+                    if (Current != '|')
+                        _diagnostics.ReportBadCharacter(new TextLocation(_text, new TextSpan(_position, 1)), Current);
+                    else
+                    {
+                        _kind = SyntaxKind.PipePipeToken;
+                        _position++;
+                    }
+                    break;
                 case '=':
                     _position++;
                     if (Current != '=')

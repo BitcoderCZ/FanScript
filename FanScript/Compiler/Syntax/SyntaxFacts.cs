@@ -140,6 +140,8 @@
                     ">=",
                 SyntaxKind.AmpersandAmpersandToken =>
                     "&&",
+                SyntaxKind.PipePipeToken =>
+                    "||",
                 SyntaxKind.EqualsEqualsToken =>
                     "==",
                 SyntaxKind.BangEqualsToken =>
