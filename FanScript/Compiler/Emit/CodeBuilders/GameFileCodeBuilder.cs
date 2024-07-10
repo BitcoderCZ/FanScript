@@ -1,14 +1,6 @@
 ﻿using FancadeLoaderLib;
 using FanScript.FCInfo;
-using FanScript.Utils;
 using MathUtils.Vectors;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FanScript.Compiler.Emit.CodeBuilders
 {

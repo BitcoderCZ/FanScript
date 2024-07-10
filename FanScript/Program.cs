@@ -1,6 +1,8 @@
-﻿//#define EDITOR_SCRIPT
+﻿#define EDITOR_SCRIPT
 
+#if !EDITOR_SCRIPT
 using FancadeLoaderLib;
+#endif
 using FanScript.Compiler;
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;

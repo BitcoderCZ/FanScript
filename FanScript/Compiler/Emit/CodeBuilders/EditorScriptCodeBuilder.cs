@@ -1,7 +1,6 @@
 ﻿using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
-using System.Numerics;
 using System.Text;
 
 /*

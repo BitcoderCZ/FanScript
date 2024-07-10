@@ -6,7 +6,6 @@ using FanScript.Compiler.Text;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
-using System.Linq.Expressions;
 
 namespace FanScript.Compiler.Binding
 {

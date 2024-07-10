@@ -19,7 +19,7 @@ namespace FanScript.Compiler.Binding
                 Type = TypeSymbol.Rotation;
             else
                 throw new Exception($"Unexpected literal '{value}' of type {value.GetType()}");
-            
+
             ConstantValue = new BoundConstant(value);
         }
 
