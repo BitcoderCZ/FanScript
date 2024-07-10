@@ -514,6 +514,8 @@ namespace FanScript.Compiler.Emit
                     Block op1 = builder.AddBlock(defOp);
 
                     Block break1 = null!;
+                    Block? break2 = null;
+                    EmitStore right = null!;
                     builder.BlockPlacer.ExpressionBlock(() =>
                     {
                         break1 = builder.AddBlock(defBreak);
@@ -523,26 +525,19 @@ namespace FanScript.Compiler.Emit
                             EmitStore left = emitExpression(binary.Left);
 
                             connectBlocks(left, BlockEmitStore.CIn(break1, break1.Type.Terminals[3]));
+
+                            right = emitExpression(binary.Right);
                         });
+
+                        if (binary.Right.Type == TypeSymbol.Vector3 || binary.Right.Type == TypeSymbol.Rotation)
+                        {
+                            break2 = builder.AddBlock(defBreak);
+
+                            connectBlocks(right, BlockEmitStore.CIn(break2, break2.Type.Terminals[3]));
+                        }
                     });
 
                     Block op2 = builder.AddBlock(defOp);
-
-                    Block? break2 = null;
-                    EmitStore right = null!;
-                    builder.BlockPlacer.ExpressionBlock(() =>
-                    {
-                        if (binary.Right.Type == TypeSymbol.Vector3 || binary.Right.Type == TypeSymbol.Rotation)
-                            break2 = builder.AddBlock(defBreak);
-
-                        builder.BlockPlacer.EnterExpressionBlock();
-                        right = emitExpression(binary.Right);
-                        if (break2 is not null)
-                            connectBlocks(right, BlockEmitStore.CIn(break2, break2.Type.Terminals[3]));
-
-                        builder.BlockPlacer.ExitExpressionBlock();
-                    });
-
                     Block op3 = builder.AddBlock(defOp);
 
                     // left to op
