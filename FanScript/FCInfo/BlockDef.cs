@@ -3,7 +3,10 @@ using System.Runtime.CompilerServices;
 
 namespace FanScript.FCInfo
 {
-    public class DefBlock
+    /// <summary>
+    /// Definition of a Fancade block
+    /// </summary>
+    public class BlockDef
     {
         public readonly string Name;
         public readonly ushort Id;
@@ -14,7 +17,7 @@ namespace FanScript.FCInfo
         public readonly Terminal[] Terminals;
         public Terminal After => Type == BlockType.Active ? Terminals[0] : throw new InvalidOperationException("Only active blocks have Before and After");
 
-        public DefBlock(string _name, ushort _id, BlockType _type, Vector2I _size, params Terminal[] _terminals)
+        public BlockDef(string _name, ushort _id, BlockType _type, Vector2I _size, params Terminal[] _terminals)
         {
             Name = _name;
             Id = _id;
@@ -27,9 +30,9 @@ namespace FanScript.FCInfo
         public override string ToString()
             => $"{{LabelName: {Name}, Id: {Id}, Type: {Type}, Size: {Size}}}";
 
-        public static bool operator ==(DefBlock a, DefBlock b)
+        public static bool operator ==(BlockDef a, BlockDef b)
             => a?.Equals(b) ?? b is null;
-        public static bool operator !=(DefBlock a, DefBlock b)
+        public static bool operator !=(BlockDef a, BlockDef b)
             => !a?.Equals(b) ?? b is not null;
 
         public override int GetHashCode()
@@ -37,14 +40,14 @@ namespace FanScript.FCInfo
 
         public override bool Equals(object? obj)
         {
-            if (obj is DefBlock other)
+            if (obj is BlockDef other)
                 return Equals(other);
             else
                 return false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(DefBlock other)
+        public bool Equals(BlockDef other)
             => other is null ? false : other.Id == Id;
     }
 }

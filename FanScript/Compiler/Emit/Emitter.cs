@@ -155,7 +155,7 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitSpecialBlockStatement(SyntaxKind keyword, BoundLabel onTrueLabel)
         {
-            DefBlock def;
+            BlockDef def;
             switch (keyword)
             {
                 case SyntaxKind.KeywordOnPlay:
@@ -259,7 +259,7 @@ namespace FanScript.Compiler.Emit
             if (constructor.ConstantValue is not null)
                 return emitLiteralExpression(constructor.ConstantValue.Value);
 
-            DefBlock def = Blocks.Math.MakeByType(constructor.Type.ToWireType());
+            BlockDef def = Blocks.Math.MakeByType(constructor.Type.ToWireType());
             Block block = builder.AddBlock(def);
 
             builder.BlockPlacer.ExpressionBlock(() =>
@@ -323,7 +323,7 @@ namespace FanScript.Compiler.Emit
         }
         private EmitStore emitBinaryExpression_FloatOrBool(BoundBinaryExpression binary)
         {
-            DefBlock op;
+            BlockDef op;
             switch (binary.Op.Kind)
             {
                 case BoundBinaryOperatorKind.Addition:
@@ -405,7 +405,7 @@ namespace FanScript.Compiler.Emit
         }
         private EmitStore emitBinaryExpression_VecOrRot(BoundBinaryExpression binary)
         {
-            DefBlock? defOp = null;
+            BlockDef? defOp = null;
             switch (binary.Op.Kind)
             {
                 case BoundBinaryOperatorKind.Addition:
@@ -503,7 +503,7 @@ namespace FanScript.Compiler.Emit
             }
 
             // TODO: cache of break (vector, rotation) blocks
-            EmitStore buildOperatorWithBreak(DefBlock defBreak, DefBlock defMake, DefBlock defOp)
+            EmitStore buildOperatorWithBreak(BlockDef defBreak, BlockDef defMake, BlockDef defOp)
             {
                 Block make = builder.AddBlock(defMake);
 

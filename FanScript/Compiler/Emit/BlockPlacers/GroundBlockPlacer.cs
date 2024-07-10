@@ -29,14 +29,14 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
         protected int highestX = 0;
 
-        public Block Place(DefBlock defBlock)
+        public Block Place(BlockDef blockDef)
         {
             Block block;
 
-            if (expressions.Count != 0) block = expressions.Peek().PlaceBlock(defBlock);
-            else block = statements.Peek().PlaceBlock(defBlock);
+            if (expressions.Count != 0) block = expressions.Peek().PlaceBlock(blockDef);
+            else block = statements.Peek().PlaceBlock(blockDef);
 
-            int x = block.Pos.X + defBlock.Size.X - 1;
+            int x = block.Pos.X + blockDef.Size.X - 1;
             if (x > highestX)
                 highestX = x;
 
@@ -96,7 +96,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             public int MinX { get; protected set; }
 
-            protected DefBlock? lastPlacedBlock;
+            protected BlockDef? lastPlacedBlock;
 
             protected readonly List<Block> Blocks = new();
 
@@ -130,17 +130,17 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                 Blocks.AddRange(child.Blocks);
             }
 
-            public virtual Block PlaceBlock(DefBlock defBlock)
+            public virtual Block PlaceBlock(BlockDef blockDef)
             {
                 if (BlockCount != 0)
-                    blockPos.Z -= defBlock.Size.Y + blockZOffset;
+                    blockPos.Z -= blockDef.Size.Y + blockZOffset;
                 else
-                    blockPos.Z -= defBlock.Size.Y - 1;
+                    blockPos.Z -= blockDef.Size.Y - 1;
 
-                lastPlacedBlock = defBlock;
+                lastPlacedBlock = blockDef;
                 BlockCount++;
 
-                Block block = new Block(blockPos, defBlock);
+                Block block = new Block(blockPos, blockDef);
                 Blocks.Add(block);
                 return block;
             }

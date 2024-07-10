@@ -15,7 +15,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         private int y = 0;
         private int blockCount = 0;
 
-        public Block Place(DefBlock defBlock)
+        public Block Place(BlockDef blockDef)
         {
             const int move = 4;
 
@@ -45,7 +45,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                 }
             }
 
-            return new Block(_pos, defBlock);
+            return new Block(_pos, blockDef);
         }
 
         public void EnterStatementBlock()

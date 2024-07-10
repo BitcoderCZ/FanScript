@@ -18,9 +18,9 @@ namespace FanScript.Compiler.Emit
             BlockPlacer = blockPlacer;
         }
 
-        public virtual Block AddBlock(DefBlock defBlock)
+        public virtual Block AddBlock(BlockDef blockDef)
         {
-            Block block = BlockPlacer.Place(defBlock);
+            Block block = BlockPlacer.Place(blockDef);
 
             setBlocks.Add(block);
 

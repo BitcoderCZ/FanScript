@@ -6,7 +6,7 @@ namespace FanScript.Compiler.Emit
     {
         int CurrentCodeBlockBlocks { get; }
 
-        Block Place(DefBlock defBlock);
+        Block Place(BlockDef blockDef);
 
         void EnterStatementBlock();
         virtual void StatementBlock(Action action)
