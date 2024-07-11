@@ -11,7 +11,6 @@ namespace FanScript.Compiler.Emit
 
         protected List<Block> blocks = new();
         protected List<ConnectionRecord> connections = new();
-        protected List<AbsoluteConnectionRecord> absoluteConnections = new();
         protected List<ValueRecord> values = new();
 
         public CodeBuilder(IBlockPlacer blockPlacer)
@@ -28,11 +27,11 @@ namespace FanScript.Compiler.Emit
             return block;
         }
 
-        internal void ConnectBlocks(EmitStore? from, EmitStore to)
+        internal void Connect(EmitStore? from, EmitStore to)
         {
             if (from is NopEmitStore || to is NopEmitStore)
             {
-                Console.WriteLine("Tried to connect nop store");
+                Console.WriteLine("Tried To connect nop store");
                 return;
             }
 
@@ -40,22 +39,11 @@ namespace FanScript.Compiler.Emit
                 return;
 
             if (from?.Out is not null)
-                foreach (var (block, terminal) in from.Out.Zip(from.OutTerminal))
-                    ConnectBlocks(block, terminal, to.In, to.InTerminal);
+                foreach (var target in from.Out)
+                    Connect(target, to.In);
         }
-        public void ConnectBlocks(Block[] from, Terminal[] fromTerminal, Block to, Terminal toTerminal)
-        {
-            if (from is not null)
-                for (int i = 0; i < from.Length; i++)
-                    ConnectBlocks(from[i], fromTerminal[i], to, toTerminal);
-        }
-        public virtual void ConnectBlocks(Block from, Terminal fromTerminal, Block to, Terminal toTerminal)
-            => connections.Add(new ConnectionRecord(from, fromTerminal, to, toTerminal));
-
-        internal void ConnectAbsolute(Vector3I blockPos, Vector3I? subPos, EmitStore to)
-            => ConnectAbsolute(blockPos, subPos, to.In, to.InTerminal);
-        public virtual void ConnectAbsolute(Vector3I blocksPos, Vector3I? subPos, Block to, Terminal toTerminal)
-            => absoluteConnections.Add(new AbsoluteConnectionRecord(blocksPos, subPos, to, toTerminal));
+        public virtual void Connect(ConnectTarget from, ConnectTarget to)
+            => connections.Add(new ConnectionRecord(from, to));
 
         public virtual void SetBlockValue(Block block, int valueIndex, object value)
             => values.Add(new ValueRecord(block, valueIndex, value));
@@ -105,11 +93,7 @@ namespace FanScript.Compiler.Emit
             values.Clear();
         }
 
-        protected readonly record struct ConnectionRecord(Block Block1, Terminal Terminal1, Block Block2, Terminal Terminal2)
-        {
-        }
-
-        protected readonly record struct AbsoluteConnectionRecord(Vector3I From, Vector3I? FromSub, Block To, Terminal ToTerminal)
+        protected readonly record struct ConnectionRecord(ConnectTarget From, ConnectTarget To)
         {
         }
 

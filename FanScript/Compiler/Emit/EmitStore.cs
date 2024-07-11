@@ -6,18 +6,14 @@ namespace FanScript.Compiler.Emit
 {
     internal interface EmitStore
     {
-        Block In { get; }
-        Terminal InTerminal { get; }
-        IEnumerable<Block> Out { get; }
-        IEnumerable<Terminal> OutTerminal { get; }
+        ConnectTarget In { get; }
+        IEnumerable<ConnectTarget> Out { get; }
     }
 
     internal sealed class NopEmitStore : EmitStore
     {
-        public Block In => new Block(new Vector3I(-1, -1, -1), Blocks.Nop);
-        public Terminal InTerminal => Blocks.Nop.Before;
-        public IEnumerable<Block> Out => Enumerable.Empty<Block>();
-        public IEnumerable<Terminal> OutTerminal => Enumerable.Empty<Terminal>();
+        public ConnectTarget In => new NopConnectTarget();
+        public IEnumerable<ConnectTarget> Out => Enumerable.Empty<ConnectTarget>();
     }
 
     internal sealed class MultiEmitStore : EmitStore
@@ -27,10 +23,8 @@ namespace FanScript.Compiler.Emit
         public EmitStore InStore { get; set; }
         public EmitStore OutStore { get; set; }
 
-        public Block In => InStore.In;
-        public Terminal InTerminal => InStore.InTerminal;
-        public IEnumerable<Block> Out => OutStore.Out;
-        public IEnumerable<Terminal> OutTerminal => OutStore.OutTerminal;
+        public ConnectTarget In => InStore.In;
+        public IEnumerable<ConnectTarget> Out => OutStore.Out;
 
         public MultiEmitStore(EmitStore _inStore, EmitStore outStore)
         {
@@ -39,60 +33,44 @@ namespace FanScript.Compiler.Emit
         }
     }
 
-    internal class BlockEmitStore : EmitStore
+    internal class BasicEmitStore : EmitStore
     {
-        public Block In { get; set; }
-        public Terminal InTerminal { get; set; }
-        public IEnumerable<Block> Out { get; set; }
-        public IEnumerable<Terminal> OutTerminal { get; set; }
+        public ConnectTarget In { get; init; }
+        public IEnumerable<ConnectTarget> Out { get; init; }
 
-        public BlockEmitStore(Block block)
+        public BasicEmitStore(Block block)
             : this(block, block.Type.Before, block, block.Type.After)
         {
         }
-        public BlockEmitStore(Block _in, Terminal _inTerminal, Block _out, Terminal _outTerminal)
+        public BasicEmitStore(Block _in, Terminal _inTerminal, Block _out, Terminal _outTerminal)
         {
-            In = _in;
-            InTerminal = _inTerminal;
-            Out = [_out];
-            OutTerminal = [_outTerminal];
-        }
-        public BlockEmitStore(Block _in, Terminal _inTerminal, Block[] _out, Terminal[] _outTerminals, bool b)
-        {
-            if (_out is not null && _outTerminals is not null && _out.Length != _outTerminals.Length)
-                throw new ArgumentException($"_outTerminals.Length ({_outTerminals.Length}) must be equal to _out.Length ({_out.Length})", "_outTerminals");
-
-            In = _in;
-            InTerminal = _inTerminal;
-            Out = _out!;
-            OutTerminal = _outTerminals!;
+            In = new BlockConnectTarget(_in, _inTerminal);
+            Out = [new BlockConnectTarget(_out, _outTerminal)];
         }
 
         /// <summary>
-        /// Creates an <see cref="BlockEmitStore"/> with <see cref="In"/> and <see cref="InTerminal"/> assigned
+        /// Creates an <see cref="BasicEmitStore"/> with <see cref="In"/> and <see cref="InTerminal"/> assigned
         /// </summary>
         /// <param name="block"></param>
         /// <param name="terminal"></param>
         /// <returns></returns>
-        public static BlockEmitStore CIn(Block block, Terminal terminal)
-            => new BlockEmitStore(block, terminal, null!, null!);
+        public static BasicEmitStore CIn(Block block, Terminal terminal)
+            => new BasicEmitStore(block, terminal, null!, null!);
 
         /// <summary>
-        /// Creates an <see cref="BlockEmitStore"/> with <see cref="Out"/> and <see cref="OutTerminal"/> assigned
+        /// Creates an <see cref="BasicEmitStore"/> with <see cref="Out"/> and <see cref="OutTerminal"/> assigned
         /// </summary>
         /// <param name="block"></param>
         /// <param name="terminal"></param>
         /// <returns></returns>
-        public static BlockEmitStore COut(Block block, Terminal terminal)
-            => new BlockEmitStore(null!, null!, block, terminal);
+        public static BasicEmitStore COut(Block block, Terminal terminal)
+            => new BasicEmitStore(null!, null!, block, terminal);
     }
 
     internal class GotoEmitStore : EmitStore
     {
-        public Block In => new Block(new Vector3I(-1, -1, -1), Blocks.Nop);
-        public Terminal InTerminal => Blocks.Nop.Before;
-        public IEnumerable<Block> Out => Enumerable.Empty<Block>();
-        public IEnumerable<Terminal> OutTerminal => Enumerable.Empty<Terminal>();
+        public ConnectTarget In => new NopConnectTarget();
+        public IEnumerable<ConnectTarget> Out => Enumerable.Empty<ConnectTarget>();
 
         public readonly string LabelName;
 
@@ -102,7 +80,7 @@ namespace FanScript.Compiler.Emit
         }
     }
 
-    internal sealed class ConditionalGotoEmitStore : BlockEmitStore
+    internal sealed class ConditionalGotoEmitStore : BasicEmitStore
     {
         public Block OnCondition;
         public Terminal OnConditionTerminal;
@@ -118,10 +96,8 @@ namespace FanScript.Compiler.Emit
 
     internal sealed class LabelEmitStore : EmitStore
     {
-        public Block In => new Block(new Vector3I(-1, -1, -1), Blocks.Nop);
-        public Terminal InTerminal => Blocks.Nop.Before;
-        public IEnumerable<Block> Out => Enumerable.Empty<Block>();
-        public IEnumerable<Terminal> OutTerminal => Enumerable.Empty<Terminal>();
+        public ConnectTarget In => new NopConnectTarget();
+        public IEnumerable<ConnectTarget> Out => Enumerable.Empty<ConnectTarget>();
 
         public readonly string Name;
 
@@ -136,29 +112,18 @@ namespace FanScript.Compiler.Emit
     /// </summary>
     internal sealed class RollbackEmitStore : EmitStore
     {
-        public Block In => new Block(new Vector3I(-1, -1, -1), Blocks.Nop);
-        public Terminal InTerminal => Blocks.Nop.Before;
-        public IEnumerable<Block> Out => Enumerable.Empty<Block>();
-        public IEnumerable<Terminal> OutTerminal => Enumerable.Empty<Terminal>();
+        public ConnectTarget In => new NopConnectTarget();
+        public IEnumerable<ConnectTarget> Out => Enumerable.Empty<ConnectTarget>();
     }
 
     internal sealed class AbsoluteEmitStore : EmitStore
     {
-        public Block In => new Block(new Vector3I(-1, -1, -1), Blocks.Nop);
-        public Terminal InTerminal => Blocks.Nop.Before;
-        public IEnumerable<Block> Out => Enumerable.Empty<Block>();
-        public IEnumerable<Terminal> OutTerminal => Enumerable.Empty<Terminal>();
+        public ConnectTarget In => new NopConnectTarget();
+        public IEnumerable<ConnectTarget> Out { get; }
 
-        public readonly Vector3I BlockPos;
-        /// <summary>
-        /// If null, the <see cref="CodeBuilder"/> will (is possible) auto determine this
-        /// </summary>
-        public readonly Vector3I? SubPos;
-
-        public AbsoluteEmitStore(Vector3I _blockPos, Vector3I? _subPos)
+        public AbsoluteEmitStore(Vector3I _blockPos, Vector3I? _subPos = null)
         {
-            BlockPos = _blockPos;
-            SubPos = _subPos;
+            Out = [new AbsoluteConnectTarget(_blockPos, _subPos)];
         }
     }
 }

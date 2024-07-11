@@ -162,7 +162,11 @@ namespace FanScript.Compiler.Emit.CodeBuilders
             for (int i = 0; i < connections.Count; i++)
             {
                 ConnectionRecord con = connections[i];
-                builder.AppendLine($"connect({con.Block1.Pos.X},{con.Block1.Pos.Y}, {con.Block1.Pos.Z},{con.Terminal1.Index},{con.Block2.Pos.X},{con.Block2.Pos.Y}, {con.Block2.Pos.Z},{con.Terminal2.Index});");
+                Vector3I from = con.From.Pos;
+                int fromTerminal = con.From.TerminalIndex;
+                Vector3I to = con.To.Pos;
+                int toTerminal = con.To.TerminalIndex;
+                builder.AppendLine($"connect({from.X},{from.Y},{from.Z},{fromTerminal},{to.X},{to.Y},{to.Z},{toTerminal});");
             }
 
             builder.AppendLine("updateChanges();");
@@ -230,15 +234,19 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                 writer.WriteInt32(connections.Count);
                 for (int i = 0; i < connections.Count; i++)
                 {
-                    ConnectionRecord val = connections[i];
-                    writer.WriteInt32(val.Block1.Pos.X);
-                    writer.WriteInt32(val.Block1.Pos.Y);
-                    writer.WriteInt32(val.Block1.Pos.Z);
-                    writer.WriteInt32(val.Block2.Pos.X);
-                    writer.WriteInt32(val.Block2.Pos.Y);
-                    writer.WriteInt32(val.Block2.Pos.Z);
-                    writer.WriteInt32(val.Terminal1.Index);
-                    writer.WriteInt32(val.Terminal2.Index);
+                    ConnectionRecord con = connections[i];
+                    Vector3I from = con.From.Pos;
+                    int fromTerminal = con.From.TerminalIndex;
+                    Vector3I to = con.To.Pos;
+                    int toTerminal = con.To.TerminalIndex;
+                    writer.WriteInt32(from.X);
+                    writer.WriteInt32(from.Y);
+                    writer.WriteInt32(from.Z);
+                    writer.WriteInt32(to.X);
+                    writer.WriteInt32(to.Y);
+                    writer.WriteInt32(to.Z);
+                    writer.WriteInt32(fromTerminal);
+                    writer.WriteInt32(toTerminal);
                 }
 
                 bufer = new byte[stream.Length];

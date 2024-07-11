@@ -57,11 +57,11 @@ namespace FanScript.Compiler.Symbols
                         EmitStore blockEmit = context.EmitExpression(call.Arguments[0]);
                         EmitStore posEmit = context.EmitExpression(call.Arguments[1]);
 
-                        context.Connect(blockEmit, BlockEmitStore.CIn(block, block.Type.Terminals[3]));
-                        context.Connect(posEmit, BlockEmitStore.CIn(block, block.Type.Terminals[2]));
+                        context.Connect(blockEmit, BasicEmitStore.CIn(block, block.Type.Terminals[3]));
+                        context.Connect(posEmit, BasicEmitStore.CIn(block, block.Type.Terminals[2]));
                     });
 
-                    return new BlockEmitStore(block);
+                    return new BasicEmitStore(block);
                 }
             };
         // currently functions are resolved only by name, so this one doesn't need to be implemented yet

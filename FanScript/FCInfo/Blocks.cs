@@ -52,9 +52,6 @@ namespace FanScript.FCInfo
             PositionsLoaded = true;
         }
 
-        // Fake block, used by some EmitStores
-        public static readonly BlockDef Nop = new BlockDef("Nop", ushort.MaxValue, (BlockType)(-1), new Vector2I(-1, -1), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Void, TerminalType.In));
-
         public static class Objects
         {
             public static readonly BlockDef SetPos = new BlockDef("Set Position", 282, BlockType.Active, new Vector2I(2, 3), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Rot, TerminalType.In, "Rotation"), new Terminal(2, WireType.Vec3, TerminalType.In, "Position"), new Terminal(3, WireType.Obj, TerminalType.In, "Object"), new Terminal(4, WireType.Void, TerminalType.In));

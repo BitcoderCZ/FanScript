@@ -68,22 +68,10 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                 ConnectionRecord con = connections[i];
                 level.Connections.Add(new Connection()
                 {
-                    From = (Vector3US)con.Block1.Pos,
-                    FromConnector = (Vector3US)con.Terminal1.Pos,
-                    To = (Vector3US)con.Block2.Pos,
-                    ToConnector = (Vector3US)con.Terminal2.Pos,
-                });
-            }
-
-            for (int i = 0; i < absoluteConnections.Count; i++)
-            {
-                AbsoluteConnectionRecord con = absoluteConnections[i];
-                level.Connections.Add(new Connection()
-                {
-                    From = (Vector3US)con.From,
-                    FromConnector = (Vector3US)(con.FromSub ?? ChoseSubPos(con.From)),
+                    From = (Vector3US)con.From.Pos,
+                    FromConnector = (Vector3US)(con.From.SubPos ?? ChoseSubPos(con.From.Pos)),
                     To = (Vector3US)con.To.Pos,
-                    ToConnector = (Vector3US)con.ToTerminal.Pos,
+                    ToConnector = (Vector3US)(con.To.SubPos ?? ChoseSubPos(con.To.Pos)),
                 });
             }
 
