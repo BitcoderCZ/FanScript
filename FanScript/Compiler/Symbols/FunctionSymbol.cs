@@ -3,7 +3,7 @@ using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Symbols
 {
-    public sealed class FunctionSymbol : Symbol
+    public class FunctionSymbol : Symbol
     {
         internal FunctionSymbol(string name, ImmutableArray<ParameterSymbol> parameters, TypeSymbol type, FunctionDeclarationSyntax? declaration = null)
             : base(name)

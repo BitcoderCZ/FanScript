@@ -1,4 +1,4 @@
-﻿#define EDITOR_SCRIPT
+﻿//#define EDITOR_SCRIPT
 
 #if !EDITOR_SCRIPT
 using FancadeLoaderLib;
@@ -25,7 +25,7 @@ namespace FanScript
 
             if (source.Diagnostics.Any())
             {
-                Console.WriteLine("Lexer/Parser error(s)");
+                Console.WriteLine("Lexer/Parser warning(s)/error(s)");
                 Console.Out.WriteDiagnostics(source.Diagnostics);
                 Console.ReadKey(true);
                 if (source.Diagnostics.HasErrors())
@@ -40,7 +40,7 @@ namespace FanScript
 
             if (scope.Diagnostics.Any())
             {
-                Console.WriteLine("Binder error(s)");
+                Console.WriteLine("Binder warning(s)/error(s)");
                 Console.Out.WriteDiagnostics(scope.Diagnostics);
                 Console.ReadKey(true);
                 if (scope.Diagnostics.HasErrors())
@@ -67,7 +67,7 @@ namespace FanScript
             ImmutableArray<Diagnostic> diagnostics = compilation.Emit(builder);
             if (diagnostics.Any())
             {
-                Console.WriteLine("Emitter error(s)");
+                Console.WriteLine("Emitter warning(s)/error(s)");
                 Console.Out.WriteDiagnostics(diagnostics);
                 Console.ReadKey(true);
                 if (scope.Diagnostics.HasErrors())
@@ -82,7 +82,7 @@ namespace FanScript
 
             Console.WriteLine("Copied to console");
 #else
-            Game game = (Game)builder.Build(Vector3I.Zero);
+            Game game = (Game)builder.Build(new Vector3I(2, 0, 2));
 
             using (FileStream fs = File.OpenWrite("658B97B57E427478"))
                 game.Save(fs);

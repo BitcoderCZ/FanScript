@@ -11,6 +11,8 @@ namespace FanScript.Compiler.Emit
 {
     internal sealed class Emitter
     {
+        private EmitContext emitContext = null!;
+
         private DiagnosticBag diagnostics = new DiagnosticBag();
         private List<VariableSymbol> variables = new List<VariableSymbol>();
         private CodeBuilder builder = null!;
@@ -38,6 +40,8 @@ namespace FanScript.Compiler.Emit
         {
             builder = _builder;
             program = _program;
+
+            emitContext = new EmitContext(builder, diagnostics, emitStatement, emitExpression, connect);
 
             builder.BlockPlacer.StatementBlock(() =>
             {
@@ -138,7 +142,7 @@ namespace FanScript.Compiler.Emit
                 if (store.InStore is NopEmitStore && __store is not NopEmitStore)
                     store.InStore = __store;
                 else if (__store is not NopEmitStore)
-                    connectBlocks(lastStore, __store);
+                    connect(lastStore, __store);
 
                 if (__store is not NopEmitStore)
                     lastStore = __store;
@@ -188,7 +192,7 @@ namespace FanScript.Compiler.Emit
             {
                 EmitStore condition = emitExpression(gotoStatement.Condition);
 
-                connectBlocks(condition, BlockEmitStore.CIn(block, block.Type.Terminals[3]));
+                connect(condition, BlockEmitStore.CIn(block, block.Type.Terminals[3]));
             });
 
             ConditionalGotoEmitStore store = new ConditionalGotoEmitStore(block, block.Type.Before,
@@ -239,7 +243,7 @@ namespace FanScript.Compiler.Emit
             {
                 EmitStore _store = emitExpression(assignment.Expression);
 
-                connectBlocks(_store, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
+                connect(_store, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
             });
 
             return new BlockEmitStore(block);
@@ -251,7 +255,8 @@ namespace FanScript.Compiler.Emit
         {
             Block block = builder.AddBlock(Blocks.Values.ValueByType(value));
 
-            builder.SetBlockValue(block, 0, value);
+            if (value is not bool)
+                builder.SetBlockValue(block, 0, value);
 
             return BlockEmitStore.COut(block, block.Type.Terminals[0]);
         }
@@ -270,9 +275,9 @@ namespace FanScript.Compiler.Emit
                 EmitStore yStore = emitExpression(constructor.ExpressionY);
                 EmitStore zStore = emitExpression(constructor.ExpressionZ);
 
-                connectBlocks(xStore, BlockEmitStore.CIn(block, def.Terminals[3]));
-                connectBlocks(yStore, BlockEmitStore.CIn(block, def.Terminals[2]));
-                connectBlocks(zStore, BlockEmitStore.CIn(block, def.Terminals[1]));
+                connect(xStore, BlockEmitStore.CIn(block, def.Terminals[3]));
+                connect(yStore, BlockEmitStore.CIn(block, def.Terminals[2]));
+                connect(zStore, BlockEmitStore.CIn(block, def.Terminals[1]));
             });
 
             return BlockEmitStore.COut(block, def.Terminals[0]);
@@ -292,7 +297,7 @@ namespace FanScript.Compiler.Emit
                         {
                             EmitStore _store = emitExpression(unary.Operand);
 
-                            connectBlocks(_store, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
+                            connect(_store, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
                         });
 
                         return BlockEmitStore.COut(block, block.Type.Terminals[0]);
@@ -305,7 +310,7 @@ namespace FanScript.Compiler.Emit
                         {
                             EmitStore _store = emitExpression(unary.Operand);
 
-                            connectBlocks(_store, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
+                            connect(_store, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
                         });
 
                         return BlockEmitStore.COut(block, block.Type.Terminals[0]);
@@ -375,7 +380,7 @@ namespace FanScript.Compiler.Emit
                 {
                     Block block = builder.AddBlock(op);
 
-                    connectBlocks(BlockEmitStore.COut(block, block.Type.Terminals[0]),
+                    connect(BlockEmitStore.COut(block, block.Type.Terminals[0]),
                         BlockEmitStore.CIn(not, not.Type.Terminals[1]));
 
                     builder.BlockPlacer.ExpressionBlock(() =>
@@ -383,8 +388,8 @@ namespace FanScript.Compiler.Emit
                         EmitStore store0 = emitExpression(binary.Left);
                         EmitStore store1 = emitExpression(binary.Right);
 
-                        connectBlocks(store0, BlockEmitStore.CIn(block, block.Type.Terminals[2]));
-                        connectBlocks(store1, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
+                        connect(store0, BlockEmitStore.CIn(block, block.Type.Terminals[2]));
+                        connect(store1, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
                     });
                 });
 
@@ -398,8 +403,8 @@ namespace FanScript.Compiler.Emit
                     EmitStore store0 = emitExpression(binary.Left);
                     EmitStore store1 = emitExpression(binary.Right);
 
-                    connectBlocks(store0, BlockEmitStore.CIn(block, block.Type.Terminals[2]));
-                    connectBlocks(store1, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
+                    connect(store0, BlockEmitStore.CIn(block, block.Type.Terminals[2]));
+                    connect(store1, BlockEmitStore.CIn(block, block.Type.Terminals[1]));
                 });
 
                 return BlockEmitStore.COut(block, block.Type.Terminals[0]);
@@ -470,7 +475,7 @@ namespace FanScript.Compiler.Emit
                             {
                                 Block op = builder.AddBlock(defOp);
 
-                                connectBlocks(BlockEmitStore.COut(op, op.Type.Terminals[0]),
+                                connect(BlockEmitStore.COut(op, op.Type.Terminals[0]),
                                     BlockEmitStore.CIn(not, not.Type.Terminals[1]));
 
                                 builder.BlockPlacer.ExpressionBlock(() =>
@@ -478,8 +483,8 @@ namespace FanScript.Compiler.Emit
                                     EmitStore store0 = emitExpression(binary.Left);
                                     EmitStore store1 = emitExpression(binary.Right);
 
-                                    connectBlocks(store0, BlockEmitStore.CIn(op, op.Type.Terminals[2]));
-                                    connectBlocks(store1, BlockEmitStore.CIn(op, op.Type.Terminals[1]));
+                                    connect(store0, BlockEmitStore.CIn(op, op.Type.Terminals[2]));
+                                    connect(store1, BlockEmitStore.CIn(op, op.Type.Terminals[1]));
                                 });
                             });
 
@@ -497,8 +502,8 @@ namespace FanScript.Compiler.Emit
                     EmitStore store0 = emitExpression(binary.Left);
                     EmitStore store1 = emitExpression(binary.Right);
 
-                    connectBlocks(store0, BlockEmitStore.CIn(op, op.Type.Terminals[2]));
-                    connectBlocks(store1, BlockEmitStore.CIn(op, op.Type.Terminals[1]));
+                    connect(store0, BlockEmitStore.CIn(op, op.Type.Terminals[2]));
+                    connect(store1, BlockEmitStore.CIn(op, op.Type.Terminals[1]));
                 });
 
                 return BlockEmitStore.COut(op, op.Type.Terminals[0]);
@@ -524,7 +529,7 @@ namespace FanScript.Compiler.Emit
                         {
                             EmitStore left = emitExpression(binary.Left);
 
-                            connectBlocks(left, BlockEmitStore.CIn(break1, break1.Type.Terminals[3]));
+                            connect(left, BlockEmitStore.CIn(break1, break1.Type.Terminals[3]));
 
                             right = emitExpression(binary.Right);
                         });
@@ -533,7 +538,7 @@ namespace FanScript.Compiler.Emit
                         {
                             break2 = builder.AddBlock(defBreak);
 
-                            connectBlocks(right, BlockEmitStore.CIn(break2, break2.Type.Terminals[3]));
+                            connect(right, BlockEmitStore.CIn(break2, break2.Type.Terminals[3]));
                         }
                     });
 
@@ -541,27 +546,27 @@ namespace FanScript.Compiler.Emit
                     Block op3 = builder.AddBlock(defOp);
 
                     // left to op
-                    connectBlocks(BlockEmitStore.COut(break1, break1.Type.Terminals[2]),
+                    connect(BlockEmitStore.COut(break1, break1.Type.Terminals[2]),
                         BlockEmitStore.CIn(op1, op1.Type.Terminals[2]));
-                    connectBlocks(BlockEmitStore.COut(break1, break1.Type.Terminals[1]),
+                    connect(BlockEmitStore.COut(break1, break1.Type.Terminals[1]),
                         BlockEmitStore.CIn(op2, op2.Type.Terminals[2]));
-                    connectBlocks(BlockEmitStore.COut(break1, break1.Type.Terminals[0]),
+                    connect(BlockEmitStore.COut(break1, break1.Type.Terminals[0]),
                         BlockEmitStore.CIn(op3, op3.Type.Terminals[2]));
 
                     // right to op
-                    connectBlocks(break2 is null ? right : BlockEmitStore.COut(break2, break2.Type.Terminals[2]),
+                    connect(break2 is null ? right : BlockEmitStore.COut(break2, break2.Type.Terminals[2]),
                         BlockEmitStore.CIn(op1, op1.Type.Terminals[1]));
-                    connectBlocks(break2 is null ? right : BlockEmitStore.COut(break2, break2.Type.Terminals[1]),
+                    connect(break2 is null ? right : BlockEmitStore.COut(break2, break2.Type.Terminals[1]),
                         BlockEmitStore.CIn(op2, op2.Type.Terminals[1]));
-                    connectBlocks(break2 is null ? right : BlockEmitStore.COut(break2, break2.Type.Terminals[0]),
+                    connect(break2 is null ? right : BlockEmitStore.COut(break2, break2.Type.Terminals[0]),
                         BlockEmitStore.CIn(op3, op3.Type.Terminals[1]));
 
                     // op to make
-                    connectBlocks(BlockEmitStore.COut(op1, op1.Type.Terminals[0]),
+                    connect(BlockEmitStore.COut(op1, op1.Type.Terminals[0]),
                         BlockEmitStore.CIn(make, make.Type.Terminals[3]));
-                    connectBlocks(BlockEmitStore.COut(op2, op2.Type.Terminals[0]),
+                    connect(BlockEmitStore.COut(op2, op2.Type.Terminals[0]),
                         BlockEmitStore.CIn(make, make.Type.Terminals[2]));
-                    connectBlocks(BlockEmitStore.COut(op3, op3.Type.Terminals[0]),
+                    connect(BlockEmitStore.COut(op3, op3.Type.Terminals[0]),
                         BlockEmitStore.CIn(make, make.Type.Terminals[1]));
                 });
 
@@ -581,6 +586,9 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitCallExpression(BoundCallExpression call)
         {
+            if (BuiltinFunctions.tryEmitFunction(call, emitContext, out EmitStore? funcStore))
+                return funcStore;
+
             switch (call.Function.Name)
             {
                 default:
@@ -604,7 +612,7 @@ namespace FanScript.Compiler.Emit
             return false;
         }
 
-        private void connectBlocks(EmitStore from, EmitStore to)
+        private void connect(EmitStore from, EmitStore to)
         {
             while (from is MultiEmitStore multi)
                 from = multi.OutStore;
@@ -626,6 +634,8 @@ namespace FanScript.Compiler.Emit
                 connectToLabel(toLabel.Name, from); // normal block before label, connect to block after the label
             else if (to is GotoEmitStore toGoto)
                 connectToLabel(toGoto.LabelName, from);
+            else if (from is AbsoluteEmitStore absoluteFrom)
+                builder.ConnectAbsolute(absoluteFrom.BlockPos, absoluteFrom.SubPos, to);
             else
                 builder.ConnectBlocks(from, to);
         }

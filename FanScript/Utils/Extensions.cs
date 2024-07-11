@@ -52,6 +52,8 @@ namespace FanScript.Utils
                 return WireType.Rot;
             else if (type == TypeSymbol.Bool)
                 return WireType.Bool;
+            else if (type == TypeSymbol.Object)
+                return WireType.Obj;
             else
                 throw new Exception($"Cannot convert TypeSymbol \"{Enum.GetName(typeof(TypeSymbol), type)}\" to WireType");
         }

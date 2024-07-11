@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using FanScript.Compiler.Emit;
+using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using System.Collections;
@@ -207,5 +208,20 @@ namespace FanScript.Compiler.Diagnostics
 
         public void ReportInvalidBreakOrContinue(TextLocation location, string text)
           => ReportError(location, $"The keyword '{text}' can only be used inside of loops.");
+
+        public void ReportOpeationNotSupportedOnPlatform(TextLocation location, BuildPlatformInfo platformInfo)
+        {
+            string msg = platformInfo switch
+            {
+                BuildPlatformInfo.CanGetBlocks => $"Current {nameof(CodeBuilder)} can't connect object wires to blocks.",
+                BuildPlatformInfo.CanCreateCustomBlocks => $"Current {nameof(CodeBuilder)} can't create custom blocks.",
+                _ => $"Operation not supported by current {nameof(CodeBuilder)}.",
+            };
+
+            ReportWarning(location, msg);
+        }
+
+        public void ReportValueMustBeConstant(TextLocation location)
+            => ReportError(location, "Value must be constant.");
     }
 }

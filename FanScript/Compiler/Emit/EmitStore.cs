@@ -141,4 +141,24 @@ namespace FanScript.Compiler.Emit
         public IEnumerable<Block> Out => Enumerable.Empty<Block>();
         public IEnumerable<Terminal> OutTerminal => Enumerable.Empty<Terminal>();
     }
+
+    internal sealed class AbsoluteEmitStore : EmitStore
+    {
+        public Block In => new Block(new Vector3I(-1, -1, -1), Blocks.Nop);
+        public Terminal InTerminal => Blocks.Nop.Before;
+        public IEnumerable<Block> Out => Enumerable.Empty<Block>();
+        public IEnumerable<Terminal> OutTerminal => Enumerable.Empty<Terminal>();
+
+        public readonly Vector3I BlockPos;
+        /// <summary>
+        /// If null, the <see cref="CodeBuilder"/> will (is possible) auto determine this
+        /// </summary>
+        public readonly Vector3I? SubPos;
+
+        public AbsoluteEmitStore(Vector3I _blockPos, Vector3I? _subPos)
+        {
+            BlockPos = _blockPos;
+            SubPos = _subPos;
+        }
+    }
 }

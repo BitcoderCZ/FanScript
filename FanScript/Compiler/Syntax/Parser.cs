@@ -199,6 +199,7 @@ namespace FanScript.Compiler.Syntax
                 case SyntaxKind.KeywordVector3:
                 case SyntaxKind.KeywordRotation:
                 case SyntaxKind.KeywordBool:
+                case SyntaxKind.KeywordObject:
                     return ParseVariableDeclaration();
                 case SyntaxKind.KeywordIf:
                     return ParseIfStatement();
@@ -259,7 +260,7 @@ namespace FanScript.Compiler.Syntax
 
         private StatementSyntax ParseVariableDeclaration()
         {
-            SyntaxToken keyword = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordBool);
+            SyntaxToken keyword = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordBool, SyntaxKind.KeywordObject);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
 
             AssignmentExpressionSyntax? assignment = null;

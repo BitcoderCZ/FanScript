@@ -36,21 +36,24 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 
             PreBuild(startPos);
 
-            BlockList blocks;
+            BlockList builtInBlocks;
             using (SaveReader reader = new SaveReader("baseBlocks.fcbl")) // fcbl - Fancade block list
-                blocks = BlockList.Load(reader);
+                builtInBlocks = BlockList.Load(reader);
 
             Level level = game.Levels[levelIndex];
 
-            for (int i = 0; i < setBlocks.Count; i++)
+            for (int i = 0; i < blocks.Count; i++)
             {
-                FCInfo.Block block = setBlocks[i];
-                level.BlockIds.SetBlock(block.Pos, blocks.GetBlock(block.Type.Id));
+                FCInfo.Block block = blocks[i];
+                level.BlockIds.SetBlock(block.Pos, builtInBlocks.GetBlock(block.Type.Id));
             }
 
-            for (int i = 0; i < setValues.Count; i++)
+            // TODO: remove
+            level.BlockIds.SetBlock(0, 0, 0, builtInBlocks.GetBlock(1));
+
+            for (int i = 0; i < values.Count; i++)
             {
-                SetValue set = setValues[i];
+                ValueRecord set = values[i];
                 level.BlockValues.Add(new BlockValue()
                 {
                     ValueIndex = (byte)set.ValueIndex,
@@ -60,15 +63,27 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                 });
             }
 
-            for (int i = 0; i < makeConnections.Count; i++)
+            for (int i = 0; i < connections.Count; i++)
             {
-                MakeConnection con = makeConnections[i];
+                ConnectionRecord con = connections[i];
                 level.Connections.Add(new Connection()
                 {
                     From = (Vector3US)con.Block1.Pos,
                     FromConnector = (Vector3US)con.Terminal1.Pos,
                     To = (Vector3US)con.Block2.Pos,
                     ToConnector = (Vector3US)con.Terminal2.Pos,
+                });
+            }
+
+            for (int i = 0; i < absoluteConnections.Count; i++)
+            {
+                AbsoluteConnectionRecord con = absoluteConnections[i];
+                level.Connections.Add(new Connection()
+                {
+                    From = (Vector3US)con.From,
+                    FromConnector = (Vector3US)(con.FromSub ?? ChoseSubPos(con.From)),
+                    To = (Vector3US)con.To.Pos,
+                    ToConnector = (Vector3US)con.ToTerminal.Pos,
                 });
             }
 

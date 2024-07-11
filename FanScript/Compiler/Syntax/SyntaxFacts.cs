@@ -74,6 +74,8 @@
                     return SyntaxKind.KeywordVector3;
                 case "rot":
                     return SyntaxKind.KeywordRotation;
+                case "object":
+                    return SyntaxKind.KeywordObject;
                 case "bool":
                     return SyntaxKind.KeywordBool;
                 case "while":
@@ -162,6 +164,8 @@
                     "vec3",
                 SyntaxKind.KeywordRotation =>
                     "rot",
+                SyntaxKind.KeywordObject =>
+                    "object",
                 SyntaxKind.KeywordBool =>
                     "bool",
                 SyntaxKind.KeywordWhile =>

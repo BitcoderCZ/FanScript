@@ -671,8 +671,8 @@ namespace FanScript.Compiler.Binding
                     return TypeSymbol.Vector3;
                 case "rot":
                     return TypeSymbol.Rotation;
-                //case "string":
-                //    return TypeSymbol.String;
+                case "object":
+                    return TypeSymbol.Object;
                 default:
                     return null;
             }

@@ -120,8 +120,8 @@ namespace FanScript.Compiler.Emit.CodeBuilders
         {
             PreBuild(startPos);
 
-            if (setBlocks.Count > 0 && setBlocks[0].Pos != Vector3I.Zero)
-                setBlocks.Insert(0, new Block(Vector3I.Zero, new BlockDef(string.Empty, 1, default, Vector2I.One)));
+            if (blocks.Count > 0 && blocks[0].Pos != Vector3I.Zero)
+                blocks.Insert(0, new Block(Vector3I.Zero, new BlockDef(string.Empty, 1, default, Vector2I.One)));
 
             Compression compression = Compression.Base64;
 
@@ -143,25 +143,25 @@ namespace FanScript.Compiler.Emit.CodeBuilders
         {
             StringBuilder builder = new StringBuilder();
 
-            for (int i = 0; i < setBlocks.Count; i++)
+            for (int i = 0; i < blocks.Count; i++)
             {
-                Block block = setBlocks[i];
+                Block block = blocks[i];
                 builder.AppendLine($"setBlock({block.Pos.X},{block.Pos.Y},{block.Pos.Z}, {block.Type.Id});");
             }
 
             builder.AppendLine("updateChanges();");
 
-            for (int i = 0; i < setValues.Count; i++)
+            for (int i = 0; i < values.Count; i++)
             {
-                SetValue set = setValues[i];
+                ValueRecord set = values[i];
                 builder.AppendLine($"setBlockValue({set.Block.Pos.X},{set.Block.Pos.Y}, {set.Block.Pos.Z},{set.ValueIndex},{set.Value.ToBlockValue()});");
             }
 
             builder.AppendLine("updateChanges();");
 
-            for (int i = 0; i < makeConnections.Count; i++)
+            for (int i = 0; i < connections.Count; i++)
             {
-                MakeConnection con = makeConnections[i];
+                ConnectionRecord con = connections[i];
                 builder.AppendLine($"connect({con.Block1.Pos.X},{con.Block1.Pos.Y}, {con.Block1.Pos.Z},{con.Terminal1.Index},{con.Block2.Pos.X},{con.Block2.Pos.Y}, {con.Block2.Pos.Z},{con.Terminal2.Index});");
             }
 
@@ -175,20 +175,20 @@ namespace FanScript.Compiler.Emit.CodeBuilders
             using (MemoryStream stream = new MemoryStream())
             using (Utils.SaveWriter writer = new Utils.SaveWriter(stream))
             {
-                writer.WriteInt32(setBlocks.Count);
-                for (int i = 0; i < setBlocks.Count; i++)
+                writer.WriteInt32(blocks.Count);
+                for (int i = 0; i < blocks.Count; i++)
                 {
-                    Block block = setBlocks[i];
+                    Block block = blocks[i];
                     writer.WriteInt32(block.Pos.X);
                     writer.WriteInt32(block.Pos.Y);
                     writer.WriteInt32(block.Pos.Z);
                     writer.WriteInt32(block.Type.Id);
                 }
 
-                writer.WriteInt32(setValues.Count);
-                for (int i = 0; i < setValues.Count; i++)
+                writer.WriteInt32(values.Count);
+                for (int i = 0; i < values.Count; i++)
                 {
-                    SetValue val = setValues[i];
+                    ValueRecord val = values[i];
                     writer.WriteInt32(val.Block.Pos.X);
                     writer.WriteInt32(val.Block.Pos.Y);
                     writer.WriteInt32(val.Block.Pos.Z);
@@ -227,10 +227,10 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                         throw new Exception($"Unsuported Value type: {val.Value.GetType()}");
                 }
 
-                writer.WriteInt32(makeConnections.Count);
-                for (int i = 0; i < makeConnections.Count; i++)
+                writer.WriteInt32(connections.Count);
+                for (int i = 0; i < connections.Count; i++)
                 {
-                    MakeConnection val = makeConnections[i];
+                    ConnectionRecord val = connections[i];
                     writer.WriteInt32(val.Block1.Pos.X);
                     writer.WriteInt32(val.Block1.Pos.Y);
                     writer.WriteInt32(val.Block1.Pos.Z);

@@ -72,6 +72,7 @@
         KeywordFloat,
         KeywordVector3,
         KeywordRotation,
+        KeywordObject,
         KeywordBool,
         KeywordWhile,
         KeywordBreak,

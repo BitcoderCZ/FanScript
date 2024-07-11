@@ -1,18 +1,5 @@
 onPlay {
-    float i = 0
-    bool a = i < 30 && i > 2 || i > 5
-    while (true) {
-        if (i >= 10) {
-            i += 4
-            continue
-        }
-        if (i > 99)
-            break
-        
-        i += 2
-    }
-
-    float f = 0
+    float a = 3
+    object o = getObject(vec3(0, 0, 0))
+    setPos(o, vec3(0, a, 0))
 }
-
-float outOfOP = 0
