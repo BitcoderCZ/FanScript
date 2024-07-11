@@ -291,16 +291,37 @@ namespace FanScript.Compiler.Emit
                     return emitExpression(unary.Operand);
                 case BoundUnaryOperatorKind.Negation:
                     {
-                        Block block = builder.AddBlock(Blocks.Math.Negate);
-
-                        builder.BlockPlacer.ExpressionBlock(() =>
+                        if (unary.Type == TypeSymbol.Vector3)
                         {
-                            EmitStore _store = emitExpression(unary.Operand);
+                            Block block = builder.AddBlock(Blocks.Math.Multiply_Vector);
 
-                            connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
-                        });
+                            builder.BlockPlacer.ExpressionBlock(() =>
+                            {
+                                EmitStore _store = emitExpression(unary.Operand);
 
-                        return BasicEmitStore.COut(block, block.Type.Terminals[0]);
+                                Block numb = builder.AddBlock(Blocks.Values.Number);
+                                builder.SetBlockValue(numb, 0, -1f);
+
+                                connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[2]));
+                                connect(BasicEmitStore.COut(numb, numb.Type.Terminals[0]), BasicEmitStore.CIn(block, block.Type.Terminals[1]));
+                            });
+
+                            return BasicEmitStore.COut(block, block.Type.Terminals[0]);
+                        }
+                        else
+                        {
+
+                            Block block = builder.AddBlock(unary.Type == TypeSymbol.Float ? Blocks.Math.Negate : Blocks.Math.Inverse);
+
+                            builder.BlockPlacer.ExpressionBlock(() =>
+                            {
+                                EmitStore _store = emitExpression(unary.Operand);
+
+                                connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
+                            });
+
+                            return BasicEmitStore.COut(block, block.Type.Terminals[0]);
+                        }
                     }
                 case BoundUnaryOperatorKind.LogicalNegation:
                     {
@@ -586,8 +607,8 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitCallExpression(BoundCallExpression call)
         {
-            if (BuiltinFunctions.tryEmitFunction(call, emitContext, out EmitStore? funcStore))
-                return funcStore;
+            if (call.Function is BuiltinFunctionSymbol builtinFunction && builtinFunction.Emit is not null)
+                return builtinFunction.Emit(call, emitContext);
 
             switch (call.Function.Name)
             {

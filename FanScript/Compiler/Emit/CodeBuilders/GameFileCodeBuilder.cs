@@ -2,6 +2,15 @@
 using FanScript.FCInfo;
 using MathUtils.Vectors;
 
+/*
+log("Block id: " + getBlock(0, 0, 0));
+for (var i = 0; i < 10; i++) {
+    if (getTerminalName(0, 0, 0, i) == "")
+        continue;
+    log("Name: " + getTerminalName(0, 0, 0, i) + ", Index: " + i + ", Type: " + getTerminalType(0, 0, 0, i));
+}
+*/
+
 namespace FanScript.Compiler.Emit.CodeBuilders
 {
     public class GameFileCodeBuilder : CodeBuilder
@@ -47,9 +56,6 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                 FCInfo.Block block = blocks[i];
                 level.BlockIds.SetBlock(block.Pos, builtInBlocks.GetBlock(block.Type.Id));
             }
-
-            // TODO: remove
-            level.BlockIds.SetBlock(0, 0, 0, builtInBlocks.GetBlock(1));
 
             for (int i = 0; i < values.Count; i++)
             {

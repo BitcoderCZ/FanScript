@@ -108,6 +108,7 @@ namespace FanScript.FCInfo
 
             public static readonly BlockDef Negate = new BlockDef("Negate", 90, BlockType.Pasive, new Vector2I(2, 1), new Terminal(0, WireType.Float, TerminalType.Out, "-Num"), new Terminal(1, WireType.Float, TerminalType.In, "Num"));
             public static readonly BlockDef Not = new BlockDef("Not", 144, BlockType.Pasive, new Vector2I(2, 1), new Terminal(0, WireType.Bool, TerminalType.Out, "Not Tru"), new Terminal(1, WireType.Bool, TerminalType.In, "Tru"));
+            public static readonly BlockDef Inverse = new BlockDef("Inverse", 440, BlockType.Pasive, new Vector2I(2, 1), new Terminal(0, WireType.Rot, TerminalType.Out, "Rot Inverse"), new Terminal(1, WireType.Rot, TerminalType.In, "Rot"));
 
             public static readonly BlockDef Add_Number = new BlockDef("Add Numbers", 92, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Float, TerminalType.Out, "Num1 + Num2"), new Terminal(1, WireType.Float, TerminalType.In, "Num2"), new Terminal(2, WireType.Float, TerminalType.In, "Num1"));
             public static readonly BlockDef Add_Vector = new BlockDef("Add Vectors", 96, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Vec3, TerminalType.Out, "Vec1 + Vec2"), new Terminal(1, WireType.Vec3, TerminalType.In, "Vec2"), new Terminal(2, WireType.Vec3, TerminalType.In, "Vec1"));

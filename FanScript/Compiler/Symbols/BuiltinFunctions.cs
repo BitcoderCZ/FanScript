@@ -78,19 +78,5 @@ namespace FanScript.Compiler.Symbols
             => functionsCache ??= typeof(BuiltinFunctions).GetFields(BindingFlags.Public | BindingFlags.Static)
                                        .Where(f => f.FieldType == typeof(FunctionSymbol))
                                        .Select(f => (FunctionSymbol)f.GetValue(null)!);
-
-        internal static bool tryEmitFunction(BoundCallExpression call, EmitContext context, [NotNullWhen(true)] out EmitStore? emitStore)
-        {
-            if (call.Function is BuiltinFunctionSymbol builtinFunction && builtinFunction.Emit is not null)
-            {
-                emitStore = builtinFunction.Emit(call, context);
-                return true;
-            }
-            else
-            {
-                emitStore = null;
-                return false;
-            }
-        }
     }
 }

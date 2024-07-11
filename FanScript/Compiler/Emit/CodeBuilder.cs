@@ -54,6 +54,8 @@ namespace FanScript.Compiler.Emit
         {
             if (startPos.X < 0 || startPos.Y < 0 || startPos.Z < 0)
                 throw new ArgumentOutOfRangeException(nameof(startPos), $"{nameof(startPos)} must be >= 0");
+            else if (blocks.Count == 0)
+                return;
 
             Vector3I lowestPos = new Vector3I(int.MaxValue, int.MaxValue, int.MaxValue);
             for (int i = 0; i < blocks.Count; i++)

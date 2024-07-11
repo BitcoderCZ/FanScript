@@ -1,5 +1,5 @@
 ﻿using FanScript.Compiler.Symbols;
-
+using MathUtils.Vectors;
 using static FanScript.Compiler.Symbols.TypeSymbol;
 
 namespace FanScript.Compiler.Binding
@@ -13,9 +13,23 @@ namespace FanScript.Compiler.Binding
                 switch (op.Kind)
                 {
                     case BoundUnaryOperatorKind.Identity:
-                        return new BoundConstant((float)operand.ConstantValue.Value);
+                        if (op.Type == Float)
+                            return new BoundConstant((float)operand.ConstantValue.Value);
+                        else if (op.Type == Vector3)
+                            return new BoundConstant((Vector3F)operand.ConstantValue.Value);
+                        else if (op.Type == TypeSymbol.Rotation)
+                            return new BoundConstant((Rotation)operand.ConstantValue.Value);
+                        else
+                            throw new Exception($"Unexpected of type for {op.Kind}: {op.Type}");
                     case BoundUnaryOperatorKind.Negation:
-                        return new BoundConstant(-(float)operand.ConstantValue.Value);
+                        if (op.Type == Float)
+                            return new BoundConstant(-(float)operand.ConstantValue.Value);
+                        else if (op.Type == Vector3)
+                            return new BoundConstant(-(Vector3F)operand.ConstantValue.Value);
+                        else if (op.Type == TypeSymbol.Rotation)
+                            return null; // couldn't figure out how the inverse works, imo should be Quaterion Inverse, but that gave me differend results (yes I did convert deg-rad and back))
+                        else
+                            throw new Exception($"Unexpected of type for {op.Kind}: {op.Type}");
                     case BoundUnaryOperatorKind.LogicalNegation:
                         return new BoundConstant(!(bool)operand.ConstantValue.Value);
                     default:
@@ -59,35 +73,35 @@ namespace FanScript.Compiler.Binding
                     if (lt == Float && rt == Float)
                         return new BoundConstant((float)l + (float)r);
                     else if (lt == Vector3 && rt == Vector3)
-                        return new BoundConstant((MathUtils.Vectors.Vector3F)l + (MathUtils.Vectors.Vector3F)r);
+                        return new BoundConstant((Vector3F)l + (Vector3F)r);
                     else
                         throw new Exception($"Unexpected combination of types for {op.Kind}: {lt} and {rt}");
                 case BoundBinaryOperatorKind.Subtraction:
                     if (lt == Float && rt == Float)
                         return new BoundConstant((float)l - (float)r);
                     else if (lt == Vector3 && rt == Vector3)
-                        return new BoundConstant((MathUtils.Vectors.Vector3F)l - (MathUtils.Vectors.Vector3F)r);
+                        return new BoundConstant((Vector3F)l - (Vector3F)r);
                     else
                         throw new Exception($"Unexpected combination of types for {op.Kind}: {lt} and {rt}");
                 case BoundBinaryOperatorKind.Multiplication:
                     if (lt == Float && rt == Float)
                         return new BoundConstant((float)l * (float)r);
                     else if (lt == Vector3 && rt == Float)
-                        return new BoundConstant((MathUtils.Vectors.Vector3F)l * (float)r);
+                        return new BoundConstant((Vector3F)l * (float)r);
                     else
                         throw new Exception($"Unexpected combination of types for {op.Kind}: {lt} and {rt}");
                 case BoundBinaryOperatorKind.Division:
                     if (lt == Float && rt == Float)
                         return new BoundConstant((float)l / (float)r);
                     else if (lt == Vector3 && rt == Float)
-                        return new BoundConstant((MathUtils.Vectors.Vector3F)l / (float)r);
+                        return new BoundConstant((Vector3F)l / (float)r);
                     else
                         throw new Exception($"Unexpected combination of types for {op.Kind}: {lt} and {rt}");
                 case BoundBinaryOperatorKind.Modulo:
                     if (lt == Float && rt == Float)
                         return new BoundConstant((float)l % (float)r);
                     else if (lt == Vector3 && rt == Float)
-                        return new BoundConstant((MathUtils.Vectors.Vector3F)l % (float)r);
+                        return new BoundConstant((Vector3F)l % (float)r);
                     else
                         throw new Exception($"Unexpected combination of types for {op.Kind}: {lt} and {rt}");
                 case BoundBinaryOperatorKind.LogicalAnd:
