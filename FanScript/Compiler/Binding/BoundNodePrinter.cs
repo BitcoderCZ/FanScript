@@ -32,6 +32,9 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.VariableDeclaration:
                     WriteVariableDeclaration((BoundVariableDeclaration)node, writer);
                     break;
+                case BoundNodeKind.AssignmentStatement:
+                    WriteAssignmentStatement((BoundAssignmentStatement)node, writer);
+                    break;
                 case BoundNodeKind.IfStatement:
                     WriteIfStatement((BoundIfStatement)node, writer);
                     break;
@@ -71,11 +74,8 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.VariableExpression:
                     WriteVariableExpression((BoundVariableExpression)node, writer);
                     break;
-                case BoundNodeKind.AssignmentExpression:
-                    WriteAssignmentExpression((BoundAssignmentExpression)node, writer);
-                    break;
-                case BoundNodeKind.CompoundAssignmentExpression:
-                    WriteCompoundAssignmentExpression((BoundCompoundAssignmentExpression)node, writer);
+                case BoundNodeKind.CompoundAssignmentStatement:
+                    WriteCompoundAssignmentExpression((BoundCompoundAssignmentStatement)node, writer);
                     break;
                 case BoundNodeKind.UnaryExpression:
                     WriteUnaryExpression((BoundUnaryExpression)node, writer);
@@ -176,6 +176,17 @@ namespace FanScript.Compiler.Binding
                 writer.WriteSpace();
                 node.OptionalAssignment.Expression.WriteTo(writer);
             }
+
+            writer.WriteLine();
+        }
+
+        private static void WriteAssignmentStatement(BoundAssignmentStatement node, IndentedTextWriter writer)
+        {
+            writer.WriteIdentifier(node.Variable.Name);
+            writer.WriteSpace();
+            writer.WritePunctuation(SyntaxKind.EqualsToken);
+            writer.WriteSpace();
+            node.Expression.WriteTo(writer);
 
             writer.WriteLine();
         }
@@ -355,16 +366,7 @@ namespace FanScript.Compiler.Binding
             writer.WriteIdentifier(node.Variable.Name);
         }
 
-        private static void WriteAssignmentExpression(BoundAssignmentExpression node, IndentedTextWriter writer)
-        {
-            writer.WriteIdentifier(node.Variable.Name);
-            writer.WriteSpace();
-            writer.WritePunctuation(SyntaxKind.EqualsToken);
-            writer.WriteSpace();
-            node.Expression.WriteTo(writer);
-        }
-
-        private static void WriteCompoundAssignmentExpression(BoundCompoundAssignmentExpression node, IndentedTextWriter writer)
+        private static void WriteCompoundAssignmentExpression(BoundCompoundAssignmentStatement node, IndentedTextWriter writer)
         {
             writer.WriteIdentifier(node.Variable.Name);
             writer.WriteSpace();

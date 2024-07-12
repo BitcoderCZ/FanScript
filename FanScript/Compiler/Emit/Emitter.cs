@@ -6,6 +6,7 @@ using FanScript.FCInfo;
 using FanScript.Utils;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq.Expressions;
 
 namespace FanScript.Compiler.Emit
 {
@@ -97,10 +98,12 @@ namespace FanScript.Compiler.Emit
             else if (statement is BoundVariableDeclaration variableDeclaration)
             {
                 if (variableDeclaration.OptionalAssignment is not null)
-                    store = emitAssigmentExpression(variableDeclaration.OptionalAssignment);
+                    store = emitAssigmentStatement(variableDeclaration.OptionalAssignment);
                 //else
                 //    store = null;
             }
+            else if (statement is BoundAssignmentStatement assigment)
+                store = emitAssigmentStatement(assigment);
             else if (statement is BoundGotoStatement gotoStatement)
                 store = emitGotoStatement(gotoStatement);
             else if (statement is BoundConditionalGotoStatement conditionalGotoStatement)
@@ -178,6 +181,22 @@ namespace FanScript.Compiler.Emit
             return new BasicEmitStore(block);
         }
 
+        private EmitStore emitAssigmentStatement(BoundAssignmentStatement assignment)
+        {
+            Block block = builder.AddBlock(Blocks.Variables.Set_VariableByType(assignment.Variable.Type!.ToWireType()));
+
+            builder.SetBlockValue(block, 0, assignment.Variable.Name);
+
+            builder.BlockPlacer.ExpressionBlock(() =>
+            {
+                EmitStore _store = emitExpression(assignment.Expression);
+
+                connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
+            });
+
+            return new BasicEmitStore(block);
+        }
+
         private EmitStore emitGotoStatement(BoundGotoStatement gotoStatement)
         {
             if (gotoStatement is BoundRollbackGotoStatement) return new RollbackEmitStore();
@@ -213,9 +232,7 @@ namespace FanScript.Compiler.Emit
         {
             EmitStore store = new NopEmitStore();
 
-            if (expression is BoundAssignmentExpression assigment)
-                store = emitAssigmentExpression(assigment);
-            else if (expression is BoundLiteralExpression literal)
+            if (expression is BoundLiteralExpression literal)
                 store = emitLiteralExpression(literal);
             else if (expression is BoundConstructorExpression constructor)
                 store = emitConstructorExpression(constructor);
@@ -231,22 +248,6 @@ namespace FanScript.Compiler.Emit
                 throw new Exception($"Unsuported expression: '{expression.GetType()}'.");
 
             return store;
-        }
-
-        private EmitStore emitAssigmentExpression(BoundAssignmentExpression assignment)
-        {
-            Block block = builder.AddBlock(Blocks.Variables.Set_VariableByType(assignment.Variable.Type!.ToWireType()));
-
-            builder.SetBlockValue(block, 0, assignment.Variable.Name);
-
-            builder.BlockPlacer.ExpressionBlock(() =>
-            {
-                EmitStore _store = emitExpression(assignment.Expression);
-
-                connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
-            });
-
-            return new BasicEmitStore(block);
         }
 
         private EmitStore emitLiteralExpression(BoundLiteralExpression literal)

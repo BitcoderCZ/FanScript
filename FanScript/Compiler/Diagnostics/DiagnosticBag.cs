@@ -115,7 +115,7 @@ namespace FanScript.Compiler.Diagnostics
             ReportError(location, message);
         }
 
-        public void ReportCannotAssign(TextLocation location, string name)
+        public void ReportCannotAssignReadOnly(TextLocation location, string name)
         {
             var message = $"Variable '{name}' is read-only and cannot be assigned to.";
             ReportError(location, message);
@@ -191,7 +191,7 @@ namespace FanScript.Compiler.Diagnostics
                 //case SyntaxKind.ReturnStatement:
                 //    ReportUnreachableCode(((ReturnStatementSyntax)node).ReturnKeyword.Location);
                 //    return;
-                case SyntaxKind.AssignmentExpression:
+                case SyntaxKind.AssignmentStatement:
                     ReportUnreachableCode(node.Location);
                     return;
                 case SyntaxKind.ExpressionStatement:

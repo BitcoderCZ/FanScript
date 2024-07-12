@@ -48,8 +48,8 @@
         BreakStatement,
         ContinueStatement,
         VariableDeclaration,
+        AssignmentStatement,
 
-        AssignmentExpression,
         UnaryExpression,
         BinaryExpression,
         ParenthesizedExpression,

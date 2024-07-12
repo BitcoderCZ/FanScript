@@ -222,9 +222,9 @@ namespace FanScript.Compiler.Binding
                 if (result is BoundExpressionStatement es)
                 {
                     bool isAllowedExpression = es.Expression.Kind == BoundNodeKind.ErrorExpression ||
-                                              es.Expression.Kind == BoundNodeKind.AssignmentExpression ||
+                                              es.Expression.Kind == BoundNodeKind.AssignmentStatement ||
                                               es.Expression.Kind == BoundNodeKind.CallExpression ||
-                                              es.Expression.Kind == BoundNodeKind.CompoundAssignmentExpression;
+                                              es.Expression.Kind == BoundNodeKind.CompoundAssignmentStatement;
                     if (!isAllowedExpression)
                         _diagnostics.ReportInvalidExpressionStatement(syntax.Location);
                 }
@@ -243,6 +243,8 @@ namespace FanScript.Compiler.Binding
                     return BindSpecialBlockStatement((SpecialBlockStatementSyntax)syntax);
                 case SyntaxKind.VariableDeclaration:
                     return BindVariableDeclaration((VariableDeclarationSyntax)syntax);
+                case SyntaxKind.AssignmentStatement:
+                    return BindAssignmentStatement((AssignmentStatementSyntax)syntax);
                 case SyntaxKind.IfStatement:
                     return BindIfStatement((IfStatementSyntax)syntax);
                 case SyntaxKind.WhileStatement:
@@ -293,9 +295,43 @@ namespace FanScript.Compiler.Binding
             TypeSymbol? variableType = type;
             VariableSymbol variable = BindVariableDeclaration(syntax.Identifier, false, variableType, /*optionalAssignment?.ConstantValue*/null);
 
-            BoundAssignmentExpression? optionalAssignment = syntax.OptionalAssignment is null ? null : (BoundAssignmentExpression)BindAssignmentExpression(syntax.OptionalAssignment);
+            BoundAssignmentStatement? optionalAssignment = syntax.OptionalAssignment is null ? null : (BoundAssignmentStatement)BindAssignmentStatement(syntax.OptionalAssignment);
 
             return new BoundVariableDeclaration(syntax, variable, optionalAssignment);
+        }
+
+        private BoundStatement BindAssignmentStatement(AssignmentStatementSyntax syntax)
+        {
+            string name = syntax.IdentifierToken.Text;
+            BoundExpression boundExpression = BindExpression(syntax.Expression);
+
+            VariableSymbol? variable = BindVariableReference(syntax.IdentifierToken);
+            if (variable is null)
+                return BindErrorStatement(syntax);
+
+            if (variable.IsReadOnly)
+                _diagnostics.ReportCannotAssignReadOnly(syntax.AssignmentToken.Location, name);
+
+            if (syntax.AssignmentToken.Kind != SyntaxKind.EqualsToken)
+            {
+                SyntaxKind equivalentOperatorTokenKind = SyntaxFacts.GetBinaryOperatorOfAssignmentOperator(syntax.AssignmentToken.Kind);
+                BoundBinaryOperator? boundOperator = BoundBinaryOperator.Bind(equivalentOperatorTokenKind, variable.Type, boundExpression.Type);
+
+                if (boundOperator is null)
+                {
+                    _diagnostics.ReportUndefinedBinaryOperator(syntax.AssignmentToken.Location, syntax.AssignmentToken.Text, variable.Type, boundExpression.Type);
+                    return BindErrorStatement(syntax);
+                }
+
+                BoundExpression convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, boundOperator.RightType/*variable.Type*/);
+
+                return new BoundCompoundAssignmentStatement(syntax, variable, boundOperator, convertedExpression);
+            }
+            else
+            {
+                BoundExpression convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, variable.Type);
+                return new BoundAssignmentStatement(syntax, variable, convertedExpression);
+            }
         }
 
         private BoundStatement BindIfStatement(IfStatementSyntax syntax)
@@ -409,8 +445,6 @@ namespace FanScript.Compiler.Binding
                     return BindLiteralExpression((LiteralExpressionSyntax)syntax);
                 case SyntaxKind.NameExpression:
                     return BindNameExpression((NameExpressionSyntax)syntax);
-                case SyntaxKind.AssignmentExpression:
-                    return BindAssignmentExpression((AssignmentExpressionSyntax)syntax);
                 case SyntaxKind.UnaryExpression:
                     return BindUnaryExpression((UnaryExpressionSyntax)syntax);
                 case SyntaxKind.BinaryExpression:
@@ -450,40 +484,6 @@ namespace FanScript.Compiler.Binding
                 return new BoundErrorExpression(syntax);
 
             return new BoundVariableExpression(syntax, variable);
-        }
-
-        private BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax)
-        {
-            string name = syntax.IdentifierToken.Text;
-            BoundExpression boundExpression = BindExpression(syntax.Expression);
-
-            VariableSymbol? variable = BindVariableReference(syntax.IdentifierToken);
-            if (variable is null)
-                return boundExpression;
-
-            if (variable.IsReadOnly)
-                _diagnostics.ReportCannotAssign(syntax.AssignmentToken.Location, name);
-
-            if (syntax.AssignmentToken.Kind != SyntaxKind.EqualsToken)
-            {
-                SyntaxKind equivalentOperatorTokenKind = SyntaxFacts.GetBinaryOperatorOfAssignmentOperator(syntax.AssignmentToken.Kind);
-                BoundBinaryOperator? boundOperator = BoundBinaryOperator.Bind(equivalentOperatorTokenKind, variable.Type, boundExpression.Type);
-
-                if (boundOperator is null)
-                {
-                    _diagnostics.ReportUndefinedBinaryOperator(syntax.AssignmentToken.Location, syntax.AssignmentToken.Text, variable.Type, boundExpression.Type);
-                    return new BoundErrorExpression(syntax);
-                }
-
-                BoundExpression convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, boundOperator.RightType/*variable.Type*/);
-
-                return new BoundCompoundAssignmentExpression(syntax, variable, boundOperator, convertedExpression);
-            }
-            else
-            {
-                BoundExpression convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, variable.Type);
-                return new BoundAssignmentExpression(syntax, variable, convertedExpression);
-            }
         }
 
         private BoundExpression BindUnaryExpression(UnaryExpressionSyntax syntax)

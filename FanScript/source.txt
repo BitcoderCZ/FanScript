@@ -1,8 +1,6 @@
 onPlay {
-    vec3 a = -vec3(2, -5, 3)
-    vec3 b = +++a
-    vec3 c = --a
-    rot d = -rot(2, -5, 3)
-    rot e = +++d
-    rot f = --d
+    float a = 5
+    float b
+    a = 3
+    b = a
 }

@@ -200,7 +200,18 @@ namespace FanScript.Compiler.Syntax
                 case SyntaxKind.KeywordRotation:
                 case SyntaxKind.KeywordBool:
                 case SyntaxKind.KeywordObject:
-                    return ParseVariableDeclaration();
+                    return ParseVariableDeclarationStatement();
+                case SyntaxKind.IdentifierToken when Peek(1).Kind switch
+                {
+                    SyntaxKind.EqualsToken => true,
+                    SyntaxKind.PlusEqualsToken => true,
+                    SyntaxKind.MinusEqualsToken => true,
+                    SyntaxKind.StarEqualsToken => true,
+                    SyntaxKind.SlashEqualsToken => true,
+                    SyntaxKind.PercentEqualsToken => true,
+                    _ => false,
+                } == true:
+                    return ParseAssignmentStatement();
                 case SyntaxKind.KeywordIf:
                     return ParseIfStatement();
                 case SyntaxKind.KeywordWhile:
@@ -258,20 +269,28 @@ namespace FanScript.Compiler.Syntax
             return new SpecialBlockStatementSyntax(_syntaxTree, keyword, block);
         }
 
-        private StatementSyntax ParseVariableDeclaration()
+        private StatementSyntax ParseVariableDeclarationStatement()
         {
             SyntaxToken keyword = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordBool, SyntaxKind.KeywordObject);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
 
-            AssignmentExpressionSyntax? assignment = null;
+            AssignmentStatementSyntax? assignment = null;
             if (Current.Kind == SyntaxKind.EqualsToken)
             {
                 SyntaxToken equals = MatchToken(SyntaxKind.EqualsToken);
                 ExpressionSyntax initializer = ParseExpression();
 
-                assignment = new AssignmentExpressionSyntax(_syntaxTree, identifier, equals, initializer);
+                assignment = new AssignmentStatementSyntax(_syntaxTree, identifier, equals, initializer);
             }
             return new VariableDeclarationSyntax(_syntaxTree, keyword, identifier, assignment);
+        }
+
+        private StatementSyntax ParseAssignmentStatement()
+        {
+            SyntaxToken identifierToken = NextToken();
+            SyntaxToken operatorToken = NextToken();
+            ExpressionSyntax right = ParseExpression();
+            return new AssignmentStatementSyntax(_syntaxTree, identifierToken, operatorToken, right);
         }
 
         //private TypeClauseSyntax? ParseOptionalTypeClause()
@@ -365,28 +384,6 @@ namespace FanScript.Compiler.Syntax
 
         private ExpressionSyntax ParseExpression()
         {
-            return ParseAssignmentExpression();
-        }
-
-        private ExpressionSyntax ParseAssignmentExpression()
-        {
-            if (Current.Kind == SyntaxKind.IdentifierToken)
-            {
-                switch (Peek(1).Kind)
-                {
-                    case SyntaxKind.PlusEqualsToken:
-                    case SyntaxKind.MinusEqualsToken:
-                    case SyntaxKind.StarEqualsToken:
-                    case SyntaxKind.SlashEqualsToken:
-                    case SyntaxKind.PercentEqualsToken:
-                    case SyntaxKind.EqualsToken:
-                        SyntaxToken identifierToken = NextToken();
-                        SyntaxToken operatorToken = NextToken();
-                        ExpressionSyntax right = ParseExpression();
-                        return new AssignmentExpressionSyntax(_syntaxTree, identifierToken, operatorToken, right);
-                }
-
-            }
             return ParseBinaryExpression();
         }
 

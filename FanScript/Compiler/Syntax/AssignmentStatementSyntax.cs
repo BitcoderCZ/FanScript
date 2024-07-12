@@ -1,8 +1,8 @@
 ﻿namespace FanScript.Compiler.Syntax
 {
-    public sealed partial class AssignmentExpressionSyntax : ExpressionSyntax
+    public sealed partial class AssignmentStatementSyntax : StatementSyntax
     {
-        public AssignmentExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken, SyntaxToken assignmentToken, ExpressionSyntax expression)
+        public AssignmentStatementSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken, SyntaxToken assignmentToken, ExpressionSyntax expression)
             : base(syntaxTree)
         {
             IdentifierToken = identifierToken;
@@ -10,7 +10,7 @@
             Expression = expression;
         }
 
-        public override SyntaxKind Kind => SyntaxKind.AssignmentExpression;
+        public override SyntaxKind Kind => SyntaxKind.AssignmentStatement;
         public SyntaxToken IdentifierToken { get; }
         public SyntaxToken AssignmentToken { get; }
         public ExpressionSyntax Expression { get; }

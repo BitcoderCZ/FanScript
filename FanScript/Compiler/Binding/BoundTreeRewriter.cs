@@ -16,6 +16,10 @@ namespace FanScript.Compiler.Binding
                     return RewriteNopStatement((BoundNopStatement)node);
                 case BoundNodeKind.VariableDeclaration:
                     return RewriteVariableDeclaration((BoundVariableDeclaration)node);
+                case BoundNodeKind.AssignmentStatement:
+                    return RewriteAssignmentStatement((BoundAssignmentStatement)node);
+                case BoundNodeKind.CompoundAssignmentStatement:
+                    return RewriteCompoundAssignmentStatement((BoundCompoundAssignmentStatement)node);
                 case BoundNodeKind.IfStatement:
                     return RewriteIfStatement((BoundIfStatement)node);
                 case BoundNodeKind.WhileStatement:
@@ -90,7 +94,25 @@ namespace FanScript.Compiler.Binding
             if (initializer == node.OptionalAssignment.Expression)
                 return node;
 
-            return new BoundVariableDeclaration(node.Syntax, node.Variable, new BoundAssignmentExpression(node.OptionalAssignment.Syntax, node.OptionalAssignment.Variable, initializer));
+            return new BoundVariableDeclaration(node.Syntax, node.Variable, new BoundAssignmentStatement(node.OptionalAssignment.Syntax, node.OptionalAssignment.Variable, initializer));
+        }
+
+        protected virtual BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)
+        {
+            BoundExpression expression = RewriteExpression(node.Expression);
+            if (expression == node.Expression)
+                return node;
+
+            return new BoundAssignmentStatement(node.Syntax, node.Variable, expression);
+        }
+
+        protected virtual BoundStatement RewriteCompoundAssignmentStatement(BoundCompoundAssignmentStatement node)
+        {
+            BoundExpression expression = RewriteExpression(node.Expression);
+            if (expression == node.Expression)
+                return node;
+
+            return new BoundCompoundAssignmentStatement(node.Syntax, node.Variable, node.Op, expression);
         }
 
         protected virtual BoundStatement RewriteIfStatement(BoundIfStatement node)
@@ -154,10 +176,6 @@ namespace FanScript.Compiler.Binding
                     return RewriteLiteralExpression((BoundLiteralExpression)node);
                 case BoundNodeKind.VariableExpression:
                     return RewriteVariableExpression((BoundVariableExpression)node);
-                case BoundNodeKind.AssignmentExpression:
-                    return RewriteAssignmentExpression((BoundAssignmentExpression)node);
-                case BoundNodeKind.CompoundAssignmentExpression:
-                    return RewriteCompoundAssignmentExpression((BoundCompoundAssignmentExpression)node);
                 case BoundNodeKind.UnaryExpression:
                     return RewriteUnaryExpression((BoundUnaryExpression)node);
                 case BoundNodeKind.BinaryExpression:
@@ -181,24 +199,6 @@ namespace FanScript.Compiler.Binding
 
         protected virtual BoundExpression RewriteVariableExpression(BoundVariableExpression node)
             => node;
-
-        protected virtual BoundExpression RewriteAssignmentExpression(BoundAssignmentExpression node)
-        {
-            BoundExpression expression = RewriteExpression(node.Expression);
-            if (expression == node.Expression)
-                return node;
-
-            return new BoundAssignmentExpression(node.Syntax, node.Variable, expression);
-        }
-
-        protected virtual BoundExpression RewriteCompoundAssignmentExpression(BoundCompoundAssignmentExpression node)
-        {
-            BoundExpression expression = RewriteExpression(node.Expression);
-            if (expression == node.Expression)
-                return node;
-
-            return new BoundCompoundAssignmentExpression(node.Syntax, node.Variable, node.Op, expression);
-        }
 
         protected virtual BoundExpression RewriteUnaryExpression(BoundUnaryExpression node)
         {

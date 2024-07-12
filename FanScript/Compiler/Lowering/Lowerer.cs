@@ -228,9 +228,9 @@ namespace FanScript.Compiler.Lowering
             return base.RewriteConditionalGotoStatement(node);
         }
 
-        protected override BoundExpression RewriteCompoundAssignmentExpression(BoundCompoundAssignmentExpression node)
+        protected override BoundStatement RewriteCompoundAssignmentStatement(BoundCompoundAssignmentStatement node)
         {
-            BoundCompoundAssignmentExpression newNode = (BoundCompoundAssignmentExpression)base.RewriteCompoundAssignmentExpression(node);
+            BoundCompoundAssignmentStatement newNode = (BoundCompoundAssignmentStatement)base.RewriteCompoundAssignmentStatement(node);
 
             // a <op>= b
             //
@@ -238,7 +238,7 @@ namespace FanScript.Compiler.Lowering
             //
             // a = (a <op> b)
 
-            BoundAssignmentExpression result = Assignment(
+            BoundAssignmentStatement result = Assignment(
                 newNode.Syntax,
                 newNode.Variable,
                 Binary(

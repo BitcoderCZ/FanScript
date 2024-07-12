@@ -1,6 +1,6 @@
 ﻿namespace FanScript.Compiler.Syntax
 {
-    partial class AssignmentExpressionSyntax
+    partial class AssignmentStatementSyntax
     {
         public override IEnumerable<SyntaxNode> GetChildren()
         {

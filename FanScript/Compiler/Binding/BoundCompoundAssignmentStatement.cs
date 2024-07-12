@@ -3,9 +3,9 @@ using FanScript.Compiler.Syntax;
 
 namespace FanScript.Compiler.Binding
 {
-    internal sealed class BoundCompoundAssignmentExpression : BoundExpression
+    internal sealed class BoundCompoundAssignmentStatement : BoundStatement
     {
-        public BoundCompoundAssignmentExpression(SyntaxNode syntax, VariableSymbol variable, BoundBinaryOperator op, BoundExpression expression)
+        public BoundCompoundAssignmentStatement(SyntaxNode syntax, VariableSymbol variable, BoundBinaryOperator op, BoundExpression expression)
             : base(syntax)
         {
             Variable = variable;
@@ -13,8 +13,7 @@ namespace FanScript.Compiler.Binding
             Expression = expression;
         }
 
-        public override BoundNodeKind Kind => BoundNodeKind.CompoundAssignmentExpression;
-        public override TypeSymbol? Type => Expression.Type;
+        public override BoundNodeKind Kind => BoundNodeKind.CompoundAssignmentStatement;
         public VariableSymbol Variable { get; }
         public BoundBinaryOperator Op { get; }
         public BoundExpression Expression { get; }

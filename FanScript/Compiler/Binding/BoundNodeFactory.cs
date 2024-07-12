@@ -11,16 +11,16 @@ namespace FanScript.Compiler.Binding
         public static BoundBlockStatement Block(SyntaxNode syntax, params BoundStatement[] statements)
             => new BoundBlockStatement(syntax, ImmutableArray.Create(statements));
 
-        public static BoundVariableDeclaration VariableDeclaration(SyntaxNode syntax, VariableSymbol symbol, BoundAssignmentExpression? optionalAssignment)
+        public static BoundVariableDeclaration VariableDeclaration(SyntaxNode syntax, VariableSymbol symbol, BoundAssignmentStatement? optionalAssignment)
             => new BoundVariableDeclaration(syntax, symbol, optionalAssignment);
 
-        public static BoundVariableDeclaration VariableDeclaration(SyntaxNode syntax, string name, BoundAssignmentExpression? optionalAssignment)
+        public static BoundVariableDeclaration VariableDeclaration(SyntaxNode syntax, string name, BoundAssignmentStatement? optionalAssignment)
             => VariableDeclarationInternal(syntax, name, optionalAssignment, isReadOnly: false);
 
-        public static BoundVariableDeclaration ConstantDeclaration(SyntaxNode syntax, string name, BoundAssignmentExpression? optionalAssignment)
+        public static BoundVariableDeclaration ConstantDeclaration(SyntaxNode syntax, string name, BoundAssignmentStatement? optionalAssignment)
             => VariableDeclarationInternal(syntax, name, optionalAssignment, isReadOnly: true);
 
-        private static BoundVariableDeclaration VariableDeclarationInternal(SyntaxNode syntax, string name, BoundAssignmentExpression? optionalAssignment, bool isReadOnly)
+        private static BoundVariableDeclaration VariableDeclarationInternal(SyntaxNode syntax, string name, BoundAssignmentStatement? optionalAssignment, bool isReadOnly)
         {
             throw new NotImplementedException();
             //var local = new LocalVariableSymbol(name, isReadOnly, initializer.Type, initializer.ConstantValue);
@@ -48,8 +48,8 @@ namespace FanScript.Compiler.Binding
         public static BoundNopStatement Nop(SyntaxNode syntax)
             => new BoundNopStatement(syntax);
 
-        public static BoundAssignmentExpression Assignment(SyntaxNode syntax, VariableSymbol variable, BoundExpression expression)
-            => new BoundAssignmentExpression(syntax, variable, expression);
+        public static BoundAssignmentStatement Assignment(SyntaxNode syntax, VariableSymbol variable, BoundExpression expression)
+            => new BoundAssignmentStatement(syntax, variable, expression);
 
         public static BoundBinaryExpression Binary(SyntaxNode syntax, BoundExpression left, SyntaxKind kind, BoundExpression right)
         {
@@ -66,11 +66,10 @@ namespace FanScript.Compiler.Binding
         public static BoundBinaryExpression LessOrEqual(SyntaxNode syntax, BoundExpression left, BoundExpression right)
             => Binary(syntax, left, SyntaxKind.LessOrEqualsToken, right);
 
-        public static BoundExpressionStatement Increment(SyntaxNode syntax, BoundVariableExpression variable)
+        public static BoundStatement Increment(SyntaxNode syntax, BoundVariableExpression variable)
         {
             BoundBinaryExpression increment = Add(syntax, variable, Literal(syntax, 1));
-            BoundAssignmentExpression incrementAssign = new BoundAssignmentExpression(syntax, variable.Variable, increment);
-            return new BoundExpressionStatement(syntax, incrementAssign);
+            return new BoundAssignmentStatement(syntax, variable.Variable, increment);
         }
 
         public static BoundUnaryExpression Not(SyntaxNode syntax, BoundExpression condition)

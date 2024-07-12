@@ -5,7 +5,7 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class BoundVariableDeclaration : BoundStatement
     {
-        public BoundVariableDeclaration(SyntaxNode syntax, VariableSymbol variable, BoundAssignmentExpression? optionalAssignment)
+        public BoundVariableDeclaration(SyntaxNode syntax, VariableSymbol variable, BoundAssignmentStatement? optionalAssignment)
             : base(syntax)
         {
             Variable = variable;
@@ -15,6 +15,6 @@ namespace FanScript.Compiler.Binding
         public override BoundNodeKind Kind => BoundNodeKind.VariableDeclaration;
 
         public VariableSymbol Variable { get; }
-        public BoundAssignmentExpression? OptionalAssignment { get; }
+        public BoundAssignmentStatement? OptionalAssignment { get; }
     }
 }

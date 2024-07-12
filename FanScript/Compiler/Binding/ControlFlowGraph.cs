@@ -100,6 +100,7 @@ namespace FanScript.Compiler.Binding
                             break;
                         case BoundNodeKind.NopStatement:
                         case BoundNodeKind.VariableDeclaration:
+                        case BoundNodeKind.AssignmentStatement:
                         case BoundNodeKind.ExpressionStatement:
                             _statements.Add(statement);
                             break;
@@ -194,6 +195,7 @@ namespace FanScript.Compiler.Binding
                                 break;
                             case BoundNodeKind.NopStatement:
                             case BoundNodeKind.VariableDeclaration:
+                            case BoundNodeKind.AssignmentStatement:
                             case BoundNodeKind.LabelStatement:
                             case BoundNodeKind.ExpressionStatement:
                                 if (isLastStatementInBlock)
