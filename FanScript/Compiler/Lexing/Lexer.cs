@@ -365,7 +365,7 @@ namespace FanScript.Compiler.Lexing
                 //case '"':
                 //    ReadString();
                 //    break;
-                case '.':
+                case '.' when char.IsDigit(Peek(1)):
                 case '0':
                 case '1':
                 case '2':

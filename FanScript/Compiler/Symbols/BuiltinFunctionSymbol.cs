@@ -1,6 +1,5 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Emit;
-using FanScript.Compiler.Syntax;
 using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Symbols

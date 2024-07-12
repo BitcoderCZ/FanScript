@@ -293,21 +293,6 @@ namespace FanScript.Compiler.Syntax
             return new AssignmentStatementSyntax(_syntaxTree, identifierToken, operatorToken, right);
         }
 
-        //private TypeClauseSyntax? ParseOptionalTypeClause()
-        //{
-        //    if (Current.Kind != SyntaxKind.ColonToken)
-        //        return null;
-
-        //    return ParseTypeClause();
-        //}
-
-        //private TypeClauseSyntax ParseTypeClause()
-        //{
-        //    var colonToken = MatchToken(SyntaxKind.ColonToken);
-        //    var identifier = MatchToken(SyntaxKind.IdentifierToken);
-        //    return new TypeClauseSyntax(_syntaxTree, colonToken, identifier);
-        //}
-
         private StatementSyntax ParseIfStatement()
         {
             SyntaxToken keyword = MatchToken(SyntaxKind.KeywordIf);
@@ -481,7 +466,7 @@ namespace FanScript.Compiler.Syntax
         {
             if (Peek(0).Kind == SyntaxKind.IdentifierToken &&
                 (Peek(1).Kind == SyntaxKind.OpenParenthesisToken || Peek(1).Kind == SyntaxKind.LessToken) &&
-                isType(Peek(2).Kind))
+                isType(Peek(2).Kind)) // not sure of a better way to do this, neccesary becose of less than operator, make some tryParseType method that doesn't consume tokens?
                 return ParseCallExpression();
 
             return ParseNameExpression();

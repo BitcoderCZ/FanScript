@@ -78,7 +78,7 @@ namespace FanScript.Compiler.Binding
             FunctionSymbol? scriptFunction;
 
             if (globalStatements.Any())
-                scriptFunction = new FunctionSymbol("$eval", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Void, null);
+                scriptFunction = new FunctionSymbol("^eval", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Void, null);
             else
                 scriptFunction = null;
 
@@ -636,7 +636,8 @@ namespace FanScript.Compiler.Binding
                     _diagnostics.ReportSpecificGenericTypeNotAllowed(syntax.HasGenericParameter ? syntax.GenericTypeClause.Location : syntax.Location, genericType, function.AllowedGenericTypes.Value);
                     return new BoundErrorExpression(syntax);
                 }
-            } else if (syntax.HasGenericParameter)
+            }
+            else if (syntax.HasGenericParameter)
             {
                 _diagnostics.ReportNonGenericMethodTypeArguments(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.LessThanToken.Span.Start, syntax.GreaterThanToken.Span.End)));
                 return new BoundErrorExpression(syntax);
