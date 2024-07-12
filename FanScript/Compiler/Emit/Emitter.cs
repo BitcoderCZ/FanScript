@@ -26,6 +26,9 @@ namespace FanScript.Compiler.Emit
         // key - label name, item - the store to connect gotos to
         private Dictionary<string, EmitStore> afterLabel = new();
 
+        private Dictionary<VariableSymbol, BreakBlockCache> vectorBreakCache = new();
+        private Dictionary<VariableSymbol, BreakBlockCache> rotationBreakCache = new();
+
         public static ImmutableArray<Diagnostic> Emit(BoundProgram program, CodeBuilder builder)
         {
             if (program.Diagnostics.HasErrors())
@@ -43,6 +46,9 @@ namespace FanScript.Compiler.Emit
             program = _program;
 
             emitContext = new EmitContext(builder, diagnostics, emitStatement, emitExpression, connect);
+
+            vectorBreakCache.Clear();
+            rotationBreakCache.Clear();
 
             builder.BlockPlacer.StatementBlock(() =>
             {
@@ -474,17 +480,13 @@ namespace FanScript.Compiler.Emit
                 switch (binary.Op.Kind)
                 {
                     case BoundBinaryOperatorKind.Addition: // Rotation
-                        return buildOperatorWithBreak(Blocks.Math.Break_Rotation, Blocks.Math.Make_Rotation,
-                            Blocks.Math.Add_Number);
+                        return buildOperatorWithBreak(Blocks.Math.Break_Rotation, Blocks.Math.Make_Rotation, rotationBreakCache, Blocks.Math.Add_Number);
                     case BoundBinaryOperatorKind.Subtraction: // Rotation
-                        return buildOperatorWithBreak(Blocks.Math.Break_Rotation, Blocks.Math.Make_Rotation,
-                            Blocks.Math.Subtract_Number);
+                        return buildOperatorWithBreak(Blocks.Math.Break_Rotation, Blocks.Math.Make_Rotation, rotationBreakCache, Blocks.Math.Subtract_Number);
                     case BoundBinaryOperatorKind.Division: // Vector3
-                        return buildOperatorWithBreak(Blocks.Math.Break_Vector, Blocks.Math.Make_Vector,
-                            Blocks.Math.Divide_Number);
+                        return buildOperatorWithBreak(Blocks.Math.Break_Vector, Blocks.Math.Make_Vector, vectorBreakCache, Blocks.Math.Divide_Number);
                     case BoundBinaryOperatorKind.Modulo: // Vector3
-                        return buildOperatorWithBreak(Blocks.Math.Break_Vector, Blocks.Math.Make_Vector,
-                            Blocks.Math.Modulo_Number);
+                        return buildOperatorWithBreak(Blocks.Math.Break_Vector, Blocks.Math.Make_Vector, vectorBreakCache, Blocks.Math.Modulo_Number);
                     case BoundBinaryOperatorKind.NotEquals:
                         {
                             if (binary.Left.Type == TypeSymbol.Vector3)
@@ -531,8 +533,7 @@ namespace FanScript.Compiler.Emit
                 return BasicEmitStore.COut(op, op.Type.Terminals[0]);
             }
 
-            // TODO: cache of break (vector, rotation) blocks
-            EmitStore buildOperatorWithBreak(BlockDef defBreak, BlockDef defMake, BlockDef defOp)
+            EmitStore buildOperatorWithBreak(BlockDef defBreak, BlockDef defMake, Dictionary<VariableSymbol, BreakBlockCache> caches, BlockDef defOp)
             {
                 Block make = builder.AddBlock(defMake);
 
@@ -545,20 +546,54 @@ namespace FanScript.Compiler.Emit
                     EmitStore right = null!;
                     builder.BlockPlacer.ExpressionBlock(() =>
                     {
-                        break1 = builder.AddBlock(defBreak);
+                        bool leftFromCache = false;
+
+                        if (binary.Left is BoundVariableExpression leftVar)
+                        {
+                            BreakBlockCache cache = caches.ComputeIfAbsent(leftVar.Variable, new BreakBlockCache());
+                            if (!cache.TryGet(out var cachedBreak))
+                            {
+                                break1 = builder.AddBlock(defBreak);
+                                cache.SetNewBlock(break1);
+                            }
+                            else
+                            {
+                                break1 = cachedBreak;
+                                leftFromCache = true;
+                            }
+                        }
+                        else
+                            break1 = builder.AddBlock(defBreak);
+
+                        BreakBlockCache? rightCache = null;
+                        if ((binary.Right.Type == TypeSymbol.Vector3 || binary.Right.Type == TypeSymbol.Rotation) && binary.Right is BoundVariableExpression rightVar)
+                            rightCache = caches.ComputeIfAbsent(rightVar.Variable, new BreakBlockCache());
 
                         builder.BlockPlacer.ExpressionBlock(() =>
                         {
-                            EmitStore left = emitExpression(binary.Left);
+                            if (!leftFromCache)
+                            {
+                                EmitStore left = emitExpression(binary.Left);
 
-                            connect(left, BasicEmitStore.CIn(break1, break1.Type.Terminals[3]));
+                                connect(left, BasicEmitStore.CIn(break1, break1.Type.Terminals[3]));
+                            }
 
-                            right = emitExpression(binary.Right);
+                            if (rightCache is null || !rightCache.CanGet())
+                                right = emitExpression(binary.Right);
                         });
 
                         if (binary.Right.Type == TypeSymbol.Vector3 || binary.Right.Type == TypeSymbol.Rotation)
                         {
-                            break2 = builder.AddBlock(defBreak);
+                            if (rightCache is not null)
+                            {
+                                if (!rightCache.TryGet(out break2))
+                                {
+                                    break2 = builder.AddBlock(defBreak);
+                                    rightCache.SetNewBlock(break2);
+                                }
+                            }
+                            else
+                                break2 = builder.AddBlock(defBreak);
 
                             connect(right, BasicEmitStore.CIn(break2, break2.Type.Terminals[3]));
                         }

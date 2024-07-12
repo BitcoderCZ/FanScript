@@ -27,6 +27,15 @@ namespace FanScript.FCInfo
             Terminals = _terminals ?? Array.Empty<Terminal>();
         }
 
+        public Terminal GetTerminal(string name)
+        {
+            foreach (Terminal terminal in Terminals)
+                if (terminal.Name == name)
+                    return terminal;
+
+            throw new KeyNotFoundException($"Terminal with name '{name}' isn't on block '{Name}'");
+        }
+
         public override string ToString()
             => $"{{LabelName: {Name}, Id: {Id}, Type: {Type}, Size: {Size}}}";
 

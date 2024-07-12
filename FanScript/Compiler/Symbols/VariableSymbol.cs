@@ -15,5 +15,14 @@ namespace FanScript.Compiler.Symbols
         public bool IsReadOnly { get; }
         public TypeSymbol? Type { get; }
         internal BoundConstant? Constant { get; }
+
+        public override int GetHashCode()
+            => HashCode.Combine(base.GetHashCode(), Type);
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is VariableSymbol other) return Name == other.Name && IsReadOnly == other.IsReadOnly && Equals(Type, other.Type);
+            else return false;
+        }
     }
 }

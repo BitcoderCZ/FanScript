@@ -75,5 +75,16 @@ namespace FanScript.Utils
             else
                 throw new Exception($"Cannot convert object of type: \"{o.GetType()}\" to Block Value");
         }
+
+        public static TValue ComputeIfAbsent<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue defaultValue)
+        {
+            if (!dict.TryGetValue(key, out TValue? val))
+            {
+                val = defaultValue;
+                dict.Add(key, val);
+            }
+
+            return val;
+        }
     }
 }

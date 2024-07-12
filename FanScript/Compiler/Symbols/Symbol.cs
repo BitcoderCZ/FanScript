@@ -21,5 +21,14 @@
                 return writer.ToString();
             }
         }
+
+        public override int GetHashCode()
+            => Name.GetHashCode();
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is Symbol other) return Name == other.Name;
+            else return false;
+        }
     }
 }
