@@ -45,9 +45,7 @@ namespace FanScript.Utils
 
         public static void WriteType(this TextWriter writer, TypeSymbol? type)
         {
-            string? text = type?.Name;
-
-            writer.WriteKeyword(text);
+            writer.WriteKeyword(type?.ToString() ?? TypeSymbol.Error.ToString());
         }
 
         public static void WriteKeyword(this TextWriter writer, string? text)

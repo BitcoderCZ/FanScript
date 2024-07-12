@@ -479,19 +479,47 @@ namespace FanScript.Compiler.Syntax
 
         private ExpressionSyntax ParseNameOrCallExpression()
         {
-            if (Peek(0).Kind == SyntaxKind.IdentifierToken && Peek(1).Kind == SyntaxKind.OpenParenthesisToken)
+            if (Peek(0).Kind == SyntaxKind.IdentifierToken &&
+                (Peek(1).Kind == SyntaxKind.OpenParenthesisToken || Peek(1).Kind == SyntaxKind.LessToken) &&
+                isType(Peek(2).Kind))
                 return ParseCallExpression();
 
             return ParseNameExpression();
+
+            bool isType(SyntaxKind kind)
+                => kind switch
+                {
+                    SyntaxKind.KeywordBool => true,
+                    SyntaxKind.KeywordFloat => true,
+                    SyntaxKind.KeywordVector3 => true,
+                    SyntaxKind.KeywordRotation => true,
+                    SyntaxKind.KeywordObject => true,
+                    _ => false,
+                };
         }
 
         private ExpressionSyntax ParseCallExpression()
         {
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
+
+            bool hasGegenericParam = Current.Kind == SyntaxKind.LessToken;
+            SyntaxToken lessThanToken = null!;
+            TypeClauseSyntax genericType = null!;
+            SyntaxToken greaterThanToken = null!;
+            if (hasGegenericParam)
+            {
+                lessThanToken = MatchToken(SyntaxKind.LessToken);
+                genericType = ParseTypeClause(false);
+                greaterThanToken = MatchToken(SyntaxKind.GreaterToken);
+            }
+
             SyntaxToken openParenthesisToken = MatchToken(SyntaxKind.OpenParenthesisToken);
             SeparatedSyntaxList<ExpressionSyntax> arguments = ParseArguments();
             SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
-            return new CallExpressionSyntax(_syntaxTree, identifier, openParenthesisToken, arguments, closeParenthesisToken);
+            if (hasGegenericParam)
+                return new CallExpressionSyntax(_syntaxTree, identifier, lessThanToken, genericType, greaterThanToken, openParenthesisToken, arguments, closeParenthesisToken);
+            else
+                return new CallExpressionSyntax(_syntaxTree, identifier, openParenthesisToken, arguments, closeParenthesisToken);
         }
 
         private SeparatedSyntaxList<ExpressionSyntax> ParseArguments()
@@ -526,9 +554,7 @@ namespace FanScript.Compiler.Syntax
 
         private TypeClauseSyntax ParseTypeClause(bool allowGeneric, bool gettinGenericParam = false)
         {
-            SyntaxToken typeToken = MatchToken(SyntaxKind.KeywordFloat,
-                SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool, SyntaxKind.KeywordVector3,
-                SyntaxKind.KeywordRotation, SyntaxKind.KeywordObject);
+            SyntaxToken typeToken = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordObject);
 
             if (Current.Kind == SyntaxKind.LessToken)
             {

@@ -1,4 +1,5 @@
 onPlay {
     float a = 25
-    inspect(a)
+    inspect<float>(a)
+    bool b = a < 5
 }

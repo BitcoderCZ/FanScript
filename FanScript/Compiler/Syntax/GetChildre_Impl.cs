@@ -40,8 +40,14 @@
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return Identifier;
+            if (HasGenericParameter)
+            {
+                yield return LessThanToken;
+                yield return GenericTypeClause;
+                yield return GreaterThanToken;
+            }
             yield return OpenParenthesisToken;
-            foreach (var child in Arguments.GetWithSeparators())
+            foreach (SyntaxNode child in Arguments.GetWithSeparators())
                 yield return child;
             yield return CloseParenthesisToken;
         }

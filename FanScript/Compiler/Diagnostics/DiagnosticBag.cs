@@ -228,18 +228,21 @@ namespace FanScript.Compiler.Diagnostics
             => ReportError(location, "Generic type isn't allowed here.");
 
         public void ReportGenericTypeRecursion(TextLocation location)
-            => ReportError(location, "Type in generic parameter cannot be generic.");
+            => ReportError(location, "Type argument cannot be generic.");
 
         public void ReportNotAGenericType(TextLocation location)
-            => ReportError(location, "Non generic type cannot have a generic argument.");
+            => ReportError(location, "Non generic type cannot have a type argument.");
 
-        public void ReportCannotInferrGenericType(TextLocation location)
-            => ReportError(location, "Cannot inferr generic type from usage.");
+        public void ReportCannotInferGenericType(TextLocation location)
+            => ReportError(location, "Cannot infer type argument from usage.");
 
         public void ReportSpecificGenericTypeNotAllowed(TextLocation location, TypeSymbol genericType, IEnumerable<TypeSymbol> allowedGenericTypes)
-            => ReportError(location, $"Generic type '{genericType}' isn't allowed, allowed types: <{string.Join(", ", allowedGenericTypes)}>.");
+            => ReportError(location, $"Type argument type '{genericType}' isn't allowed, allowed types: <{string.Join(", ", allowedGenericTypes)}>.");
 
         public void ReportTypeMustHaveGenericParameter(TextLocation location)
-            => ReportError(location, "Type must have generic parameter.");
+            => ReportError(location, "Type must have a type argument.");
+
+        public void ReportNonGenericMethodTypeArguments(TextLocation location)
+            => ReportError(location, "Non-generic methods cannot be used with a type argument.");
     }
 }

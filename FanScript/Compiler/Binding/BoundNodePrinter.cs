@@ -254,7 +254,7 @@ namespace FanScript.Compiler.Binding
 
         private static void WriteLabelStatement(BoundLabelStatement node, IndentedTextWriter writer)
         {
-            var unindent = writer.Indent > 0;
+            bool unindent = writer.Indent > 0;
             if (unindent)
                 writer.Indent--;
 
@@ -320,7 +320,7 @@ namespace FanScript.Compiler.Binding
 
         private static void WriteLiteralExpression(BoundLiteralExpression node, IndentedTextWriter writer)
         {
-            var value = node.Value.ToString()!;
+            string value = node.Value.ToString()!;
 
             if (node.Type == TypeSymbol.Bool)
                 writer.WriteKeyword((bool)node.Value ? SyntaxKind.KeywordTrue : SyntaxKind.KeywordFalse);
@@ -398,15 +398,21 @@ namespace FanScript.Compiler.Binding
         private static void WriteCallExpression(BoundCallExpression node, IndentedTextWriter writer)
         {
             writer.WriteIdentifier(node.Function.Name);
+
+            if (node.Function.IsGeneric)
+            {
+                writer.WritePunctuation(SyntaxKind.LessToken);
+                writer.WriteType(node.GenericType);
+                writer.WritePunctuation(SyntaxKind.GreaterToken);
+            }
+
             writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
 
-            var isFirst = true;
-            foreach (var argument in node.Arguments)
+            bool isFirst = true;
+            foreach (BoundExpression argument in node.Arguments)
             {
                 if (isFirst)
-                {
                     isFirst = false;
-                }
                 else
                 {
                     writer.WritePunctuation(SyntaxKind.CommaToken);
