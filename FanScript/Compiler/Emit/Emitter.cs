@@ -6,7 +6,6 @@ using FanScript.FCInfo;
 using FanScript.Utils;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq.Expressions;
 
 namespace FanScript.Compiler.Emit
 {

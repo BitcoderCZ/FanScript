@@ -1,6 +1,4 @@
-﻿using System.Text;
-
-namespace FanScript.Compiler.Symbols
+﻿namespace FanScript.Compiler.Symbols
 {
     public sealed class TypeSymbol : Symbol
     {

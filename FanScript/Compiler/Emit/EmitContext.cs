@@ -1,10 +1,5 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FanScript.Compiler.Emit
 {
@@ -31,7 +26,7 @@ namespace FanScript.Compiler.Emit
             => emitStatement(statement);
         public EmitStore EmitExpression(BoundExpression expression)
             => emitExpression(expression);
-        
+
         public void Connect(EmitStore from, EmitStore to)
             => connect(from, to);
     }

@@ -2,8 +2,6 @@
 using FanScript.Compiler.Emit;
 using FanScript.FCInfo;
 using MathUtils.Vectors;
-using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace FanScript.Compiler.Symbols

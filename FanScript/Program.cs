@@ -11,7 +11,6 @@ using FanScript.Compiler.Emit.BlockPlacers;
 using FanScript.Compiler.Emit.CodeBuilders;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
-using MathUtils;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
 using TextCopy;

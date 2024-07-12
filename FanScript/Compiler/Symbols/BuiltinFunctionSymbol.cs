@@ -1,12 +1,7 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Emit;
 using FanScript.Compiler.Syntax;
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FanScript.Compiler.Symbols
 {
