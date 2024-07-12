@@ -1,6 +1,7 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Emit;
 using FanScript.FCInfo;
+using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Reflection;
 
@@ -8,6 +9,26 @@ namespace FanScript.Compiler.Symbols
 {
     internal static class BuiltinFunctions
     {
+        public static readonly FunctionSymbol Inspect
+            = new BuiltinFunctionSymbol("inspect",
+            [
+                new ParameterSymbol("value", TypeSymbol.Generic, 0)
+            ], TypeSymbol.Void, [TypeSymbol.Bool, TypeSymbol.Float, TypeSymbol.Vector3, TypeSymbol.Rotation])
+            {
+                Emit = (call, context) =>
+                {
+                    Block block = context.Builder.AddBlock(Blocks.Values.InspectByType(call.GenericType!.ToWireType()));
+
+                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    {
+                        EmitStore store = context.EmitExpression(call.Arguments[0]);
+
+                        context.Connect(store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
+                    });
+
+                    return new BasicEmitStore(block);
+                },
+            };
         public static readonly FunctionSymbol Object_Get
           = new BuiltinFunctionSymbol("getObject", [
               new ParameterSymbol("position", TypeSymbol.Vector3, 0)

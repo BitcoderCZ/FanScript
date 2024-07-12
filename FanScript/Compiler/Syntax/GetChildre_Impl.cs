@@ -104,7 +104,7 @@
     {
         public override IEnumerable<SyntaxNode> GetChildren()
         {
-            yield return TypeKeyword;
+            yield return TypeClause;
             yield return Identifier;
             yield return OpenParenthesisToken;
             foreach (var child in Parameters.GetWithSeparators())
@@ -175,7 +175,13 @@
     {
         public override IEnumerable<SyntaxNode> GetChildren()
         {
-            yield return Identifier;
+            yield return TypeToken;
+            if (HasGenericParameter)
+            {
+                yield return LessToken;
+                yield return InnerType;
+                yield return GreaterToken;
+            }
         }
     }
     partial class UnaryExpressionSyntax
@@ -190,7 +196,7 @@
     {
         public override IEnumerable<SyntaxNode> GetChildren()
         {
-            yield return Keyword;
+            yield return TypeClause;
             if (OptionalAssignment is null)
                 yield return Identifier;
             else

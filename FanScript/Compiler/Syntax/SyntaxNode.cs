@@ -19,8 +19,8 @@ namespace FanScript.Compiler.Syntax
         {
             get
             {
-                var first = GetChildren().First().Span;
-                var last = GetChildren().Last().Span;
+                TextSpan first = GetChildren().First().Span;
+                TextSpan last = GetChildren().Last().Span;
                 return TextSpan.FromBounds(first.Start, last.End);
             }
         }
@@ -29,8 +29,8 @@ namespace FanScript.Compiler.Syntax
         {
             get
             {
-                var first = GetChildren().First().FullSpan;
-                var last = GetChildren().Last().FullSpan;
+                TextSpan first = GetChildren().First().FullSpan;
+                TextSpan last = GetChildren().Last().FullSpan;
                 return TextSpan.FromBounds(first.Start, last.End);
             }
         }
@@ -39,7 +39,7 @@ namespace FanScript.Compiler.Syntax
 
         public IEnumerable<SyntaxNode> AncestorsAndSelf()
         {
-            var node = this;
+            SyntaxNode? node = this;
             while (node is not null)
             {
                 yield return node;
@@ -71,7 +71,7 @@ namespace FanScript.Compiler.Syntax
         private static void PrettyPrint(TextWriter writer, SyntaxNode node, string indent = "", bool isLast = true)
         {
             bool isToConsole = writer == Console.Out;
-            SyntaxToken token = node as SyntaxToken;
+            SyntaxToken? token = node as SyntaxToken;
 
             if (token is not null)
             {
@@ -90,8 +90,8 @@ namespace FanScript.Compiler.Syntax
                 }
             }
 
-            var hasTrailingTrivia = token is not null && token.TrailingTrivia.Any();
-            var tokenMarker = !hasTrailingTrivia && isLast ? "└──" : "├──";
+            bool hasTrailingTrivia = token is not null && token.TrailingTrivia.Any();
+            string tokenMarker = !hasTrailingTrivia && isLast ? "└──" : "├──";
 
             if (isToConsole)
                 Console.ForegroundColor = ConsoleColor.DarkGray;
@@ -119,8 +119,8 @@ namespace FanScript.Compiler.Syntax
             {
                 foreach (var trivia in token.TrailingTrivia)
                 {
-                    var isLastTrailingTrivia = trivia == token.TrailingTrivia.Last();
-                    var triviaMarker = isLast && isLastTrailingTrivia ? "└──" : "├──";
+                    bool isLastTrailingTrivia = trivia == token.TrailingTrivia.Last();
+                    string triviaMarker = isLast && isLastTrailingTrivia ? "└──" : "├──";
 
                     if (isToConsole)
                         Console.ForegroundColor = ConsoleColor.DarkGray;
@@ -137,7 +137,7 @@ namespace FanScript.Compiler.Syntax
 
             indent += isLast ? "   " : "│  ";
 
-            var lastChild = node.GetChildren().LastOrDefault();
+            SyntaxNode? lastChild = node.GetChildren().LastOrDefault();
 
             foreach (var child in node.GetChildren())
                 PrettyPrint(writer, child, indent, child == lastChild);

@@ -2,10 +2,10 @@
 {
     public sealed partial class FunctionDeclarationSyntax : MemberSyntax
     {
-        internal FunctionDeclarationSyntax(SyntaxTree syntaxTree, SyntaxToken typeKeyword, SyntaxToken identifier, SyntaxToken openParenthesisToken, SeparatedSyntaxList<ParameterSyntax> parameters, SyntaxToken closeParenthesisToken, TypeClauseSyntax? type, BlockStatementSyntax body)
+        internal FunctionDeclarationSyntax(SyntaxTree syntaxTree, TypeClauseSyntax typeClause, SyntaxToken identifier, SyntaxToken openParenthesisToken, SeparatedSyntaxList<ParameterSyntax> parameters, SyntaxToken closeParenthesisToken, TypeClauseSyntax? type, BlockStatementSyntax body)
             : base(syntaxTree)
         {
-            TypeKeyword = typeKeyword;
+            TypeClause = typeClause;
             Identifier = identifier;
             OpenParenthesisToken = openParenthesisToken;
             Parameters = parameters;
@@ -15,7 +15,7 @@
 
         public override SyntaxKind Kind => SyntaxKind.FunctionDeclaration;
 
-        public SyntaxToken TypeKeyword { get; }
+        public TypeClauseSyntax TypeClause { get; }
         public SyntaxToken Identifier { get; }
         public SyntaxToken OpenParenthesisToken { get; }
         public SeparatedSyntaxList<ParameterSyntax> Parameters { get; }

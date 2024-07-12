@@ -1,10 +1,4 @@
 onPlay {
-    vec3 v1 = vec3(1, 2, 3)
-    vec3 va = v1 / 2
-    vec3 vb = v1 % 2
-
-    rot r1 = rot(45, 90, 180)
-    rot r2 = rot(-45, -90, -180)
-    rot ra = r1 + r2
-    rot rb = r1 - r2
+    float a = 25
+    inspect(a)
 }

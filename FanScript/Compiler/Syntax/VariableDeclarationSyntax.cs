@@ -2,16 +2,16 @@
 {
     public sealed partial class VariableDeclarationSyntax : StatementSyntax
     {
-        internal VariableDeclarationSyntax(SyntaxTree syntaxTree, SyntaxToken keyword, SyntaxToken identifier, AssignmentStatementSyntax? optionalAssignment)
+        internal VariableDeclarationSyntax(SyntaxTree syntaxTree, TypeClauseSyntax typeClause, SyntaxToken identifier, AssignmentStatementSyntax? optionalAssignment)
             : base(syntaxTree)
         {
-            Keyword = keyword;
+            TypeClause = typeClause;
             Identifier = identifier;
             OptionalAssignment = optionalAssignment;
         }
 
         public override SyntaxKind Kind => SyntaxKind.VariableDeclaration;
-        public SyntaxToken Keyword { get; }
+        public TypeClauseSyntax TypeClause { get; }
         public SyntaxToken Identifier { get; }
         public AssignmentStatementSyntax? OptionalAssignment { get; }
     }

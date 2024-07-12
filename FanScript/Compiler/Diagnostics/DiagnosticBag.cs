@@ -149,7 +149,7 @@ namespace FanScript.Compiler.Diagnostics
             => ReportError(location, "Not all code paths return a Value.");
 
         public void ReportInvalidExpressionStatement(TextLocation location)
-            => ReportError(location, $"Only assignment and call expressions can be used as a statement.");
+            => ReportError(location, $"Only call expressions can be used as a statement.");
 
         public void ReportOnlyOneFileCanHaveGlobalStatements(TextLocation location)
             => ReportError(location, $"At most one file can have global statements.");
@@ -168,7 +168,7 @@ namespace FanScript.Compiler.Diagnostics
                         ReportUnreachableCode(firstStatement);
                     return;
                 case SyntaxKind.VariableDeclaration:
-                    ReportUnreachableCode(((VariableDeclarationSyntax)node).Keyword.Location);
+                    ReportUnreachableCode(((VariableDeclarationSyntax)node).TypeClause.Location);
                     return;
                 case SyntaxKind.IfStatement:
                     ReportUnreachableCode(((IfStatementSyntax)node).IfKeyword.Location);
@@ -223,5 +223,23 @@ namespace FanScript.Compiler.Diagnostics
 
         public void ReportValueMustBeConstant(TextLocation location)
             => ReportError(location, "Value must be constant.");
+
+        public void ReportGenericTypeNotAllowed(TextLocation location)
+            => ReportError(location, "Generic type isn't allowed here.");
+
+        public void ReportGenericTypeRecursion(TextLocation location)
+            => ReportError(location, "Type in generic parameter cannot be generic.");
+
+        public void ReportNotAGenericType(TextLocation location)
+            => ReportError(location, "Non generic type cannot have a generic argument.");
+
+        public void ReportCannotInferrGenericType(TextLocation location)
+            => ReportError(location, "Cannot inferr generic type from usage.");
+
+        public void ReportSpecificGenericTypeNotAllowed(TextLocation location, TypeSymbol genericType, IEnumerable<TypeSymbol> allowedGenericTypes)
+            => ReportError(location, $"Generic type '{genericType}' isn't allowed, allowed types: <{string.Join(", ", allowedGenericTypes)}>.");
+
+        public void ReportTypeMustHaveGenericParameter(TextLocation location)
+            => ReportError(location, "Type must have generic parameter.");
     }
 }

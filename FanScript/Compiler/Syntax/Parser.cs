@@ -271,7 +271,7 @@ namespace FanScript.Compiler.Syntax
 
         private StatementSyntax ParseVariableDeclarationStatement()
         {
-            SyntaxToken keyword = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordBool, SyntaxKind.KeywordObject);
+            TypeClauseSyntax typeClause = ParseTypeClause(true);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
 
             AssignmentStatementSyntax? assignment = null;
@@ -282,7 +282,7 @@ namespace FanScript.Compiler.Syntax
 
                 assignment = new AssignmentStatementSyntax(_syntaxTree, identifier, equals, initializer);
             }
-            return new VariableDeclarationSyntax(_syntaxTree, keyword, identifier, assignment);
+            return new VariableDeclarationSyntax(_syntaxTree, typeClause, identifier, assignment);
         }
 
         private StatementSyntax ParseAssignmentStatement()
@@ -512,9 +512,7 @@ namespace FanScript.Compiler.Syntax
                     nodesAndSeparators.Add(comma);
                 }
                 else
-                {
-                    parseNextArgument = false;
-                }
+                    parseNextArgument = false; // TODO: this can just be break, right?
             }
 
             return new SeparatedSyntaxList<ExpressionSyntax>(nodesAndSeparators.ToImmutable());
@@ -524,6 +522,29 @@ namespace FanScript.Compiler.Syntax
         {
             SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
             return new NameExpressionSyntax(_syntaxTree, identifierToken);
+        }
+
+        private TypeClauseSyntax ParseTypeClause(bool allowGeneric, bool gettinGenericParam = false)
+        {
+            SyntaxToken typeToken = MatchToken(SyntaxKind.KeywordFloat,
+                SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool, SyntaxKind.KeywordVector3,
+                SyntaxKind.KeywordRotation, SyntaxKind.KeywordObject);
+
+            if (Current.Kind == SyntaxKind.LessToken)
+            {
+                if (!allowGeneric)
+                    _diagnostics.ReportGenericTypeNotAllowed(typeToken.Location);
+                else if (gettinGenericParam)
+                    _diagnostics.ReportGenericTypeRecursion(typeToken.Location);
+
+                SyntaxToken lessToken = MatchToken(SyntaxKind.LessToken);
+                TypeClauseSyntax innerType = ParseTypeClause(allowGeneric, true);
+                SyntaxToken greaterToken = MatchToken(SyntaxKind.GreaterToken);
+
+                return new TypeClauseSyntax(_syntaxTree, typeToken, lessToken, innerType, greaterToken);
+            }
+            else
+                return new TypeClauseSyntax(_syntaxTree, typeToken);
         }
     }
 }

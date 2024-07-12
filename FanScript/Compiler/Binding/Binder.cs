@@ -41,7 +41,7 @@ namespace FanScript.Compiler.Binding
             Binder binder = new Binder(isScript, parentScope, function: null);
 
             binder.Diagnostics.AddRange(syntaxTrees.SelectMany(st => st.Diagnostics));
-            if (binder.Diagnostics.Any())
+            if (binder.Diagnostics.HasErrors())
                 return new BoundGlobalScope(previous, binder.Diagnostics.ToImmutableArray(), null, ImmutableArray<FunctionSymbol>.Empty, ImmutableArray<VariableSymbol>.Empty, ImmutableArray<BoundStatement>.Empty);
 
             IEnumerable<FunctionDeclarationSyntax> functionDeclarations = syntaxTrees.SelectMany(st => st.Root.Members)
@@ -73,7 +73,7 @@ namespace FanScript.Compiler.Binding
 
             // Check for main/script with global statements
 
-            var functions = binder._scope.GetDeclaredFunctions();
+            ImmutableArray<FunctionSymbol> functions = binder._scope.GetDeclaredFunctions();
 
             FunctionSymbol? scriptFunction;
 
@@ -95,7 +95,7 @@ namespace FanScript.Compiler.Binding
         {
             BoundScope parentScope = CreateParentScope(globalScope);
 
-            if (globalScope.Diagnostics.Any())
+            if (globalScope.Diagnostics.HasErrors())
                 return new BoundProgram(previous, globalScope.Diagnostics, null, ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Empty);
 
             ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Builder functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
@@ -151,14 +151,14 @@ namespace FanScript.Compiler.Binding
             foreach (ParameterSyntax parameterSyntax in syntax.Parameters)
             {
                 string parameterName = parameterSyntax.Identifier.Text;
-                TypeSymbol? parameterType = BindTypeClause(parameterSyntax.Type.Identifier);
+                TypeSymbol? parameterType = BindTypeClause(parameterSyntax.Type);
                 if (!seenParameterNames.Add(parameterName))
                     _diagnostics.ReportParameterAlreadyDeclared(parameterSyntax.Location, parameterName);
                 else
                     parameters.Add(new ParameterSymbol(parameterName, parameterType, parameters.Count));
             }
 
-            TypeSymbol type = BindTypeClause(syntax.TypeKeyword) ?? TypeSymbol.Void;
+            TypeSymbol type = BindTypeClause(syntax.TypeClause) ?? TypeSymbol.Void;
 
             FunctionSymbol function = new FunctionSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
             if (syntax.Identifier.Text is not null &&
@@ -222,9 +222,7 @@ namespace FanScript.Compiler.Binding
                 if (result is BoundExpressionStatement es)
                 {
                     bool isAllowedExpression = es.Expression.Kind == BoundNodeKind.ErrorExpression ||
-                                              es.Expression.Kind == BoundNodeKind.AssignmentStatement ||
-                                              es.Expression.Kind == BoundNodeKind.CallExpression ||
-                                              es.Expression.Kind == BoundNodeKind.CompoundAssignmentStatement;
+                                              es.Expression.Kind == BoundNodeKind.CallExpression;
                     if (!isAllowedExpression)
                         _diagnostics.ReportInvalidExpressionStatement(syntax.Location);
                 }
@@ -290,7 +288,7 @@ namespace FanScript.Compiler.Binding
 
         private BoundStatement BindVariableDeclaration(VariableDeclarationSyntax syntax)
         {
-            TypeSymbol? type = BindTypeClause(syntax.Keyword);
+            TypeSymbol? type = BindTypeClause(syntax.TypeClause);
 
             TypeSymbol? variableType = type;
             VariableSymbol variable = BindVariableDeclaration(syntax.Identifier, false, variableType, /*optionalAssignment?.ConstantValue*/null);
@@ -400,14 +398,37 @@ namespace FanScript.Compiler.Binding
             return new BoundGotoStatement(syntax, continueLabel);
         }
 
-        private TypeSymbol? BindTypeClause(SyntaxToken? syntax)
+        private TypeSymbol? BindTypeClause(TypeClauseSyntax? syntax)
         {
             if (syntax is null)
                 return null;
 
-            TypeSymbol? type = LookupType(syntax.Text);
+            TypeSymbol? type = LookupType(syntax.TypeToken.Text);
             if (type is null)
-                _diagnostics.ReportUndefinedType(syntax.Location, syntax.Text);
+                _diagnostics.ReportUndefinedType(syntax.Location, syntax.TypeToken.Text);
+
+            if (syntax.HasGenericParameter)
+            {
+                if (type is null)
+                    return TypeSymbol.Error;
+                else if (type.IsGenericDefinition)
+                {
+                    TypeSymbol? innerType = BindTypeClause(syntax.InnerType);
+                    if (innerType is null)
+                        return TypeSymbol.Error;
+                    else
+                        return TypeSymbol.CreateGenericInstance(type, innerType);
+                }
+                else
+                {
+                    _diagnostics.ReportNotAGenericType(syntax.Location);
+                    return TypeSymbol.Error;
+                }
+            } else if (type is not null && type.IsGenericDefinition)
+            {
+                _diagnostics.ReportTypeMustHaveGenericParameter(syntax.Location);
+                return TypeSymbol.Error;
+            }
 
             return type;
         }
@@ -567,15 +588,68 @@ namespace FanScript.Compiler.Binding
                 return new BoundErrorExpression(syntax);
             }
 
+            TypeSymbol? genericType = null;
+            if (function.IsGeneric)
+            {
+                // TODO: once added, check for explicit generic type
+                // try to inferred generic type from arguments
+                for (int i = 0; i < function.Parameters.Length; i++)
+                {
+                    ParameterSymbol param = function.Parameters[i];
+                    BoundExpression arg = boundArguments[i];
+
+                    TypeSymbol? _genericType = null;
+                    if (param.Type == TypeSymbol.Generic)
+                        _genericType = arg.Type;
+                    else if (param.Type!.IsGenericDefinition && arg.Type!.IsGenericInstance)
+                        _genericType = arg.Type.InnerType;
+
+                    if (_genericType is not null)
+                    {
+                        if (genericType is null)
+                            genericType = _genericType;
+                        else if (!genericType.GenericEquals(_genericType))
+                        {
+                            genericType = null;
+                            break;
+                        }
+                    }
+                }
+
+                if (genericType is null)
+                {
+                    _diagnostics.ReportCannotInferrGenericType(syntax.Location);
+                    return new BoundErrorExpression(syntax);
+                }
+                else if (genericType.IsGenericInstance)
+                {
+                    _diagnostics.ReportGenericTypeRecursion(syntax.Location);
+                    return new BoundErrorExpression(syntax);
+                }
+                else if (!function.AllowedGenericTypes.Value.Contains(genericType))
+                {
+                    _diagnostics.ReportSpecificGenericTypeNotAllowed(syntax.Location, genericType, function.AllowedGenericTypes.Value);
+                    return new BoundErrorExpression(syntax);
+                }
+            }
+
             for (int i = 0; i < syntax.Arguments.Count; i++)
             {
                 TextLocation argumentLocation = syntax.Arguments[i].Location;
                 BoundExpression argument = boundArguments[i];
                 VariableSymbol parameter = function.Parameters[i];
-                boundArguments[i] = BindConversion(argumentLocation, argument, parameter.Type);
+                boundArguments[i] = BindConversion(argumentLocation, argument, fixType(parameter.Type));
             }
 
-            return new BoundCallExpression(syntax, function, boundArguments.ToImmutable());
+            return new BoundCallExpression(syntax, function, boundArguments.ToImmutable(), fixType(function.Type)!, genericType);
+
+            TypeSymbol? fixType(TypeSymbol? type)
+            {
+                if (genericType is null || type is null) return type;
+                else if (type == TypeSymbol.Generic) return genericType;
+                else if (type.IsGenericDefinition) return TypeSymbol.CreateGenericInstance(type, genericType);
+                else return type;
+            }
         }
 
         private BoundExpression BindConstructorExpression(ConstructorExpressionSyntax syntax)
@@ -617,9 +691,7 @@ namespace FanScript.Compiler.Binding
             }
 
             if (!allowExplicit && conversion.IsExplicit)
-            {
                 _diagnostics.ReportCannotConvertImplicitly(diagnosticLocation, expression.Type, type);
-            }
 
             if (conversion.IsIdentity)
                 return expression;
@@ -661,21 +733,12 @@ namespace FanScript.Compiler.Binding
 
         private TypeSymbol? LookupType(string name)
         {
-            switch (name)
-            {
-                case "bool":
-                    return TypeSymbol.Bool;
-                case "float":
-                    return TypeSymbol.Float;
-                case "vec3":
-                    return TypeSymbol.Vector3;
-                case "rot":
-                    return TypeSymbol.Rotation;
-                case "object":
-                    return TypeSymbol.Object;
-                default:
-                    return null;
-            }
+            TypeSymbol type = TypeSymbol.GetType(name);
+
+            if (type == TypeSymbol.Error)
+                return null;
+            else
+                return type;
         }
     }
 }
