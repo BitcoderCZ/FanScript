@@ -1,6 +1,5 @@
 onPlay {
-    array<float> arrrrrrrrrrrrrrr
-    set(arrrrrrrrrrrrrrr, 0, 25)
-    set(arrrrrrrrrrrrrrr, 1, 7)
-    inspect(get(arrrrrrrrrrrrrrr, 1))
+    vec3 v = vec3(5, 0, 0)
+    rot r = rot(0, 90, 0)
+    inspect(v * r)
 }

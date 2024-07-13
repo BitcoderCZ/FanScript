@@ -451,10 +451,12 @@ namespace FanScript.Compiler.Emit
                         defOp = Blocks.Math.Subtract_Vector;
                     break;
                 case BoundBinaryOperatorKind.Multiplication:
-                    if (binary.Left.Type == TypeSymbol.Vector3)
+                    if (binary.Left.Type == TypeSymbol.Vector3 && binary.Right.Type == TypeSymbol.Vector3)
                         defOp = Blocks.Math.Multiply_Vector;
-                    else if (binary.Left.Type == TypeSymbol.Rotation)
+                    else if (binary.Left.Type == TypeSymbol.Rotation && binary.Right.Type == TypeSymbol.Rotation)
                         defOp = Blocks.Math.Multiply_Rotation;
+                    else if (binary.Left.Type == TypeSymbol.Vector3 && binary.Right.Type == TypeSymbol.Rotation)
+                        defOp = Blocks.Math.Rotate_Vector;
                     else
                         throw new Exception($"Unexpected BoundBinaryOperatorKind: '{binary.Op.Kind}'.");
                     break;

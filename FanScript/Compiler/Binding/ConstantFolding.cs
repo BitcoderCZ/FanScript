@@ -88,6 +88,8 @@ namespace FanScript.Compiler.Binding
                         return new BoundConstant((float)l * (float)r);
                     else if (lt == Vector3 && rt == Float)
                         return new BoundConstant((Vector3F)l * (float)r);
+                    else if (lt == Vector3 && rt == TypeSymbol.Rotation)
+                        return null; // TODO
                     else
                         throw new Exception($"Unexpected combination of types for {op.Kind}: {lt} and {rt}");
                 case BoundBinaryOperatorKind.Division:
