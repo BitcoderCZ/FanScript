@@ -14,6 +14,7 @@ namespace FanScript.Compiler.Symbols
         public static readonly TypeSymbol Vector3 = new TypeSymbol("vec3");
         public static readonly TypeSymbol Rotation = new TypeSymbol("rot");
         public static readonly TypeSymbol Object = new TypeSymbol("object");
+        public static readonly TypeSymbol Array = new TypeSymbol("array", true);
         public static readonly TypeSymbol Void = new TypeSymbol("void");
 
         public bool IsGeneric => IsGenericDefinition || IsGenericInstance;
@@ -24,7 +25,7 @@ namespace FanScript.Compiler.Symbols
         public bool IsGenericInstance { get; }
         public TypeSymbol? InnerType { get; }
 
-        public static readonly ImmutableArray<TypeSymbol> BuiltInTypes = [Bool, Float, Vector3, Rotation, Object];
+        public static readonly ImmutableArray<TypeSymbol> BuiltInTypes = [Bool, Float, Vector3, Rotation, Object, Array];
 
         private TypeSymbol(string name, bool isGenericDefinition = false)
             : base(name)

@@ -23,7 +23,10 @@ namespace FanScript.Compiler.Binding
 
         public static Conversion Classify(TypeSymbol? from, TypeSymbol? to)
         {
-            if (from == to)
+            if (from is null || to is null)
+                return None;
+
+            if (from.GenericEquals(to))
                 return Identity;
 
             if (from != TypeSymbol.Void && to == TypeSymbol.Any)

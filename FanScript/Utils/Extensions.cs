@@ -22,7 +22,7 @@ namespace FanScript.Utils
                 case SyntaxKind.KeywordBool:
                     return WireType.Bool;
                 default:
-                    throw new Exception($"Cannot convert SyntaxKind \"{Enum.GetName(typeof(SyntaxKind), syntax)}\" to WireType");
+                    throw new Exception($"Cannot convert SyntaxKind '{syntax}' to WireType");
             }
         }
         public static TypeSymbol ToTypeSymbol(this SyntaxKind syntax)
@@ -38,13 +38,18 @@ namespace FanScript.Utils
                 case SyntaxKind.KeywordBool:
                     return TypeSymbol.Bool;
                 default:
-                    throw new Exception($"Cannot convert SyntaxKind \"{Enum.GetName(typeof(SyntaxKind), syntax)}\" to TypeSymbol");
+                    throw new Exception($"Cannot convert SyntaxKind '{syntax}' to TypeSymbol");
             }
         }
 
         public static WireType ToWireType(this TypeSymbol type)
         {
-            if (type == TypeSymbol.Float)
+            if (type.IsGenericInstance)
+            {
+                if (type.NonGenericEquals(TypeSymbol.Array))
+                    return type.InnerType.ToWireType();
+            }
+            else if (type == TypeSymbol.Float)
                 return WireType.Float;
             else if (type == TypeSymbol.Vector3)
                 return WireType.Vec3;
@@ -54,8 +59,8 @@ namespace FanScript.Utils
                 return WireType.Bool;
             else if (type == TypeSymbol.Object)
                 return WireType.Obj;
-            else
-                throw new Exception($"Cannot convert TypeSymbol \"{Enum.GetName(typeof(TypeSymbol), type)}\" to WireType");
+
+            throw new Exception($"Cannot convert TypeSymbol '{type}' to WireType");
         }
 
         public static string ToBlockValue(this object o)
@@ -67,13 +72,13 @@ namespace FanScript.Utils
             else if (o is float f)
                 return f.ToString(CultureInfo.InvariantCulture);
             else if (o is bool b)
-                return b.ToString().ToLower();
+                return b.ToString().ToLowerInvariant();
             else if (o is Vector3 v)
                 return $"[{v.X.ToString(CultureInfo.InvariantCulture)},{v.Y.ToString(CultureInfo.InvariantCulture)},{v.Z.ToString(CultureInfo.InvariantCulture)}]";
             else if (o is Rotation r)
                 return $"[{r.Value.X.ToString(CultureInfo.InvariantCulture)},{r.Value.Y.ToString(CultureInfo.InvariantCulture)},{r.Value.Z.ToString(CultureInfo.InvariantCulture)}]";
             else
-                throw new Exception($"Cannot convert object of type: \"{o.GetType()}\" to Block Value");
+                throw new Exception($"Cannot convert object of type: '{o.GetType()}' to Block Value");
         }
 
         public static TValue ComputeIfAbsent<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue defaultValue)

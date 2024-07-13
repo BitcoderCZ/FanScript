@@ -3,6 +3,7 @@ using FanScript.Compiler.Emit;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
+using System;
 using System.Reflection;
 
 namespace FanScript.Compiler.Symbols
@@ -17,16 +18,16 @@ namespace FanScript.Compiler.Symbols
             {
                 Emit = (call, context) =>
                 {
-                    Block block = context.Builder.AddBlock(Blocks.Values.InspectByType(call.GenericType!.ToWireType()));
+                    Block inspect = context.Builder.AddBlock(Blocks.Values.InspectByType(call.GenericType!.ToWireType()));
 
                     context.Builder.BlockPlacer.ExpressionBlock(() =>
                     {
                         EmitStore store = context.EmitExpression(call.Arguments[0]);
 
-                        context.Connect(store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
+                        context.Connect(store, BasicEmitStore.CIn(inspect, inspect.Type.Terminals[1]));
                     });
 
-                    return new BasicEmitStore(block);
+                    return new BasicEmitStore(inspect);
                 },
             };
         public static readonly FunctionSymbol Object_Get
@@ -91,6 +92,63 @@ namespace FanScript.Compiler.Symbols
                 new ParameterSymbol("position", TypeSymbol.Vector3, 1),
                 new ParameterSymbol("rotation", TypeSymbol.Rotation, 2)
             ], TypeSymbol.Void);
+        public static readonly FunctionSymbol Array_Get
+            = new BuiltinFunctionSymbol("get",
+            [
+                new ParameterSymbol("array", TypeSymbol.Array, 0),
+                new ParameterSymbol("index", TypeSymbol.Float, 1),
+            ], TypeSymbol.Generic, [TypeSymbol.Bool, TypeSymbol.Float, TypeSymbol.Vector3, TypeSymbol.Rotation, TypeSymbol.Object])
+            {
+                Emit = (call, context) =>
+                {
+                    Block list = context.Builder.AddBlock(Blocks.Variables.ListByType(call.GenericType!.ToWireType()));
+
+                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    {
+                        EmitStore array = context.EmitExpression(call.Arguments[0]);
+                        EmitStore index = context.EmitExpression(call.Arguments[1]);
+
+                        context.Connect(array, BasicEmitStore.CIn(list, list.Type.Terminals[2]));
+                        context.Connect(index, BasicEmitStore.CIn(list, list.Type.Terminals[1]));
+                    });
+
+                    return BasicEmitStore.COut(list, list.Type.Terminals[0]);
+                },
+            };
+        public static readonly FunctionSymbol Array_Set
+            = new BuiltinFunctionSymbol("set",
+            [
+                new ParameterSymbol("array", TypeSymbol.Array, 0),
+                new ParameterSymbol("index", TypeSymbol.Float, 1),
+                new ParameterSymbol("value", TypeSymbol.Generic, 2),
+            ], TypeSymbol.Void, [TypeSymbol.Bool, TypeSymbol.Float, TypeSymbol.Vector3, TypeSymbol.Rotation, TypeSymbol.Object])
+            {
+                Emit = (call, context) =>
+                {
+                    Block setPtr = context.Builder.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));
+
+                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    {
+                        Block list = context.Builder.AddBlock(Blocks.Variables.ListByType(call.GenericType!.ToWireType()));
+
+                        context.Builder.BlockPlacer.ExpressionBlock(() =>
+                        {
+                            EmitStore array = context.EmitExpression(call.Arguments[0]);
+                            EmitStore index = context.EmitExpression(call.Arguments[1]);
+
+                            context.Connect(array, BasicEmitStore.CIn(list, list.Type.Terminals[2]));
+                            context.Connect(index, BasicEmitStore.CIn(list, list.Type.Terminals[1]));
+                        });
+
+                        EmitStore value = context.EmitExpression(call.Arguments[2]);
+
+                        context.Connect(BasicEmitStore.COut(list, list.Type.Terminals[0]), BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals[2]));
+                        context.Connect(value, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals[1]));
+                    });
+
+                    return new BasicEmitStore(setPtr);
+                },
+            };
 
         private static IEnumerable<FunctionSymbol>? functionsCache;
         internal static IEnumerable<FunctionSymbol> GetAll()

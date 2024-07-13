@@ -1,5 +1,6 @@
 onPlay {
-    float a = 25
-    inspect<float>(a)
-    bool b = a < 5
+    array<float> arr
+    set(arr, 0, 25)
+    set(arr, 1, 7)
+    inspect(get(arr, 1))
 }

@@ -200,6 +200,7 @@ namespace FanScript.Compiler.Syntax
                 case SyntaxKind.KeywordRotation:
                 case SyntaxKind.KeywordBool:
                 case SyntaxKind.KeywordObject:
+                case SyntaxKind.KeywordArray:
                     return ParseVariableDeclarationStatement();
                 case SyntaxKind.IdentifierToken when Peek(1).Kind switch
                 {
@@ -465,8 +466,8 @@ namespace FanScript.Compiler.Syntax
         private ExpressionSyntax ParseNameOrCallExpression()
         {
             if (Peek(0).Kind == SyntaxKind.IdentifierToken &&
-                (Peek(1).Kind == SyntaxKind.OpenParenthesisToken || Peek(1).Kind == SyntaxKind.LessToken) &&
-                isType(Peek(2).Kind)) // not sure of a better way to do this, neccesary becose of less than operator, make some tryParseType method that doesn't consume tokens?
+                (Peek(1).Kind == SyntaxKind.OpenParenthesisToken || 
+                (Peek(1).Kind == SyntaxKind.LessToken && isType(Peek(2).Kind)))) // not sure of a better way to do this, neccesary becose of less than operator, make some tryParseType method that doesn't consume tokens?
                 return ParseCallExpression();
 
             return ParseNameExpression();
@@ -539,7 +540,7 @@ namespace FanScript.Compiler.Syntax
 
         private TypeClauseSyntax ParseTypeClause(bool allowGeneric, bool gettinGenericParam = false)
         {
-            SyntaxToken typeToken = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordObject);
+            SyntaxToken typeToken = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordObject, SyntaxKind.KeywordArray);
 
             if (Current.Kind == SyntaxKind.LessToken)
             {
