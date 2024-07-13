@@ -719,6 +719,8 @@ namespace FanScript.Compiler.Binding
 
             if (declare && !_scope.TryDeclareVariable(variable))
                 _diagnostics.ReportSymbolAlreadyDeclared(identifier.Location, name);
+            else if (name.Length > Constants.MaxVariableNameLength)
+                _diagnostics.ReportVariableNameTooLong(identifier.Location, name);
 
             return variable;
         }

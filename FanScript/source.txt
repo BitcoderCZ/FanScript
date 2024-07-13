@@ -1,6 +1,6 @@
 onPlay {
-    array<float> arr
-    set(arr, 0, 25)
-    set(arr, 1, 7)
-    inspect(get(arr, 1))
+    array<float> arrrrrrrrrrrrrrr
+    set(arrrrrrrrrrrrrrr, 0, 25)
+    set(arrrrrrrrrrrrrrr, 1, 7)
+    inspect(get(arrrrrrrrrrrrrrr, 1))
 }

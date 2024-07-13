@@ -24,126 +24,66 @@ namespace FanScript.Compiler.Diagnostics
             => _diagnostics.Add(Diagnostic.Warning(location, message));
 
         public void ReportInvalidNumber(TextLocation location, string text, TypeSymbol type)
-        {
-            var message = $"The number {text} isn't valid {type}.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"The number {text} isn't valid {type}.");
 
         public void ReportBadCharacter(TextLocation location, char character)
-        {
-            var message = $"Bad character input: '{character}'.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"Bad character input: '{character}'.");
 
         public void ReportUnterminatedString(TextLocation location)
-        {
-            var message = "Unterminated string literal.";
-            ReportError(location, message);
-        }
+            => ReportError(location, "Unterminated string literal.");
 
         public void ReportInvalidEscapeSequance(TextLocation location, string escapeSequance)
             => ReportError(location, $"Invalid escape sequance: '{escapeSequance}'.");
 
         public void ReportUnterminatedMultiLineComment(TextLocation location)
-        {
-            var message = "Unterminated multi-line comment.";
-            ReportError(location, message);
-        }
+            => ReportError(location, "Unterminated multi-line comment.");
 
         public void ReportUnexpectedToken(TextLocation location, SyntaxKind actualKind, SyntaxKind expectedKind)
-        {
-            var message = $"Unexpected token <{actualKind}>, expected <{expectedKind}>.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"Unexpected token <{actualKind}>, expected <{expectedKind}>.");
         public void ReportUnexpectedToken(TextLocation location, SyntaxKind actualKind, SyntaxKind[] expectedKinds)
-        {
-            var message = $"Unexpected token <{actualKind}>, expected one of <{string.Join(", ", expectedKinds)}>.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"Unexpected token <{actualKind}>, expected one of <{string.Join(", ", expectedKinds)}>.");
 
         public void ReportUndefinedUnaryOperator(TextLocation location, string operatorText, TypeSymbol? operandType)
-        {
-            var message = $"Unary operator '{operatorText}' is not defined for type '{operandType}'.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"Unary operator '{operatorText}' is not defined for type '{operandType}'.");
 
         public void ReportUndefinedBinaryOperator(TextLocation location, string operatorText, TypeSymbol? leftType, TypeSymbol? rightType)
-        {
-            var message = $"Binary operator '{operatorText}' is not defined for types '{leftType}' and '{rightType}'.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"Binary operator '{operatorText}' is not defined for types '{leftType}' and '{rightType}'.");
 
         public void ReportParameterAlreadyDeclared(TextLocation location, string parameterName)
-        {
-            var message = $"A parameter with the name '{parameterName}' already exists.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"A parameter with the name '{parameterName}' already exists.");
 
         public void ReportUndefinedVariable(TextLocation location, string name)
-        {
-            var message = $"Variable '{name}' doesn't exist.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"Variable '{name}' doesn't exist.");
 
         public void ReportNotAVariable(TextLocation location, string name)
-        {
-            var message = $"'{name}' is not a variable.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"'{name}' is not a variable.");
 
         public void ReportUndefinedType(TextLocation location, string name)
-        {
-            var message = $"Type '{name}' doesn't exist.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"Type '{name}' doesn't exist.");
 
         public void ReportCannotConvert(TextLocation location, TypeSymbol? fromType, TypeSymbol? toType)
-        {
-            var message = $"Cannot convert type '{fromType}' to '{toType}'.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"Cannot convert type '{fromType}' to '{toType}'.");
 
         public void ReportCannotConvertImplicitly(TextLocation location, TypeSymbol? fromType, TypeSymbol? toType)
-        {
-            var message = $"Cannot convert type '{fromType}' to '{toType}'. An explicit conversion exists (are you missing a cast?)";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"Cannot convert type '{fromType}' to '{toType}'. An explicit conversion exists (are you missing a cast?)");
 
         public void ReportSymbolAlreadyDeclared(TextLocation location, string name)
-        {
-            var message = $"'{name}' is already declared.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"'{name}' is already declared.");
 
         public void ReportCannotAssignReadOnly(TextLocation location, string name)
-        {
-            var message = $"Variable '{name}' is read-only and cannot be assigned to.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"Variable '{name}' is read-only and cannot be assigned to.");
 
         public void ReportUndefinedFunction(TextLocation location, string name)
-        {
-            var message = $"Function '{name}' doesn't exist.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"Function '{name}' doesn't exist.");
 
         public void ReportNotAFunction(TextLocation location, string name)
-        {
-            var message = $"'{name}' is not a function.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"'{name}' is not a function.");
 
         public void ReportWrongArgumentCount(TextLocation location, string name, int expectedCount, int actualCount)
-        {
-            var message = $"Function '{name}' requires {expectedCount} arguments but was given {actualCount}.";
-            ReportError(location, message);
-        }
+            => ReportError(location, $"Function '{name}' requires {expectedCount} arguments but was given {actualCount}.");
 
         public void ReportExpressionMustHaveValue(TextLocation location)
-        {
-            var message = "Expression must have a Value.";
-            ReportError(location, message);
-        }
+            => ReportError(location, "Expression must have a Value.");
 
         public void ReportAllPathsMustReturn(TextLocation location)
             => ReportError(location, "Not all code paths return a Value.");
@@ -244,5 +184,8 @@ namespace FanScript.Compiler.Diagnostics
 
         public void ReportNonGenericMethodTypeArguments(TextLocation location)
             => ReportError(location, "Non-generic methods cannot be used with a type argument.");
+
+        public void ReportVariableNameTooLong(TextLocation location, string name)
+            => ReportError(location, $"Variable name '{name}' is too long, maximum allowed length is {Constants.MaxVariableNameLength}");
     }
 }

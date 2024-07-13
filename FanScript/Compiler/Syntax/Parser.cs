@@ -466,7 +466,7 @@ namespace FanScript.Compiler.Syntax
         private ExpressionSyntax ParseNameOrCallExpression()
         {
             if (Peek(0).Kind == SyntaxKind.IdentifierToken &&
-                (Peek(1).Kind == SyntaxKind.OpenParenthesisToken || 
+                (Peek(1).Kind == SyntaxKind.OpenParenthesisToken ||
                 (Peek(1).Kind == SyntaxKind.LessToken && isType(Peek(2).Kind)))) // not sure of a better way to do this, neccesary becose of less than operator, make some tryParseType method that doesn't consume tokens?
                 return ParseCallExpression();
 
