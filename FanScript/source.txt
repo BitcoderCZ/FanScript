@@ -1,5 +1,4 @@
 onPlay {
-    vec3 v = vec3(5, 0, 0)
-    rot r = rot(0, 90, 0)
-    inspect(v * r)
+    object o = getObject(0, 0, 0)
+    setPos(o, vec3(0, 3, 0), rot(45, 45, 45))
 }

@@ -5,7 +5,7 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class BoundScope
     {
-        private Dictionary<string, Symbol>? _symbols;
+        private Dictionary<string, List<Symbol>>? _symbols;
 
         public BoundScope(BoundScope? parent)
         {
@@ -24,20 +24,49 @@ namespace FanScript.Compiler.Binding
             where TSymbol : Symbol
         {
             if (_symbols is null)
-                _symbols = new Dictionary<string, Symbol>();
-            else if (_symbols.ContainsKey(symbol.Name))
-                return false;
+                _symbols = new();
+            else if (_symbols.TryGetValue(symbol.Name, out var symbolList))
+            {
+                if (symbol is FunctionSymbol function)
+                {
+                    if (symbolList.Where(symbol => symbol is FunctionSymbol)
+                        .Select(symbol => (FunctionSymbol)symbol)
+                        .Where(func => Enumerable.SequenceEqual(
+                            func.Parameters.Select(param => param.Type),
+                            function.Parameters.Select(param => param.Type))
+                        )
+                        .Count() == 0)
+                    { // function(s) with same name, but differend parameters
+                        symbolList.Add(symbol);
+                        return true;
+                    }
+                }
 
-            _symbols.Add(symbol.Name, symbol);
+                return false;
+            }
+
+            _symbols.Add(symbol.Name, [symbol]);
             return true;
         }
 
         public Symbol? TryLookupSymbol(string name)
         {
-            if (_symbols is not null && _symbols.TryGetValue(name, out var symbol))
-                return symbol;
+            if (_symbols is not null && _symbols.TryGetValue(name, out var symbolList))
+                return symbolList.FirstOrDefault();
 
             return Parent?.TryLookupSymbol(name);
+        }
+
+        public FunctionSymbol? TryLookupFunction(string name, IEnumerable<TypeSymbol> arguments)
+        {
+            if (_symbols is not null && _symbols.TryGetValue(name, out var symbolList))
+                foreach (var symbol in symbolList)
+                    if (symbol is FunctionSymbol function && function.Parameters
+                        .Select(param => param.Type)
+                        .SequenceEqual(arguments))
+                        return function;
+
+            return Parent?.TryLookupFunction(name, arguments);
         }
 
         public ImmutableArray<VariableSymbol> GetDeclaredVariables()

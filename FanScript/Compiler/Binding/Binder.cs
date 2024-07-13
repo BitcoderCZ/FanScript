@@ -556,15 +556,18 @@ namespace FanScript.Compiler.Binding
                 boundArguments.Add(BindExpression(argument));
 
             Symbol? symbol = _scope.TryLookupSymbol(syntax.Identifier.Text);
-            if (symbol is null)
+
+            if (symbol is not FunctionSymbol)
             {
-                _diagnostics.ReportUndefinedFunction(syntax.Identifier.Location, syntax.Identifier.Text);
+                _diagnostics.ReportNotAFunction(syntax.Identifier.Location, syntax.Identifier.Text);
                 return new BoundErrorExpression(syntax);
             }
 
-            if (symbol is not FunctionSymbol function)
+            FunctionSymbol? function = _scope.TryLookupFunction(syntax.Identifier.Text, boundArguments.Select(arg => arg.Type!).ToList());
+
+            if (function is null)
             {
-                _diagnostics.ReportNotAFunction(syntax.Identifier.Location, syntax.Identifier.Text);
+                _diagnostics.ReportUndefinedFunction(syntax.Identifier.Location, syntax.Identifier.Text);
                 return new BoundErrorExpression(syntax);
             }
 

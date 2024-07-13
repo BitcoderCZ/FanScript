@@ -49,18 +49,35 @@ namespace FanScript.Compiler.Symbols
                       return new NopEmitStore();
                   }
 
-                  Vector3I val = (Vector3I)((Vector3F)constant.Value); // unbox, then cast
+                  Vector3I pos = (Vector3I)((Vector3F)constant.Value); // unbox, then cast
 
-                  return new AbsoluteEmitStore(val, null);
+                  return new AbsoluteEmitStore(pos, null);
               }
           };
-        // currently functions are resolved only by name, so this one doesn't need to be implemented yet
         public static readonly FunctionSymbol Object_Get2
           = new BuiltinFunctionSymbol("getObject", [
               new ParameterSymbol("x", TypeSymbol.Float, 0),
               new ParameterSymbol("y", TypeSymbol.Float, 1),
               new ParameterSymbol("z", TypeSymbol.Float, 2)
-            ], TypeSymbol.Object);
+            ], TypeSymbol.Object)
+          {
+              Emit = (call, context) =>
+              {
+                  if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
+                  {
+                      context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
+                      return new NopEmitStore();
+                  }
+
+                  object[]? args = context.ValidateConstants(call.Arguments);
+                  if (args is null)
+                      return new NopEmitStore();
+
+                  Vector3I pos = new Vector3I((int)(float)args[0], (int)(float)args[1], (int)(float)args[2]); // unbox, then cast
+
+                  return new AbsoluteEmitStore(pos, null);
+              }
+          };
         public static readonly FunctionSymbol Object_SetPos
             = new BuiltinFunctionSymbol("setPos", [
                 new ParameterSymbol("object", TypeSymbol.Object, 0),
@@ -83,14 +100,32 @@ namespace FanScript.Compiler.Symbols
                     return new BasicEmitStore(block);
                 }
             };
-        // currently functions are resolved only by name, so this one doesn't need to be implemented yet
         public static readonly FunctionSymbol Object_SetPos2
             = new BuiltinFunctionSymbol("setPos",
             [
                 new ParameterSymbol("object", TypeSymbol.Object, 0),
                 new ParameterSymbol("position", TypeSymbol.Vector3, 1),
                 new ParameterSymbol("rotation", TypeSymbol.Rotation, 2)
-            ], TypeSymbol.Void);
+            ], TypeSymbol.Void)
+            {
+                Emit = (call, context) =>
+                {
+                    Block block = context.Builder.AddBlock(Blocks.Objects.SetPos);
+
+                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    {
+                        EmitStore blockEmit = context.EmitExpression(call.Arguments[0]);
+                        EmitStore posEmit = context.EmitExpression(call.Arguments[1]);
+                        EmitStore rotEmit = context.EmitExpression(call.Arguments[2]);
+
+                        context.Connect(blockEmit, BasicEmitStore.CIn(block, block.Type.Terminals[3]));
+                        context.Connect(posEmit, BasicEmitStore.CIn(block, block.Type.Terminals[2]));
+                        context.Connect(rotEmit, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
+                    });
+
+                    return new BasicEmitStore(block);
+                }
+            };
         public static readonly FunctionSymbol Array_Get
             = new BuiltinFunctionSymbol("get",
             [
