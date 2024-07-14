@@ -4,7 +4,7 @@ namespace FanScript.Compiler.Symbols
 {
     public class LocalVariableSymbol : VariableSymbol
     {
-        internal LocalVariableSymbol(string name, bool isReadOnly, TypeSymbol? type, BoundConstant? constant)
+        internal LocalVariableSymbol(string name, bool isReadOnly, TypeSymbol type, BoundConstant? constant)
             : base(name, isReadOnly, type, constant)
         {
         }

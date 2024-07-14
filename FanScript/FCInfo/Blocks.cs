@@ -291,10 +291,12 @@ namespace FanScript.FCInfo
         }
 
         // used by terminals.json
+#pragma warning disable CS0649
         private class TerminalInfo
         {
             public ushort Id;
             public JObject[] Positions = null!;
         }
+#pragma warning restore CS0649
     }
 }

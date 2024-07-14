@@ -85,7 +85,7 @@ namespace FanScript.Compiler.Syntax
         {
             if (_parents is null)
             {
-                Dictionary<SyntaxNode, SyntaxNode> parents = CreateParentsDictionary(Root);
+                Dictionary<SyntaxNode, SyntaxNode?> parents = CreateParentsDictionary(Root);
                 Interlocked.CompareExchange(ref _parents, parents, null);
             }
 
@@ -94,7 +94,7 @@ namespace FanScript.Compiler.Syntax
 
         private Dictionary<SyntaxNode, SyntaxNode?> CreateParentsDictionary(CompilationUnitSyntax root)
         {
-            Dictionary<SyntaxNode, SyntaxNode> result = new Dictionary<SyntaxNode, SyntaxNode?>
+            Dictionary<SyntaxNode, SyntaxNode?> result = new Dictionary<SyntaxNode, SyntaxNode?>
             {
                 { root, null }
             };

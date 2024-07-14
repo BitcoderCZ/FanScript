@@ -689,11 +689,10 @@ namespace FanScript.Compiler.Binding
 
             return new BoundCallExpression(syntax, function, boundArguments.ToImmutable(), fixType(function.Type)!, genericType);
 
-            TypeSymbol? fixType(TypeSymbol? type)
+            TypeSymbol fixType(TypeSymbol type)
             {
-                if (genericType is null || type is null) return type;
-                else if (type == TypeSymbol.Generic) return genericType;
-                else if (type.IsGenericDefinition) return TypeSymbol.CreateGenericInstance(type, genericType);
+                if (type == TypeSymbol.Generic) return genericType ?? TypeSymbol.Error;
+                else if (type.IsGenericDefinition) return TypeSymbol.CreateGenericInstance(type, genericType ?? TypeSymbol.Error);
                 else return type;
             }
         }
@@ -724,7 +723,7 @@ namespace FanScript.Compiler.Binding
             return BindConversion(syntax.Location, expression, type, allowExplicit);
         }
 
-        private BoundExpression BindConversion(TextLocation diagnosticLocation, BoundExpression expression, TypeSymbol? type, bool allowExplicit = false)
+        private BoundExpression BindConversion(TextLocation diagnosticLocation, BoundExpression expression, TypeSymbol type, bool allowExplicit = false)
         {
             Conversion conversion = Conversion.Classify(expression.Type, type);
 
@@ -745,7 +744,7 @@ namespace FanScript.Compiler.Binding
             return new BoundConversionExpression(expression.Syntax, type, expression);
         }
 
-        private VariableSymbol BindVariableDeclaration(SyntaxToken identifier, bool isReadOnly, TypeSymbol? type, BoundConstant? constant = null)
+        private VariableSymbol BindVariableDeclaration(SyntaxToken identifier, bool isReadOnly, TypeSymbol type, BoundConstant? constant = null)
         {
             string name = identifier.Text ?? "?";
             bool declare = !identifier.IsMissing;

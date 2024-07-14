@@ -81,7 +81,7 @@ namespace FanScript.Compiler.Binding
             if (_symbols is null)
                 return ImmutableArray<TSymbol>.Empty;
 
-            return _symbols.Values.OfType<TSymbol>().ToImmutableArray();
+            return _symbols.Values.SelectMany(symbols => symbols).OfType<TSymbol>().ToImmutableArray();
         }
     }
 }

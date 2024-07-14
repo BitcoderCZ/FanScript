@@ -12,7 +12,6 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
         private Vector3I pos = Vector3I.Zero;
 
-        private int y = 0;
         private int blockCount = 0;
 
         public Block Place(BlockDef blockDef)

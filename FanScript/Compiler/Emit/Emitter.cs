@@ -98,7 +98,7 @@ namespace FanScript.Compiler.Emit
         {
             EmitStore store = new NopEmitStore();
 
-            // TODO: switch
+            // TODO: switch expression
             if (statement is BoundBlockStatement block)
                 store = emitBlockStatement(block);
             else if (statement is BoundVariableDeclaration variableDeclaration)
@@ -236,6 +236,7 @@ namespace FanScript.Compiler.Emit
         {
             EmitStore store = new NopEmitStore();
 
+            // TODO: switch expression
             if (expression is BoundLiteralExpression literal)
                 store = emitLiteralExpression(literal);
             else if (expression is BoundConstructorExpression constructor)
