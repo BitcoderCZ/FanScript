@@ -145,7 +145,7 @@ namespace FanScript.Compiler.Lowering
 
                 BoundLabel elseLabel = GenerateLabel("else");
                 BoundLabel endLabel = GenerateLabel("ifEnd");
-                var result = Block(
+                BoundBlockStatement result = Block(
                     node.Syntax,
                     GotoFalse(node.Syntax, elseLabel, node.Condition),
                     node.ThenStatement,
@@ -166,11 +166,11 @@ namespace FanScript.Compiler.Lowering
             //
             // ----->
             //
-            // gotoTrue <onPlay (handeled by emiter)> onTrue
+            // gotoTrue <special condition (play sensor, late update, ...) (handeled by emiter)> onTrue
             // goto end
             // onTrue:
             // <body>
-            // goto end [rollback] // special "label" that doesn't really exist, neccesary because once body is finished the goto end will execute anyway bacause of how the special block blocks work (exec body, exec after)
+            // goto end [rollback] // special goto that doesn't *really* "goto" but for the purposes of ControlFlowGraph does, neccesary because once body is finished the goto end will execute anyway bacause of how the special block blocks work (exec body, exec after)
             // end:
 
             BoundLabel onTrueLabel = GenerateLabel("onSpecial");
@@ -247,6 +247,43 @@ namespace FanScript.Compiler.Lowering
                     newNode.Op,
                     newNode.Expression
                 )
+            );
+
+            return result;
+        }
+
+        protected override BoundStatement RewriteArrayInitializerStatement(BoundArrayInitializerStatement node)
+        {
+            BoundArrayInitializerStatement newNode = (BoundArrayInitializerStatement)base.RewriteArrayInitializerStatement(node);
+
+            // x = [a, b, c, ...]
+            //
+            // ---->
+            //
+            // set(x, 0, a)
+            // set(x, 1, b)
+            // set(x, 2, c)
+            // ...
+
+            ImmutableArray<BoundStatement>.Builder builder = ImmutableArray.CreateBuilder<BoundStatement>(newNode.Elements.Length);
+
+            TypeSymbol elementType = newNode.Variable.Type!.InnerType!;
+
+            float index = 0f;
+            foreach (BoundExpression element in newNode.Elements)
+            {
+                ImmutableArray<BoundExpression> arguments = [
+                    new BoundVariableExpression(newNode.Syntax, newNode.Variable),
+                    Literal(newNode.Syntax, index++),
+                    element,
+                ];
+
+                builder.Add(new BoundExpressionStatement(newNode.Syntax, new BoundCallExpression(newNode.Syntax, BuiltinFunctions.Array_Set, arguments, TypeSymbol.Void, elementType)));
+            }
+
+            BoundBlockStatement result = new BoundBlockStatement(
+                newNode.Syntax,
+                builder.ToImmutable()
             );
 
             return result;

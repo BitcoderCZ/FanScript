@@ -98,14 +98,13 @@ namespace FanScript.Compiler.Emit
         {
             EmitStore store = new NopEmitStore();
 
+            // TODO: switch
             if (statement is BoundBlockStatement block)
                 store = emitBlockStatement(block);
             else if (statement is BoundVariableDeclaration variableDeclaration)
             {
                 if (variableDeclaration.OptionalAssignment is not null)
-                    store = emitAssigmentStatement(variableDeclaration.OptionalAssignment);
-                //else
-                //    store = null;
+                    store = emitStatement(variableDeclaration.OptionalAssignment);
             }
             else if (statement is BoundAssignmentStatement assigment)
                 store = emitAssigmentStatement(assigment);

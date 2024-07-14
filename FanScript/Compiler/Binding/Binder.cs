@@ -6,6 +6,7 @@ using FanScript.Compiler.Text;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FanScript.Compiler.Binding
 {
@@ -257,6 +258,8 @@ namespace FanScript.Compiler.Binding
                     return BindContinueStatement((ContinueStatementSyntax)syntax);
                 //case SyntaxKind.ReturnStatement:
                 //    return BindReturnStatement((ReturnStatementSyntax)syntax);
+                case SyntaxKind.ArrayInitializerStatement:
+                    return BindArrayInitializerStatement((ArrayInitializerStatementSyntax)syntax);
                 case SyntaxKind.ExpressionStatement:
                     return BindExpressionStatement((ExpressionStatementSyntax)syntax);
                 default:
@@ -293,7 +296,7 @@ namespace FanScript.Compiler.Binding
             TypeSymbol? variableType = type;
             VariableSymbol variable = BindVariableDeclaration(syntax.Identifier, false, variableType, /*optionalAssignment?.ConstantValue*/null);
 
-            BoundAssignmentStatement? optionalAssignment = syntax.OptionalAssignment is null ? null : (BoundAssignmentStatement)BindAssignmentStatement(syntax.OptionalAssignment);
+            BoundStatement? optionalAssignment = syntax.OptionalAssignment is null ? null : BindStatement(syntax.OptionalAssignment);
 
             return new BoundVariableDeclaration(syntax, variable, optionalAssignment);
         }
@@ -330,6 +333,35 @@ namespace FanScript.Compiler.Binding
                 BoundExpression convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, variable.Type);
                 return new BoundAssignmentStatement(syntax, variable, convertedExpression);
             }
+        }
+
+        private BoundStatement BindArrayInitializerStatement(ArrayInitializerStatementSyntax syntax)
+        {
+            if (syntax.Elements.Count == 0)
+            {
+                _diagnostics.ReportEmptyArrayInitializer(syntax.Location);
+                return BindErrorStatement(syntax);
+            }
+
+            VariableSymbol? variable = BindVariableReference(syntax.IdentifierToken);
+            if (variable is null)
+                return BindErrorStatement(syntax);
+
+            ImmutableArray<BoundExpression>.Builder boundElements = ImmutableArray.CreateBuilder<BoundExpression>(syntax.Elements.Count);
+
+            foreach (ExpressionSyntax argument in syntax.Elements)
+                boundElements.Add(BindExpression(argument));
+
+            TypeSymbol type = boundElements[0].Type;
+
+            for (int i = 0; i < syntax.Elements.Count; i++)
+            {
+                TextLocation elementLocation = syntax.Elements[i].Location;
+                BoundExpression element = boundElements[i];
+                boundElements[i] = BindConversion(elementLocation, element, type); // all elements must be of the same type
+            }
+
+            return new BoundArrayInitializerStatement(syntax, variable, boundElements.ToImmutable());
         }
 
         private BoundStatement BindIfStatement(IfStatementSyntax syntax)
@@ -398,20 +430,21 @@ namespace FanScript.Compiler.Binding
             return new BoundGotoStatement(syntax, continueLabel);
         }
 
-        private TypeSymbol? BindTypeClause(TypeClauseSyntax? syntax)
+        private TypeSymbol BindTypeClause(TypeClauseSyntax? syntax)
         {
             if (syntax is null)
-                return null;
+                return TypeSymbol.Error;
 
             TypeSymbol? type = LookupType(syntax.TypeToken.Text);
             if (type is null)
+            {
                 _diagnostics.ReportUndefinedType(syntax.Location, syntax.TypeToken.Text);
+                type = TypeSymbol.Error;
+            }
 
             if (syntax.HasGenericParameter)
             {
-                if (type is null)
-                    return TypeSymbol.Error;
-                else if (type.IsGenericDefinition)
+                if (type.IsGenericDefinition)
                 {
                     TypeSymbol? innerType = BindTypeClause(syntax.InnerType);
                     if (innerType is null)
@@ -425,7 +458,7 @@ namespace FanScript.Compiler.Binding
                     return TypeSymbol.Error;
                 }
             }
-            else if (type is not null && type.IsGenericDefinition)
+            else if (type.IsGenericDefinition)
             {
                 _diagnostics.ReportTypeMustHaveGenericParameter(syntax.Location);
                 return TypeSymbol.Error;
@@ -550,7 +583,7 @@ namespace FanScript.Compiler.Binding
             if (syntax.Arguments.Count == 1 && LookupType(syntax.Identifier.Text) is TypeSymbol type)
                 return BindConversion(syntax.Arguments[0], type, allowExplicit: true);
 
-            ImmutableArray<BoundExpression>.Builder boundArguments = ImmutableArray.CreateBuilder<BoundExpression>();
+            ImmutableArray<BoundExpression>.Builder boundArguments = ImmutableArray.CreateBuilder<BoundExpression>(syntax.Arguments.Count);
 
             foreach (ExpressionSyntax argument in syntax.Arguments)
                 boundArguments.Add(BindExpression(argument));

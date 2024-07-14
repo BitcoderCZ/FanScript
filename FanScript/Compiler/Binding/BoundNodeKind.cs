@@ -16,6 +16,7 @@
         RollbackGotoStatement,
         ConditionalGotoStatement,
         LabelStatement,
+        ArrayInitializerStatement,
 
         // Expressions
         ErrorExpression,

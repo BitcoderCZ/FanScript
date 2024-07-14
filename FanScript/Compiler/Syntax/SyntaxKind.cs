@@ -49,6 +49,7 @@
         ContinueStatement,
         VariableDeclaration,
         AssignmentStatement,
+        ArrayInitializerStatement,
 
         UnaryExpression,
         BinaryExpression,

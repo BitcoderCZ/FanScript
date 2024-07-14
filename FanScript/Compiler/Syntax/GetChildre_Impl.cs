@@ -1,5 +1,17 @@
 ﻿namespace FanScript.Compiler.Syntax
 {
+    partial class ArrayInitializerStatementSyntax
+    {
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return IdentifierToken;
+            yield return EqualsToken;
+            yield return OpenSquareToken;
+            foreach (SyntaxNode child in Elements.GetWithSeparators())
+                yield return child;
+            yield return CloseSquareToken;
+        }
+    }
     partial class AssignmentStatementSyntax
     {
         public override IEnumerable<SyntaxNode> GetChildren()

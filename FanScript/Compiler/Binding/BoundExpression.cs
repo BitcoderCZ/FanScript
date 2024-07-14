@@ -10,7 +10,7 @@ namespace FanScript.Compiler.Binding
         {
         }
 
-        public abstract TypeSymbol? Type { get; }
+        public abstract TypeSymbol Type { get; }
         public virtual BoundConstant? ConstantValue => null;
     }
 }

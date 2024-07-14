@@ -187,5 +187,8 @@ namespace FanScript.Compiler.Diagnostics
 
         public void ReportVariableNameTooLong(TextLocation location, string name)
             => ReportError(location, $"Variable name '{name}' is too long, maximum allowed length is {Constants.MaxVariableNameLength}");
+
+        public void ReportEmptyArrayInitializer(TextLocation location)
+            => ReportError(location, $"Array initializer cannot be empty.");
     }
 }

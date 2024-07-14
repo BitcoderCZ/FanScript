@@ -120,6 +120,10 @@
                     "(",
                 SyntaxKind.CloseParenthesisToken =>
                     ")",
+                SyntaxKind.OpenSquareToken =>
+                    "[",
+                SyntaxKind.CloseSquareToken =>
+                    "]",
                 SyntaxKind.OpenBraceToken =>
                     "{",
                 SyntaxKind.CloseBraceToken =>

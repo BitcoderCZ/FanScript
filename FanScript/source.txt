@@ -1,4 +1,3 @@
 onPlay {
-    object o = getObject(0, 0, 0)
-    setPos(o, vec3(0, 3, 0), rot(45, 45, 45))
+    array<float> arr = [5, 10, 15]
 }

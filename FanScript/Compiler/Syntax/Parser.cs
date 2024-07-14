@@ -211,7 +211,7 @@ namespace FanScript.Compiler.Syntax
                     SyntaxKind.SlashEqualsToken => true,
                     SyntaxKind.PercentEqualsToken => true,
                     _ => false,
-                } == true:
+                }:
                     return ParseAssignmentStatement();
                 case SyntaxKind.KeywordIf:
                     return ParseIfStatement();
@@ -275,23 +275,49 @@ namespace FanScript.Compiler.Syntax
             TypeClauseSyntax typeClause = ParseTypeClause(true);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
 
-            AssignmentStatementSyntax? assignment = null;
+            StatementSyntax? assignment = null;
             if (Current.Kind == SyntaxKind.EqualsToken)
             {
                 SyntaxToken equals = MatchToken(SyntaxKind.EqualsToken);
-                ExpressionSyntax initializer = ParseExpression();
 
-                assignment = new AssignmentStatementSyntax(_syntaxTree, identifier, equals, initializer);
+                if (Current.Kind == SyntaxKind.OpenSquareToken)
+                {
+                    SyntaxToken openSquareToken = MatchToken(SyntaxKind.OpenSquareToken);
+                    SeparatedSyntaxList<ExpressionSyntax> elements = ParseSeparatedList(SyntaxKind.CloseSquareToken);
+                    SyntaxToken closeSquareToken = MatchToken(SyntaxKind.CloseSquareToken);
+
+                    assignment = new ArrayInitializerStatementSyntax(_syntaxTree, identifier, equals, openSquareToken, elements, closeSquareToken);
+                }
+                else
+                {
+                    ExpressionSyntax initializer = ParseExpression();
+
+                    assignment = new AssignmentStatementSyntax(_syntaxTree, identifier, equals, initializer);
+                }
             }
             return new VariableDeclarationSyntax(_syntaxTree, typeClause, identifier, assignment);
         }
 
         private StatementSyntax ParseAssignmentStatement()
         {
+            if (Peek(2).Kind == SyntaxKind.OpenSquareToken)
+                return ParseArrayInitializerStatement();
+
             SyntaxToken identifierToken = NextToken();
             SyntaxToken operatorToken = NextToken();
             ExpressionSyntax right = ParseExpression();
             return new AssignmentStatementSyntax(_syntaxTree, identifierToken, operatorToken, right);
+        }
+
+        private StatementSyntax ParseArrayInitializerStatement()
+        {
+            SyntaxToken identifierToken = NextToken();
+            SyntaxToken equalsToken = MatchToken(SyntaxKind.EqualsToken);
+            SyntaxToken openSquareToken = MatchToken(SyntaxKind.OpenSquareToken);
+            SeparatedSyntaxList<ExpressionSyntax> elements = ParseSeparatedList(SyntaxKind.CloseSquareToken);
+            SyntaxToken closeSquareToken = MatchToken(SyntaxKind.CloseSquareToken);
+
+            return new ArrayInitializerStatementSyntax(_syntaxTree, identifierToken, equalsToken, openSquareToken, elements, closeSquareToken);
         }
 
         private StatementSyntax ParseIfStatement()
@@ -416,7 +442,7 @@ namespace FanScript.Compiler.Syntax
 
                 case SyntaxKind.KeywordVector3:
                 case SyntaxKind.KeywordRotation:
-                    return ParseVectorConstructor();
+                    return ParseVectorConstructorExpresion();
 
                 //case SyntaxKind.StringToken:
                 //    return ParseStringLiteral();
@@ -445,7 +471,7 @@ namespace FanScript.Compiler.Syntax
         private ExpressionSyntax ParseNumberLiteral()
             => new LiteralExpressionSyntax(_syntaxTree, MatchToken(SyntaxKind.FloatToken));
 
-        private ExpressionSyntax ParseVectorConstructor()
+        private ExpressionSyntax ParseVectorConstructorExpresion()
         {
             SyntaxToken keywordToken = MatchToken(SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation);
 
@@ -500,7 +526,7 @@ namespace FanScript.Compiler.Syntax
             }
 
             SyntaxToken openParenthesisToken = MatchToken(SyntaxKind.OpenParenthesisToken);
-            SeparatedSyntaxList<ExpressionSyntax> arguments = ParseArguments();
+            SeparatedSyntaxList<ExpressionSyntax> arguments = ParseSeparatedList(SyntaxKind.CloseParenthesisToken);
             SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
             if (hasGegenericParam)
                 return new CallExpressionSyntax(_syntaxTree, identifier, lessThanToken, genericType, greaterThanToken, openParenthesisToken, arguments, closeParenthesisToken);
@@ -508,13 +534,13 @@ namespace FanScript.Compiler.Syntax
                 return new CallExpressionSyntax(_syntaxTree, identifier, openParenthesisToken, arguments, closeParenthesisToken);
         }
 
-        private SeparatedSyntaxList<ExpressionSyntax> ParseArguments()
+        private SeparatedSyntaxList<ExpressionSyntax> ParseSeparatedList(SyntaxKind listEnd)
         {
             ImmutableArray<SyntaxNode>.Builder nodesAndSeparators = ImmutableArray.CreateBuilder<SyntaxNode>();
 
             bool parseNextArgument = true;
             while (parseNextArgument &&
-                   Current.Kind != SyntaxKind.CloseParenthesisToken &&
+                   Current.Kind != listEnd &&
                    Current.Kind != SyntaxKind.EndOfFileToken)
             {
                 ExpressionSyntax expression = ParseExpression();

@@ -11,7 +11,7 @@ namespace FanScript.Compiler.Binding
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.SpecialBlockCondition;
-        public override TypeSymbol? Type => TypeSymbol.Void;
+        public override TypeSymbol Type => TypeSymbol.Void;
 
         public SyntaxKind Keyword { get; }
     }

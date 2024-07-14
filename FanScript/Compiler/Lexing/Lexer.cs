@@ -278,6 +278,14 @@ namespace FanScript.Compiler.Lexing
                     _kind = SyntaxKind.CloseParenthesisToken;
                     _position++;
                     break;
+                case '[':
+                    _kind = SyntaxKind.OpenSquareToken;
+                    _position++;
+                    break;
+                case ']':
+                    _kind = SyntaxKind.CloseSquareToken;
+                    _position++;
+                    break;
                 case '{':
                     _kind = SyntaxKind.OpenBraceToken;
                     _position++;
