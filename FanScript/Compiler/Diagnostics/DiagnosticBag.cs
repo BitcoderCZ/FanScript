@@ -190,5 +190,23 @@ namespace FanScript.Compiler.Diagnostics
 
         public void ReportEmptyArrayInitializer(TextLocation location)
             => ReportError(location, $"Array initializer cannot be empty.");
+
+        public void ReportNotAModifier(TextLocation location, string text)
+            => ReportError(location, $"'{text}' isn't a valid modifier.");
+
+        public void ReportInvalidModifier(TextLocation location, Modifiers modifier, ModifierTarget usedTarget, IEnumerable<ModifierTarget> validTargets)
+            => ReportError(location, $"Modifier '{modifier}' was used on <{usedTarget}>, but it can only be used on <{string.Join(", ", validTargets)}>.");
+
+        public void ReportDuplicateModifier(TextLocation location, Modifiers modifier)
+            => ReportError(location, $"Duplicate '{modifier}' modifier.");
+
+        public void ReportInvalidModifierOnType(TextLocation location, Modifiers modifier, TypeSymbol type)
+            => ReportError(location, $"Modifier '{modifier}' isn't valid on a variable of type '{type}'.");
+
+        public void ReportConstantNotInitialized(TextLocation location)
+            => ReportError(location, "A constant variable needs to be initialized.");
+
+        public void ReportConflictingModifiers(TextLocation location, Modifiers modifier, Modifiers conflictingModifier)
+            => ReportError(location, $"Modifier '{conflictingModifier}' conflicts with modifier '{modifier}'.");
     }
 }

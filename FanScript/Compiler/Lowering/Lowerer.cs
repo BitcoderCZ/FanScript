@@ -93,7 +93,7 @@ namespace FanScript.Compiler.Lowering
             if (node.ConstantValue != null)
                 return Literal(node.Syntax, node.ConstantValue.Value);
 
-            return node;
+            return base.RewriteBinaryExpression(node);
         }
 
         protected override BoundExpression RewriteUnaryExpression(BoundUnaryExpression node)
@@ -101,7 +101,15 @@ namespace FanScript.Compiler.Lowering
             if (node.ConstantValue != null)
                 return Literal(node.Syntax, node.ConstantValue.Value);
 
-            return node;
+            return base.RewriteUnaryExpression(node);
+        }
+
+        protected override BoundExpression RewriteVariableExpression(BoundVariableExpression node)
+        {
+            if (node.ConstantValue != null)
+                return Literal(node.Syntax, node.ConstantValue.Value);
+
+            return base.RewriteVariableExpression(node);
         }
 
         protected override BoundStatement RewriteIfStatement(BoundIfStatement node)

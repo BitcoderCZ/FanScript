@@ -91,5 +91,8 @@
         FunctionDeclaration,
 
         KeywordFunction,
+
+        ReadOnlyModifier,
+        ConstantModifier,
     }
 }

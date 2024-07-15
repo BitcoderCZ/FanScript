@@ -88,6 +88,10 @@
                     return SyntaxKind.KeywordContinue;
                 case "onPlay":
                     return SyntaxKind.KeywordOnPlay;
+                case "readonly":
+                    return SyntaxKind.ReadOnlyModifier;
+                case "const":
+                    return SyntaxKind.ConstantModifier;
                 default:
                     return SyntaxKind.IdentifierToken;
             }
@@ -186,6 +190,10 @@
                     "function",
                 SyntaxKind.KeywordOnPlay =>
                     "onPlay",
+                SyntaxKind.ReadOnlyModifier =>
+                    "readonly",
+                SyntaxKind.ConstantModifier =>
+                    "const",
                 _ =>
                     null
             };
@@ -208,9 +216,12 @@
         public static bool IsKeyword(this SyntaxKind kind)
             => kind.ToString().StartsWith("Keyword");
 
+        public static bool IsModifier(this SyntaxKind kind)
+            => kind.ToString().EndsWith("Modifier");
+
         public static bool IsToken(this SyntaxKind kind)
             => !kind.IsTrivia() &&
-                   (kind.IsKeyword() || kind.ToString().EndsWith("Token"));
+                   (kind.IsKeyword() || kind.IsModifier() || kind.ToString().EndsWith("Token"));
 
         public static SyntaxKind GetBinaryOperatorOfAssignmentOperator(SyntaxKind kind)
         {

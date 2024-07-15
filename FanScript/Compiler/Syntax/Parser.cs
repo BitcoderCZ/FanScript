@@ -228,7 +228,12 @@ namespace FanScript.Compiler.Syntax
                 //case SyntaxKind.ReturnKeyword:
                 //    return ParseReturnStatement();
                 default:
-                    return ParseExpressionStatement();
+                    {
+                        if (Current.Kind.IsModifier())
+                            return ParseModifiers();
+
+                        return ParseExpressionStatement();
+                    }
             }
         }
 
@@ -270,7 +275,7 @@ namespace FanScript.Compiler.Syntax
             return new SpecialBlockStatementSyntax(_syntaxTree, keyword, block);
         }
 
-        private StatementSyntax ParseVariableDeclarationStatement()
+        private StatementSyntax ParseVariableDeclarationStatement(ImmutableArray<SyntaxToken>? modifiers = null)
         {
             TypeClauseSyntax typeClause = ParseTypeClause(true);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
@@ -295,7 +300,7 @@ namespace FanScript.Compiler.Syntax
                     assignment = new AssignmentStatementSyntax(_syntaxTree, identifier, equals, initializer);
                 }
             }
-            return new VariableDeclarationSyntax(_syntaxTree, typeClause, identifier, assignment);
+            return new VariableDeclarationSyntax(_syntaxTree, modifiers ?? ImmutableArray<SyntaxToken>.Empty, typeClause, identifier, assignment);
         }
 
         private StatementSyntax ParseAssignmentStatement()
@@ -390,6 +395,16 @@ namespace FanScript.Compiler.Syntax
         //    var expression = sameLine ? ParseExpression() : null;
         //    return new ReturnStatementSyntax(_syntaxTree, keyword, expression);
         //}
+
+        private StatementSyntax ParseModifiers()
+        {
+            ImmutableArray<SyntaxToken>.Builder builder = ImmutableArray.CreateBuilder<SyntaxToken>();
+
+            while (Current.Kind.IsModifier())
+                builder.Add(NextToken());
+
+            return ParseVariableDeclarationStatement(builder.ToImmutable());
+        }
 
         private ExpressionStatementSyntax ParseExpressionStatement()
             => new ExpressionStatementSyntax(_syntaxTree, ParseExpression());

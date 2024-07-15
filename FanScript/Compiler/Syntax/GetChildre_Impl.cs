@@ -214,6 +214,8 @@
     {
         public override IEnumerable<SyntaxNode> GetChildren()
         {
+            foreach (SyntaxNode modifier in Modifiers)
+                yield return modifier;
             yield return TypeClause;
             if (OptionalAssignment is null)
                 yield return Identifier;

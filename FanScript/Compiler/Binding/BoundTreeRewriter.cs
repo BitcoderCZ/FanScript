@@ -94,7 +94,12 @@ namespace FanScript.Compiler.Binding
             if (node.OptionalAssignment is null)
                 return node;
             else if (node.OptionalAssignment is BoundArrayInitializerStatement arrayInitializer)
-                return RewriteArrayInitializerStatement(arrayInitializer);
+                return new BoundBlockStatement(
+                    node.Syntax,
+                    [
+                        new BoundVariableDeclaration(node.Syntax, node.Variable, null),
+                        RewriteArrayInitializerStatement(arrayInitializer)
+                    ]);
 
             BoundStatement assignment = RewriteStatement(node.OptionalAssignment);
             if (assignment == node.OptionalAssignment)

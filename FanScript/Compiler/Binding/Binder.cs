@@ -4,6 +4,7 @@ using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using FanScript.Utils;
+using MathUtils.Equations;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
 using static System.Runtime.InteropServices.JavaScript.JSType;
@@ -294,7 +295,10 @@ namespace FanScript.Compiler.Binding
             TypeSymbol? type = BindTypeClause(syntax.TypeClause);
 
             TypeSymbol? variableType = type;
-            VariableSymbol variable = BindVariableDeclaration(syntax.Identifier, false, variableType, /*optionalAssignment?.ConstantValue*/null);
+            VariableSymbol variable = BindVariableDeclaration(syntax.Identifier, syntax.Modifiers, variableType);
+
+            if (variable.Modifiers.HasFlag(Modifiers.Constant) && syntax.OptionalAssignment is null)
+                _diagnostics.ReportConstantNotInitialized(syntax.Identifier.Location);
 
             BoundStatement? optionalAssignment = syntax.OptionalAssignment is null ? null : BindStatement(syntax.OptionalAssignment);
 
@@ -310,8 +314,12 @@ namespace FanScript.Compiler.Binding
             if (variable is null)
                 return BindErrorStatement(syntax);
 
-            if (variable.IsReadOnly)
+            if (variable.IsReadOnly && variable.Initialized)
                 _diagnostics.ReportCannotAssignReadOnly(syntax.AssignmentToken.Location, name);
+            else if (variable.Modifiers.HasFlag(Modifiers.Constant) && boundExpression.ConstantValue is null)
+                _diagnostics.ReportValueMustBeConstant(syntax.Expression.Location);
+
+            variable.Initialize(boundExpression.ConstantValue);
 
             if (syntax.AssignmentToken.Kind != SyntaxKind.EqualsToken)
             {
@@ -346,6 +354,11 @@ namespace FanScript.Compiler.Binding
             VariableSymbol? variable = BindVariableReference(syntax.IdentifierToken);
             if (variable is null)
                 return BindErrorStatement(syntax);
+
+            if (variable.IsReadOnly && variable.Initialized)
+                _diagnostics.ReportCannotAssignReadOnly(syntax.EqualsToken.Location, variable.Name);
+
+            variable.Initialize(null);
 
             ImmutableArray<BoundExpression>.Builder boundElements = ImmutableArray.CreateBuilder<BoundExpression>(syntax.Elements.Count);
 
@@ -744,13 +757,32 @@ namespace FanScript.Compiler.Binding
             return new BoundConversionExpression(expression.Syntax, type, expression);
         }
 
-        private VariableSymbol BindVariableDeclaration(SyntaxToken identifier, bool isReadOnly, TypeSymbol type, BoundConstant? constant = null)
+        private VariableSymbol BindVariableDeclaration(SyntaxToken identifier, ImmutableArray<SyntaxToken> modifierArray, TypeSymbol type)
         {
             string name = identifier.Text ?? "?";
             bool declare = !identifier.IsMissing;
+
+            Modifiers validModifiers = Modifiers.Readonly;
+            if (type.GenericEquals(TypeSymbol.Bool) ||
+                type.GenericEquals(TypeSymbol.Float) ||
+                type.GenericEquals(TypeSymbol.Vector3) ||
+                type.GenericEquals(TypeSymbol.Rotation))
+                validModifiers |= Modifiers.Constant;
+
+            Modifiers modifiers = ParseModifiers(modifierArray, ModifierTarget.Variable, item =>
+            {
+                var (modifier, token) = item;
+
+                bool valid = validModifiers.HasFlag(modifier);
+                if (!valid)
+                    _diagnostics.ReportInvalidModifierOnType(token.Location, modifier, type);
+
+                return valid;
+            });
+
             VariableSymbol variable = _function is null
-                                ? new GlobalVariableSymbol(name, isReadOnly, type, constant)
-                                : new LocalVariableSymbol(name, isReadOnly, type, constant);
+                                ? new GlobalVariableSymbol(name, modifiers, type)
+                                : new LocalVariableSymbol(name, modifiers, type);
 
             if (declare && !_scope.TryDeclareVariable(variable))
                 _diagnostics.ReportSymbolAlreadyDeclared(identifier.Location, name);
@@ -786,6 +818,75 @@ namespace FanScript.Compiler.Binding
                 return null;
             else
                 return type;
+        }
+
+        private Modifiers ParseModifiers(IEnumerable<SyntaxToken> tokens, ModifierTarget target, Func<(Modifiers, SyntaxToken), bool>? checkModifier = null)
+        {
+            if (tokens.Count() == 0)
+                return 0;
+
+            checkModifier ??= item => true;
+
+            List<(Modifiers Modifier, SyntaxToken Token)> modifiersAndTokens = tokens
+                .Where(token =>
+                {
+                    // remove tokens that aren't modifiers
+                    bool isModifier = token.Kind.IsModifier();
+
+                    if (!isModifier)
+                        _diagnostics.ReportNotAModifier(token.Location, token.Text);
+
+                    return isModifier;
+                })
+                .Select(token => (ModifiersE.FromKind(token.Kind), token))
+                .Where(item =>
+                {
+                    // remove modifiers not valid for this target
+                    var (modifier, token) = item;
+                    bool valid = modifier.GetTargets().Contains(target);
+
+                    if (!valid)
+                        _diagnostics.ReportInvalidModifier(token.Location, modifier, target, modifier.GetTargets());
+
+                    return valid;
+                })
+                .Where(checkModifier)
+                .ToList();
+
+            IEnumerable<Modifiers> _modifiers = modifiersAndTokens.Select(item => item.Modifier);
+
+            // remove conflicting modifiers
+            for (int i = 0; i < modifiersAndTokens.Count; i++)
+            {
+                Modifiers? conflict = null;
+                foreach (var _conflict in modifiersAndTokens[i].Modifier.GetConflictingModifiers())
+                    if (_modifiers.Contains(_conflict))
+                    {
+                        conflict = _conflict;
+                        break;
+                    }
+
+                if (conflict is not null)
+                {
+                    _diagnostics.ReportConflictingModifiers(modifiersAndTokens[i].Token.Location, conflict.Value, modifiersAndTokens[i].Modifier);
+
+                    modifiersAndTokens.RemoveAt(i);
+                    i--;
+                }
+            }
+
+            // construct the enum
+            Modifiers modifiers = 0;
+
+            foreach (var (modifier, token) in modifiersAndTokens)
+            {
+                if (modifiers.HasFlag(modifier))
+                    _diagnostics.ReportDuplicateModifier(token.Location, modifier);
+                else
+                    modifiers |= modifier;
+            }
+
+            return modifiers;
         }
     }
 }

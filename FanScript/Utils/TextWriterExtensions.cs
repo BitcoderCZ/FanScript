@@ -1,9 +1,11 @@
-﻿using FanScript.Compiler.Diagnostics;
+﻿using FanScript.Compiler;
+using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using System.CodeDom.Compiler;
 using System.Diagnostics;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace FanScript.Utils
 {
@@ -45,7 +47,33 @@ namespace FanScript.Utils
 
         public static void WriteType(this TextWriter writer, TypeSymbol? type)
         {
-            writer.WriteKeyword(type?.ToString() ?? TypeSymbol.Error.ToString());
+            type ??= TypeSymbol.Error;
+            writer.SetForeground(type.IsGeneric ? ConsoleColor.DarkGreen : ConsoleColor.Blue);
+            writer.Write(type.Name);
+            writer.ResetColor();
+            if (type.IsGeneric)
+            {
+                writer.WritePunctuation(SyntaxKind.LessToken);
+                if (type.IsGenericInstance)
+                    writer.WriteType(type.InnerType);
+                writer.WritePunctuation(SyntaxKind.GreaterToken);
+            }
+        }
+
+        public static void WriteModifiers(this TextWriter writer, Modifiers modifiers)
+        {
+            bool isFirst = true;
+
+            foreach (var modifier in Enum.GetValues<Modifiers>())
+                if (modifiers.HasFlag(modifier))
+                {
+                    if (!isFirst)
+                        writer.WriteSpace();
+
+                    isFirst = false;
+
+                    writer.WriteKeyword(SyntaxFacts.GetText(modifier.ToKind()));
+                }
         }
 
         public static void WriteKeyword(this TextWriter writer, string? text)

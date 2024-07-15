@@ -4,8 +4,8 @@ namespace FanScript.Compiler.Symbols
 {
     public sealed class GlobalVariableSymbol : VariableSymbol
     {
-        internal GlobalVariableSymbol(string name, bool isReadOnly, TypeSymbol type, BoundConstant? constant)
-            : base(name, isReadOnly, type, constant)
+        internal GlobalVariableSymbol(string name, Modifiers modifiers, TypeSymbol type)
+            : base(name, modifiers, type)
         {
         }
 

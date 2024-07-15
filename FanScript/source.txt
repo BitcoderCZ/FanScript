@@ -1,3 +1,7 @@
 onPlay {
-    array<float> arr = [5, 10, 15]
+    readonly float a = 5
+    const float b = 10
+    readonly array<float> arr = [1, 2, 3]
+
+    float c = b // because b is constant, b get's replaced by it's value (10)
 }

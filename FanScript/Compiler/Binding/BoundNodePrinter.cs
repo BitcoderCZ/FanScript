@@ -169,6 +169,11 @@ namespace FanScript.Compiler.Binding
 
         private static void WriteVariableDeclaration(BoundVariableDeclaration node, IndentedTextWriter writer)
         {
+            if (node.Variable.Modifiers != 0)
+            {
+                writer.WriteModifiers(node.Variable.Modifiers);
+                writer.WriteSpace();
+            }
             writer.WriteType(node.Variable.Type);
             writer.WriteSpace();
 
