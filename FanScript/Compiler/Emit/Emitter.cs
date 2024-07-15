@@ -96,35 +96,21 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitStatement(BoundStatement statement)
         {
-            EmitStore store = new NopEmitStore();
+            EmitStore store = statement switch
+            {
+                BoundBlockStatement => emitBlockStatement((BoundBlockStatement)statement),
+                BoundVariableDeclaration declaration when declaration.OptionalAssignment is not null => emitStatement(declaration.OptionalAssignment),
+                BoundVariableDeclaration => new NopEmitStore(),
+                BoundAssignmentStatement => emitAssigmentStatement((BoundAssignmentStatement)statement),
+                BoundGotoStatement => emitGotoStatement((BoundGotoStatement)statement),
+                BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundSpecialBlockCondition condition => emitSpecialBlockStatement(condition.Keyword, conditionalGoto.Label),
+                BoundConditionalGotoStatement => emitConditionalGotoStatement((BoundConditionalGotoStatement)statement),
+                BoundLabelStatement => emitLabelStatement((BoundLabelStatement)statement),
+                BoundExpressionStatement => emitExpression(((BoundExpressionStatement)statement).Expression),
+                BoundNopStatement => new NopEmitStore(),
 
-            // TODO: switch expression
-            if (statement is BoundBlockStatement block)
-                store = emitBlockStatement(block);
-            else if (statement is BoundVariableDeclaration variableDeclaration)
-            {
-                if (variableDeclaration.OptionalAssignment is not null)
-                    store = emitStatement(variableDeclaration.OptionalAssignment);
-            }
-            else if (statement is BoundAssignmentStatement assigment)
-                store = emitAssigmentStatement(assigment);
-            else if (statement is BoundGotoStatement gotoStatement)
-                store = emitGotoStatement(gotoStatement);
-            else if (statement is BoundConditionalGotoStatement conditionalGotoStatement)
-            {
-                if (conditionalGotoStatement.Condition is BoundSpecialBlockCondition condition)
-                    store = emitSpecialBlockStatement(condition.Keyword, conditionalGotoStatement.Label);
-                else
-                    store = emitConditionalGotoStatement(conditionalGotoStatement);
-            }
-            else if (statement is BoundLabelStatement labelStatement)
-                store = emitLabelStatement(labelStatement);
-            else if (statement is BoundExpressionStatement expression)
-                store = emitExpression(expression.Expression);
-            else if (statement is BoundNopStatement)
-                store = new NopEmitStore();
-            else
-                throw new Exception($"Unsuported statement '{statement}'.");
+                _ => throw new Exception($"Unsuported statement '{statement}'."),
+            };
 
             return store;
         }
@@ -234,23 +220,17 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitExpression(BoundExpression expression)
         {
-            EmitStore store = new NopEmitStore();
+            EmitStore store = expression switch
+            {
+                BoundLiteralExpression => emitLiteralExpression((BoundLiteralExpression)expression),
+                BoundConstructorExpression => emitConstructorExpression((BoundConstructorExpression)expression),
+                BoundUnaryExpression => emitUnaryExpression((BoundUnaryExpression)expression),
+                BoundBinaryExpression => emitBinaryExpression((BoundBinaryExpression)expression),
+                BoundVariableExpression => emitVariableExpression((BoundVariableExpression)expression),
+                BoundCallExpression => emitCallExpression((BoundCallExpression)expression),
 
-            // TODO: switch expression
-            if (expression is BoundLiteralExpression literal)
-                store = emitLiteralExpression(literal);
-            else if (expression is BoundConstructorExpression constructor)
-                store = emitConstructorExpression(constructor);
-            else if (expression is BoundUnaryExpression unary)
-                store = emitUnaryExpression(unary);
-            else if (expression is BoundBinaryExpression binary)
-                store = emitBinaryExpression(binary);
-            else if (expression is BoundVariableExpression name)
-                store = emitVariableExpression(name);
-            else if (expression is BoundCallExpression call)
-                store = emitCallExpression(call);
-            else
-                throw new Exception($"Unsuported expression: '{expression.GetType()}'.");
+                _ => throw new Exception($"Unsuported expression: '{expression.GetType()}'."),
+            };
 
             return store;
         }
