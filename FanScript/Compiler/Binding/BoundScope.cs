@@ -5,7 +5,7 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class BoundScope
     {
-        private Dictionary<string, List<Symbol>>? _symbols;
+        private Dictionary<string, List<Symbol>> _symbols = new();
 
         public BoundScope(BoundScope? parent)
         {
@@ -23,30 +23,44 @@ namespace FanScript.Compiler.Binding
         private bool TryDeclareSymbol<TSymbol>(TSymbol symbol)
             where TSymbol : Symbol
         {
-            if (_symbols is null)
-                _symbols = new();
-            else if (_symbols.TryGetValue(symbol.Name, out var symbolList))
-            {
-                if (symbol is FunctionSymbol function)
-                {
-                    if (symbolList.Where(symbol => symbol is FunctionSymbol)
-                        .Select(symbol => (FunctionSymbol)symbol)
-                        .Where(func => Enumerable.SequenceEqual(
-                            func.Parameters.Select(param => param.Type),
-                            function.Parameters.Select(param => param.Type))
-                        )
-                        .Count() == 0)
-                    { // function(s) with same name, but differend parameters
-                        symbolList.Add(symbol);
-                        return true;
-                    }
-                }
-
+            if (SymbolExists(symbol))
                 return false;
+
+            if (!_symbols.TryGetValue(symbol.Name, out var symbolList))
+            {
+                symbolList = new();
+                _symbols.Add(symbol.Name, symbolList);
             }
 
-            _symbols.Add(symbol.Name, [symbol]);
+            symbolList.Add(symbol);
             return true;
+        }
+
+        private bool SymbolExists(Symbol symbol)
+        {
+            if (symbol is FunctionSymbol func)
+                return FunctionExists(func);
+
+            if (_symbols.ContainsKey(symbol.Name)) return true;
+
+            return Parent?.SymbolExists(symbol) ?? false;
+        }
+
+        private bool FunctionExists(FunctionSymbol function)
+        {
+            if (_symbols.TryGetValue(function.Name, out var symbolList))
+            {
+                if (symbolList.Where(symbol => symbol is FunctionSymbol)
+                       .Select(symbol => (FunctionSymbol)symbol)
+                       .Where(func => Enumerable.SequenceEqual(
+                           func.Parameters.Select(param => param.Type),
+                           function.Parameters.Select(param => param.Type))
+                       )
+                       .Count() != 0)
+                    return true;
+            }
+
+            return Parent?.FunctionExists(function) ?? false;
         }
 
         public Symbol? TryLookupSymbol(string name)
