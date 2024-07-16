@@ -92,5 +92,21 @@ namespace FanScript.Compiler.Symbols
             if (obj is TypeSymbol other) return GenericEquals(other);
             else return false;
         }
+
+        public class FuntionParamsComparer : IEqualityComparer<TypeSymbol>
+        {
+            public bool Equals(TypeSymbol? x, TypeSymbol? y)
+            {
+                if (x == y) return true;
+                else if (x is null || y is null) return false;
+
+                return x.GenericEquals(y) ||
+                    (x.Equals(Generic) || y.Equals(Generic)) ||
+                    (x.NonGenericEquals(y) && ((x.IsGenericInstance && y.IsGenericDefinition) || (x.IsGenericDefinition && y.IsGenericInstance)));
+            }
+
+            public int GetHashCode([DisallowNull] TypeSymbol obj)
+                => 0; // can't use normal gethashcode, because any type can equal generic
+        }
     }
 }

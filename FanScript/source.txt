@@ -4,4 +4,7 @@ onPlay {
     readonly array<float> arr = [1, 2, 3]
 
     float c = b // because b is constant, b get's replaced by it's value (10)
+
+    setPtrValue(get(arr, 0), 10)
+    set(arr, 1, 20)
 }

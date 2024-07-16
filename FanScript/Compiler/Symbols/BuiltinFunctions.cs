@@ -183,6 +183,30 @@ namespace FanScript.Compiler.Symbols
                     return new BasicEmitStore(setPtr);
                 },
             };
+        public static readonly FunctionSymbol Ptr_SetValue
+            = new BuiltinFunctionSymbol("setPtrValue",
+            [
+                new ParameterSymbol("pointer", TypeSymbol.Generic, 0),
+                new ParameterSymbol("value", TypeSymbol.Generic, 1),
+            ], TypeSymbol.Void, [TypeSymbol.Bool, TypeSymbol.Float, TypeSymbol.Vector3, TypeSymbol.Rotation, TypeSymbol.Object])
+            {
+                Emit = (call, context) =>
+                {
+                    Block setPtr = context.Builder.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));
+
+                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    {
+                        EmitStore ptr = context.EmitExpression(call.Arguments[0]);
+                        EmitStore value = context.EmitExpression(call.Arguments[1]);
+
+                        context.Connect(ptr, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals[2]));
+                        context.Connect(value, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals[1]));
+                    });
+
+                    return new BasicEmitStore(setPtr);
+
+                }
+            };
 
         private static IEnumerable<FunctionSymbol>? functionsCache;
         internal static IEnumerable<FunctionSymbol> GetAll()

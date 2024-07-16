@@ -63,7 +63,7 @@ namespace FanScript.Compiler.Binding
                 foreach (var symbol in symbolList)
                     if (symbol is FunctionSymbol function && function.Parameters
                         .Select(param => param.Type)
-                        .SequenceEqual(arguments))
+                        .SequenceEqual(arguments, new TypeSymbol.FuntionParamsComparer()))
                         return function;
 
             return Parent?.TryLookupFunction(name, arguments);
