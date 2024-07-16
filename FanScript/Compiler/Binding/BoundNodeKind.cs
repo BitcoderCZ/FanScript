@@ -30,5 +30,7 @@
         ConstructorExpression,
 
         SpecialBlockCondition,
+
+        EmitterHint,
     }
 }

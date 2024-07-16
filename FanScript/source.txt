@@ -1,10 +1,18 @@
 onPlay {
-    readonly float a = 5
-    const float b = 10
-    readonly array<float> arr = [1, 2, 3]
+    float i = 0
+    bool a = i < 30 && i > 2 || i > 5
+    while (true) {
+        if (i >= 10) {
+            i += 4
+            continue
+        }
+        if (i > 99)
+            break
+        
+        i += 2
+    }
 
-    float c = b // because b is constant, b get's replaced by it's value (10)
-
-    setPtrValue(get(arr, 0), 10)
-    set(arr, 1, 20)
+    float f = 0
 }
+
+float outOfOP = 0

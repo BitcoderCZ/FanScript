@@ -34,8 +34,8 @@
 
         public TreeNode<T> GetOrCreateChild(int index, T defaultValue)
         {
-            if (index < children.Count)
-                return children[index];
+            if (children.TryGetValue(index, out var val))
+                return val;
             else
                 return AddChild(index, defaultValue);
         }

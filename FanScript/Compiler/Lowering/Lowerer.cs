@@ -82,7 +82,7 @@ namespace FanScript.Compiler.Lowering
 
             ImmutableArray<BoundStatement>.Builder builder = node.Statements.ToBuilder();
             for (int i = builder.Count - 1; i >= 0; i--)
-                if (!reachableStatements.Contains(builder[i]))
+                if (!reachableStatements.Contains(builder[i]) && builder[i] is not BoundEmitterHint)
                     builder.RemoveAt(i);
 
             return new BoundBlockStatement(node.Syntax, builder.ToImmutable());
@@ -114,7 +114,7 @@ namespace FanScript.Compiler.Lowering
 
         protected override BoundStatement RewriteIfStatement(BoundIfStatement node)
         {
-            if (node.ElseStatement == null)
+            if (node.ElseStatement is null)
             {
                 // if <condition>
                 //      <then>
@@ -129,7 +129,9 @@ namespace FanScript.Compiler.Lowering
                 BoundBlockStatement result = Block(
                     node.Syntax,
                     GotoFalse(node.Syntax, endLabel, node.Condition),
+                    Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),
                     node.ThenStatement,
+                    Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd),
                     Label(node.Syntax, endLabel)
                 );
 
@@ -156,14 +158,29 @@ namespace FanScript.Compiler.Lowering
                 BoundBlockStatement result = Block(
                     node.Syntax,
                     GotoFalse(node.Syntax, elseLabel, node.Condition),
+                    Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),
                     node.ThenStatement,
+                    Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd),
                     Goto(node.Syntax, endLabel),
                     Label(node.Syntax, elseLabel),
-                    node.ElseStatement,
+                    getElse(),
                     Label(node.Syntax, endLabel)
                 );
 
                 return RewriteStatement(result);
+
+                BoundStatement getElse()
+                {
+                    if (node.ElseStatement is BoundIfStatement)
+                        return node.ElseStatement;
+                    else
+                        return Block(
+                            node.Syntax,
+                            Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),
+                            node.ElseStatement!,
+                            Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd)
+                        );
+                }
             }
         }
 
@@ -188,7 +205,9 @@ namespace FanScript.Compiler.Lowering
                 GotoTrue(node.Syntax, onTrueLabel, new BoundSpecialBlockCondition(node.Keyword, node.Keyword.Kind)),
                 Goto(node.Syntax, endLabel),
                 Label(node.Syntax, onTrueLabel),
+                Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),
                 node.Block,
+                Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd),
                 RollbackGoto(node.Syntax, endLabel),
                 Label(node.Syntax, endLabel)
             );
@@ -213,7 +232,9 @@ namespace FanScript.Compiler.Lowering
                 node.Syntax,
                 Label(node.Syntax, node.ContinueLabel),
                 GotoFalse(node.Syntax, node.BreakLabel, node.Condition),
+                Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),
                 node.Body,
+                Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd),
                 Goto(node.Syntax, node.ContinueLabel),
                 Label(node.Syntax, node.BreakLabel)
             );

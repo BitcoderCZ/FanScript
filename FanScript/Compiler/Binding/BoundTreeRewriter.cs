@@ -41,6 +41,8 @@ namespace FanScript.Compiler.Binding
                     return RewriteConditionalGotoStatement((BoundConditionalGotoStatement)node);
                 case BoundNodeKind.ReturnStatement:
                 //    return RewriteReturnStatement((BoundReturnStatement)node);
+                case BoundNodeKind.EmitterHint:
+                    return RewriteEmitterHint((BoundEmitterHint)node);
                 case BoundNodeKind.ExpressionStatement:
                     return RewriteExpressionStatement((BoundExpressionStatement)node);
                 default:
@@ -196,6 +198,9 @@ namespace FanScript.Compiler.Binding
 
             return new BoundConditionalGotoStatement(node.Syntax, node.Label, condition, node.JumpIfTrue);
         }
+
+        protected virtual BoundStatement RewriteEmitterHint(BoundEmitterHint node)
+            => node;
 
         protected virtual BoundStatement RewriteExpressionStatement(BoundExpressionStatement node)
         {

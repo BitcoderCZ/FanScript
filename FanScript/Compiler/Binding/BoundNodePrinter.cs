@@ -69,6 +69,9 @@ namespace FanScript.Compiler.Binding
                 //case BoundNodeKind.ReturnStatement:
                 //    WriteReturnStatement((BoundReturnStatement)node, writer);
                 //    break;
+                case BoundNodeKind.EmitterHint:
+                    WriteEmitterHint((BoundEmitterHint)node, writer);
+                    break;
                 case BoundNodeKind.ExpressionStatement:
                     WriteExpressionStatement((BoundExpressionStatement)node, writer);
                     break;
@@ -347,6 +350,26 @@ namespace FanScript.Compiler.Binding
         //    }
         //    writer.WriteLine();
         //}
+
+        private static void WriteEmitterHint(BoundEmitterHint node, IndentedTextWriter writer)
+        {
+            switch (node.Hint)
+            {
+                case BoundEmitterHint.HintKind.StatementBlockEnd:
+                    writer.Indent--;
+                    break;
+            }
+
+            writer.WritePunctuation("<" + node.Hint + ">");
+            writer.WriteLine();
+
+            switch (node.Hint)
+            {
+                case BoundEmitterHint.HintKind.StatementBlockStart:
+                    writer.Indent++;
+                    break;
+            }
+        }
 
         private static void WriteExpressionStatement(BoundExpressionStatement node, IndentedTextWriter writer)
         {

@@ -93,5 +93,8 @@ namespace FanScript.Compiler.Binding
 
             return new BoundLiteralExpression(syntax, literal);
         }
+
+        public static BoundEmitterHint Hint(SyntaxNode syntax, BoundEmitterHint.HintKind hint)
+            => new BoundEmitterHint(syntax, hint);
     }
 }

@@ -106,6 +106,7 @@ namespace FanScript.Compiler.Emit
                 BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundSpecialBlockCondition condition => emitSpecialBlockStatement(condition.Keyword, conditionalGoto.Label),
                 BoundConditionalGotoStatement => emitConditionalGotoStatement((BoundConditionalGotoStatement)statement),
                 BoundLabelStatement => emitLabelStatement((BoundLabelStatement)statement),
+                BoundEmitterHint => emitHint((BoundEmitterHint)statement),
                 BoundExpressionStatement => emitExpression(((BoundExpressionStatement)statement).Expression),
                 BoundNopStatement => new NopEmitStore(),
 
@@ -216,6 +217,23 @@ namespace FanScript.Compiler.Emit
         private EmitStore emitLabelStatement(BoundLabelStatement labelStatement)
         {
             return new LabelEmitStore(labelStatement.Label.Name);
+        }
+
+        private EmitStore emitHint(BoundEmitterHint statement)
+        {
+            switch (statement.Hint)
+            {
+                case BoundEmitterHint.HintKind.StatementBlockStart:
+                    builder.BlockPlacer.EnterStatementBlock();
+                    break;
+                case BoundEmitterHint.HintKind.StatementBlockEnd:
+                    builder.BlockPlacer.ExitStatementBlock();
+                    break;
+                default:
+                    throw new InvalidDataException($"Unknown emitter hint: '{statement.Hint}'");
+            }
+
+            return new NopEmitStore();
         }
 
         private EmitStore emitExpression(BoundExpression expression)
