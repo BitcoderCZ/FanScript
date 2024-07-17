@@ -26,6 +26,7 @@ namespace FanScript.Compiler.Symbols
         public TypeSymbol? InnerType { get; }
 
         public static readonly ImmutableArray<TypeSymbol> BuiltInTypes = [Bool, Float, Vector3, Rotation, Object, Array];
+        public static readonly ImmutableArray<TypeSymbol> BuiltInNonGenericTypes = [Bool, Float, Vector3, Rotation, Object];
 
         private TypeSymbol(string name, bool isGenericDefinition = false)
             : base(name)

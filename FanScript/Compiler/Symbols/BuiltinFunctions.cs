@@ -262,7 +262,7 @@ namespace FanScript.Compiler.Symbols
             = new BuiltinFunctionSymbol("inspect",
             [
                 new ParameterSymbol("value", TypeSymbol.Generic, 0)
-            ], TypeSymbol.Void, [TypeSymbol.Bool, TypeSymbol.Float, TypeSymbol.Vector3, TypeSymbol.Rotation], (call, context) =>
+            ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
                 {
                     Block inspect = context.Builder.AddBlock(Blocks.Values.InspectByType(call.GenericType!.ToWireType()));
 
@@ -370,7 +370,7 @@ namespace FanScript.Compiler.Symbols
             [
                 new ParameterSymbol("array", TypeSymbol.Array, 0),
                 new ParameterSymbol("index", TypeSymbol.Float, 1),
-            ], TypeSymbol.Generic, [TypeSymbol.Bool, TypeSymbol.Float, TypeSymbol.Vector3, TypeSymbol.Rotation, TypeSymbol.Object], (call, context) =>
+            ], TypeSymbol.Generic, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
                 {
                     Block list = context.Builder.AddBlock(Blocks.Variables.ListByType(call.GenericType!.ToWireType()));
 
@@ -392,7 +392,7 @@ namespace FanScript.Compiler.Symbols
                 new ParameterSymbol("array", TypeSymbol.Array, 0),
                 new ParameterSymbol("index", TypeSymbol.Float, 1),
                 new ParameterSymbol("value", TypeSymbol.Generic, 2),
-            ], TypeSymbol.Void, [TypeSymbol.Bool, TypeSymbol.Float, TypeSymbol.Vector3, TypeSymbol.Rotation, TypeSymbol.Object], (call, context) =>
+            ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
                 {
                     Block setPtr = context.Builder.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));
 
@@ -423,7 +423,7 @@ namespace FanScript.Compiler.Symbols
             [
                 new ParameterSymbol("pointer", TypeSymbol.Generic, 0),
                 new ParameterSymbol("value", TypeSymbol.Generic, 1),
-            ], TypeSymbol.Void, [TypeSymbol.Bool, TypeSymbol.Float, TypeSymbol.Vector3, TypeSymbol.Rotation, TypeSymbol.Object], (call, context) =>
+            ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
                 {
                     Block setPtr = context.Builder.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));
 

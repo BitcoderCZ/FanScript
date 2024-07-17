@@ -195,6 +195,8 @@ namespace FanScript.FCInfo
                         return Inspect_Vector;
                     case WireType.Rot:
                         return Inspect_Rotation;
+                    case WireType.Obj:
+                        return Inspect_Object;
                     default:
                         throw new Exception($"Cannot get inspect for WireType: \"{Enum.GetName(typeof(WireType), type)}\"");
                 }
@@ -210,6 +212,7 @@ namespace FanScript.FCInfo
             public static readonly BlockDef Inspect_Vector = new BlockDef("Inspect Vector", 20, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Vec3, TerminalType.In, "Vector"), new Terminal(2, WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef Inspect_Rotation = new BlockDef("Inspect Rotation", 24, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Rot, TerminalType.In, "Rotation"), new Terminal(2, WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef Inspect_Truth = new BlockDef("Inspect Truth", 28, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Bool, TerminalType.In, "Truth"), new Terminal(2, WireType.Void, TerminalType.In, "Before"));
+            public static readonly BlockDef Inspect_Object = new BlockDef("Inspect Object", 32, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Obj, TerminalType.In, "Object"), new Terminal(2, WireType.Void, TerminalType.In, "Before"));
         }
 
         public static class Variables
