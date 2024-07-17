@@ -1,9 +1,11 @@
-on PlaySensor() {
+on Play() {
     readonly float a = 45
     readonly float b = 20
 
-    setRandomSeed(0)
-    float random = random(100, 200)
+    on LateUpdate() {
+        setRandomSeed(0)
+        float random = random(100, 200)
+    }
 
     float min = min(a, b)
     float max = max(a, b)
@@ -22,4 +24,8 @@ on PlaySensor() {
     rot axisAngle = axisAngle(vec3(0, 0, 1), a)
     vec3 lineVsPlane = lineVsPlane(vec3(0, a, 0), vec3(0, -a, 0), vec3(0, 0, 0), vec3(0, 1, 0))
     rot lookRotation = lookRotation(vec3(a, 0, a), vec3(0, 1, 0))
+}
+
+on BoxArt() {
+    float ba = 0
 }

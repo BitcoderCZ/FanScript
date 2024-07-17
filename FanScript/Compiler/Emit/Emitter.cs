@@ -158,8 +158,14 @@ namespace FanScript.Compiler.Emit
             BlockDef def;
             switch (type)
             {
-                case SpecialBlockType.PlaySensor:
+                case SpecialBlockType.Play:
                     def = Blocks.Control.PlaySensor;
+                    break;
+                case SpecialBlockType.LateUpdate:
+                    def = Blocks.Control.LateUpdate;
+                    break;
+                case SpecialBlockType.BoxArt:
+                    def = Blocks.Control.BoxArtSensor;
                     break;
                 default:
                     throw new Exception($"Unknown {typeof(SpecialBlockType)}: {type}");

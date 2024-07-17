@@ -290,8 +290,16 @@ namespace FanScript.Compiler.Binding
             int argCount;
             switch (syntax.Identifier.Text)
             {
-                case "PlaySensor":
-                    type = SpecialBlockType.PlaySensor;
+                case "Play":
+                    type = SpecialBlockType.Play;
+                    argCount = 0;
+                    break;
+                case "LateUpdate":
+                    type = SpecialBlockType.LateUpdate;
+                    argCount = 0;
+                    break;
+                case "BoxArt":
+                    type = SpecialBlockType.BoxArt;
                     argCount = 0;
                     break;
                 default:

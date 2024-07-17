@@ -8,6 +8,8 @@ namespace FanScript.Compiler
 {
     public enum SpecialBlockType
     {
-        PlaySensor
+        Play,
+        LateUpdate,
+        BoxArt,
     }
 }
