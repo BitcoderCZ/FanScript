@@ -5,7 +5,8 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class BoundScope
     {
-        private Dictionary<string, List<Symbol>> _symbols = new();
+        private Dictionary<string, VariableSymbol> variables = new();
+        private Dictionary<string, List<FunctionSymbol>> functions = new();
 
         public BoundScope(BoundScope? parent)
         {
@@ -15,43 +16,41 @@ namespace FanScript.Compiler.Binding
         public BoundScope? Parent { get; }
 
         public bool TryDeclareVariable(VariableSymbol variable)
-            => TryDeclareSymbol(variable);
-
-        public bool TryDeclareFunction(FunctionSymbol function)
-            => TryDeclareSymbol(function);
-
-        private bool TryDeclareSymbol<TSymbol>(TSymbol symbol)
-            where TSymbol : Symbol
         {
-            if (SymbolExists(symbol))
+            if (VariablelExists(variable))
                 return false;
 
-            if (!_symbols.TryGetValue(symbol.Name, out var symbolList))
-            {
-                symbolList = new();
-                _symbols.Add(symbol.Name, symbolList);
-            }
-
-            symbolList.Add(symbol);
+            variables.Add(variable.Name, variable);
             return true;
         }
 
-        private bool SymbolExists(Symbol symbol)
+        public bool TryDeclareFunction(FunctionSymbol function)
         {
-            if (symbol is FunctionSymbol func)
-                return FunctionExists(func);
+            if (FunctionExists(function))
+                return false; 
+            
+            if (!functions.TryGetValue(function.Name, out var symbolList))
+            {
+                symbolList = new();
+                functions.Add(function.Name, symbolList);
+            }
 
-            if (_symbols.ContainsKey(symbol.Name)) return true;
+            symbolList.Add(function);
+            return true;
+        }
 
-            return Parent?.SymbolExists(symbol) ?? false;
+        private bool VariablelExists(VariableSymbol variable)
+        {
+            if (variables.ContainsKey(variable.Name)) return true;
+
+            return Parent?.VariablelExists(variable) ?? false;
         }
 
         private bool FunctionExists(FunctionSymbol function)
         {
-            if (_symbols.TryGetValue(function.Name, out var symbolList))
+            if (functions.TryGetValue(function.Name, out var symbolList))
             {
                 if (symbolList.Where(symbol => symbol is FunctionSymbol)
-                       .Select(symbol => (FunctionSymbol)symbol)
                        .Where(func => Enumerable.SequenceEqual(
                            func.Parameters.Select(param => param.Type),
                            function.Parameters.Select(param => param.Type))
@@ -63,17 +62,17 @@ namespace FanScript.Compiler.Binding
             return Parent?.FunctionExists(function) ?? false;
         }
 
-        public Symbol? TryLookupSymbol(string name)
+        public Symbol? TryLookupVariable(string name)
         {
-            if (_symbols is not null && _symbols.TryGetValue(name, out var symbolList))
-                return symbolList.FirstOrDefault();
+            if (variables.TryGetValue(name, out var variable))
+                return variable;
 
-            return Parent?.TryLookupSymbol(name);
+            return Parent?.TryLookupVariable(name);
         }
 
         public FunctionSymbol? TryLookupFunction(string name, IEnumerable<TypeSymbol> arguments)
         {
-            if (_symbols is not null && _symbols.TryGetValue(name, out var symbolList))
+            if (functions.TryGetValue(name, out var symbolList))
                 foreach (var symbol in symbolList)
                     if (symbol is FunctionSymbol function && function.Parameters
                         .Select(param => param.Type)
@@ -84,18 +83,9 @@ namespace FanScript.Compiler.Binding
         }
 
         public ImmutableArray<VariableSymbol> GetDeclaredVariables()
-            => GetDeclaredSymbols<VariableSymbol>();
+            => variables.Values.ToImmutableArray();
 
         public ImmutableArray<FunctionSymbol> GetDeclaredFunctions()
-            => GetDeclaredSymbols<FunctionSymbol>();
-
-        private ImmutableArray<TSymbol> GetDeclaredSymbols<TSymbol>()
-            where TSymbol : Symbol
-        {
-            if (_symbols is null)
-                return ImmutableArray<TSymbol>.Empty;
-
-            return _symbols.Values.SelectMany(symbols => symbols).OfType<TSymbol>().ToImmutableArray();
-        }
+            => functions.Values.SelectMany(list => list).ToImmutableArray();
     }
 }

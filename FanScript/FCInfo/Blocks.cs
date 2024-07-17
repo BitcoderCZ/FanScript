@@ -10,6 +10,7 @@ namespace FanScript.FCInfo
     {
         public static bool PositionsLoaded { get; private set; } = false;
 
+        // TODO: instead of each block speifing positions, have position "templates" or whatever and have the blocks index into them
         public static void LoadPositions()
         {
             if (PositionsLoaded) return;
@@ -131,6 +132,31 @@ namespace FanScript.FCInfo
 
             public static readonly BlockDef Less = new BlockDef("Less Than", 128, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Bool, TerminalType.Out, "Num1 < Num2"), new Terminal(1, WireType.Float, TerminalType.In, "Num2"), new Terminal(2, WireType.Float, TerminalType.In, "Num1"));
             public static readonly BlockDef Greater = new BlockDef("Greater Than", 481, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Bool, TerminalType.Out, "Num1 > Num2"), new Terminal(1, WireType.Float, TerminalType.In, "Num2"), new Terminal(2, WireType.Float, TerminalType.In, "Num1"));
+
+            public static readonly BlockDef Min = new BlockDef("Min", 176, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Float, TerminalType.Out, "Smaller"), new Terminal(1, WireType.Float, TerminalType.In, "Num2"), new Terminal(2, WireType.Float, TerminalType.In, "Num1"));
+            public static readonly BlockDef Max = new BlockDef("Min", 180, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Float, TerminalType.Out, "Bigger"), new Terminal(1, WireType.Float, TerminalType.In, "Num2"), new Terminal(2, WireType.Float, TerminalType.In, "Num1"));
+
+            public static readonly BlockDef Sin = new BlockDef("Sin", 413, BlockType.Pasive, new Vector2I(2, 1), new Terminal(0, WireType.Float, TerminalType.Out, "Sin(Num)"), new Terminal(1, WireType.Float, TerminalType.In, "Num"));
+            public static readonly BlockDef Cos = new BlockDef("Cos", 453, BlockType.Pasive, new Vector2I(2, 1), new Terminal(0, WireType.Float, TerminalType.Out, "Cos(Num)"), new Terminal(1, WireType.Float, TerminalType.In, "Num"));
+            public static readonly BlockDef Round = new BlockDef("Round", 184, BlockType.Pasive, new Vector2I(2, 1), new Terminal(0, WireType.Float, TerminalType.Out, "Rounded"), new Terminal(1, WireType.Float, TerminalType.In, "Number"));
+            public static readonly BlockDef Floor = new BlockDef("Floor", 186, BlockType.Pasive, new Vector2I(2, 1), new Terminal(0, WireType.Float, TerminalType.Out, "Floor"), new Terminal(1, WireType.Float, TerminalType.In, "Number"));
+            public static readonly BlockDef Ceiling = new BlockDef("Ceiling", 188, BlockType.Pasive, new Vector2I(2, 1), new Terminal(0, WireType.Float, TerminalType.Out, "Ceiling"), new Terminal(1, WireType.Float, TerminalType.In, "Number"));
+            public static readonly BlockDef Absolute = new BlockDef("Absolute", 455, BlockType.Pasive, new Vector2I(2, 1), new Terminal(0, WireType.Float, TerminalType.Out, "|Num|"), new Terminal(1, WireType.Float, TerminalType.In, "Num"));
+
+            public static readonly BlockDef Logarithm = new BlockDef("Logarithm", 580, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Float, TerminalType.Out, "Logarithm"), new Terminal(1, WireType.Float, TerminalType.In, "Base"), new Terminal(2, WireType.Float, TerminalType.In, "Number"));
+
+            public static readonly BlockDef Normalize = new BlockDef("Normalize", 578, BlockType.Pasive, new Vector2I(2, 1), new Terminal(0, WireType.Vec3, TerminalType.Out, "Normalized"), new Terminal(1, WireType.Vec3, TerminalType.In, "Vector"));
+
+            public static readonly BlockDef DotProduct = new BlockDef("Dot Product", 570, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Float, TerminalType.Out, "Dot Product"), new Terminal(1, WireType.Vec3, TerminalType.In, "Vector"), new Terminal(2, WireType.Vec3, TerminalType.In, "Vector"));
+            public static readonly BlockDef CrossProduct = new BlockDef("Cross Product", 574, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Vec3, TerminalType.Out, "Cross Product"), new Terminal(1, WireType.Vec3, TerminalType.In, "Vector"), new Terminal(2, WireType.Vec3, TerminalType.In, "Vector"));
+            public static readonly BlockDef Distance = new BlockDef("Distance", 190, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Float, TerminalType.Out, "Distance"), new Terminal(1, WireType.Vec3, TerminalType.In, "Vector"), new Terminal(2, WireType.Vec3, TerminalType.In, "Vector"));
+
+            public static readonly BlockDef Lerp = new BlockDef("LERP", 194, BlockType.Pasive, new Vector2I(2, 3), new Terminal(0, WireType.Rot, TerminalType.Out, "Rotation"), new Terminal(1, WireType.Float, TerminalType.In, "Amount"), new Terminal(2, WireType.Rot, TerminalType.In, "To"), new Terminal(3, WireType.Rot, TerminalType.In, "From"));
+
+            public static readonly BlockDef AxisAngle = new BlockDef("Axis Angle", 200, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Rot, TerminalType.Out, "Rotation"), new Terminal(1, WireType.Float, TerminalType.In, "Angle"), new Terminal(2, WireType.Vec3, TerminalType.In, "Axis"));
+            public static readonly BlockDef LookRotation = new BlockDef("Look Rotation", 204, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Rot, TerminalType.Out, "Rotation"), new Terminal(1, WireType.Vec3, TerminalType.In, "Up"), new Terminal(2, WireType.Vec3, TerminalType.In, "Direction"));
+
+            public static readonly BlockDef LineVsPlane = new BlockDef("Line vs Plane", 208, BlockType.Pasive, new Vector2I(2, 4), new Terminal(0, WireType.Vec3, TerminalType.Out, "Intersection"), new Terminal(1, WireType.Vec3, TerminalType.In, "Plane Normal"), new Terminal(2, WireType.Vec3, TerminalType.In, "Plane Point"), new Terminal(3, WireType.Vec3, TerminalType.In, "Line To"), new Terminal(4, WireType.Vec3, TerminalType.In, "Line From"));
 
             public static readonly BlockDef Make_Vector = new BlockDef("Make Vector", 150, BlockType.Pasive, new Vector2I(2, 3), new Terminal(0, WireType.Vec3, TerminalType.Out, "Vector"), new Terminal(1, WireType.Float, TerminalType.In, "Z"), new Terminal(2, WireType.Float, TerminalType.In, "Y"), new Terminal(3, WireType.Float, TerminalType.In, "X"));
             public static readonly BlockDef Break_Vector = new BlockDef("Break Vector", 156, BlockType.Pasive, new Vector2I(2, 3), new Terminal(0, WireType.Float, TerminalType.Out, "Z"), new Terminal(1, WireType.Float, TerminalType.Out, "Y"), new Terminal(2, WireType.Float, TerminalType.Out, "X"), new Terminal(3, WireType.Vec3, TerminalType.In, "Vector"));

@@ -601,14 +601,6 @@ namespace FanScript.Compiler.Binding
             foreach (ExpressionSyntax argument in syntax.Arguments)
                 boundArguments.Add(BindExpression(argument));
 
-            Symbol? symbol = _scope.TryLookupSymbol(syntax.Identifier.Text);
-
-            if (symbol is not FunctionSymbol)
-            {
-                _diagnostics.ReportNotAFunction(syntax.Identifier.Location, syntax.Identifier.Text);
-                return new BoundErrorExpression(syntax);
-            }
-
             FunctionSymbol? function = _scope.TryLookupFunction(syntax.Identifier.Text, boundArguments.Select(arg => arg.Type!).ToList());
 
             if (function is null)
@@ -795,7 +787,7 @@ namespace FanScript.Compiler.Binding
         private VariableSymbol? BindVariableReference(SyntaxToken identifierToken)
         {
             string name = identifierToken.Text;
-            switch (_scope.TryLookupSymbol(name))
+            switch (_scope.TryLookupVariable(name))
             {
                 case VariableSymbol variable:
                     return variable;

@@ -642,7 +642,7 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitCallExpression(BoundCallExpression call)
         {
-            if (call.Function is BuiltinFunctionSymbol builtinFunction && builtinFunction.Emit is not null)
+            if (call.Function is BuiltinFunctionSymbol builtinFunction)
                 return builtinFunction.Emit(call, emitContext);
 
             switch (call.Function.Name)
