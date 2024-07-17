@@ -202,7 +202,7 @@ namespace FanScript.Compiler.Lowering
             BoundLabel endLabel = GenerateLabel("end");
             BoundBlockStatement result = Block(
                 node.Syntax,
-                GotoTrue(node.Syntax, onTrueLabel, new BoundSpecialBlockCondition(node.Keyword, node.Keyword.Kind)),
+                GotoTrue(node.Syntax, onTrueLabel, new BoundSpecialBlockCondition(node.Syntax, node.Type, node.Arguments)),
                 Goto(node.Syntax, endLabel),
                 Label(node.Syntax, onTrueLabel),
                 Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),

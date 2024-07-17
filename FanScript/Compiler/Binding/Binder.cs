@@ -286,8 +286,47 @@ namespace FanScript.Compiler.Binding
 
         private BoundStatement BindSpecialBlockStatement(SpecialBlockStatementSyntax syntax)
         {
+            SpecialBlockType type;
+            int argCount;
+            switch (syntax.Identifier.Text)
+            {
+                case "PlaySensor":
+                    type = SpecialBlockType.PlaySensor;
+                    argCount = 0;
+                    break;
+                default:
+                    _diagnostics.ReportUnknownSpecialBlock(syntax.Identifier.Location, syntax.Identifier.Text);
+                    return BindErrorStatement(syntax);
+            }
+
+            if (argCount != syntax.Arguments.Count)
+            {
+                TextSpan span;
+                if (syntax.Arguments.Count > argCount)
+                {
+                    SyntaxNode firstExceedingNode;
+                    if (argCount > 0)
+                        firstExceedingNode = syntax.Arguments.GetSeparator(argCount - 1);
+                    else
+                        firstExceedingNode = syntax.Arguments[0];
+                    ExpressionSyntax lastExceedingArgument = syntax.Arguments[syntax.Arguments.Count - 1];
+                    span = TextSpan.FromBounds(firstExceedingNode.Span.Start, lastExceedingArgument.Span.End);
+                }
+                else
+                    span = syntax.CloseParenthesisToken.Span;
+
+                TextLocation location = new TextLocation(syntax.SyntaxTree.Text, span);
+                _diagnostics.ReportWrongSBArgumentCount(location, syntax.Identifier.Text, argCount, syntax.Arguments.Count);
+                return BindErrorStatement(syntax);
+            }
+
+            ImmutableArray<BoundExpression>.Builder boundArguments = ImmutableArray.CreateBuilder<BoundExpression>(syntax.Arguments.Count);
+
+            foreach (ExpressionSyntax argument in syntax.Arguments)
+                boundArguments.Add(BindExpression(argument, TypeSymbol.Float)); // at least for now all params are floats (ints actually)
+
             BoundBlockStatement block = (BoundBlockStatement)BindBlockStatement(syntax.Block);
-            return new BoundSpecialBlockStatement(syntax, syntax.KeywordToken, block);
+            return new BoundSpecialBlockStatement(syntax, type, boundArguments.ToImmutable(), block);
         }
 
         private BoundStatement BindVariableDeclaration(VariableDeclarationSyntax syntax)

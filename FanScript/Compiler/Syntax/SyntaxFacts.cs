@@ -86,8 +86,8 @@
                     return SyntaxKind.KeywordBreak;
                 case "continue":
                     return SyntaxKind.KeywordContinue;
-                case "onPlay":
-                    return SyntaxKind.KeywordOnPlay;
+                case "on":
+                    return SyntaxKind.KeywordOn;
                 case "readonly":
                     return SyntaxKind.ReadOnlyModifier;
                 case "const":
@@ -188,8 +188,8 @@
                     "continue",
                 SyntaxKind.KeywordFunction =>
                     "function",
-                SyntaxKind.KeywordOnPlay =>
-                    "onPlay",
+                SyntaxKind.KeywordOn =>
+                    "on",
                 SyntaxKind.ReadOnlyModifier =>
                     "readonly",
                 SyntaxKind.ConstantModifier =>

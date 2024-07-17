@@ -73,6 +73,20 @@
             yield return EndOfFileToken;
         }
     }
+    partial class ConstructorExpressionSyntax
+    {
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return KeywordToken;
+            yield return OpenParenthesisToken;
+            yield return ExpressionX;
+            yield return Comma0Token;
+            yield return ExpressionY;
+            yield return Comma1Token;
+            yield return ExpressionZ;
+            yield return CloseParenthesisToken;
+        }
+    }
     partial class ContinueStatementSyntax
     {
         public override IEnumerable<SyntaxNode> GetChildren()
@@ -189,6 +203,19 @@
     //            yield return Expression;
     //    }
     //}
+    partial class SpecialBlockStatementSyntax
+    {
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return KeywordToken;
+            yield return Identifier;
+            yield return OpenParenthesisToken;
+            foreach (SyntaxNode child in Arguments.GetWithSeparators())
+                yield return child;
+            yield return CloseParenthesisToken;
+            yield return Block;
+        }
+    }
     partial class TypeClauseSyntax
     {
         public override IEnumerable<SyntaxNode> GetChildren()
@@ -230,28 +257,6 @@
             yield return WhileKeyword;
             yield return Condition;
             yield return Body;
-        }
-    }
-    partial class SpecialBlockStatementSyntax
-    {
-        public override IEnumerable<SyntaxNode> GetChildren()
-        {
-            yield return KeywordToken;
-            yield return Block;
-        }
-    }
-    partial class ConstructorExpressionSyntax
-    {
-        public override IEnumerable<SyntaxNode> GetChildren()
-        {
-            yield return KeywordToken;
-            yield return OpenParenthesisToken;
-            yield return ExpressionX;
-            yield return Comma0Token;
-            yield return ExpressionY;
-            yield return Comma1Token;
-            yield return ExpressionZ;
-            yield return CloseParenthesisToken;
         }
     }
 }

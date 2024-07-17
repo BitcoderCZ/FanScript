@@ -81,11 +81,33 @@ namespace FanScript.Compiler.Binding
 
         protected virtual BoundStatement RewriteSpecialBlockStatement(BoundSpecialBlockStatement node)
         {
+            ImmutableArray<BoundExpression>.Builder? builder = null;
+
+            for (var i = 0; i < node.Arguments.Length; i++)
+            {
+                BoundExpression oldArgument = node.Arguments[i];
+                BoundExpression newArgument = RewriteExpression(oldArgument);
+                if (newArgument != oldArgument)
+                {
+                    if (builder is null)
+                    {
+                        builder = ImmutableArray.CreateBuilder<BoundExpression>(node.Arguments.Length);
+
+                        for (int j = 0; j < i; j++)
+                            builder.Add(node.Arguments[j]);
+                    }
+                }
+
+                if (builder is not null)
+                    builder.Add(newArgument);
+            }
+
             BoundBlockStatement block = (BoundBlockStatement)RewriteBlockStatement(node.Block);
-            if (block == node.Block)
+
+            if (builder is null && block == node.Block)
                 return node;
 
-            return new BoundSpecialBlockStatement(node.Syntax, node.Keyword, block);
+            return new BoundSpecialBlockStatement(node.Syntax, node.Type, builder?.ToImmutable() ?? node.Arguments, block);
         }
 
         protected virtual BoundStatement RewriteNopStatement(BoundNopStatement node)

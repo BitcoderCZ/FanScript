@@ -1,4 +1,4 @@
-onPlay {
+on PlaySensor() {
     readonly float a = 45
     readonly float b = 20
 

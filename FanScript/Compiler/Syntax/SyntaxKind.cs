@@ -79,8 +79,7 @@
         KeywordWhile,
         KeywordBreak,
         KeywordContinue,
-
-        KeywordOnPlay,
+        KeywordOn,
 
         SkippedTextTrivia,
         LineBreakTrivia,

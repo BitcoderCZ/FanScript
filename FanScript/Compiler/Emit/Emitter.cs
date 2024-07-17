@@ -103,7 +103,7 @@ namespace FanScript.Compiler.Emit
                 BoundVariableDeclaration => new NopEmitStore(),
                 BoundAssignmentStatement => emitAssigmentStatement((BoundAssignmentStatement)statement),
                 BoundGotoStatement => emitGotoStatement((BoundGotoStatement)statement),
-                BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundSpecialBlockCondition condition => emitSpecialBlockStatement(condition.Keyword, conditionalGoto.Label),
+                BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundSpecialBlockCondition condition => emitSpecialBlockStatement(condition.SBType, condition.Arguments, conditionalGoto.Label),
                 BoundConditionalGotoStatement => emitConditionalGotoStatement((BoundConditionalGotoStatement)statement),
                 BoundLabelStatement => emitLabelStatement((BoundLabelStatement)statement),
                 BoundEmitterHint => emitHint((BoundEmitterHint)statement),
@@ -153,16 +153,16 @@ namespace FanScript.Compiler.Emit
             return store;
         }
 
-        private EmitStore emitSpecialBlockStatement(SyntaxKind keyword, BoundLabel onTrueLabel)
+        private EmitStore emitSpecialBlockStatement(SpecialBlockType type, ImmutableArray<BoundExpression> arguments, BoundLabel onTrueLabel)
         {
             BlockDef def;
-            switch (keyword)
+            switch (type)
             {
-                case SyntaxKind.KeywordOnPlay:
+                case SpecialBlockType.PlaySensor:
                     def = Blocks.Control.PlaySensor;
                     break;
                 default:
-                    throw new Exception($"Unsupported Keyword: {keyword}");
+                    throw new Exception($"Unknown {typeof(SpecialBlockType)}: {type}");
             }
 
             Block block = builder.AddBlock(def);

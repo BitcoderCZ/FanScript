@@ -193,7 +193,7 @@ namespace FanScript.Compiler.Syntax
             {
                 case SyntaxKind.OpenBraceToken:
                     return ParseBlockStatement();
-                case SyntaxKind.KeywordOnPlay:
+                case SyntaxKind.KeywordOn:
                     return ParseSpecialBlockStatement();
                 case SyntaxKind.KeywordFloat:
                 case SyntaxKind.KeywordVector3:
@@ -269,10 +269,14 @@ namespace FanScript.Compiler.Syntax
 
         private StatementSyntax ParseSpecialBlockStatement()
         {
-            SyntaxToken keyword = MatchToken(SyntaxKind.KeywordOnPlay);
+            SyntaxToken onKeyword = MatchToken(SyntaxKind.KeywordOn);
+            SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
+            SyntaxToken openParenthesisToken = MatchToken(SyntaxKind.OpenParenthesisToken);
+            SeparatedSyntaxList<ExpressionSyntax> arguments = ParseSeparatedList(SyntaxKind.CloseParenthesisToken);
+            SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
             BlockStatementSyntax block = ParseBlockStatement();
 
-            return new SpecialBlockStatementSyntax(_syntaxTree, keyword, block);
+            return new SpecialBlockStatementSyntax(_syntaxTree, onKeyword, identifier, openParenthesisToken, arguments, closeParenthesisToken, block);
         }
 
         private StatementSyntax ParseVariableDeclarationStatement(ImmutableArray<SyntaxToken>? modifiers = null)
@@ -579,7 +583,7 @@ namespace FanScript.Compiler.Syntax
             return new NameExpressionSyntax(_syntaxTree, identifierToken);
         }
 
-        private TypeClauseSyntax ParseTypeClause(bool allowGeneric, bool gettinGenericParam = false)
+        private TypeClauseSyntax ParseTypeClause(bool allowGeneric, bool gettingGenericParam = false)
         {
             SyntaxToken typeToken = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordObject, SyntaxKind.KeywordArray);
 
@@ -587,7 +591,7 @@ namespace FanScript.Compiler.Syntax
             {
                 if (!allowGeneric)
                     _diagnostics.ReportGenericTypeNotAllowed(typeToken.Location);
-                else if (gettinGenericParam)
+                else if (gettingGenericParam)
                     _diagnostics.ReportGenericTypeRecursion(typeToken.Location);
 
                 SyntaxToken lessToken = MatchToken(SyntaxKind.LessToken);
