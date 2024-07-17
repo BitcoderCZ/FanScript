@@ -133,6 +133,10 @@ namespace FanScript.FCInfo
             public static readonly BlockDef Less = new BlockDef("Less Than", 128, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Bool, TerminalType.Out, "Num1 < Num2"), new Terminal(1, WireType.Float, TerminalType.In, "Num2"), new Terminal(2, WireType.Float, TerminalType.In, "Num1"));
             public static readonly BlockDef Greater = new BlockDef("Greater Than", 481, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Bool, TerminalType.Out, "Num1 > Num2"), new Terminal(1, WireType.Float, TerminalType.In, "Num2"), new Terminal(2, WireType.Float, TerminalType.In, "Num1"));
 
+            public static readonly BlockDef Random = new BlockDef("Random", 168, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Float, TerminalType.Out, "Random"), new Terminal(1, WireType.Float, TerminalType.In, "Max"), new Terminal(2, WireType.Float, TerminalType.In, "Min"));
+
+            public static readonly BlockDef RandomSeed = new BlockDef("Random Seed", 485, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Float, TerminalType.In, "Seed"), new Terminal(2, WireType.Void, TerminalType.In));
+
             public static readonly BlockDef Min = new BlockDef("Min", 176, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Float, TerminalType.Out, "Smaller"), new Terminal(1, WireType.Float, TerminalType.In, "Num2"), new Terminal(2, WireType.Float, TerminalType.In, "Num1"));
             public static readonly BlockDef Max = new BlockDef("Min", 180, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Float, TerminalType.Out, "Bigger"), new Terminal(1, WireType.Float, TerminalType.In, "Num2"), new Terminal(2, WireType.Float, TerminalType.In, "Num1"));
 

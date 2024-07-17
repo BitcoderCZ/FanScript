@@ -2,6 +2,9 @@ onPlay {
     readonly float a = 45
     readonly float b = 20
 
+    setRandomSeed(0)
+    float random = random(100, 200)
+
     float min = min(a, b)
     float max = max(a, b)
     float sin = sin(a)

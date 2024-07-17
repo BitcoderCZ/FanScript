@@ -12,13 +12,26 @@ namespace FanScript.Compiler.Symbols
     {
         private static class Math
         {
-            private static EmitStore emit11(BoundCallExpression call, EmitContext context, Func<float, float> constant, BlockDef blockDef)
+            private static EmitStore emit10(BoundCallExpression call, EmitContext context, BlockDef blockDef)
+            {
+                Block block = context.Builder.AddBlock(blockDef);
+
+                context.Builder.BlockPlacer.ExpressionBlock(() =>
+                {
+                    EmitStore num = context.EmitExpression(call.Arguments[0]);
+
+                    context.Connect(num, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
+                });
+
+                return new BasicEmitStore(block);
+            }
+            private static EmitStore emit11(BoundCallExpression call, EmitContext context, Func<float, float>? constant, BlockDef blockDef)
                 => emit11(call, context, constant, blockDef, Blocks.Values.Number);
-            private static EmitStore emit11<T>(BoundCallExpression call, EmitContext context, Func<T, T> constant, BlockDef blockDef, BlockDef literalDef)
+            private static EmitStore emit11<T>(BoundCallExpression call, EmitContext context, Func<T, T>? constant, BlockDef blockDef, BlockDef literalDef)
                 where T : notnull
             {
                 object[]? constants = context.ValidateConstants(call.Arguments, false);
-                if (constants is not null)
+                if (constants is not null && constant is not null)
                 {
                     Block literal = context.Builder.AddBlock(literalDef);
 
@@ -38,7 +51,7 @@ namespace FanScript.Compiler.Symbols
 
                 return BasicEmitStore.COut(block, block.Type.Terminals[0]);
             }
-            private static EmitStore emit21(BoundCallExpression call, EmitContext context, Func<float, float, float> constant, BlockDef blockDef)
+            private static EmitStore emit21(BoundCallExpression call, EmitContext context, Func<float, float, float>? constant, BlockDef blockDef)
                 => emit21(call, context, constant, blockDef, Blocks.Values.Number);
             private static EmitStore emit21<T1, T2, TOut>(BoundCallExpression call, EmitContext context, Func<T1, T2, TOut>? constant, BlockDef blockDef, BlockDef literalDef)
                 where T1 : notnull
@@ -134,6 +147,17 @@ namespace FanScript.Compiler.Symbols
                 return BasicEmitStore.COut(block, block.Type.Terminals[0]);
             }
 
+            public static readonly FunctionSymbol Random
+                = new BuiltinFunctionSymbol("random",
+                [
+                    new ParameterSymbol("min", TypeSymbol.Float, 0),
+                    new ParameterSymbol("max", TypeSymbol.Float, 1),
+                ], TypeSymbol.Float, (call, context) => emit21(call, context, null, Blocks.Math.Random));
+            public static readonly FunctionSymbol RandomSeed
+                = new BuiltinFunctionSymbol("setRandomSeed",
+                [
+                    new ParameterSymbol("seed", TypeSymbol.Float, 0),
+                ], TypeSymbol.Void, (call, context) => emit10(call, context, Blocks.Math.RandomSeed));
             public static readonly FunctionSymbol Min
                 = new BuiltinFunctionSymbol("min",
                 [
