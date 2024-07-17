@@ -520,6 +520,21 @@ namespace FanScript.Compiler.Binding
         private static void WriteSpecialBlockCondition(BoundSpecialBlockCondition node, IndentedTextWriter writer)
         {
             writer.WriteIdentifier(node.SBType.ToString());
+            writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
+            bool isFirst = true;
+            foreach (BoundExpression argument in node.Arguments)
+            {
+                if (isFirst)
+                    isFirst = false;
+                else
+                {
+                    writer.WritePunctuation(SyntaxKind.CommaToken);
+                    writer.WriteSpace();
+                }
+
+                argument.WriteTo(writer);
+            }
+            writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
         }
     }
 }

@@ -166,6 +166,9 @@ namespace FanScript.Compiler.Emit
                 case SpecialBlockType.BoxArt:
                     def = Blocks.Control.BoxArtSensor;
                     break;
+                case SpecialBlockType.Button:
+                    def = Blocks.Control.Button;
+                    break;
                 default:
                     throw new Exception($"Unknown {typeof(SpecialBlockType)}: {type}");
             }
@@ -173,6 +176,20 @@ namespace FanScript.Compiler.Emit
             Block block = builder.AddBlock(def);
 
             connectToLabel(onTrueLabel.Name, BasicEmitStore.COut(block, block.Type.Terminals[1]));
+
+            switch (type)
+            {
+                case SpecialBlockType.Button:
+                    {
+                        object[]? values = emitContext.ValidateConstants(arguments, true);
+                        if (values is null)
+                            break;
+
+                        for (int i = 0; i < values.Length; i++)
+                            builder.SetBlockValue(block, i, values[i]);
+                    }
+                    break;
+            }
 
             return new BasicEmitStore(block);
         }

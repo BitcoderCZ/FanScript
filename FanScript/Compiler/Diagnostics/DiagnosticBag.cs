@@ -2,6 +2,7 @@
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
+using FanScript.FCInfo;
 using System.Collections;
 
 namespace FanScript.Compiler.Diagnostics
@@ -186,7 +187,7 @@ namespace FanScript.Compiler.Diagnostics
             => ReportError(location, "Non-generic methods cannot be used with a type argument.");
 
         public void ReportVariableNameTooLong(TextLocation location, string name)
-            => ReportError(location, $"Variable name '{name}' is too long, maximum allowed length is {Constants.MaxVariableNameLength}");
+            => ReportError(location, $"Variable name '{name}' is too long, maximum allowed length is {FancadeConstants.MaxVariableNameLength}");
 
         public void ReportEmptyArrayInitializer(TextLocation location)
             => ReportError(location, $"Array initializer cannot be empty.");

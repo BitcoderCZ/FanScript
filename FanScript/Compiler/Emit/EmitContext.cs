@@ -30,7 +30,7 @@ namespace FanScript.Compiler.Emit
         public void Connect(EmitStore from, EmitStore to)
             => connect(from, to);
 
-        public object[]? ValidateConstants(IList<BoundExpression> expressions, bool mustBeValid)
+        public object[]? ValidateConstants(IList<BoundExpression> expressions, bool mustBeConstant)
         {
             object[] values = new object[expressions.Count];
             bool invalid = false;
@@ -40,7 +40,7 @@ namespace FanScript.Compiler.Emit
                 BoundConstant? constant = expressions[i].ConstantValue;
                 if (constant is null)
                 {
-                    if (mustBeValid)
+                    if (mustBeConstant)
                         Diagnostics.ReportValueMustBeConstant(expressions[i].Syntax.Location);
                     invalid = true;
                 }

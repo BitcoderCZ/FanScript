@@ -3,6 +3,7 @@ using FanScript.Compiler.Lowering;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
+using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
@@ -199,7 +200,14 @@ namespace FanScript.Compiler.Binding
         {
             BoundScope result = new BoundScope(null);
 
-            foreach (var f in BuiltinFunctions.GetAll())
+            foreach (Constant con in Constants.GetAll())
+            {
+                VariableSymbol variable = new LocalVariableSymbol(con.Name, Modifiers.Constant, con.Type);
+                variable.Initialize(new BoundConstant(con.Value));
+                result.TryDeclareVariable(variable);
+            }
+
+            foreach (FunctionSymbol f in BuiltinFunctions.GetAll())
                 result.TryDeclareFunction(f);
 
             return result;
@@ -299,6 +307,10 @@ namespace FanScript.Compiler.Binding
                 case "BoxArt":
                     type = SpecialBlockType.BoxArt;
                     argCount = 0;
+                    break;
+                case "Button":
+                    type = SpecialBlockType.Button;
+                    argCount = 1;
                     break;
                 default:
                     _diagnostics.ReportUnknownSpecialBlock(syntax.Identifier.Location, syntax.Identifier.Text);
@@ -823,7 +835,7 @@ namespace FanScript.Compiler.Binding
 
             if (declare && !_scope.TryDeclareVariable(variable))
                 _diagnostics.ReportSymbolAlreadyDeclared(identifier.Location, name);
-            else if (name.Length > Constants.MaxVariableNameLength)
+            else if (name.Length > FancadeConstants.MaxVariableNameLength)
                 _diagnostics.ReportVariableNameTooLong(identifier.Location, name);
 
             return variable;

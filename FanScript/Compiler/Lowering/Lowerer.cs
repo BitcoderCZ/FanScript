@@ -186,6 +186,8 @@ namespace FanScript.Compiler.Lowering
 
         protected override BoundStatement RewriteSpecialBlockStatement(BoundSpecialBlockStatement node)
         {
+            BoundSpecialBlockStatement newNode = (BoundSpecialBlockStatement)base.RewriteSpecialBlockStatement(node);
+
             // onPlay
             //      <body>
             //
@@ -201,15 +203,15 @@ namespace FanScript.Compiler.Lowering
             BoundLabel onTrueLabel = GenerateLabel("onSpecial");
             BoundLabel endLabel = GenerateLabel("end");
             BoundBlockStatement result = Block(
-                node.Syntax,
-                GotoTrue(node.Syntax, onTrueLabel, new BoundSpecialBlockCondition(node.Syntax, node.Type, node.Arguments)),
-                Goto(node.Syntax, endLabel),
-                Label(node.Syntax, onTrueLabel),
-                Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),
-                node.Block,
-                Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd),
-                RollbackGoto(node.Syntax, endLabel),
-                Label(node.Syntax, endLabel)
+                newNode.Syntax,
+                GotoTrue(newNode.Syntax, onTrueLabel, new BoundSpecialBlockCondition(newNode.Syntax, newNode.Type, newNode.Arguments)),
+                Goto(newNode.Syntax, endLabel),
+                Label(newNode.Syntax, onTrueLabel),
+                Hint(newNode.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),
+                newNode.Block,
+                Hint(newNode.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd),
+                RollbackGoto(newNode.Syntax, endLabel),
+                Label(newNode.Syntax, endLabel)
             );
 
             return RewriteStatement(result);
