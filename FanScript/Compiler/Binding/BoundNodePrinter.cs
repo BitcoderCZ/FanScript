@@ -3,7 +3,6 @@ using FanScript.Compiler.Syntax;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using System.CodeDom.Compiler;
-using System.ComponentModel;
 
 namespace FanScript.Compiler.Binding
 {
@@ -162,7 +161,7 @@ namespace FanScript.Compiler.Binding
             writer.WriteKeyword(SyntaxKind.KeywordOn);
             writer.WriteSpace();
             writer.WriteIdentifier(node.Type.ToString());
-            writer.WritePunctuation(SyntaxKind.OpenParenthesisToken); 
+            writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
             bool isFirst = true;
             foreach (BoundExpression argument in node.Arguments)
             {

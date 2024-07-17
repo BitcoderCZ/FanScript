@@ -4,10 +4,8 @@ using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using FanScript.Utils;
-using MathUtils.Equations;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FanScript.Compiler.Binding
 {

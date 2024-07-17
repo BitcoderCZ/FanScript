@@ -2,7 +2,6 @@
 using FanScript.Compiler.Emit;
 using FanScript.FCInfo;
 using FanScript.Utils;
-using MathUtils.Measures;
 using MathUtils.Vectors;
 using System.Reflection;
 

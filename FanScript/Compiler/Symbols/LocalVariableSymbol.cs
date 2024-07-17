@@ -1,6 +1,4 @@
-﻿using FanScript.Compiler.Binding;
-
-namespace FanScript.Compiler.Symbols
+﻿namespace FanScript.Compiler.Symbols
 {
     public class LocalVariableSymbol : VariableSymbol
     {

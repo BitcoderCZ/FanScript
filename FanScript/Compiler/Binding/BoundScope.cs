@@ -27,8 +27,8 @@ namespace FanScript.Compiler.Binding
         public bool TryDeclareFunction(FunctionSymbol function)
         {
             if (FunctionExists(function))
-                return false; 
-            
+                return false;
+
             if (!functions.TryGetValue(function.Name, out var symbolList))
             {
                 symbolList = new();

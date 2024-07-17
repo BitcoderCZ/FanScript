@@ -1,7 +1,6 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Symbols;
-using FanScript.Compiler.Syntax;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using System.Collections.Immutable;

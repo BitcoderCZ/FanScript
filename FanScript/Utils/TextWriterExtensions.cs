@@ -5,7 +5,6 @@ using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using System.CodeDom.Compiler;
 using System.Diagnostics;
-using static System.Net.Mime.MediaTypeNames;
 
 namespace FanScript.Utils
 {

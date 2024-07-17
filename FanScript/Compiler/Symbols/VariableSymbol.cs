@@ -1,5 +1,4 @@
 ﻿using FanScript.Compiler.Binding;
-using System.Reflection.Metadata;
 
 namespace FanScript.Compiler.Symbols
 {
