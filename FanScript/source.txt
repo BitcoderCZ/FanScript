@@ -7,3 +7,7 @@ on Button(BUTTON_TYPE_DIRECTION) {
 on Button(BUTTON_TYPE_BUTTON) {
     inspect(b)
 }
+
+vec3 pos
+joystick(ref pos, JOYSTICK_TYPE_SCREEN)
+inspect(pos)

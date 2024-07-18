@@ -1,4 +1,6 @@
-﻿namespace FanScript.Compiler.Syntax
+﻿using FanScript.Utils;
+
+namespace FanScript.Compiler.Syntax
 {
     partial class ArrayInitializerStatementSyntax
     {
@@ -59,7 +61,31 @@
                 yield return GreaterThanToken;
             }
             yield return OpenParenthesisToken;
-            foreach (SyntaxNode child in Arguments.GetWithSeparators())
+
+            int modCounter = 0;
+            int counter = 0;
+            foreach (SyntaxNode child in ArgumentModifiers.Zip(Arguments.GetWithSeparators(), (modifiers, arg) =>
+            {
+                // first return all the modifiers for this arg
+                if (counter == 0)
+                {
+                    if (modCounter < modifiers.Length)
+                        return (modifiers[modCounter++], false, false); // nothing consumed
+
+                    modCounter = 0;
+                    counter++;
+                }
+
+                bool consumeMods = false;
+
+                if (counter++ > 2)
+                {
+                    counter = 0;
+                    consumeMods = true;
+                }
+
+                return (arg, consumeMods, true); // if consumeMods is true on the next iteration we will be looking at a new param, so consume the current mods
+            }))
                 yield return child;
             yield return CloseParenthesisToken;
         }

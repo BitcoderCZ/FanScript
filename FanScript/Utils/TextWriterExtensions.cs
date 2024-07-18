@@ -5,6 +5,7 @@ using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using System.CodeDom.Compiler;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace FanScript.Utils
 {
@@ -71,7 +72,7 @@ namespace FanScript.Utils
 
                     isFirst = false;
 
-                    writer.WriteKeyword(SyntaxFacts.GetText(modifier.ToKind()));
+                    writer.WriteKeyword(modifier.ToKind().GetText());
                 }
         }
 
@@ -90,7 +91,7 @@ namespace FanScript.Utils
         }
 
         public static void WriteNumber(this TextWriter writer, float value)
-            => WriteNumber(writer, value.ToString());
+            => WriteNumber(writer, value.ToString(CultureInfo.InvariantCulture));
         public static void WriteNumber(this TextWriter writer, string text)
         {
             writer.SetForeground(ConsoleColor.Cyan);

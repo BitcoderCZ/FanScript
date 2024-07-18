@@ -63,7 +63,16 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                 level.BlockValues.Add(new BlockValue()
                 {
                     ValueIndex = (byte)set.ValueIndex,
-                    Type = set.Value is float ? (byte)4 : (set.Value is Vector3F || set.Value is Rotation) ? (byte)5 : set.Value is string ? (byte)6 : throw new InvalidDataException($"Unsupported type of value: '{set.Value.GetType()}'."),
+                    Type = (byte)(set.Value switch
+                    {
+                        byte => 1,
+                        ushort => 2,
+                        float => 4,
+                        Vector3F => 5,
+                        Rotation => 5,
+                        string => 6,
+                        _ => throw new InvalidDataException($"Unsupported type of value: '{set.Value.GetType()}'."),
+                    }),
                     Position = (Vector3US)set.Block.Pos,
                     Value = set.Value is Rotation rot ? rot.Value : set.Value,
                 });

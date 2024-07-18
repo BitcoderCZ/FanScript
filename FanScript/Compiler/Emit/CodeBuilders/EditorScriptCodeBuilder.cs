@@ -198,10 +198,15 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                     writer.WriteInt32(val.Block.Pos.Z);
                     writer.WriteInt32(val.ValueIndex);
 
-                    if (val.Value is float f)
+                    if (val.Value is byte numB)
                     {
                         writer.WriteInt32(0);
-                        writer.WriteSingle(f);
+                        writer.WriteSingle(numB); // javascript only has float type, so no reason to add a value type (other than saving space)
+                    }
+                    else if (val.Value is float numF)
+                    {
+                        writer.WriteInt32(0);
+                        writer.WriteSingle(numF);
                     }
                     else if (val.Value is string s)
                     {

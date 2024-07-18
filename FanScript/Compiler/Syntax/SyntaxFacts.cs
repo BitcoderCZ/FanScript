@@ -92,12 +92,14 @@
                     return SyntaxKind.ReadOnlyModifier;
                 case "const":
                     return SyntaxKind.ConstantModifier;
+                case "ref":
+                    return SyntaxKind.RefModifier;
                 default:
                     return SyntaxKind.IdentifierToken;
             }
         }
 
-        public static string? GetText(SyntaxKind kind)
+        public static string? GetText(this SyntaxKind kind)
             => kind switch
             {
                 SyntaxKind.PlusToken =>
@@ -194,6 +196,8 @@
                     "readonly",
                 SyntaxKind.ConstantModifier =>
                     "const",
+                SyntaxKind.RefModifier =>
+                    "ref",
                 _ =>
                     null
             };

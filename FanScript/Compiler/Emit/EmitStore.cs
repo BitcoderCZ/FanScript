@@ -1,6 +1,7 @@
 ﻿
 using FanScript.FCInfo;
 using MathUtils.Vectors;
+using System.Diagnostics;
 
 namespace FanScript.Compiler.Emit
 {
@@ -41,6 +42,7 @@ namespace FanScript.Compiler.Emit
         public BasicEmitStore(Block block)
             : this(block, block.Type.Before, block, block.Type.After)
         {
+            Debug.Assert(block.Type.Type == BlockType.Active, "block.Type.Type must be BlockType.Active");
         }
         public BasicEmitStore(Block _in, Terminal _inTerminal, Block _out, Terminal _outTerminal)
         {
@@ -52,11 +54,32 @@ namespace FanScript.Compiler.Emit
         /// Creates an <see cref="BasicEmitStore"/> with <see cref="In"/> and <see cref="InTerminal"/> assigned
         /// </summary>
         /// <param name="block"></param>
+        /// <returns></returns>
+        public static BasicEmitStore CIn(Block block)
+        {
+            Debug.Assert(block.Type.Type == BlockType.Active, "block.Type.Type must be BlockType.Active");
+            return CIn(block, block.Type.Before);
+        }
+        /// <summary>
+        /// Creates an <see cref="BasicEmitStore"/> with <see cref="In"/> and <see cref="InTerminal"/> assigned
+        /// </summary>
+        /// <param name="block"></param>
         /// <param name="terminal"></param>
         /// <returns></returns>
         public static BasicEmitStore CIn(Block block, Terminal terminal)
             => new BasicEmitStore(block, terminal, null!, null!);
 
+        /// <summary>
+        /// Creates an <see cref="BasicEmitStore"/> with <see cref="Out"/> and <see cref="OutTerminal"/> assigned
+        /// </summary>
+        /// <param name="block"></param>
+        /// <param name="terminal"></param>
+        /// <returns></returns>
+        public static BasicEmitStore COut(Block block)
+        {
+            Debug.Assert(block.Type.Type == BlockType.Active, "block.Type.Type must be BlockType.Active");
+            return COut(block, block.Type.After);
+        }
         /// <summary>
         /// Creates an <see cref="BasicEmitStore"/> with <see cref="Out"/> and <see cref="OutTerminal"/> assigned
         /// </summary>

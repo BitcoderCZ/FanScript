@@ -9,6 +9,40 @@ namespace FanScript.Compiler.Symbols
 {
     internal static class BuiltinFunctions
     {
+        private static class Control
+        {
+            public static readonly FunctionSymbol Joystick
+                = new BuiltinFunctionSymbol("joystick",
+                [
+                    new ParameterSymbol("joyDir", Modifiers.Ref, TypeSymbol.Vector3, 0),
+                    new ParameterSymbol("JOYSTICK_TYPE", TypeSymbol.Float, 1),
+                ], TypeSymbol.Void, (call, context) =>
+                {
+                    object[]? values = context.ValidateConstants(call.Arguments.AsSpan(Range.StartAt(1)), true);
+                    if (values is null)
+                        return new NopEmitStore();
+
+                    VariableSymbol variable = ((BoundVariableExpression)call.Arguments[0]).Variable;
+
+                    Block joystick = context.Builder.AddBlock(Blocks.Control.Joystick);
+
+                    context.Builder.SetBlockValue(joystick, 0, (byte)(float)values[0]); // unbox, then cast
+
+                    Block varBlock = null!;
+                    context.Builder.BlockPlacer.StatementBlock(() =>
+                    {
+                        varBlock = context.Builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
+
+                        context.Builder.SetBlockValue(varBlock, 0, variable.Name);
+
+                        context.Connect(BasicEmitStore.COut(joystick), BasicEmitStore.CIn(varBlock));
+                        context.Connect(BasicEmitStore.COut(joystick, joystick.Type.Terminals[1]), BasicEmitStore.CIn(varBlock, varBlock.Type.Terminals[1]));
+                    });
+
+                    return new MultiEmitStore(BasicEmitStore.CIn(joystick), BasicEmitStore.COut(varBlock));
+                });
+        }
+
         private static class Math
         {
             private static EmitStore emit10(BoundCallExpression call, EmitContext context, BlockDef blockDef)

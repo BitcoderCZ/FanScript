@@ -95,9 +95,74 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportOnlyOneFileCanHaveGlobalStatements(TextLocation location)
             => ReportError(location, $"At most one file can have global statements.");
 
-        public void ReportUnreachableCode(TextLocation location)
-           => ReportWarning(location, $"Unreachable code detected.");
+        public void ReportInvalidBreakOrContinue(TextLocation location, string text)
+          => ReportError(location, $"The keyword '{text}' can only be used inside of loops.");
 
+        public void ReportValueMustBeConstant(TextLocation location)
+            => ReportError(location, "Value must be constant.");
+
+        public void ReportGenericTypeNotAllowed(TextLocation location)
+            => ReportError(location, "Generic type isn't allowed here.");
+
+        public void ReportGenericTypeRecursion(TextLocation location)
+            => ReportError(location, "Type argument cannot be generic.");
+
+        public void ReportNotAGenericType(TextLocation location)
+            => ReportError(location, "Non generic type cannot have a type argument.");
+
+        public void ReportCannotInferGenericType(TextLocation location)
+            => ReportError(location, "Cannot infer type argument from usage.");
+
+        public void ReportSpecificGenericTypeNotAllowed(TextLocation location, TypeSymbol genericType, IEnumerable<TypeSymbol> allowedGenericTypes)
+            => ReportError(location, $"Type argument type '{genericType}' isn't allowed, allowed types: <{string.Join(", ", allowedGenericTypes)}>.");
+
+        public void ReportTypeMustHaveGenericParameter(TextLocation location)
+            => ReportError(location, "Type must have a type argument.");
+
+        public void ReportNonGenericMethodTypeArguments(TextLocation location)
+            => ReportError(location, "Non-generic methods cannot be used with a type argument.");
+
+        public void ReportVariableNameTooLong(TextLocation location, string name)
+            => ReportError(location, $"Variable name '{name}' is too long, maximum allowed length is {FancadeConstants.MaxVariableNameLength}");
+
+        public void ReportEmptyArrayInitializer(TextLocation location)
+            => ReportError(location, $"Array initializer cannot be empty.");
+
+        public void ReportNotAModifier(TextLocation location, string text)
+            => ReportError(location, $"'{text}' isn't a valid modifier.");
+
+        public void ReportInvalidModifier(TextLocation location, Modifiers modifier, ModifierTarget usedTarget, IEnumerable<ModifierTarget> validTargets)
+            => ReportError(location, $"Modifier '{modifier.ToKind().GetText()}' was used on <{usedTarget}>, but it can only be used on <{string.Join(", ", validTargets)}>.");
+
+        public void ReportDuplicateModifier(TextLocation location, Modifiers modifier)
+            => ReportError(location, $"Duplicate '{modifier.ToKind().GetText()}' modifier.");
+
+        public void ReportInvalidModifierOnType(TextLocation location, Modifiers modifier, TypeSymbol type)
+            => ReportError(location, $"Modifier '{modifier.ToKind().GetText()}' isn't valid on a variable of type '{type}'.");
+
+        public void ReportConstantNotInitialized(TextLocation location)
+            => ReportError(location, "A constant variable needs to be initialized.");
+
+        public void ReportConflictingModifiers(TextLocation location, Modifiers modifier, Modifiers conflictingModifier)
+            => ReportError(location, $"Modifier '{conflictingModifier.ToKind().GetText()}' conflicts with modifier '{modifier.ToKind().GetText()}'.");
+
+        public void ReportUnknownSpecialBlock(TextLocation location, string text)
+            => ReportError(location, $"Unknown special block '{text}'.");
+
+        public void ReportWrongSBArgumentCount(TextLocation location, string name, int expectedCount, int actualCount)
+            => ReportError(location, $"Special block '{name}' requires {expectedCount} arguments but was given {actualCount}.");
+
+        public void ReportArgumentMustHaveModifier(TextLocation location, string name, Modifiers modifier)
+            => ReportError(location, $"Argument for paramater '{name}' must be passed with the '{modifier.ToKind().GetText()}' modifier.");
+
+        public void ReportArgumentCannotHaveModifier(TextLocation location, string name, Modifiers modifier)
+            => ReportError(location, $"Argument for paramater '{name}' cannot be passed with the '{modifier.ToKind().GetText()}' modifier.");
+
+        public void ReportRefMustBeVariable(TextLocation location)
+            => ReportError(location, $"A ref argument must be an assignable variable.");
+
+        public void ReportUnreachableCode(TextLocation location)
+          => ReportWarning(location, $"Unreachable code detected.");
         public void ReportUnreachableCode(SyntaxNode node)
         {
             switch (node.Kind)
@@ -147,9 +212,6 @@ namespace FanScript.Compiler.Diagnostics
             }
         }
 
-        public void ReportInvalidBreakOrContinue(TextLocation location, string text)
-          => ReportError(location, $"The keyword '{text}' can only be used inside of loops.");
-
         public void ReportOpeationNotSupportedOnPlatform(TextLocation location, BuildPlatformInfo platformInfo)
         {
             string msg = platformInfo switch
@@ -161,60 +223,6 @@ namespace FanScript.Compiler.Diagnostics
 
             ReportWarning(location, msg);
         }
-
-        public void ReportValueMustBeConstant(TextLocation location)
-            => ReportError(location, "Value must be constant.");
-
-        public void ReportGenericTypeNotAllowed(TextLocation location)
-            => ReportError(location, "Generic type isn't allowed here.");
-
-        public void ReportGenericTypeRecursion(TextLocation location)
-            => ReportError(location, "Type argument cannot be generic.");
-
-        public void ReportNotAGenericType(TextLocation location)
-            => ReportError(location, "Non generic type cannot have a type argument.");
-
-        public void ReportCannotInferGenericType(TextLocation location)
-            => ReportError(location, "Cannot infer type argument from usage.");
-
-        public void ReportSpecificGenericTypeNotAllowed(TextLocation location, TypeSymbol genericType, IEnumerable<TypeSymbol> allowedGenericTypes)
-            => ReportError(location, $"Type argument type '{genericType}' isn't allowed, allowed types: <{string.Join(", ", allowedGenericTypes)}>.");
-
-        public void ReportTypeMustHaveGenericParameter(TextLocation location)
-            => ReportError(location, "Type must have a type argument.");
-
-        public void ReportNonGenericMethodTypeArguments(TextLocation location)
-            => ReportError(location, "Non-generic methods cannot be used with a type argument.");
-
-        public void ReportVariableNameTooLong(TextLocation location, string name)
-            => ReportError(location, $"Variable name '{name}' is too long, maximum allowed length is {FancadeConstants.MaxVariableNameLength}");
-
-        public void ReportEmptyArrayInitializer(TextLocation location)
-            => ReportError(location, $"Array initializer cannot be empty.");
-
-        public void ReportNotAModifier(TextLocation location, string text)
-            => ReportError(location, $"'{text}' isn't a valid modifier.");
-
-        public void ReportInvalidModifier(TextLocation location, Modifiers modifier, ModifierTarget usedTarget, IEnumerable<ModifierTarget> validTargets)
-            => ReportError(location, $"Modifier '{modifier}' was used on <{usedTarget}>, but it can only be used on <{string.Join(", ", validTargets)}>.");
-
-        public void ReportDuplicateModifier(TextLocation location, Modifiers modifier)
-            => ReportError(location, $"Duplicate '{modifier}' modifier.");
-
-        public void ReportInvalidModifierOnType(TextLocation location, Modifiers modifier, TypeSymbol type)
-            => ReportError(location, $"Modifier '{modifier}' isn't valid on a variable of type '{type}'.");
-
-        public void ReportConstantNotInitialized(TextLocation location)
-            => ReportError(location, "A constant variable needs to be initialized.");
-
-        public void ReportConflictingModifiers(TextLocation location, Modifiers modifier, Modifiers conflictingModifier)
-            => ReportError(location, $"Modifier '{conflictingModifier}' conflicts with modifier '{modifier}'.");
-
-        public void ReportUnknownSpecialBlock(TextLocation location, string text)
-            => ReportError(location, $"Unknown special block '{text}'.");
-
-        public void ReportWrongSBArgumentCount(TextLocation location, string name, int expectedCount, int actualCount)
-            => ReportError(location, $"Special block '{name}' requires {expectedCount} arguments but was given {actualCount}.");
 
         public void ReportFailedToDeclare(TextLocation location, string type, string name)
             => ReportWarning(location, $"Failed to declare {type} '{name}'.");

@@ -186,7 +186,7 @@ namespace FanScript.Compiler.Emit
                             break;
 
                         for (int i = 0; i < values.Length; i++)
-                            builder.SetBlockValue(block, i, values[i]);
+                            builder.SetBlockValue(block, i, (byte)(float)values[i]); // unbox, then cast
                     }
                     break;
             }

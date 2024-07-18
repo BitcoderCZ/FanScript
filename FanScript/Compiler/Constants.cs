@@ -25,7 +25,10 @@ namespace FanScript.Compiler
     internal static class Constants
     {
         public static readonly Constant BUTTON_TYPE_DIRECTION = new Constant(TypeSymbol.Float, "BUTTON_TYPE_DIRECTION", 0f);
-        public static readonly Constant BUTTON_TYPE_BUTTON = new Constant(TypeSymbol.Float, "BUTTON_TYPE_BUTTON", 1.00000012f); // just '1f' doesn't work with GameFileCodeBuilder for some reason, ig float imprecision and rounding down
+        public static readonly Constant BUTTON_TYPE_BUTTON = new Constant(TypeSymbol.Float, "BUTTON_TYPE_BUTTON", 1f);
+
+        public static readonly Constant JOYSTICK_TYPE_XZ = new Constant(TypeSymbol.Float, "JOYSTICK_TYPE_XZ", 0f);
+        public static readonly Constant JOYSTICK_TYPE_SCREEN = new Constant(TypeSymbol.Float, "JOYSTICK_TYPE_SCREEN", 1f);
 
         private static IEnumerable<Constant>? cache;
         public static IEnumerable<Constant> GetAll()

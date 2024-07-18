@@ -747,15 +747,37 @@ namespace FanScript.Compiler.Binding
                 return new BoundErrorExpression(syntax);
             }
 
+            var argModifiersBuilder = ImmutableArray.CreateBuilder<Modifiers>();
+
             for (int i = 0; i < syntax.Arguments.Count; i++)
             {
                 TextLocation argumentLocation = syntax.Arguments[i].Location;
                 BoundExpression argument = boundArguments[i];
                 VariableSymbol parameter = function.Parameters[i];
+
+                Modifiers modifiers = BindModifiers(syntax.ArgumentModifiers[i], ModifierTarget.Parameter, item =>
+                {
+                    var (modifier, token) = item;
+
+                    bool valid = modifier == Modifiers.Ref ? parameter.Modifiers.HasFlag(Modifiers.Ref) : true;
+
+                    if (!valid)
+                        _diagnostics.ReportArgumentCannotHaveModifier(token.Location, parameter.Name, Modifiers.Ref);
+
+                    return valid;
+                });
+
+                argModifiersBuilder.Add(modifiers);
+
+                if (parameter.Modifiers.HasFlag(Modifiers.Ref) && !modifiers.HasFlag(Modifiers.Ref))
+                    _diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Ref);
+                else if (modifiers.HasFlag(Modifiers.Ref) && (argument is not BoundVariableExpression variable || variable.Variable.IsReadOnly))
+                    _diagnostics.ReportRefMustBeVariable(argumentLocation);
+
                 boundArguments[i] = BindConversion(argumentLocation, argument, fixType(parameter.Type));
             }
 
-            return new BoundCallExpression(syntax, function, boundArguments.ToImmutable(), fixType(function.Type)!, genericType);
+            return new BoundCallExpression(syntax, function, argModifiersBuilder.ToImmutable(), boundArguments.ToImmutable(), fixType(function.Type)!, genericType);
 
             TypeSymbol fixType(TypeSymbol type)
             {
@@ -824,7 +846,7 @@ namespace FanScript.Compiler.Binding
                 type.GenericEquals(TypeSymbol.Rotation))
                 validModifiers |= Modifiers.Constant;
 
-            Modifiers modifiers = ParseModifiers(modifierArray, ModifierTarget.Variable, item =>
+            Modifiers modifiers = BindModifiers(modifierArray, ModifierTarget.Variable, item =>
             {
                 var (modifier, token) = item;
 
@@ -875,7 +897,7 @@ namespace FanScript.Compiler.Binding
                 return type;
         }
 
-        private Modifiers ParseModifiers(IEnumerable<SyntaxToken> tokens, ModifierTarget target, Func<(Modifiers, SyntaxToken), bool>? checkModifier = null)
+        private Modifiers BindModifiers(IEnumerable<SyntaxToken> tokens, ModifierTarget target, Func<(Modifiers, SyntaxToken), bool>? checkModifier = null)
         {
             if (tokens.Count() == 0)
                 return 0;

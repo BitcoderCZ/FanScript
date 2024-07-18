@@ -91,5 +91,21 @@ namespace FanScript.Utils
 
             return val;
         }
+
+        public static IEnumerable<TResult> Zip<TFirst, TSecond, TResult>(this IEnumerable<TFirst> first, IEnumerable<TSecond> second, Func<TFirst, TSecond, (TResult, bool, bool)> selector)
+        {
+            var firstEnumerator = first.GetEnumerator();
+            var secondEnumerator = second.GetEnumerator();
+
+            bool moveFirst = true;
+            bool moveSecond = true;
+
+            while ((!moveFirst || firstEnumerator.MoveNext()) && (!moveSecond || secondEnumerator.MoveNext()))
+            {
+                (TResult result, moveFirst, moveSecond) = selector(firstEnumerator.Current, secondEnumerator.Current);
+
+                yield return result;
+            }
+        }
     }
 }

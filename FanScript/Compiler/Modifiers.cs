@@ -12,11 +12,13 @@ namespace FanScript.Compiler
     {
         Readonly = 1 << 0,
         Constant = 1 << 1,
+        Ref = 1 << 2,
     }
 
     public enum ModifierTarget
     {
         Variable,
+        Parameter,
         Function,
     }
 
@@ -27,8 +29,9 @@ namespace FanScript.Compiler
     {
         private static readonly FrozenDictionary<Modifiers, ModifierInfo> lookup = new Dictionary<Modifiers, ModifierInfo>()
         {
-            [Modifiers.Readonly] = new ModifierInfo(SyntaxKind.ReadOnlyModifier) { Targets = [ModifierTarget.Variable], Conflicts = [Modifiers.Constant] },
-            [Modifiers.Constant] = new ModifierInfo(SyntaxKind.ConstantModifier) { Targets = [ModifierTarget.Variable], Conflicts = [Modifiers.Readonly] },
+            [Modifiers.Readonly] = new ModifierInfo(SyntaxKind.ReadOnlyModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Constant] },
+            [Modifiers.Constant] = new ModifierInfo(SyntaxKind.ConstantModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Readonly] },
+            [Modifiers.Ref] = new ModifierInfo(SyntaxKind.RefModifier, [ModifierTarget.Parameter]) { Conflicts = [] },
         }.ToFrozenDictionary();
 
         public static Modifiers FromKind(SyntaxKind kind)
@@ -36,6 +39,7 @@ namespace FanScript.Compiler
             {
                 SyntaxKind.ReadOnlyModifier => Modifiers.Readonly,
                 SyntaxKind.ConstantModifier => Modifiers.Constant,
+                SyntaxKind.RefModifier => Modifiers.Ref,
                 _ => throw new InvalidDataException($"SyntaxKind '{kind}' isn't a modifier"),
             };
 
@@ -54,10 +58,10 @@ namespace FanScript.Compiler
             public IReadOnlyCollection<ModifierTarget> Targets { get; init; }
             public IReadOnlyCollection<Modifiers> Conflicts { get; init; }
 
-            public ModifierInfo(SyntaxKind _kind)
+            public ModifierInfo(SyntaxKind _kind, IReadOnlyCollection<ModifierTarget> _targets)
             {
                 Kind = _kind;
-                Targets = ReadOnlyCollection<ModifierTarget>.Empty;
+                Targets = _targets;
                 Conflicts = ReadOnlyCollection<Modifiers>.Empty;
             }
         }

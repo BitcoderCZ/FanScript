@@ -1,4 +1,5 @@
 ﻿using FanScript.Compiler;
+using MathUtils.Measures;
 using MathUtils.Vectors;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -65,6 +66,7 @@ namespace FanScript.FCInfo
             public static readonly BlockDef LateUpdate = new BlockDef("Late Update", 566, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Void, TerminalType.Out, "After Physics"), new Terminal(2, WireType.Void, TerminalType.In));
             public static readonly BlockDef BoxArtSensor = new BlockDef("Box Art Sensor", 409, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Void, TerminalType.Out, "On Screenshot"), new Terminal(2, WireType.Void, TerminalType.In));
             public static readonly BlockDef Button = new BlockDef("Button", 588, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Void, TerminalType.Out, "Button"), new Terminal(2, WireType.Void, TerminalType.In));
+            public static readonly BlockDef Joystick = new BlockDef("Joystick", 592, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Vec3, TerminalType.Out, "Joy Dir"), new Terminal(2, WireType.Void, TerminalType.In));
         }
 
         public static class Math

@@ -272,7 +272,8 @@ namespace FanScript.Compiler.Syntax
             SyntaxToken onKeyword = MatchToken(SyntaxKind.KeywordOn);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
             SyntaxToken openParenthesisToken = MatchToken(SyntaxKind.OpenParenthesisToken);
-            SeparatedSyntaxList<ExpressionSyntax> arguments = ParseSeparatedList(SyntaxKind.CloseParenthesisToken);
+            // TODO: allow modifiers, so stuff like "on Swipe(ref dir)" can be done
+            (var arguments, _) = ParseSeparatedList(SyntaxKind.CloseParenthesisToken);
             SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
             BlockStatementSyntax block = ParseBlockStatement();
 
@@ -292,7 +293,7 @@ namespace FanScript.Compiler.Syntax
                 if (Current.Kind == SyntaxKind.OpenSquareToken)
                 {
                     SyntaxToken openSquareToken = MatchToken(SyntaxKind.OpenSquareToken);
-                    SeparatedSyntaxList<ExpressionSyntax> elements = ParseSeparatedList(SyntaxKind.CloseSquareToken);
+                    (var elements, _) = ParseSeparatedList(SyntaxKind.CloseSquareToken);
                     SyntaxToken closeSquareToken = MatchToken(SyntaxKind.CloseSquareToken);
 
                     assignment = new ArrayInitializerStatementSyntax(_syntaxTree, identifier, equals, openSquareToken, elements, closeSquareToken);
@@ -323,7 +324,7 @@ namespace FanScript.Compiler.Syntax
             SyntaxToken identifierToken = NextToken();
             SyntaxToken equalsToken = MatchToken(SyntaxKind.EqualsToken);
             SyntaxToken openSquareToken = MatchToken(SyntaxKind.OpenSquareToken);
-            SeparatedSyntaxList<ExpressionSyntax> elements = ParseSeparatedList(SyntaxKind.CloseSquareToken);
+            (var elements, _) = ParseSeparatedList(SyntaxKind.CloseSquareToken);
             SyntaxToken closeSquareToken = MatchToken(SyntaxKind.CloseSquareToken);
 
             return new ArrayInitializerStatementSyntax(_syntaxTree, identifierToken, equalsToken, openSquareToken, elements, closeSquareToken);
@@ -545,23 +546,36 @@ namespace FanScript.Compiler.Syntax
             }
 
             SyntaxToken openParenthesisToken = MatchToken(SyntaxKind.OpenParenthesisToken);
-            SeparatedSyntaxList<ExpressionSyntax> arguments = ParseSeparatedList(SyntaxKind.CloseParenthesisToken);
+            (var arguments, var modifiers) = ParseSeparatedList(SyntaxKind.CloseParenthesisToken, true);
             SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
             if (hasGegenericParam)
-                return new CallExpressionSyntax(_syntaxTree, identifier, lessThanToken, genericType, greaterThanToken, openParenthesisToken, arguments, closeParenthesisToken);
+                return new CallExpressionSyntax(_syntaxTree, identifier, lessThanToken, genericType, greaterThanToken, openParenthesisToken, modifiers, arguments, closeParenthesisToken);
             else
-                return new CallExpressionSyntax(_syntaxTree, identifier, openParenthesisToken, arguments, closeParenthesisToken);
+                return new CallExpressionSyntax(_syntaxTree, identifier, openParenthesisToken, modifiers, arguments, closeParenthesisToken);
         }
 
-        private SeparatedSyntaxList<ExpressionSyntax> ParseSeparatedList(SyntaxKind listEnd)
+        private (SeparatedSyntaxList<ExpressionSyntax> list, ImmutableArray<ImmutableArray<SyntaxToken>> modifiers) ParseSeparatedList(SyntaxKind listEnd, bool allowModifiers = false)
         {
-            ImmutableArray<SyntaxNode>.Builder nodesAndSeparators = ImmutableArray.CreateBuilder<SyntaxNode>();
+            var nodesAndSeparators = ImmutableArray.CreateBuilder<SyntaxNode>();
+            var modifiersBuilder = ImmutableArray.CreateBuilder<ImmutableArray<SyntaxToken>>();
 
             bool parseNextArgument = true;
             while (parseNextArgument &&
                    Current.Kind != listEnd &&
                    Current.Kind != SyntaxKind.EndOfFileToken)
             {
+                if (allowModifiers)
+                {
+                    var builder = ImmutableArray.CreateBuilder<SyntaxToken>();
+
+                    while (Current.Kind.IsModifier())
+                        builder.Add(NextToken());
+
+                    modifiersBuilder.Add(builder.ToImmutable());
+                }
+                else
+                    modifiersBuilder.Add(ImmutableArray<SyntaxToken>.Empty);
+
                 ExpressionSyntax expression = ParseExpression();
                 nodesAndSeparators.Add(expression);
 
@@ -574,7 +588,7 @@ namespace FanScript.Compiler.Syntax
                     parseNextArgument = false; // TODO: this can just be break, right?
             }
 
-            return new SeparatedSyntaxList<ExpressionSyntax>(nodesAndSeparators.ToImmutable());
+            return (new SeparatedSyntaxList<ExpressionSyntax>(nodesAndSeparators.ToImmutable()), modifiersBuilder.ToImmutable());
         }
 
         private ExpressionSyntax ParseNameExpression()

@@ -311,7 +311,7 @@ namespace FanScript.Compiler.Binding
             if (builder is null)
                 return node;
 
-            return new BoundCallExpression(node.Syntax, node.Function, builder.MoveToImmutable(), node.ReturnType, node.GenericType);
+            return new BoundCallExpression(node.Syntax, node.Function, node.ArgModifiers, builder.MoveToImmutable(), node.ReturnType, node.GenericType);
         }
 
         protected virtual BoundExpression RewriteConversionExpression(BoundConversionExpression node)

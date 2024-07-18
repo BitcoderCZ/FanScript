@@ -309,7 +309,7 @@ namespace FanScript.Compiler.Lowering
                     element,
                 ];
 
-                builder.Add(new BoundExpressionStatement(newNode.Syntax, new BoundCallExpression(newNode.Syntax, BuiltinFunctions.Array_Set, arguments, TypeSymbol.Void, elementType)));
+                builder.Add(new BoundExpressionStatement(newNode.Syntax, new BoundCallExpression(newNode.Syntax, BuiltinFunctions.Array_Set, [0, 0, 0], arguments, TypeSymbol.Void, elementType)));
             }
 
             BoundBlockStatement result = new BoundBlockStatement(

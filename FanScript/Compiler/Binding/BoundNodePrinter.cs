@@ -400,12 +400,10 @@ namespace FanScript.Compiler.Binding
 
         private static void WriteLiteralExpression(BoundLiteralExpression node, IndentedTextWriter writer)
         {
-            string value = node.Value.ToString()!;
-
             if (node.Type == TypeSymbol.Bool)
                 writer.WriteKeyword((bool)node.Value ? SyntaxKind.KeywordTrue : SyntaxKind.KeywordFalse);
             else if (node.Type == TypeSymbol.Float)
-                writer.WriteNumber(value);
+                writer.WriteNumber((float)node.Value);
             else if (node.Type == TypeSymbol.Vector3 || node.Type == TypeSymbol.Rotation)
             {
                 Vector3F val;
@@ -479,7 +477,7 @@ namespace FanScript.Compiler.Binding
             writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
 
             bool isFirst = true;
-            foreach (BoundExpression argument in node.Arguments)
+            foreach (var (argument, modifiers) in node.Arguments.Zip(node.ArgModifiers))
             {
                 if (isFirst)
                     isFirst = false;
@@ -489,6 +487,9 @@ namespace FanScript.Compiler.Binding
                     writer.WriteSpace();
                 }
 
+                writer.WriteModifiers(modifiers);
+                if (modifiers != 0)
+                    writer.WriteSpace();
                 argument.WriteTo(writer);
             }
 
