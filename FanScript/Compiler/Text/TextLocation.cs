@@ -2,6 +2,8 @@
 {
     public struct TextLocation
     {
+        public static readonly TextLocation None = new TextLocation(SourceText.From(""), new TextSpan(0, 0));
+
         public TextLocation(SourceText text, TextSpan span)
         {
             Text = text;

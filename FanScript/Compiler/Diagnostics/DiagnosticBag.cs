@@ -211,9 +211,12 @@ namespace FanScript.Compiler.Diagnostics
             => ReportError(location, $"Modifier '{conflictingModifier}' conflicts with modifier '{modifier}'.");
 
         public void ReportUnknownSpecialBlock(TextLocation location, string text)
-            => ReportError(location, $"Unknown special block '{text}'");
+            => ReportError(location, $"Unknown special block '{text}'.");
 
         public void ReportWrongSBArgumentCount(TextLocation location, string name, int expectedCount, int actualCount)
             => ReportError(location, $"Special block '{name}' requires {expectedCount} arguments but was given {actualCount}.");
+
+        public void ReportFailedToDeclare(TextLocation location, string type, string name)
+            => ReportWarning(location, $"Failed to declare {type} '{name}'.");
     }
 }

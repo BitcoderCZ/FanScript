@@ -38,7 +38,9 @@ namespace FanScript.Compiler.Binding
             if (!isScript)
                 throw new Exception("Must be script");
 
-            BoundScope parentScope = CreateParentScope(previous);
+            DiagnosticBag scopeDiagnostics = new DiagnosticBag();
+
+            BoundScope parentScope = CreateParentScope(previous, scopeDiagnostics);
             Binder binder = new Binder(isScript, parentScope, function: null);
 
             binder.Diagnostics.AddRange(syntaxTrees.SelectMany(st => st.Diagnostics));
@@ -83,7 +85,7 @@ namespace FanScript.Compiler.Binding
             else
                 scriptFunction = null;
 
-            ImmutableArray<Diagnostic> diagnostics = binder.Diagnostics.ToImmutableArray();
+            ImmutableArray<Diagnostic> diagnostics = binder.Diagnostics.Concat(scopeDiagnostics).ToImmutableArray();
             ImmutableArray<VariableSymbol> variables = binder._scope.GetDeclaredVariables();
 
             if (previous is not null)
@@ -94,13 +96,15 @@ namespace FanScript.Compiler.Binding
 
         public static BoundProgram BindProgram(bool isScript, BoundProgram? previous, BoundGlobalScope globalScope)
         {
-            BoundScope parentScope = CreateParentScope(globalScope);
+            DiagnosticBag scopeDiagnostics = new DiagnosticBag();
+            BoundScope parentScope = CreateParentScope(globalScope, scopeDiagnostics);
 
             if (globalScope.Diagnostics.HasErrors())
                 return new BoundProgram(previous, globalScope.Diagnostics, null, ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Empty);
 
             ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Builder functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
             ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+            diagnostics.AddRange(scopeDiagnostics);
 
             foreach (FunctionSymbol function in globalScope.Functions)
             {
@@ -168,7 +172,7 @@ namespace FanScript.Compiler.Binding
         }
 
 
-        private static BoundScope CreateParentScope(BoundGlobalScope? previous)
+        private static BoundScope CreateParentScope(BoundGlobalScope? previous, DiagnosticBag diagnostics)
         {
             Stack<BoundGlobalScope> stack = new Stack<BoundGlobalScope>();
             while (previous is not null)
@@ -177,7 +181,7 @@ namespace FanScript.Compiler.Binding
                 previous = previous.Previous;
             }
 
-            BoundScope parent = CreateRootScope();
+            BoundScope parent = CreateRootScope(diagnostics);
 
             while (stack.Count > 0)
             {
@@ -196,7 +200,7 @@ namespace FanScript.Compiler.Binding
             return parent;
         }
 
-        private static BoundScope CreateRootScope()
+        private static BoundScope CreateRootScope(DiagnosticBag diagnostics)
         {
             BoundScope result = new BoundScope(null);
 
@@ -204,11 +208,13 @@ namespace FanScript.Compiler.Binding
             {
                 VariableSymbol variable = new LocalVariableSymbol(con.Name, Modifiers.Constant, con.Type);
                 variable.Initialize(new BoundConstant(con.Value));
-                result.TryDeclareVariable(variable);
+                if (!result.TryDeclareVariable(variable))
+                    diagnostics.ReportFailedToDeclare(TextLocation.None, "Constant", variable.Name);
             }
 
             foreach (FunctionSymbol f in BuiltinFunctions.GetAll())
-                result.TryDeclareFunction(f);
+                if (!result.TryDeclareFunction(f))
+                    diagnostics.ReportFailedToDeclare(TextLocation.None, "Built in function", f.Name);
 
             return result;
         }

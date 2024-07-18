@@ -29,7 +29,7 @@ namespace FanScript.Compiler.Symbols
             private static EmitStore emit11<T>(BoundCallExpression call, EmitContext context, Func<T, T>? constant, BlockDef blockDef, BlockDef literalDef)
                 where T : notnull
             {
-                object[]? constants = context.ValidateConstants(call.Arguments, false);
+                object[]? constants = context.ValidateConstants(call.Arguments.AsSpan(), false);
                 if (constants is not null && constant is not null)
                 {
                     Block literal = context.Builder.AddBlock(literalDef);
@@ -57,7 +57,7 @@ namespace FanScript.Compiler.Symbols
                 where T2 : notnull
                 where TOut : notnull
             {
-                object[]? constants = context.ValidateConstants(call.Arguments, false);
+                object[]? constants = context.ValidateConstants(call.Arguments.AsSpan(), false);
                 if (constants is not null && constant is not null)
                 {
                     Block literal = context.Builder.AddBlock(literalDef);
@@ -86,7 +86,7 @@ namespace FanScript.Compiler.Symbols
                 where T3 : notnull
                 where TOut : notnull
             {
-                object[]? constants = context.ValidateConstants(call.Arguments, false);
+                object[]? constants = context.ValidateConstants(call.Arguments.AsSpan(), false);
                 if (constants is not null && constant is not null)
                 {
                     Block literal = context.Builder.AddBlock(literalDef);
@@ -118,7 +118,7 @@ namespace FanScript.Compiler.Symbols
                 where T4 : notnull
                 where TOut : notnull
             {
-                object[]? constants = context.ValidateConstants(call.Arguments, false);
+                object[]? constants = context.ValidateConstants(call.Arguments.AsSpan(), false);
                 if (constants is not null && constant is not null)
                 {
                     Block literal = context.Builder.AddBlock(literalDef);
@@ -311,7 +311,7 @@ namespace FanScript.Compiler.Symbols
                       return new NopEmitStore();
                   }
 
-                  object[]? args = context.ValidateConstants(call.Arguments, true);
+                  object[]? args = context.ValidateConstants(call.Arguments.AsSpan(), true);
                   if (args is null)
                       return new NopEmitStore();
 

@@ -181,7 +181,7 @@ namespace FanScript.Compiler.Emit
             {
                 case SpecialBlockType.Button:
                     {
-                        object[]? values = emitContext.ValidateConstants(arguments, true);
+                        object[]? values = emitContext.ValidateConstants(arguments.AsSpan(), true);
                         if (values is null)
                             break;
 

@@ -30,12 +30,12 @@ namespace FanScript.Compiler.Emit
         public void Connect(EmitStore from, EmitStore to)
             => connect(from, to);
 
-        public object[]? ValidateConstants(IList<BoundExpression> expressions, bool mustBeConstant)
+        public object[]? ValidateConstants(ReadOnlySpan<BoundExpression> expressions, bool mustBeConstant)
         {
-            object[] values = new object[expressions.Count];
+            object[] values = new object[expressions.Length];
             bool invalid = false;
 
-            for (int i = 0; i < values.Length; i++)
+            for (int i = 0; i < expressions.Length; i++)
             {
                 BoundConstant? constant = expressions[i].ConstantValue;
                 if (constant is null)
