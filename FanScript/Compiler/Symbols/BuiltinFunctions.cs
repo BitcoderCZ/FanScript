@@ -9,6 +9,84 @@ namespace FanScript.Compiler.Symbols
 {
     internal static class BuiltinFunctions
     {
+        // (A) - active block (has before and after), num - numb inputs, num - number outputs
+        private static EmitStore emitAX0(BoundCallExpression call, EmitContext context, BlockDef blockDef)
+        {
+            Block block = context.Builder.AddBlock(blockDef);
+
+            if (call.Arguments.Length != 0)
+                context.Builder.BlockPlacer.ExpressionBlock(() =>
+                {
+                    for (int i = 0; i < call.Arguments.Length; i++)
+                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[call.Arguments.Length - i]));
+                });
+
+            return new BasicEmitStore(block);
+        }
+        private static EmitStore emitXX(BoundCallExpression call, EmitContext context, int numbReturnArgs, BlockDef blockDef)
+        {
+            if (numbReturnArgs <= 0)
+                throw new ArgumentOutOfRangeException(nameof(numbReturnArgs));
+            else if (numbReturnArgs > call.Arguments.Length)
+                throw new ArgumentOutOfRangeException(nameof(numbReturnArgs));
+
+            int retArgStart = call.Arguments.Length - numbReturnArgs;
+
+            EmitStore inStore = null!;
+            EmitStore lastStore = null!;
+
+            Block? block = null;
+
+            for (int i = retArgStart; i < call.Arguments.Length; i++)
+            {
+                VariableSymbol variable = ((BoundVariableExpression)call.Arguments[i]).Variable; 
+                Block varBlock = context.Builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
+
+                context.Builder.SetBlockValue(varBlock, 0, variable.Name);
+
+                if (block is null)
+                {
+                    inStore = BasicEmitStore.CIn(varBlock);
+                    block = null!;
+                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    {
+                        block = context.Builder.AddBlock(blockDef);
+
+                        if (retArgStart != 0)
+                            context.Builder.BlockPlacer.ExpressionBlock(() =>
+                            {
+                                for (int i = 0; i < retArgStart; i++)
+                                    context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[(retArgStart - 1) - i + numbReturnArgs]));
+                            });
+                    });
+                }
+                else
+                    context.Connect(lastStore, BasicEmitStore.CIn(varBlock));
+
+                context.Connect(
+                    BasicEmitStore.COut(block, block.Type.Terminals[(call.Arguments.Length - 1) - i]),
+                    BasicEmitStore.CIn(varBlock, varBlock.Type.Terminals[1])
+                );
+
+                lastStore = BasicEmitStore.COut(varBlock);
+            }
+
+            return new MultiEmitStore(inStore, lastStore);
+        }
+        private static EmitStore emitX1(BoundCallExpression call, EmitContext context, BlockDef blockDef)
+        {
+            Block block = context.Builder.AddBlock(blockDef);
+
+            if (call.Arguments.Length != 0)
+                context.Builder.BlockPlacer.ExpressionBlock(() =>
+                {
+                    for (int i = 0; i < call.Arguments.Length; i++)
+                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[call.Arguments.Length - i]));
+                });
+
+            return BasicEmitStore.COut(block, block.Type.Terminals[0]);
+        }
+
         private static class Control
         {
             public static readonly FunctionSymbol Joystick
@@ -45,242 +123,146 @@ namespace FanScript.Compiler.Symbols
 
         private static class Math
         {
-            private static EmitStore emit10(BoundCallExpression call, EmitContext context, BlockDef blockDef)
-            {
-                Block block = context.Builder.AddBlock(blockDef);
-
-                context.Builder.BlockPlacer.ExpressionBlock(() =>
-                {
-                    EmitStore num = context.EmitExpression(call.Arguments[0]);
-
-                    context.Connect(num, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
-                });
-
-                return new BasicEmitStore(block);
-            }
-            private static EmitStore emit11(BoundCallExpression call, EmitContext context, Func<float, float>? constant, BlockDef blockDef)
-                => emit11(call, context, constant, blockDef, Blocks.Values.Number);
-            private static EmitStore emit11<T>(BoundCallExpression call, EmitContext context, Func<T, T>? constant, BlockDef blockDef, BlockDef literalDef)
-                where T : notnull
-            {
-                object[]? constants = context.ValidateConstants(call.Arguments.AsSpan(), false);
-                if (constants is not null && constant is not null)
-                {
-                    Block literal = context.Builder.AddBlock(literalDef);
-
-                    context.Builder.SetBlockValue(literal, 0, constant((T)constants[0]));
-
-                    return BasicEmitStore.COut(literal, literal.Type.Terminals[0]);
-                }
-
-                Block block = context.Builder.AddBlock(blockDef);
-
-                context.Builder.BlockPlacer.ExpressionBlock(() =>
-                {
-                    EmitStore num = context.EmitExpression(call.Arguments[0]);
-
-                    context.Connect(num, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
-                });
-
-                return BasicEmitStore.COut(block, block.Type.Terminals[0]);
-            }
-            private static EmitStore emit21(BoundCallExpression call, EmitContext context, Func<float, float, float>? constant, BlockDef blockDef)
-                => emit21(call, context, constant, blockDef, Blocks.Values.Number);
-            private static EmitStore emit21<T1, T2, TOut>(BoundCallExpression call, EmitContext context, Func<T1, T2, TOut>? constant, BlockDef blockDef, BlockDef literalDef)
-                where T1 : notnull
-                where T2 : notnull
-                where TOut : notnull
-            {
-                object[]? constants = context.ValidateConstants(call.Arguments.AsSpan(), false);
-                if (constants is not null && constant is not null)
-                {
-                    Block literal = context.Builder.AddBlock(literalDef);
-
-                    context.Builder.SetBlockValue(literal, 0, constant((T1)constants[0], (T2)constants[1]));
-
-                    return BasicEmitStore.COut(literal, literal.Type.Terminals[0]);
-                }
-
-                Block block = context.Builder.AddBlock(blockDef);
-
-                context.Builder.BlockPlacer.ExpressionBlock(() =>
-                {
-                    EmitStore num1 = context.EmitExpression(call.Arguments[0]);
-                    EmitStore num2 = context.EmitExpression(call.Arguments[1]);
-
-                    context.Connect(num1, BasicEmitStore.CIn(block, block.Type.Terminals[2]));
-                    context.Connect(num2, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
-                });
-
-                return BasicEmitStore.COut(block, block.Type.Terminals[0]);
-            }
-            private static EmitStore emit31<T1, T2, T3, TOut>(BoundCallExpression call, EmitContext context, Func<T1, T2, T3, TOut>? constant, BlockDef blockDef, BlockDef literalDef)
-                where T1 : notnull
-                where T2 : notnull
-                where T3 : notnull
-                where TOut : notnull
-            {
-                object[]? constants = context.ValidateConstants(call.Arguments.AsSpan(), false);
-                if (constants is not null && constant is not null)
-                {
-                    Block literal = context.Builder.AddBlock(literalDef);
-
-                    context.Builder.SetBlockValue(literal, 0, constant((T1)constants[0], (T2)constants[1], (T3)constants[2]));
-
-                    return BasicEmitStore.COut(literal, literal.Type.Terminals[0]);
-                }
-
-                Block block = context.Builder.AddBlock(blockDef);
-
-                context.Builder.BlockPlacer.ExpressionBlock(() =>
-                {
-                    EmitStore num1 = context.EmitExpression(call.Arguments[0]);
-                    EmitStore num2 = context.EmitExpression(call.Arguments[1]);
-                    EmitStore num3 = context.EmitExpression(call.Arguments[2]);
-
-                    context.Connect(num1, BasicEmitStore.CIn(block, block.Type.Terminals[3]));
-                    context.Connect(num2, BasicEmitStore.CIn(block, block.Type.Terminals[2]));
-                    context.Connect(num3, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
-                });
-
-                return BasicEmitStore.COut(block, block.Type.Terminals[0]);
-            }
-            private static EmitStore emit41<T1, T2, T3, T4, TOut>(BoundCallExpression call, EmitContext context, Func<T1, T2, T3, T4, TOut>? constant, BlockDef blockDef, BlockDef literalDef)
-                where T1 : notnull
-                where T2 : notnull
-                where T3 : notnull
-                where T4 : notnull
-                where TOut : notnull
-            {
-                object[]? constants = context.ValidateConstants(call.Arguments.AsSpan(), false);
-                if (constants is not null && constant is not null)
-                {
-                    Block literal = context.Builder.AddBlock(literalDef);
-
-                    context.Builder.SetBlockValue(literal, 0, constant((T1)constants[0], (T2)constants[1], (T3)constants[2], (T4)constants[3]));
-
-                    return BasicEmitStore.COut(literal, literal.Type.Terminals[0]);
-                }
-
-                Block block = context.Builder.AddBlock(blockDef);
-
-                context.Builder.BlockPlacer.ExpressionBlock(() =>
-                {
-                    EmitStore num1 = context.EmitExpression(call.Arguments[0]);
-                    EmitStore num2 = context.EmitExpression(call.Arguments[1]);
-                    EmitStore num3 = context.EmitExpression(call.Arguments[2]);
-                    EmitStore num4 = context.EmitExpression(call.Arguments[3]);
-
-                    context.Connect(num1, BasicEmitStore.CIn(block, block.Type.Terminals[4]));
-                    context.Connect(num2, BasicEmitStore.CIn(block, block.Type.Terminals[3]));
-                    context.Connect(num3, BasicEmitStore.CIn(block, block.Type.Terminals[2]));
-                    context.Connect(num4, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
-                });
-
-                return BasicEmitStore.COut(block, block.Type.Terminals[0]);
-            }
-
             public static readonly FunctionSymbol Random
                 = new BuiltinFunctionSymbol("random",
                 [
                     new ParameterSymbol("min", TypeSymbol.Float, 0),
                     new ParameterSymbol("max", TypeSymbol.Float, 1),
-                ], TypeSymbol.Float, (call, context) => emit21(call, context, null, Blocks.Math.Random));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Random));
             public static readonly FunctionSymbol RandomSeed
                 = new BuiltinFunctionSymbol("setRandomSeed",
                 [
                     new ParameterSymbol("seed", TypeSymbol.Float, 0),
-                ], TypeSymbol.Void, (call, context) => emit10(call, context, Blocks.Math.RandomSeed));
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Math.RandomSeed));
             public static readonly FunctionSymbol Min
                 = new BuiltinFunctionSymbol("min",
                 [
                     new ParameterSymbol("num1", TypeSymbol.Float, 0),
                     new ParameterSymbol("num2", TypeSymbol.Float, 1),
-                ], TypeSymbol.Float, (call, context) => emit21(call, context, (num1, num2) => MathF.Min(num1, num2), Blocks.Math.Min));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Min));
             public static readonly FunctionSymbol Max
                 = new BuiltinFunctionSymbol("max",
                 [
                     new ParameterSymbol("num1", TypeSymbol.Float, 0),
                     new ParameterSymbol("num2", TypeSymbol.Float, 1),
-                ], TypeSymbol.Float, (call, context) => emit21(call, context, (num1, num2) => MathF.Max(num1, num2), Blocks.Math.Max));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Max));
             public static readonly FunctionSymbol Sin
                 = new BuiltinFunctionSymbol("sin",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float, 0),
-                ], TypeSymbol.Float, (call, context) => emit11(call, context, num => MathF.Sin(num), Blocks.Math.Sin));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Sin));
             public static readonly FunctionSymbol Cos
                 = new BuiltinFunctionSymbol("cos",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float, 0),
-                ], TypeSymbol.Float, (call, context) => emit11(call, context, num => MathF.Cos(num), Blocks.Math.Cos));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Cos));
             public static readonly FunctionSymbol Round
                 = new BuiltinFunctionSymbol("round",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float, 0),
-                ], TypeSymbol.Float, (call, context) => emit11(call, context, num => MathF.Round(num), Blocks.Math.Round));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Round));
             public static readonly FunctionSymbol Floor
                 = new BuiltinFunctionSymbol("floor",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float, 0),
-                ], TypeSymbol.Float, (call, context) => emit11(call, context, num => MathF.Floor(num), Blocks.Math.Floor));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Floor));
             public static readonly FunctionSymbol Ceiling
                 = new BuiltinFunctionSymbol("ceiling",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float, 0),
-                ], TypeSymbol.Float, (call, context) => emit11(call, context, num => MathF.Ceiling(num), Blocks.Math.Ceiling));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Ceiling));
             public static readonly FunctionSymbol Abs
                 = new BuiltinFunctionSymbol("abs",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float, 0),
-                ], TypeSymbol.Float, (call, context) => emit11(call, context, num => MathF.Abs(num), Blocks.Math.Absolute));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Absolute));
             public static readonly FunctionSymbol Log
                 = new BuiltinFunctionSymbol("log",
                 [
                     new ParameterSymbol("number", TypeSymbol.Float, 0),
                     new ParameterSymbol("base", TypeSymbol.Float, 1),
-                ], TypeSymbol.Float, (call, context) => emit21(call, context, (number, @base) => MathF.Log(number, @base), Blocks.Math.Logarithm));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Logarithm));
             public static readonly FunctionSymbol Normalize
                 = new BuiltinFunctionSymbol("normalize",
                 [
                     new ParameterSymbol("vector", TypeSymbol.Vector3, 0),
-                ], TypeSymbol.Vector3, (call, context) => emit11<Vector3F>(call, context, vec => vec.Normalized(), Blocks.Math.Normalize, Blocks.Values.Vector));
+                ], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Math.Normalize));
             public static readonly FunctionSymbol DotProduct
                 = new BuiltinFunctionSymbol("dot",
                 [
                     new ParameterSymbol("vector", TypeSymbol.Vector3, 0),
                     new ParameterSymbol("vector", TypeSymbol.Vector3, 1),
-                ], TypeSymbol.Float, (call, context) => emit21<Vector3F, Vector3F, float>(call, context, (vec1, vec2) => Vector3F.Dot(vec1, vec2), Blocks.Math.DotProduct, Blocks.Values.Number));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.DotProduct));
             public static readonly FunctionSymbol CrossProduct
                 = new BuiltinFunctionSymbol("cross",
                 [
                     new ParameterSymbol("vector", TypeSymbol.Vector3, 0),
                     new ParameterSymbol("vector", TypeSymbol.Vector3, 1),
-                ], TypeSymbol.Vector3, (call, context) => emit21<Vector3F, Vector3F, Vector3F>(call, context, (vec1, vec2) => Vector3F.Cross(vec1, vec2), Blocks.Math.CrossProduct, Blocks.Values.Vector));
+                ], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Math.CrossProduct));
             public static readonly FunctionSymbol Distance
                 = new BuiltinFunctionSymbol("dist",
                 [
                     new ParameterSymbol("vector", TypeSymbol.Vector3, 0),
                     new ParameterSymbol("vector", TypeSymbol.Vector3, 1),
-                ], TypeSymbol.Float, (call, context) => emit21<Vector3F, Vector3F, float>(call, context, (vec1, vec2) => (float)Vector3F.Distance(vec1, vec2), Blocks.Math.Distance, Blocks.Values.Number));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Distance));
             public static readonly FunctionSymbol Lerp
                 = new BuiltinFunctionSymbol("lerp",
                 [
                     new ParameterSymbol("from", TypeSymbol.Rotation, 0),
                     new ParameterSymbol("to", TypeSymbol.Rotation, 1),
                     new ParameterSymbol("amount", TypeSymbol.Float, 2),
-                ], TypeSymbol.Rotation, (call, context) => emit31<Rotation, Rotation, float, Rotation>(call, context, null, Blocks.Math.Lerp, Blocks.Values.Rotation));
+                ], TypeSymbol.Rotation, (call, context) => emitX1(call, context, Blocks.Math.Lerp));
             public static readonly FunctionSymbol AxisAngle
                 = new BuiltinFunctionSymbol("axisAngle",
                 [
                     new ParameterSymbol("axis", TypeSymbol.Vector3, 0),
                     new ParameterSymbol("angle", TypeSymbol.Float, 1),
-                ], TypeSymbol.Rotation, (call, context) => emit21<Vector3F, float, Rotation>(call, context, null, Blocks.Math.AxisAngle, Blocks.Values.Rotation));
+                ], TypeSymbol.Rotation, (call, context) => emitX1(call, context, Blocks.Math.AxisAngle));
+            public static readonly FunctionSymbol ScreenToWorld
+                = new BuiltinFunctionSymbol("screenToWorld",
+                [
+                    new ParameterSymbol("screenX", TypeSymbol.Float, 0),
+                    new ParameterSymbol("screenY", TypeSymbol.Float, 1),
+                    new ParameterSymbol("worldNear", Modifiers.Ref, TypeSymbol.Vector3, 2),
+                    new ParameterSymbol("worldFar", Modifiers.Ref, TypeSymbol.Vector3, 3),
+                ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Math.ScreenToWorld));
+            public static readonly FunctionSymbol WorldToScreen
+                = new BuiltinFunctionSymbol("worldToScreen",
+                [
+                    new ParameterSymbol("worldPos", TypeSymbol.Vector3, 0),
+                    new ParameterSymbol("screenX", Modifiers.Ref, TypeSymbol.Float, 1),
+                    new ParameterSymbol("screenY", Modifiers.Ref, TypeSymbol.Float, 2),
+                ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Math.WorldToScreen));
+            public static readonly FunctionSymbol WorldToScreen2
+                = new BuiltinFunctionSymbol("worldToScreen",
+                [
+                    new ParameterSymbol("worldPos", TypeSymbol.Vector3, 0),
+                ], TypeSymbol.Vector3, (call, context) =>
+                {
+                    Block make = context.Builder.AddBlock(Blocks.Math.Make_Vector);
+
+                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    {
+                        Block wts = context.Builder.AddBlock(Blocks.Math.WorldToScreen);
+
+                        context.Builder.BlockPlacer.ExpressionBlock(() =>
+                        {
+                            EmitStore store = context.EmitExpression(call.Arguments[0]);
+                            context.Connect(store, BasicEmitStore.CIn(wts, wts.Type.Terminals[2]));
+                        });
+
+                        context.Connect(BasicEmitStore.COut(wts, wts.Type.Terminals[1]), BasicEmitStore.CIn(make, make.Type.Terminals[3]));
+                        context.Connect(BasicEmitStore.COut(wts, wts.Type.Terminals[0]), BasicEmitStore.CIn(make, make.Type.Terminals[2]));
+                    });
+
+                    return BasicEmitStore.COut(make, make.Type.Terminals[0]); 
+                });
             public static readonly FunctionSymbol LookRotation
                 = new BuiltinFunctionSymbol("lookRotation",
                 [
                     new ParameterSymbol("direction", TypeSymbol.Vector3, 0),
                     new ParameterSymbol("up", TypeSymbol.Vector3, 1),
-                ], TypeSymbol.Rotation, (call, context) => emit21<Vector3F, Vector3F, Rotation>(call, context, null, Blocks.Math.LookRotation, Blocks.Values.Rotation));
+                ], TypeSymbol.Rotation, (call, context) => emitX1(call, context, Blocks.Math.LookRotation));
             public static readonly FunctionSymbol LineVsPlane
                 = new BuiltinFunctionSymbol("lineVsPlane",
                 [
@@ -288,7 +270,7 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("lineTo", TypeSymbol.Vector3, 1),
                     new ParameterSymbol("planePoint", TypeSymbol.Vector3, 2),
                     new ParameterSymbol("planeNormal", TypeSymbol.Vector3, 3),
-                ], TypeSymbol.Vector3, (call, context) => emit41<Vector3F, Vector3F, Vector3F, Vector3F, Vector3F>(call, context, null, Blocks.Math.LineVsPlane, Blocks.Values.Vector));
+                ], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Math.LineVsPlane));
         }
 
         public static readonly FunctionSymbol Inspect

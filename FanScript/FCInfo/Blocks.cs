@@ -163,6 +163,10 @@ namespace FanScript.FCInfo
             public static readonly BlockDef Lerp = new BlockDef("LERP", 194, BlockType.Pasive, new Vector2I(2, 3), new Terminal(0, WireType.Rot, TerminalType.Out, "Rotation"), new Terminal(1, WireType.Float, TerminalType.In, "Amount"), new Terminal(2, WireType.Rot, TerminalType.In, "To"), new Terminal(3, WireType.Rot, TerminalType.In, "From"));
 
             public static readonly BlockDef AxisAngle = new BlockDef("Axis Angle", 200, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Rot, TerminalType.Out, "Rotation"), new Terminal(1, WireType.Float, TerminalType.In, "Angle"), new Terminal(2, WireType.Vec3, TerminalType.In, "Axis"));
+
+            public static readonly BlockDef ScreenToWorld = new BlockDef("Screen To World", 216, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Vec3, TerminalType.Out, "World Far"), new Terminal(1, WireType.Vec3, TerminalType.Out, "World Near"), new Terminal(2, WireType.Float, TerminalType.In, "Screen Y"), new Terminal(3, WireType.Float, TerminalType.In, "Screen X"));
+            public static readonly BlockDef WorldToScreen = new BlockDef("World To Screen", 477, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Float, TerminalType.Out, "Screen Y"), new Terminal(1, WireType.Float, TerminalType.Out, "Screen X"), new Terminal(2, WireType.Vec3, TerminalType.In, "World Pos"));
+
             public static readonly BlockDef LookRotation = new BlockDef("Look Rotation", 204, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Rot, TerminalType.Out, "Rotation"), new Terminal(1, WireType.Vec3, TerminalType.In, "Up"), new Terminal(2, WireType.Vec3, TerminalType.In, "Direction"));
 
             public static readonly BlockDef LineVsPlane = new BlockDef("Line vs Plane", 208, BlockType.Pasive, new Vector2I(2, 4), new Terminal(0, WireType.Vec3, TerminalType.Out, "Intersection"), new Terminal(1, WireType.Vec3, TerminalType.In, "Plane Normal"), new Terminal(2, WireType.Vec3, TerminalType.In, "Plane Point"), new Terminal(3, WireType.Vec3, TerminalType.In, "Line To"), new Terminal(4, WireType.Vec3, TerminalType.In, "Line From"));
