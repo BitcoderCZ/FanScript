@@ -543,7 +543,7 @@ namespace FanScript.Compiler.Syntax
             }
 
             ArgumentClauseSyntax argumentClause = ParseArgumentClause();
-           
+
             if (hasGegenericParam)
                 return new CallExpressionSyntax(_syntaxTree, identifier, lessThanToken, genericType, greaterThanToken, argumentClause);
             else

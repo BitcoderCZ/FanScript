@@ -1,5 +1,4 @@
 ﻿using FanScript.Compiler.Syntax;
-using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Binding
 {

@@ -7,7 +7,6 @@ using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FanScript.Compiler.Binding
 {
@@ -318,10 +317,10 @@ namespace FanScript.Compiler.Binding
                 case "Touch":
                     type = SpecialBlockType.Touch;
                     parameters = [
-                        new ParameterSymbol("screenX", Modifiers.Ref, TypeSymbol.Float, 0),    
-                        new ParameterSymbol("screenY", Modifiers.Ref, TypeSymbol.Float, 1),    
-                        new ParameterSymbol("TOUCH_STATE", TypeSymbol.Float, 2),    
-                        new ParameterSymbol("TOUCH_INDEX", TypeSymbol.Float, 3),    
+                        new ParameterSymbol("screenX", Modifiers.Ref, TypeSymbol.Float, 0),
+                        new ParameterSymbol("screenY", Modifiers.Ref, TypeSymbol.Float, 1),
+                        new ParameterSymbol("TOUCH_STATE", TypeSymbol.Float, 2),
+                        new ParameterSymbol("TOUCH_INDEX", TypeSymbol.Float, 3),
                     ];
                     break;
                 case "Button":
@@ -715,7 +714,7 @@ namespace FanScript.Compiler.Binding
                 return new BoundErrorExpression(syntax);
             }
 
-            BoundArgumentClause? argumentClause = BindArgumentClause(syntax.ArgumentClause, 
+            BoundArgumentClause? argumentClause = BindArgumentClause(syntax.ArgumentClause,
                 function.Parameters
                     .Select(param => new ParameterSymbol(param.Name, param.Modifiers, fixType(param.Type), param.Ordinal))
                     .ToImmutableArray(),
