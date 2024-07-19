@@ -129,7 +129,7 @@ namespace FanScript.LangServer
         }
 
         public DocumentSymbolRegistrationOptions GetRegistrationOptions(DocumentSymbolCapability capability, ClientCapabilities clientCapabilities) => new DocumentSymbolRegistrationOptions {
-            DocumentSelector = TextDocumentSelector.ForLanguage("csharp")
+            DocumentSelector = TextDocumentSelector.ForLanguage("plaintext")
         };
     }
 

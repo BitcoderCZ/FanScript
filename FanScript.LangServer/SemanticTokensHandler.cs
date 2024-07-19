@@ -95,7 +95,7 @@ namespace FanScript.LangServer
         {
             return new SemanticTokensRegistrationOptions
             {
-                DocumentSelector = TextDocumentSelector.ForLanguage("csharp"),
+                DocumentSelector = TextDocumentSelector.ForLanguage("plaintext"),
                 Legend = new SemanticTokensLegend
                 {
                     TokenModifiers = capability.TokenModifiers,
