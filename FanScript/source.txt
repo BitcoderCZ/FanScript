@@ -10,3 +10,7 @@ readonly float a = 1
 on Button(BUTTON_TYPE_DIRECTION) {
     inspect(a)
 }
+
+vec3 pos
+joystick(ref pos, JOYSTICK_TYPE_SCREEN)
+inspect(pos)
