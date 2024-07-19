@@ -28,6 +28,7 @@
         ExpressionStatement,
         ConversionExpression,
         ConstructorExpression,
+        ArgumentClause,
 
         SpecialBlockCondition,
 

@@ -80,8 +80,8 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportNotAFunction(TextLocation location, string name)
             => ReportError(location, $"'{name}' is not a function.");
 
-        public void ReportWrongArgumentCount(TextLocation location, string name, int expectedCount, int actualCount)
-            => ReportError(location, $"Function '{name}' requires {expectedCount} arguments but was given {actualCount}.");
+        public void ReportWrongArgumentCount(TextLocation location, string type, string name, int expectedCount, int actualCount)
+            => ReportError(location, $"{type} '{name}' requires {expectedCount} arguments but was given {actualCount}.");
 
         public void ReportExpressionMustHaveValue(TextLocation location)
             => ReportError(location, "Expression must have a Value.");
@@ -148,9 +148,6 @@ namespace FanScript.Compiler.Diagnostics
 
         public void ReportUnknownSpecialBlock(TextLocation location, string text)
             => ReportError(location, $"Unknown special block '{text}'.");
-
-        public void ReportWrongSBArgumentCount(TextLocation location, string name, int expectedCount, int actualCount)
-            => ReportError(location, $"Special block '{name}' requires {expectedCount} arguments but was given {actualCount}.");
 
         public void ReportArgumentMustHaveModifier(TextLocation location, string name, Modifiers modifier)
             => ReportError(location, $"Argument for paramater '{name}' must be passed with the '{modifier.ToKind().GetText()}' modifier.");

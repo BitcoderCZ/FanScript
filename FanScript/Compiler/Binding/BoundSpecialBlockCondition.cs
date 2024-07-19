@@ -6,16 +6,16 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class BoundSpecialBlockCondition : BoundExpression
     {
-        public BoundSpecialBlockCondition(SyntaxNode syntax, SpecialBlockType sbType, ImmutableArray<BoundExpression> arguments) : base(syntax)
+        public BoundSpecialBlockCondition(SyntaxNode syntax, SpecialBlockType sbType, BoundArgumentClause argumentClause) : base(syntax)
         {
             SBType = sbType;
-            Arguments = arguments;
+            ArgumentClause = argumentClause;
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.SpecialBlockCondition;
         public override TypeSymbol Type => TypeSymbol.Void;
 
         public SpecialBlockType SBType { get; }
-        public ImmutableArray<BoundExpression> Arguments { get; }
+        public BoundArgumentClause ArgumentClause { get; }
     }
 }

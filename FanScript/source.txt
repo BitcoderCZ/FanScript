@@ -1,16 +1,12 @@
-on Play() {
-    vec3 near
-    vec3 far
-    screenToWorld(200, 100, ref near, ref far)
-    inspect(near)
-    inspect(far)
+float x
+float y
 
-    float screenX
-    float screenY
-    worldToScreen(vec3(5, 5, 5), ref screenX, ref screenY)
-    inspect(screenX)
-    inspect(screenY)
+on Touch(ref x, ref y, TOUCH_STATE_ENDS, TOUCH_INDEX_1) {
+    inspect(vec3(x, y, 0))
+}
 
-    vec3 screenPos = worldToScreen(vec3(5, 5, 5))
-    inspect(screenPos)
+readonly float a = 1
+
+on Button(BUTTON_TYPE_DIRECTION) {
+    inspect(a)
 }

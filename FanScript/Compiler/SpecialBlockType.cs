@@ -5,6 +5,7 @@
         Play,
         LateUpdate,
         BoxArt,
+        Touch,
         Button,
     }
 }

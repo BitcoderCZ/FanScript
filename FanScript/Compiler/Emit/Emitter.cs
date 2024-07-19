@@ -102,7 +102,7 @@ namespace FanScript.Compiler.Emit
                 BoundVariableDeclaration => new NopEmitStore(),
                 BoundAssignmentStatement => emitAssigmentStatement((BoundAssignmentStatement)statement),
                 BoundGotoStatement => emitGotoStatement((BoundGotoStatement)statement),
-                BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundSpecialBlockCondition condition => emitSpecialBlockStatement(condition.SBType, condition.Arguments, conditionalGoto.Label),
+                BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundSpecialBlockCondition condition => emitSpecialBlockStatement(condition.SBType, condition.ArgumentClause.Arguments, conditionalGoto.Label),
                 BoundConditionalGotoStatement => emitConditionalGotoStatement((BoundConditionalGotoStatement)statement),
                 BoundLabelStatement => emitLabelStatement((BoundLabelStatement)statement),
                 BoundEmitterHint => emitHint((BoundEmitterHint)statement),
@@ -166,6 +166,9 @@ namespace FanScript.Compiler.Emit
                 case SpecialBlockType.BoxArt:
                     def = Blocks.Control.BoxArtSensor;
                     break;
+                case SpecialBlockType.Touch:
+                    def = Blocks.Control.TouchSensor;
+                    break;
                 case SpecialBlockType.Button:
                     def = Blocks.Control.Button;
                     break;
@@ -175,7 +178,7 @@ namespace FanScript.Compiler.Emit
 
             Block block = builder.AddBlock(def);
 
-            connectToLabel(onTrueLabel.Name, BasicEmitStore.COut(block, block.Type.Terminals[1]));
+            builder.BlockPlacer.EnterStatementBlock();
 
             switch (type)
             {
@@ -189,9 +192,47 @@ namespace FanScript.Compiler.Emit
                             builder.SetBlockValue(block, i, (byte)(float)values[i]); // unbox, then cast
                     }
                     break;
+                case SpecialBlockType.Touch:
+                    {
+                        object[]? values = emitContext.ValidateConstants(arguments.AsSpan(2..), true);
+                        if (values is null)
+                            break;
+
+                        for (int i = 0; i < values.Length; i++)
+                            builder.SetBlockValue(block, i, (byte)(float)values[i]); // unbox, then cast
+
+                        connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments.AsSpan(..2)));
+                        return new BasicEmitStore(block);
+                    }
             }
 
+            connectToLabel(onTrueLabel.Name, BasicEmitStore.COut(block, block.Type.Terminals[^2]));
+
             return new BasicEmitStore(block);
+
+            EmitStore placeAndConnectRefArgs(ReadOnlySpan<BoundExpression> arguments)
+            {
+                EmitStore lastStore = null!;
+
+                for (int i = 0; i < arguments.Length; i++)
+                {
+                    VariableSymbol variable = ((BoundVariableExpression)arguments[i]).Variable;
+                    Block varBlock = builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
+
+                    builder.SetBlockValue(varBlock, 0, variable.Name);
+
+                    if (i == 0)
+                        connect(BasicEmitStore.COut(block, block.Type.Terminals[^2]), BasicEmitStore.CIn(varBlock));
+                    else
+                        connect(lastStore, BasicEmitStore.CIn(varBlock));
+
+                    connect(BasicEmitStore.COut(block, block.Type.Terminals[Index.FromEnd(i + 3)]), BasicEmitStore.CIn(varBlock, varBlock.Type.Terminals[1]));
+
+                    lastStore = new BasicEmitStore(varBlock);
+                }
+
+                return lastStore;
+            }
         }
 
         private EmitStore emitAssigmentStatement(BoundAssignmentStatement assignment)

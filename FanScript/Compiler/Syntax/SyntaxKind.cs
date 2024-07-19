@@ -58,6 +58,7 @@
         CallExpression,
         NameExpression,
         ConstructorExpression,
+        ArgumentClause,
 
         Parameter,
         TypeClause,

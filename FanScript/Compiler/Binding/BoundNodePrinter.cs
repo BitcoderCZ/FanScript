@@ -161,21 +161,7 @@ namespace FanScript.Compiler.Binding
             writer.WriteKeyword(SyntaxKind.KeywordOn);
             writer.WriteSpace();
             writer.WriteIdentifier(node.Type.ToString());
-            writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
-            bool isFirst = true;
-            foreach (BoundExpression argument in node.Arguments)
-            {
-                if (isFirst)
-                    isFirst = false;
-                else
-                {
-                    writer.WritePunctuation(SyntaxKind.CommaToken);
-                    writer.WriteSpace();
-                }
-
-                argument.WriteTo(writer);
-            }
-            writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
+            WriteArgumentClause(node.ArgumentClause, writer);
             writer.WriteLine();
             WriteBlockStatement(node.Block, writer);
         }
@@ -446,7 +432,7 @@ namespace FanScript.Compiler.Binding
 
         private static void WriteUnaryExpression(BoundUnaryExpression node, IndentedTextWriter writer)
         {
-            var precedence = SyntaxFacts.GetUnaryOperatorPrecedence(node.Op.SyntaxKind);
+            int precedence = SyntaxFacts.GetUnaryOperatorPrecedence(node.Op.SyntaxKind);
 
             writer.WritePunctuation(node.Op.SyntaxKind);
             writer.WriteNestedExpression(precedence, node.Operand);
@@ -454,7 +440,7 @@ namespace FanScript.Compiler.Binding
 
         private static void WriteBinaryExpression(BoundBinaryExpression node, IndentedTextWriter writer)
         {
-            var precedence = SyntaxFacts.GetBinaryOperatorPrecedence(node.Op.SyntaxKind);
+            int precedence = SyntaxFacts.GetBinaryOperatorPrecedence(node.Op.SyntaxKind);
 
             writer.WriteNestedExpression(precedence, node.Left);
             writer.WriteSpace();
@@ -474,26 +460,7 @@ namespace FanScript.Compiler.Binding
                 writer.WritePunctuation(SyntaxKind.GreaterToken);
             }
 
-            writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
-
-            bool isFirst = true;
-            foreach (var (argument, modifiers) in node.Arguments.Zip(node.ArgModifiers))
-            {
-                if (isFirst)
-                    isFirst = false;
-                else
-                {
-                    writer.WritePunctuation(SyntaxKind.CommaToken);
-                    writer.WriteSpace();
-                }
-
-                writer.WriteModifiers(modifiers);
-                if (modifiers != 0)
-                    writer.WriteSpace();
-                argument.WriteTo(writer);
-            }
-
-            writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
+            WriteArgumentClause(node.ArgumentClause, writer);
         }
 
         private static void WriteConversionExpression(BoundConversionExpression node, IndentedTextWriter writer)
@@ -521,20 +488,33 @@ namespace FanScript.Compiler.Binding
         private static void WriteSpecialBlockCondition(BoundSpecialBlockCondition node, IndentedTextWriter writer)
         {
             writer.WriteIdentifier(node.SBType.ToString());
-            writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
-            bool isFirst = true;
-            foreach (BoundExpression argument in node.Arguments)
-            {
-                if (isFirst)
-                    isFirst = false;
-                else
-                {
-                    writer.WritePunctuation(SyntaxKind.CommaToken);
-                    writer.WriteSpace();
-                }
+            WriteArgumentClause(node.ArgumentClause, writer);
+        }
 
-                argument.WriteTo(writer);
+        private static void WriteArgumentClause(BoundArgumentClause node, IndentedTextWriter writer)
+        {
+            writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
+
+            if (node.Arguments.Length != 0)
+            {
+                bool isFirst = true;
+                foreach (var (argument, modifiers) in node.Arguments.Zip(node.ArgModifiers))
+                {
+                    if (isFirst)
+                        isFirst = false;
+                    else
+                    {
+                        writer.WritePunctuation(SyntaxKind.CommaToken);
+                        writer.WriteSpace();
+                    }
+
+                    writer.WriteModifiers(modifiers);
+                    if (modifiers != 0)
+                        writer.WriteSpace();
+                    argument.WriteTo(writer);
+                }
             }
+
             writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
         }
     }

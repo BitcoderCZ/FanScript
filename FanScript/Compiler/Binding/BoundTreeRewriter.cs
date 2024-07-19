@@ -80,33 +80,14 @@ namespace FanScript.Compiler.Binding
 
         protected virtual BoundStatement RewriteSpecialBlockStatement(BoundSpecialBlockStatement node)
         {
-            ImmutableArray<BoundExpression>.Builder? builder = null;
-
-            for (var i = 0; i < node.Arguments.Length; i++)
-            {
-                BoundExpression oldArgument = node.Arguments[i];
-                BoundExpression newArgument = RewriteExpression(oldArgument);
-                if (newArgument != oldArgument)
-                {
-                    if (builder is null)
-                    {
-                        builder = ImmutableArray.CreateBuilder<BoundExpression>(node.Arguments.Length);
-
-                        for (int j = 0; j < i; j++)
-                            builder.Add(node.Arguments[j]);
-                    }
-                }
-
-                if (builder is not null)
-                    builder.Add(newArgument);
-            }
+            BoundArgumentClause argumentClause = RewriteArgumentClause(node.ArgumentClause);
 
             BoundBlockStatement block = (BoundBlockStatement)RewriteBlockStatement(node.Block);
 
-            if (builder is null && block == node.Block)
+            if (argumentClause == node.ArgumentClause && block == node.Block)
                 return node;
 
-            return new BoundSpecialBlockStatement(node.Syntax, node.Type, builder?.ToImmutable() ?? node.Arguments, block);
+            return new BoundSpecialBlockStatement(node.Syntax, node.Type, argumentClause, block);
         }
 
         protected virtual BoundStatement RewriteNopStatement(BoundNopStatement node)
@@ -269,6 +250,7 @@ namespace FanScript.Compiler.Binding
         protected virtual BoundExpression RewriteUnaryExpression(BoundUnaryExpression node)
         {
             BoundExpression operand = RewriteExpression(node.Operand);
+
             if (operand == node.Operand)
                 return node;
 
@@ -279,6 +261,7 @@ namespace FanScript.Compiler.Binding
         {
             BoundExpression left = RewriteExpression(node.Left);
             BoundExpression right = RewriteExpression(node.Right);
+
             if (left == node.Left && right == node.Right)
                 return node;
 
@@ -286,6 +269,46 @@ namespace FanScript.Compiler.Binding
         }
 
         protected virtual BoundExpression RewriteCallExpression(BoundCallExpression node)
+        {
+            BoundArgumentClause argumentClause = RewriteArgumentClause(node.ArgumentClause);
+
+            if (argumentClause == node.ArgumentClause)
+                return node;
+
+            return new BoundCallExpression(node.Syntax, node.Function, argumentClause, node.ReturnType, node.GenericType);
+        }
+
+        protected virtual BoundExpression RewriteConversionExpression(BoundConversionExpression node)
+        {
+            BoundExpression expression = RewriteExpression(node.Expression);
+
+            if (expression == node.Expression)
+                return node;
+
+            return new BoundConversionExpression(node.Syntax, node.Type, expression);
+        }
+
+        protected virtual BoundExpression RewriteConstructorExpression(BoundConstructorExpression node)
+        {
+            BoundExpression expressionX = RewriteExpression(node.ExpressionX);
+            BoundExpression expressionY = RewriteExpression(node.ExpressionY);
+            BoundExpression expressionZ = RewriteExpression(node.ExpressionZ);
+
+            bool xDiff = expressionX != node.ExpressionX,
+                yDiff = expressionY != node.ExpressionY,
+                zDiff = expressionZ != node.ExpressionZ;
+
+            if (xDiff || yDiff || zDiff)
+                return new BoundConstructorExpression(node.Syntax, node.Type,
+                    xDiff ? expressionX : node.ExpressionX,
+                    yDiff ? expressionY : node.ExpressionY,
+                    zDiff ? expressionZ : node.ExpressionZ
+                );
+            else
+                return node;
+        }
+
+        protected virtual BoundArgumentClause RewriteArgumentClause(BoundArgumentClause node)
         {
             ImmutableArray<BoundExpression>.Builder? builder = null;
 
@@ -311,36 +334,7 @@ namespace FanScript.Compiler.Binding
             if (builder is null)
                 return node;
 
-            return new BoundCallExpression(node.Syntax, node.Function, node.ArgModifiers, builder.MoveToImmutable(), node.ReturnType, node.GenericType);
-        }
-
-        protected virtual BoundExpression RewriteConversionExpression(BoundConversionExpression node)
-        {
-            BoundExpression expression = RewriteExpression(node.Expression);
-            if (expression == node.Expression)
-                return node;
-
-            return new BoundConversionExpression(node.Syntax, node.Type, expression);
-        }
-
-        protected virtual BoundExpression RewriteConstructorExpression(BoundConstructorExpression node)
-        {
-            BoundExpression expressionX = RewriteExpression(node.ExpressionX);
-            BoundExpression expressionY = RewriteExpression(node.ExpressionY);
-            BoundExpression expressionZ = RewriteExpression(node.ExpressionZ);
-
-            bool xDiff = expressionX != node.ExpressionX,
-                yDiff = expressionY != node.ExpressionY,
-                zDiff = expressionZ != node.ExpressionZ;
-
-            if (xDiff || yDiff || zDiff)
-                return new BoundConstructorExpression(node.Syntax, node.Type,
-                    xDiff ? expressionX : node.ExpressionX,
-                    yDiff ? expressionY : node.ExpressionY,
-                    zDiff ? expressionZ : node.ExpressionZ
-                );
-            else
-                return node;
+            return new BoundArgumentClause(node.Syntax, node.ArgModifiers, builder.ToImmutable());
         }
     }
 }

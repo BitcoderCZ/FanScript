@@ -6,25 +6,24 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class BoundCallExpression : BoundExpression
     {
-        public BoundCallExpression(SyntaxNode syntax, FunctionSymbol function, ImmutableArray<Modifiers> argModifiers, ImmutableArray<BoundExpression> arguments, TypeSymbol returnType, TypeSymbol? genericType)
+        public BoundCallExpression(SyntaxNode syntax, FunctionSymbol function, BoundArgumentClause argumentClause, TypeSymbol returnType, TypeSymbol? genericType)
             : base(syntax)
         {
-            if (argModifiers.Length != arguments.Length)
-                throw new ArgumentException(nameof(arguments), $"{nameof(arguments)}.Length must match {nameof(argModifiers)}.Length");
-
             Function = function;
-            ArgModifiers = argModifiers;
-            Arguments = arguments;
+            ArgumentClause = argumentClause;
             ReturnType = returnType;
             GenericType = genericType;
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.CallExpression;
         public override TypeSymbol Type => ReturnType;
+
         public FunctionSymbol Function { get; }
-        public ImmutableArray<Modifiers> ArgModifiers { get; }
-        public ImmutableArray<BoundExpression> Arguments { get; }
+        public BoundArgumentClause ArgumentClause { get; }
         public TypeSymbol ReturnType { get; }
         public TypeSymbol? GenericType { get; }
+
+        public ImmutableArray<Modifiers> ArgModifiers => ArgumentClause.ArgModifiers;
+        public ImmutableArray<BoundExpression> Arguments => ArgumentClause.Arguments;
     }
 }

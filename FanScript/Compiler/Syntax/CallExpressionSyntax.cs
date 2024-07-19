@@ -5,17 +5,14 @@ namespace FanScript.Compiler.Syntax
 {
     public sealed partial class CallExpressionSyntax : ExpressionSyntax
     {
-        internal CallExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifier, SyntaxToken openParenthesisToken, ImmutableArray<ImmutableArray<SyntaxToken>> argumentModifiers, SeparatedSyntaxList<ExpressionSyntax> arguments, SyntaxToken closeParenthesisToken)
+        internal CallExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifier, ArgumentClauseSyntax argumentClause)
             : base(syntaxTree)
         {
             Identifier = identifier;
             HasGenericParameter = false;
-            OpenParenthesisToken = openParenthesisToken;
-            Arguments = arguments;
-            ArgumentModifiers = argumentModifiers;
-            CloseParenthesisToken = closeParenthesisToken;
+            ArgumentClause = argumentClause;
         }
-        internal CallExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifier, SyntaxToken lessThanToken, TypeClauseSyntax genericTypeClause, SyntaxToken greaterThanToken, SyntaxToken openParenthesisToken, ImmutableArray<ImmutableArray<SyntaxToken>> argumentModifiers, SeparatedSyntaxList<ExpressionSyntax> arguments, SyntaxToken closeParenthesisToken)
+        internal CallExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifier, SyntaxToken lessThanToken, TypeClauseSyntax genericTypeClause, SyntaxToken greaterThanToken, ArgumentClauseSyntax argumentClause)
             : base(syntaxTree)
         {
             Identifier = identifier;
@@ -23,10 +20,7 @@ namespace FanScript.Compiler.Syntax
             LessThanToken = lessThanToken;
             GenericTypeClause = genericTypeClause;
             GreaterThanToken = greaterThanToken;
-            OpenParenthesisToken = openParenthesisToken;
-            ArgumentModifiers = argumentModifiers;
-            Arguments = arguments;
-            CloseParenthesisToken = closeParenthesisToken;
+            ArgumentClause = argumentClause;
         }
 
         public override SyntaxKind Kind => SyntaxKind.CallExpression;
@@ -36,9 +30,8 @@ namespace FanScript.Compiler.Syntax
         public SyntaxToken? LessThanToken { get; }
         public TypeClauseSyntax? GenericTypeClause { get; }
         public SyntaxToken? GreaterThanToken { get; }
-        public SyntaxToken OpenParenthesisToken { get; }
-        public ImmutableArray<ImmutableArray<SyntaxToken>> ArgumentModifiers { get; }
-        public SeparatedSyntaxList<ExpressionSyntax> Arguments { get; }
-        public SyntaxToken CloseParenthesisToken { get; }
+        public ArgumentClauseSyntax ArgumentClause { get; }
+
+        public SeparatedSyntaxList<ExpressionSyntax> Arguments => ArgumentClause.Arguments;
     }
 }

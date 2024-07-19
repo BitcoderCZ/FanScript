@@ -10,6 +10,7 @@
         }
 
         public override SyntaxKind Kind => SyntaxKind.ElseClause;
+
         public SyntaxToken ElseKeyword { get; }
         public StatementSyntax ElseStatement { get; }
     }

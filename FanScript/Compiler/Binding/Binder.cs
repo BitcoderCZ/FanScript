@@ -7,6 +7,7 @@ using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FanScript.Compiler.Binding
 {
@@ -299,58 +300,46 @@ namespace FanScript.Compiler.Binding
         private BoundStatement BindSpecialBlockStatement(SpecialBlockStatementSyntax syntax)
         {
             SpecialBlockType type;
-            int argCount;
+            ImmutableArray<ParameterSymbol> parameters;
             switch (syntax.Identifier.Text)
             {
                 case "Play":
                     type = SpecialBlockType.Play;
-                    argCount = 0;
+                    parameters = [];
                     break;
                 case "LateUpdate":
                     type = SpecialBlockType.LateUpdate;
-                    argCount = 0;
+                    parameters = [];
                     break;
                 case "BoxArt":
                     type = SpecialBlockType.BoxArt;
-                    argCount = 0;
+                    parameters = [];
+                    break;
+                case "Touch":
+                    type = SpecialBlockType.Touch;
+                    parameters = [
+                        new ParameterSymbol("screenX", Modifiers.Ref, TypeSymbol.Float, 0),    
+                        new ParameterSymbol("screenY", Modifiers.Ref, TypeSymbol.Float, 1),    
+                        new ParameterSymbol("TOUCH_STATE", TypeSymbol.Float, 2),    
+                        new ParameterSymbol("TOUCH_INDEX", TypeSymbol.Float, 3),    
+                    ];
                     break;
                 case "Button":
                     type = SpecialBlockType.Button;
-                    argCount = 1;
+                    parameters = [new ParameterSymbol("BUTTON_TYPE", TypeSymbol.Float, 0)];
                     break;
                 default:
                     _diagnostics.ReportUnknownSpecialBlock(syntax.Identifier.Location, syntax.Identifier.Text);
                     return BindErrorStatement(syntax);
             }
 
-            if (argCount != syntax.Arguments.Count)
-            {
-                TextSpan span;
-                if (syntax.Arguments.Count > argCount)
-                {
-                    SyntaxNode firstExceedingNode;
-                    if (argCount > 0)
-                        firstExceedingNode = syntax.Arguments.GetSeparator(argCount - 1);
-                    else
-                        firstExceedingNode = syntax.Arguments[0];
-                    ExpressionSyntax lastExceedingArgument = syntax.Arguments[syntax.Arguments.Count - 1];
-                    span = TextSpan.FromBounds(firstExceedingNode.Span.Start, lastExceedingArgument.Span.End);
-                }
-                else
-                    span = syntax.CloseParenthesisToken.Span;
+            BoundArgumentClause? argumentClause = BindArgumentClause(syntax.ArgumentClause, parameters, "SpecialBlock", syntax.Identifier.Text);
 
-                TextLocation location = new TextLocation(syntax.SyntaxTree.Text, span);
-                _diagnostics.ReportWrongSBArgumentCount(location, syntax.Identifier.Text, argCount, syntax.Arguments.Count);
+            if (argumentClause is null)
                 return BindErrorStatement(syntax);
-            }
-
-            ImmutableArray<BoundExpression>.Builder boundArguments = ImmutableArray.CreateBuilder<BoundExpression>(syntax.Arguments.Count);
-
-            foreach (ExpressionSyntax argument in syntax.Arguments)
-                boundArguments.Add(BindExpression(argument, TypeSymbol.Float)); // at least for now all params are floats (ints actually)
 
             BoundBlockStatement block = (BoundBlockStatement)BindBlockStatement(syntax.Block);
-            return new BoundSpecialBlockStatement(syntax, type, boundArguments.ToImmutable(), block);
+            return new BoundSpecialBlockStatement(syntax, type, argumentClause, block);
         }
 
         private BoundStatement BindVariableDeclaration(VariableDeclarationSyntax syntax)
@@ -672,27 +661,6 @@ namespace FanScript.Compiler.Binding
                 return new BoundErrorExpression(syntax);
             }
 
-            if (syntax.Arguments.Count != function.Parameters.Length)
-            {
-                TextSpan span;
-                if (syntax.Arguments.Count > function.Parameters.Length)
-                {
-                    SyntaxNode firstExceedingNode;
-                    if (function.Parameters.Length > 0)
-                        firstExceedingNode = syntax.Arguments.GetSeparator(function.Parameters.Length - 1);
-                    else
-                        firstExceedingNode = syntax.Arguments[0];
-                    ExpressionSyntax lastExceedingArgument = syntax.Arguments[syntax.Arguments.Count - 1];
-                    span = TextSpan.FromBounds(firstExceedingNode.Span.Start, lastExceedingArgument.Span.End);
-                }
-                else
-                    span = syntax.CloseParenthesisToken.Span;
-
-                TextLocation location = new TextLocation(syntax.SyntaxTree.Text, span);
-                _diagnostics.ReportWrongArgumentCount(location, function.Name, function.Parameters.Length, syntax.Arguments.Count);
-                return new BoundErrorExpression(syntax);
-            }
-
             TypeSymbol? genericType = null;
             if (function.IsGeneric)
             {
@@ -747,37 +715,16 @@ namespace FanScript.Compiler.Binding
                 return new BoundErrorExpression(syntax);
             }
 
-            var argModifiersBuilder = ImmutableArray.CreateBuilder<Modifiers>();
+            BoundArgumentClause? argumentClause = BindArgumentClause(syntax.ArgumentClause, 
+                function.Parameters
+                    .Select(param => new ParameterSymbol(param.Name, param.Modifiers, fixType(param.Type), param.Ordinal))
+                    .ToImmutableArray(),
+                "Function", function.Name, boundArguments);
 
-            for (int i = 0; i < syntax.Arguments.Count; i++)
-            {
-                TextLocation argumentLocation = syntax.Arguments[i].Location;
-                BoundExpression argument = boundArguments[i];
-                VariableSymbol parameter = function.Parameters[i];
+            if (argumentClause is null)
+                return new BoundErrorExpression(syntax);
 
-                Modifiers modifiers = BindModifiers(syntax.ArgumentModifiers[i], ModifierTarget.Parameter, item =>
-                {
-                    var (modifier, token) = item;
-
-                    bool valid = modifier == Modifiers.Ref ? parameter.Modifiers.HasFlag(Modifiers.Ref) : true;
-
-                    if (!valid)
-                        _diagnostics.ReportArgumentCannotHaveModifier(token.Location, parameter.Name, Modifiers.Ref);
-
-                    return valid;
-                });
-
-                argModifiersBuilder.Add(modifiers);
-
-                if (parameter.Modifiers.HasFlag(Modifiers.Ref) && !modifiers.HasFlag(Modifiers.Ref))
-                    _diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Ref);
-                else if (modifiers.HasFlag(Modifiers.Ref) && (argument is not BoundVariableExpression variable || variable.Variable.IsReadOnly))
-                    _diagnostics.ReportRefMustBeVariable(argumentLocation);
-
-                boundArguments[i] = BindConversion(argumentLocation, argument, fixType(parameter.Type));
-            }
-
-            return new BoundCallExpression(syntax, function, argModifiersBuilder.ToImmutable(), boundArguments.ToImmutable(), fixType(function.Type)!, genericType);
+            return new BoundCallExpression(syntax, function, argumentClause, fixType(function.Type)!, genericType);
 
             TypeSymbol fixType(TypeSymbol type)
             {
@@ -895,6 +842,70 @@ namespace FanScript.Compiler.Binding
                 return null;
             else
                 return type;
+        }
+
+        private BoundArgumentClause? BindArgumentClause(ArgumentClauseSyntax syntax, ImmutableArray<ParameterSymbol> parameters, string type, string name, ImmutableArray<BoundExpression>.Builder? boundArguments = null)
+        {
+            if (boundArguments is null)
+            {
+                boundArguments = ImmutableArray.CreateBuilder<BoundExpression>(syntax.Arguments.Count);
+
+                foreach (ExpressionSyntax argument in syntax.Arguments)
+                    boundArguments.Add(BindExpression(argument));
+            }
+
+            if (syntax.Arguments.Count != parameters.Length)
+            {
+                TextSpan span;
+                if (syntax.Arguments.Count > parameters.Length)
+                {
+                    SyntaxNode firstExceedingNode;
+                    if (parameters.Length > 0)
+                        firstExceedingNode = syntax.Arguments.GetSeparator(parameters.Length - 1);
+                    else
+                        firstExceedingNode = syntax.Arguments[0];
+                    ExpressionSyntax lastExceedingArgument = syntax.Arguments[syntax.Arguments.Count - 1];
+                    span = TextSpan.FromBounds(firstExceedingNode.Span.Start, lastExceedingArgument.Span.End);
+                }
+                else
+                    span = syntax.CloseParenthesisToken.Span;
+
+                TextLocation location = new TextLocation(syntax.SyntaxTree.Text, span);
+                _diagnostics.ReportWrongArgumentCount(location, type, name, parameters.Length, syntax.Arguments.Count);
+                return null;
+            }
+
+            var argModifiersBuilder = ImmutableArray.CreateBuilder<Modifiers>();
+
+            for (int i = 0; i < syntax.Arguments.Count; i++)
+            {
+                TextLocation argumentLocation = syntax.Arguments[i].Location;
+                BoundExpression argument = boundArguments[i];
+                ParameterSymbol parameter = parameters[i];
+
+                Modifiers modifiers = BindModifiers(syntax.ArgumentModifiers[i], ModifierTarget.Parameter, item =>
+                {
+                    var (modifier, token) = item;
+
+                    bool valid = modifier == Modifiers.Ref ? parameter.Modifiers.HasFlag(Modifiers.Ref) : true;
+
+                    if (!valid)
+                        _diagnostics.ReportArgumentCannotHaveModifier(token.Location, parameter.Name, Modifiers.Ref);
+
+                    return valid;
+                });
+
+                argModifiersBuilder.Add(modifiers);
+
+                if (parameter.Modifiers.HasFlag(Modifiers.Ref) && !modifiers.HasFlag(Modifiers.Ref))
+                    _diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Ref);
+                else if (modifiers.HasFlag(Modifiers.Ref) && (argument is not BoundVariableExpression variable || variable.Variable.IsReadOnly))
+                    _diagnostics.ReportRefMustBeVariable(argumentLocation);
+
+                boundArguments[i] = BindConversion(argumentLocation, argument, parameter.Type);
+            }
+
+            return new BoundArgumentClause(syntax, argModifiersBuilder.ToImmutable(), boundArguments.ToImmutable());
         }
 
         private Modifiers BindModifiers(IEnumerable<SyntaxToken> tokens, ModifierTarget target, Func<(Modifiers, SyntaxToken), bool>? checkModifier = null)

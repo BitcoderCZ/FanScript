@@ -204,10 +204,10 @@ namespace FanScript.Compiler.Lowering
             BoundLabel endLabel = GenerateLabel("end");
             BoundBlockStatement result = Block(
                 newNode.Syntax,
-                GotoTrue(newNode.Syntax, onTrueLabel, new BoundSpecialBlockCondition(newNode.Syntax, newNode.Type, newNode.Arguments)),
+                GotoTrue(newNode.Syntax, onTrueLabel, new BoundSpecialBlockCondition(newNode.Syntax, newNode.Type, newNode.ArgumentClause)),
                 Goto(newNode.Syntax, endLabel),
                 Label(newNode.Syntax, onTrueLabel),
-                Hint(newNode.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),
+                // Hint(newNode.Syntax, BoundEmitterHint.HintKind.StatementBlockStart), might need to be sooner if there are ref variables, so let emitter handle it
                 newNode.Block,
                 Hint(newNode.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd),
                 RollbackGoto(newNode.Syntax, endLabel),
@@ -309,7 +309,7 @@ namespace FanScript.Compiler.Lowering
                     element,
                 ];
 
-                builder.Add(new BoundExpressionStatement(newNode.Syntax, new BoundCallExpression(newNode.Syntax, BuiltinFunctions.Array_Set, [0, 0, 0], arguments, TypeSymbol.Void, elementType)));
+                builder.Add(new BoundExpressionStatement(newNode.Syntax, new BoundCallExpression(newNode.Syntax, BuiltinFunctions.Array_Set, new BoundArgumentClause(newNode.Syntax, [0, 0, 0], arguments), TypeSymbol.Void, elementType)));
             }
 
             BoundBlockStatement result = new BoundBlockStatement(

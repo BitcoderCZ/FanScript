@@ -271,13 +271,10 @@ namespace FanScript.Compiler.Syntax
         {
             SyntaxToken onKeyword = MatchToken(SyntaxKind.KeywordOn);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
-            SyntaxToken openParenthesisToken = MatchToken(SyntaxKind.OpenParenthesisToken);
-            // TODO: allow modifiers, so stuff like "on Swipe(ref dir)" can be done
-            (var arguments, _) = ParseSeparatedList(SyntaxKind.CloseParenthesisToken);
-            SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
+            ArgumentClauseSyntax argumentClause = ParseArgumentClause();
             BlockStatementSyntax block = ParseBlockStatement();
 
-            return new SpecialBlockStatementSyntax(_syntaxTree, onKeyword, identifier, openParenthesisToken, arguments, closeParenthesisToken, block);
+            return new SpecialBlockStatementSyntax(_syntaxTree, onKeyword, identifier, argumentClause, block);
         }
 
         private StatementSyntax ParseVariableDeclarationStatement(ImmutableArray<SyntaxToken>? modifiers = null)
@@ -545,13 +542,20 @@ namespace FanScript.Compiler.Syntax
                 greaterThanToken = MatchToken(SyntaxKind.GreaterToken);
             }
 
+            ArgumentClauseSyntax argumentClause = ParseArgumentClause();
+           
+            if (hasGegenericParam)
+                return new CallExpressionSyntax(_syntaxTree, identifier, lessThanToken, genericType, greaterThanToken, argumentClause);
+            else
+                return new CallExpressionSyntax(_syntaxTree, identifier, argumentClause);
+        }
+
+        private ArgumentClauseSyntax ParseArgumentClause()
+        {
             SyntaxToken openParenthesisToken = MatchToken(SyntaxKind.OpenParenthesisToken);
             (var arguments, var modifiers) = ParseSeparatedList(SyntaxKind.CloseParenthesisToken, true);
             SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
-            if (hasGegenericParam)
-                return new CallExpressionSyntax(_syntaxTree, identifier, lessThanToken, genericType, greaterThanToken, openParenthesisToken, modifiers, arguments, closeParenthesisToken);
-            else
-                return new CallExpressionSyntax(_syntaxTree, identifier, openParenthesisToken, modifiers, arguments, closeParenthesisToken);
+            return new ArgumentClauseSyntax(_syntaxTree, openParenthesisToken, modifiers, arguments, closeParenthesisToken);
         }
 
         private (SeparatedSyntaxList<ExpressionSyntax> list, ImmutableArray<ImmutableArray<SyntaxToken>> modifiers) ParseSeparatedList(SyntaxKind listEnd, bool allowModifiers = false)

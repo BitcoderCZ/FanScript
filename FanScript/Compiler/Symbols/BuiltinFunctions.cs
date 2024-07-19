@@ -23,6 +23,51 @@ namespace FanScript.Compiler.Symbols
 
             return new BasicEmitStore(block);
         }
+        private static EmitStore emitAXX(BoundCallExpression call, EmitContext context, int numbReturnArgs, BlockDef blockDef)
+        {
+            if (numbReturnArgs <= 0)
+                throw new ArgumentOutOfRangeException(nameof(numbReturnArgs));
+            else if (numbReturnArgs > call.Arguments.Length)
+                throw new ArgumentOutOfRangeException(nameof(numbReturnArgs));
+
+            int retArgStart = call.Arguments.Length - numbReturnArgs;
+
+            EmitStore lastStore = null!;
+
+            Block? block = context.Builder.AddBlock(blockDef);
+
+            if (retArgStart != 0)
+                context.Builder.BlockPlacer.ExpressionBlock(() =>
+                {
+                    for (int i = 0; i < retArgStart; i++)
+                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[(retArgStart - 1) - i + numbReturnArgs]));
+                });
+
+            context.Builder.BlockPlacer.StatementBlock(() =>
+            {
+                for (int i = retArgStart; i < call.Arguments.Length; i++)
+                {
+                    VariableSymbol variable = ((BoundVariableExpression)call.Arguments[i]).Variable;
+                    Block varBlock = context.Builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
+
+                    context.Builder.SetBlockValue(varBlock, 0, variable.Name);
+
+                    if (i == 0)
+                        context.Connect(BasicEmitStore.COut(block), BasicEmitStore.CIn(varBlock));
+                    else
+                        context.Connect(lastStore, BasicEmitStore.CIn(varBlock));
+
+                    context.Connect(
+                        BasicEmitStore.COut(block, block.Type.Terminals[(call.Arguments.Length - 1) - i]),
+                        BasicEmitStore.CIn(varBlock, varBlock.Type.Terminals[1])
+                    );
+
+                    lastStore = BasicEmitStore.COut(varBlock);
+                }
+            });
+
+            return new MultiEmitStore(BasicEmitStore.CIn(block), lastStore);
+        }
         private static EmitStore emitXX(BoundCallExpression call, EmitContext context, int numbReturnArgs, BlockDef blockDef)
         {
             if (numbReturnArgs <= 0)
@@ -39,7 +84,7 @@ namespace FanScript.Compiler.Symbols
 
             for (int i = retArgStart; i < call.Arguments.Length; i++)
             {
-                VariableSymbol variable = ((BoundVariableExpression)call.Arguments[i]).Variable; 
+                VariableSymbol variable = ((BoundVariableExpression)call.Arguments[i]).Variable;
                 Block varBlock = context.Builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
 
                 context.Builder.SetBlockValue(varBlock, 0, variable.Name);
@@ -100,8 +145,6 @@ namespace FanScript.Compiler.Symbols
                     if (values is null)
                         return new NopEmitStore();
 
-                    VariableSymbol variable = ((BoundVariableExpression)call.Arguments[0]).Variable;
-
                     Block joystick = context.Builder.AddBlock(Blocks.Control.Joystick);
 
                     context.Builder.SetBlockValue(joystick, 0, (byte)(float)values[0]); // unbox, then cast
@@ -109,6 +152,7 @@ namespace FanScript.Compiler.Symbols
                     Block varBlock = null!;
                     context.Builder.BlockPlacer.StatementBlock(() =>
                     {
+                        VariableSymbol variable = ((BoundVariableExpression)call.Arguments[0]).Variable;
                         varBlock = context.Builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
 
                         context.Builder.SetBlockValue(varBlock, 0, variable.Name);
@@ -255,7 +299,7 @@ namespace FanScript.Compiler.Symbols
                         context.Connect(BasicEmitStore.COut(wts, wts.Type.Terminals[0]), BasicEmitStore.CIn(make, make.Type.Terminals[2]));
                     });
 
-                    return BasicEmitStore.COut(make, make.Type.Terminals[0]); 
+                    return BasicEmitStore.COut(make, make.Type.Terminals[0]);
                 });
             public static readonly FunctionSymbol LookRotation
                 = new BuiltinFunctionSymbol("lookRotation",
