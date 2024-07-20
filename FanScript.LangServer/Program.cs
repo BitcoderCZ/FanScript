@@ -21,8 +21,8 @@ namespace FanScript.LangServer
         private static async Task MainAsync(string[] args)
         {
             // Debugger.Launch();
-            while (!Debugger.IsAttached)
-                await Task.Delay(500);
+            //while (!Debugger.IsAttached)
+            //    await Task.Delay(500);
 
             Log.Logger = new LoggerConfiguration()
                         .Enrich.FromLogContext()
