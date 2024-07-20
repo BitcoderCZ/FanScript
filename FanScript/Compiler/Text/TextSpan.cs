@@ -15,6 +15,9 @@
         public static TextSpan FromBounds(int start, int end)
             => new TextSpan(start, end - start);
 
+        public bool OverlapsWith(TextSpan span)
+            => Start < span.End && End > span.Start;
+
         public override string ToString() => $"{Start}..{End}";
     }
 }

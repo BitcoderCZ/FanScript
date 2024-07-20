@@ -1,16 +1,6 @@
 {
-	"name": "fanscript",
-	"description": "An extension for working with fanScript",
-	"author": "Bitcoder",
-	"license": "MIT",
-	"version": "0.0.1",
-	"publisher": "vscode",
-	"repository": {
-		"type": "git",
-		"url": "https://github.com/BitcoderCZ/FanScript"
-	},
 	"engines": {
-		"vscode": "^1.75.0"
+    	"vscode": "^1.91.0"
 	},
 	"dependencies": {
 		"vscode-languageclient": "^9.0.1"

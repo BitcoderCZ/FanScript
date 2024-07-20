@@ -10,7 +10,7 @@ namespace FanScript.LangServer
     {
         public FoldingRangeRegistrationOptions GetRegistrationOptions() =>
             new FoldingRangeRegistrationOptions {
-                DocumentSelector = TextDocumentSelector.ForLanguage("plaintext")
+                DocumentSelector = TextDocumentSelector.ForLanguage("fanscript")
             };
 
         public Task<Container<FoldingRange>?> Handle(
@@ -30,7 +30,7 @@ namespace FanScript.LangServer
             );
 
         public FoldingRangeRegistrationOptions GetRegistrationOptions(FoldingRangeCapability capability, ClientCapabilities clientCapabilities) => new FoldingRangeRegistrationOptions {
-            DocumentSelector = TextDocumentSelector.ForLanguage("plaintext")
+            DocumentSelector = TextDocumentSelector.ForLanguage("fanscript")
         };
     }
 }

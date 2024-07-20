@@ -26,8 +26,9 @@ namespace FanScript.LangServer
         private readonly ILanguageServerConfiguration _configuration;
 
         private readonly TextDocumentSelector _textDocumentSelector = new TextDocumentSelector(
-            new TextDocumentFilter {
-                Pattern = "**/*.cs"
+            new TextDocumentFilter
+            {
+                Pattern = "**/*.fcs"
             }
         );
 
@@ -42,17 +43,14 @@ namespace FanScript.LangServer
 
         public override Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken token)
         {
-            _logger.LogCritical("Critical");
-            _logger.LogDebug("Debug");
-            _logger.LogTrace("Trace");
-            _logger.LogInformation("Hello world!");
+            _logger.LogInformation("Changed file: " + notification.TextDocument.Uri);
             return Unit.Task;
         }
 
         public override async Task<Unit> Handle(DidOpenTextDocumentParams notification, CancellationToken token)
         {
             await Task.Yield();
-            _logger.LogInformation("Hello world!");
+            _logger.LogInformation("Opened file: " + notification.TextDocument.Uri);
             await _configuration.GetScopedConfiguration(notification.TextDocument.Uri, token).ConfigureAwait(false);
             return Unit.Value;
         }
@@ -69,13 +67,14 @@ namespace FanScript.LangServer
 
         public override Task<Unit> Handle(DidSaveTextDocumentParams notification, CancellationToken token) => Unit.Task;
 
-        protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities) => new TextDocumentSyncRegistrationOptions() {
+        protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities) => new TextDocumentSyncRegistrationOptions()
+        {
             DocumentSelector = _textDocumentSelector,
             Change = Change,
             Save = new SaveOptions() { IncludeText = true }
         };
 
-        public override TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri) => new TextDocumentAttributes(uri, "csharp");
+        public override TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri) => new TextDocumentAttributes(uri, "fanscript");
     }
 
     internal class MyDocumentSymbolHandler : IDocumentSymbolHandler
@@ -103,7 +102,8 @@ namespace FanScript.LangServer
                     }
 
                     symbols.Add(
-                        new DocumentSymbol {
+                        new DocumentSymbol
+                        {
                             Detail = part,
                             Deprecated = true,
                             Kind = SymbolKind.Field,
@@ -128,8 +128,9 @@ namespace FanScript.LangServer
             return symbols;
         }
 
-        public DocumentSymbolRegistrationOptions GetRegistrationOptions(DocumentSymbolCapability capability, ClientCapabilities clientCapabilities) => new DocumentSymbolRegistrationOptions {
-            DocumentSelector = TextDocumentSelector.ForLanguage("plaintext")
+        public DocumentSymbolRegistrationOptions GetRegistrationOptions(DocumentSymbolCapability capability, ClientCapabilities clientCapabilities) => new DocumentSymbolRegistrationOptions
+        {
+            DocumentSelector = TextDocumentSelector.ForLanguage("fanscript")
         };
     }
 
@@ -151,77 +152,83 @@ namespace FanScript.LangServer
             CancellationToken cancellationToken
         )
         {
-            using var reporter = _serverWorkDoneManager.For(
-                request, new WorkDoneProgressBegin {
-                    Cancellable = true,
-                    Message = "This might take a while...",
-                    Title = "Some long task....",
-                    Percentage = 0
-                }
-            );
-            using var partialResults = _progressManager.For(request, cancellationToken);
-            if (partialResults != null)
-            {
-                await Task.Delay(2000, cancellationToken).ConfigureAwait(false);
+            //using var reporter = _serverWorkDoneManager.For(
+            //    request, new WorkDoneProgressBegin
+            //    {
+            //        Cancellable = true,
+            //        Message = "This might take a while...",
+            //        Title = "Some long task....",
+            //        Percentage = 0
+            //    }
+            //);
+            //using var partialResults = _progressManager.For(request, cancellationToken);
+            //if (partialResults != null)
+            //{
+            //    await Task.Delay(2000, cancellationToken).ConfigureAwait(false);
 
-                reporter.OnNext(
-                    new WorkDoneProgressReport {
-                        Cancellable = true,
-                        Percentage = 20
-                    }
-                );
-                await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+            //    reporter.OnNext(
+            //        new WorkDoneProgressReport
+            //        {
+            //            Cancellable = true,
+            //            Percentage = 20
+            //        }
+            //    );
+            //    await Task.Delay(500, cancellationToken).ConfigureAwait(false);
 
-                reporter.OnNext(
-                    new WorkDoneProgressReport {
-                        Cancellable = true,
-                        Percentage = 40
-                    }
-                );
-                await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+            //    reporter.OnNext(
+            //        new WorkDoneProgressReport
+            //        {
+            //            Cancellable = true,
+            //            Percentage = 40
+            //        }
+            //    );
+            //    await Task.Delay(500, cancellationToken).ConfigureAwait(false);
 
-                reporter.OnNext(
-                    new WorkDoneProgressReport {
-                        Cancellable = true,
-                        Percentage = 50
-                    }
-                );
-                await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+            //    reporter.OnNext(
+            //        new WorkDoneProgressReport
+            //        {
+            //            Cancellable = true,
+            //            Percentage = 50
+            //        }
+            //    );
+            //    await Task.Delay(500, cancellationToken).ConfigureAwait(false);
 
-                partialResults.OnNext(
-                    new[] {
-                        new WorkspaceSymbol {
-                            ContainerName = "Partial Container",
-                            Kind = SymbolKind.Constant,
-                            Location = new Location {
-                                Range = new Range(
-                                    new Position(2, 1),
-                                    new Position(2, 10)
-                                )
-                            },
-                            Name = "Partial name"
-                        }
-                    }
-                );
+            //    partialResults.OnNext(
+            //        new[] {
+            //            new WorkspaceSymbol {
+            //                ContainerName = "Partial Container",
+            //                Kind = SymbolKind.Constant,
+            //                Location = new Location {
+            //                    Range = new Range(
+            //                        new Position(2, 1),
+            //                        new Position(2, 10)
+            //                    )
+            //                },
+            //                Name = "Partial name"
+            //            }
+            //        }
+            //    );
 
-                reporter.OnNext(
-                    new WorkDoneProgressReport {
-                        Cancellable = true,
-                        Percentage = 70
-                    }
-                );
-                await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+            //    reporter.OnNext(
+            //        new WorkDoneProgressReport
+            //        {
+            //            Cancellable = true,
+            //            Percentage = 70
+            //        }
+            //    );
+            //    await Task.Delay(500, cancellationToken).ConfigureAwait(false);
 
-                reporter.OnNext(
-                    new WorkDoneProgressReport {
-                        Cancellable = true,
-                        Percentage = 90
-                    }
-                );
+            //    reporter.OnNext(
+            //        new WorkDoneProgressReport
+            //        {
+            //            Cancellable = true,
+            //            Percentage = 90
+            //        }
+            //    );
 
-                partialResults.OnCompleted();
-                return new WorkspaceSymbol[] { };
-            }
+            //    partialResults.OnCompleted();
+            //    return new WorkspaceSymbol[] { };
+            //}
 
             try
             {
@@ -241,12 +248,13 @@ namespace FanScript.LangServer
             }
             finally
             {
-                reporter.OnNext(
-                    new WorkDoneProgressReport {
-                        Cancellable = true,
-                        Percentage = 100
-                    }
-                );
+                //reporter.OnNext(
+                //    new WorkDoneProgressReport
+                //    {
+                //        Cancellable = true,
+                //        Percentage = 100
+                //    }
+                //);
             }
         }
 

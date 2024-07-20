@@ -4,11 +4,15 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FanScript.Compiler.Syntax;
+using FanScript.Compiler.Text;
+using FanScript.LangServer.Classification;
 using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace FanScript.LangServer
 {
@@ -52,13 +56,44 @@ namespace FanScript.LangServer
             CancellationToken cancellationToken
         )
         {
+            string path = DocumentUri.GetFileSystemPath(identifier)!;
+
+            await Task.Yield();
+
+            TextSpan span = new TextSpan(0, int.MaxValue);
+            // store position start,end in span (line, character)
+            //if (identifier is SemanticTokensRangeParams rangeParams)
+            //    span = rangeParams.Range.Start;
+
+            try
+            {
+                SyntaxTree tree = SyntaxTree.Load(path);
+                var nodes = Classifier.Classify(tree, span);
+                foreach (var node in nodes)
+                {
+                    SemanticTokenType? tokenType = node.Classification;
+
+                    TextLocation location = new TextLocation(tree.Text, node.Span);
+
+                    builder.Push(
+                        new Range(location.StartLine, location.StartCharacter, location.EndLine, location.EndCharacter),
+                        tokenType
+                    );
+                }
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to tokenize file '{identifier.TextDocument.Uri}'");
+            }
+
+            var content = await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false);
+            await Task.Yield();
+
             using var typesEnumerator = RotateEnum(SemanticTokenType.Defaults).GetEnumerator();
             using var modifiersEnumerator = RotateEnum(SemanticTokenModifier.Defaults).GetEnumerator();
             // you would normally get this from a common source that is managed by current open editor, current active editor, etc.
-            var content = await File.ReadAllTextAsync(DocumentUri.GetFileSystemPath(identifier), cancellationToken).ConfigureAwait(false);
-            await Task.Yield();
-
-            foreach (var (line, text) in content.Split('\n').Select((text, line) => ( line, text )))
+            foreach (var (line, text) in content.Split('\n').Select((text, line) => (line, text)))
             {
                 var parts = text.TrimEnd().Split(';', ' ', '.', '"', '(', ')');
                 var index = 0;
@@ -95,7 +130,7 @@ namespace FanScript.LangServer
         {
             return new SemanticTokensRegistrationOptions
             {
-                DocumentSelector = TextDocumentSelector.ForLanguage("plaintext"),
+                DocumentSelector = TextDocumentSelector.ForLanguage("fanscript"),
                 Legend = new SemanticTokensLegend
                 {
                     TokenModifiers = capability.TokenModifiers,

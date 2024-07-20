@@ -24,7 +24,7 @@ namespace FanScript.Compiler.Syntax
 
                 bool consumeMods = false;
 
-                if (counter++ > 2)
+                if (++counter > 2)
                 {
                     counter = 0;
                     consumeMods = true;

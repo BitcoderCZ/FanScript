@@ -1,26 +1,37 @@
 {
-	"name": "lsp-sample",
-	"description": "A language server example",
-	"author": "Microsoft Corporation",
+	"name": "fanscript",
+	"displayName": "FanScript",
+	"description": "An extension for working with fanScript",
+	"author": "Bitcoder",
 	"license": "MIT",
-	"version": "1.0.0",
+	"version": "0.0.1",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/Microsoft/vscode-extension-samples"
+		"url": "https://github.com/BitcoderCZ/FanScript"
 	},
-	"publisher": "vscode-samples",
-	"categories": [],
+	"publisher": "Bitcoder",
+	"categories": [
+		"Programming Languages"
+	],
 	"keywords": [
 		"multi-root ready"
 	],
 	"engines": {
-		"vscode": "^1.75.0"
+    	"vscode": "^1.91.0"
 	},
-	"activationEvents": [
-		"onLanguage:plaintext"
-	],
 	"main": "./client/out/extension",
 	"contributes": {
+		"languages": [{
+			"id": "fanscript",
+			"aliases": ["FanScript", "fanscript"],
+			"extensions": [".fcs"],
+			"configuration": "./language-configuration.json"
+		}],
+		"grammars": [{
+			"language": "fanscript",
+			"scopeName": "source.fancade",
+			"path": "./syntaxes/fanscript.tmLanguage.json"
+		}],
 		"configuration": {
 			"type": "object",
 			"title": "Example configuration",
