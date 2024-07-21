@@ -24,8 +24,7 @@ namespace FanScript.LangServer
 {
     internal class TextDocumentHandler : TextDocumentSyncHandlerBase
     {
-        public static TextDocumentHandler? Ins { get; private set; } = null;
-
+        private readonly ILanguageServerFacade _facade;
         private readonly ILogger<TextDocumentHandler> _logger;
         private readonly ILanguageServerConfiguration _configuration;
 
@@ -38,27 +37,24 @@ namespace FanScript.LangServer
             }
         );
 
-        public TextDocumentHandler(ILogger<TextDocumentHandler> logger, CustomLogger customLogger, ILanguageServerConfiguration configuration)
+        public TextDocumentHandler(ILanguageServerFacade facade, ILogger<TextDocumentHandler> logger, CustomLogger customLogger, ILanguageServerConfiguration configuration)
         {
+            _facade = facade;
             _logger = logger;
             _configuration = configuration;
-
-            if (Ins is not null)
-                throw new Exception($"{nameof(Ins)} is not null");
-
-            Ins = this;
         }
 
+        // TODO: use Incremental, and make textCache use StringBuilder or wrapper over List<char/byte> (implement ToString()!!!)
         public TextDocumentSyncKind Change { get; } = TextDocumentSyncKind.Full;
 
         public override Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken token)
         {
             _logger.LogInformation("Changed file: " + notification.TextDocument.Uri);
 
+            // if delete, start - first char deleted, RangeLength - numb chars deleted
             TextDocumentContentChangeEvent? first = notification.ContentChanges.FirstOrDefault();
-            if (notification.ContentChanges.Count() == 1 && first is not null && first.RangeLength == 0)
+            if (Change == TextDocumentSyncKind.Full && first is not null)
             {
-                // for some reason vscode just sends the entire content of a file
                 textCache[notification.TextDocument.Uri] = first.Text;
             }
 
@@ -76,14 +72,13 @@ namespace FanScript.LangServer
         public override Task<Unit> Handle(DidCloseTextDocumentParams notification, CancellationToken token)
         {
             if (_configuration.TryGetScopedConfiguration(notification.TextDocument.Uri, out var disposable))
-            {
                 disposable.Dispose();
-            }
 
             return Unit.Task;
         }
 
-        public override Task<Unit> Handle(DidSaveTextDocumentParams notification, CancellationToken token) => Unit.Task;
+        public override Task<Unit> Handle(DidSaveTextDocumentParams notification, CancellationToken token) 
+            => Unit.Task;
 
         protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities) => new TextDocumentSyncRegistrationOptions()
         {
@@ -111,12 +106,6 @@ namespace FanScript.LangServer
             catch { }
 
             return text;
-        }
-
-        ~TextDocumentHandler()
-        {
-            if (ReferenceEquals(Ins, this))
-                Ins = null;
         }
     }
 

@@ -9,21 +9,27 @@ using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using FanScript.LangServer.Classification;
 using Microsoft.Extensions.Logging;
+using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace FanScript.LangServer
 {
 #pragma warning disable 618
-    public class SemanticTokensHandler : SemanticTokensHandlerBase
+    internal class SemanticTokensHandler : SemanticTokensHandlerBase
     {
+        private readonly ILanguageServerFacade _facade;
         private readonly ILogger _logger;
 
-        public SemanticTokensHandler(ILogger<SemanticTokensHandler> logger)
+        private TextDocumentHandler? _documentHandler;
+
+        public SemanticTokensHandler(ILanguageServerFacade facade, ILogger<SemanticTokensHandler> logger)
         {
+            _facade = facade;
             _logger = logger;
         }
 
@@ -57,10 +63,13 @@ namespace FanScript.LangServer
             CancellationToken cancellationToken
         )
         {
+            _documentHandler ??= _facade.Workspace.GetService(typeof(TextDocumentHandler)) as TextDocumentHandler;
+
+            if (_documentHandler is null)
+                return;
+
             string? path = DocumentUri.GetFileSystemPath(identifier);
-            string? content = null;
-            if (TextDocumentHandler.Ins is not null)
-                content = await TextDocumentHandler.Ins.GetDocumentTextAsync(identifier.TextDocument.Uri).ConfigureAwait(false);
+            string? content = await _documentHandler.GetDocumentTextAsync(identifier.TextDocument.Uri).ConfigureAwait(false);
 
             await Task.Yield();
 
@@ -178,7 +187,7 @@ namespace FanScript.LangServer
                 },
                 Full = new SemanticTokensCapabilityRequestFull
                 {
-                    Delta = false//true
+                    Delta = false
                 },
                 Range = true
             };

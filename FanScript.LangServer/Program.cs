@@ -15,7 +15,6 @@ namespace FanScript.LangServer
     {
         private static async Task Main(string[] args)
         {
-            // Debugger.Launch();
             //while (!Debugger.IsAttached)
             //    await Task.Delay(500);
 
@@ -40,7 +39,11 @@ namespace FanScript.LangServer
                                 .AddLanguageProtocolLogging()
                                 .SetMinimumLevel(LogLevel.Debug)
                         )
-                       .WithHandler<TextDocumentHandler>()
+                       .WithServices(
+                            services => services
+                                .AddSingleton<TextDocumentHandler>()
+                        )
+                       //.WithHandler<TextDocumentHandler>()
                        .WithHandler<DidChangeWatchedFilesHandler>()
                        .WithHandler<FoldingRangeHandler>()
                        .WithHandler<MyWorkspaceSymbolsHandler>()

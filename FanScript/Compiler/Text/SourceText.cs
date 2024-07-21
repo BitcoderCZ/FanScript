@@ -16,7 +16,7 @@ namespace FanScript.Compiler.Text
         public static SourceText From(string text, string fileName = "")
             => new SourceText(text, fileName);
 
-        private static ImmutableArray<TextLine> ParseLines(SourceText sourceText, string text)
+        private static ImmutableArray<TextLine> ParseLines(SourceText sourceText, ReadOnlySpan<char> text)
         {
             ImmutableArray<TextLine>.Builder result = ImmutableArray.CreateBuilder<TextLine>();
 
@@ -52,7 +52,7 @@ namespace FanScript.Compiler.Text
             result.Add(line);
         }
 
-        private static int GetLineBreakWidth(string text, int position)
+        private static int GetLineBreakWidth(ReadOnlySpan<char> text, int position)
         {
             int c = text[position];
             char l = position + 1 >= text.Length ? '\0' : text[position + 1];
