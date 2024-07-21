@@ -54,11 +54,11 @@ namespace FanScript.LangServer
                                     provider =>
                                     {
                                         var loggerFactory = provider.GetService<ILoggerFactory>();
-                                        var logger = loggerFactory.CreateLogger<Foo>();
+                                        var logger = loggerFactory.CreateLogger<CustomLogger>();
 
                                         logger.LogInformation("Configuring");
 
-                                        return new Foo(logger);
+                                        return new CustomLogger(logger);
                                     }
                                 );
                                 services.AddSingleton(
@@ -127,7 +127,7 @@ namespace FanScript.LangServer
                                 //await Task.Delay(2000).ConfigureAwait(false);
                                 //manager.OnNext(new WorkDoneProgressReport { Message = "doing things... 56789" });
 
-                                var logger = languageServer.Services.GetService<ILogger<Foo>>();
+                                var logger = languageServer.Services.GetService<ILogger<CustomLogger>>();
                                 var configuration = await languageServer.Configuration.GetConfiguration(
                                     new ConfigurationItem
                                     {
@@ -154,19 +154,14 @@ namespace FanScript.LangServer
         }
     }
 
-    internal class Foo
+    internal class CustomLogger
     {
-        private readonly ILogger<Foo> _logger;
+        private readonly ILogger<CustomLogger> _logger;
 
-        public Foo(ILogger<Foo> logger)
+        public CustomLogger(ILogger<CustomLogger> logger)
         {
             logger.LogInformation("inside ctor");
             _logger = logger;
-        }
-
-        public void SayFoo()
-        {
-            _logger.LogInformation("Fooooo!");
         }
     }
 }

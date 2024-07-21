@@ -28,9 +28,7 @@ namespace FanScript.Compiler.Text
                 int lineBreakWidth = GetLineBreakWidth(text, position);
 
                 if (lineBreakWidth == 0)
-                {
                     position++;
-                }
                 else
                 {
                     AddLine(result, sourceText, position, lineStart, lineBreakWidth);
@@ -90,13 +88,9 @@ namespace FanScript.Compiler.Text
                     return index;
 
                 if (start > position)
-                {
                     upper = index - 1;
-                }
                 else
-                {
                     lower = index + 1;
-                }
             }
 
             return lower - 1;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -56,18 +57,31 @@ namespace FanScript.LangServer
             CancellationToken cancellationToken
         )
         {
-            string path = DocumentUri.GetFileSystemPath(identifier)!;
+            string? path = DocumentUri.GetFileSystemPath(identifier);
+            string? content = null;
+            if (TextDocumentHandler.Ins is not null)
+                content = await TextDocumentHandler.Ins.GetDocumentTextAsync(identifier.TextDocument.Uri).ConfigureAwait(false);
 
             await Task.Yield();
 
-            TextSpan span = new TextSpan(0, int.MaxValue);
-            // store position start,end in span (line, character)
-            //if (identifier is SemanticTokensRangeParams rangeParams)
-            //    span = rangeParams.Range.Start;
+            if (string.IsNullOrEmpty(content))
+                return;
 
             try
             {
-                SyntaxTree tree = SyntaxTree.Load(path);
+                // TODO: cache syntax tree?, versioning
+                SyntaxTree tree = SyntaxTree.Parse(SourceText.From(content, path ?? string.Empty));
+
+                TextSpan span = new TextSpan(0, int.MaxValue);
+                if (identifier is SemanticTokensRangeParams rangeParams)
+                {
+                    Range range = rangeParams.Range;
+                    span = new TextSpan(
+                        tree.Text.Lines[range.Start.Line].Start + range.Start.Character,
+                        tree.Text.Lines[range.End.Line].Start + range.End.Character
+                    );
+                }
+
                 var nodes = Classifier.Classify(tree, span);
                 foreach (var node in nodes)
                 {
@@ -75,11 +89,39 @@ namespace FanScript.LangServer
 
                     TextLocation location = new TextLocation(tree.Text, node.Span);
 
-                    builder.Push(
-                        new Range(location.StartLine, location.StartCharacter, location.EndLine, location.EndCharacter),
-                        tokenType
-                    );
+                    if (location.StartLine == location.EndLine)
+                    {
+                        builder.Push(
+                            new Range(location.StartLine, location.StartCharacter, location.EndLine, location.EndCharacter),
+                            tokenType
+                        );
+                    }
+                    else
+                    {
+                        // first line
+                        builder.Push(
+                            new Range(location.StartLine, location.StartCharacter, location.StartLine, tree.Text.Lines[location.StartLine].Lenght - location.StartCharacter),
+                            tokenType
+                        );
+
+                        for (int i = location.StartLine + 1; i < location.EndLine; i++)
+                        {
+                            int lineLength = tree.Text.Lines[i].Lenght;
+                            if (lineLength != 0)
+                                builder.Push(
+                                    new Range(i, 0, i, lineLength),
+                                    tokenType
+                                );
+                        }
+
+                        // last line
+                        builder.Push(
+                            new Range(location.EndLine, 0, location.EndLine, location.EndCharacter),
+                            tokenType
+                        );
+                    }
                 }
+
                 return;
             }
             catch (Exception ex)
@@ -87,9 +129,7 @@ namespace FanScript.LangServer
                 _logger.LogError(ex, $"Failed to tokenize file '{identifier.TextDocument.Uri}'");
             }
 
-            var content = await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false);
-            await Task.Yield();
-
+            // fallback
             using var typesEnumerator = RotateEnum(SemanticTokenType.Defaults).GetEnumerator();
             using var modifiersEnumerator = RotateEnum(SemanticTokenModifier.Defaults).GetEnumerator();
             // you would normally get this from a common source that is managed by current open editor, current active editor, etc.
@@ -138,7 +178,7 @@ namespace FanScript.LangServer
                 },
                 Full = new SemanticTokensCapabilityRequestFull
                 {
-                    Delta = true
+                    Delta = false//true
                 },
                 Range = true
             };

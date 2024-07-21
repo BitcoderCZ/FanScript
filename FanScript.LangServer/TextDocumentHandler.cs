@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MediatR;
@@ -22,8 +24,12 @@ namespace FanScript.LangServer
 {
     internal class TextDocumentHandler : TextDocumentSyncHandlerBase
     {
+        public static TextDocumentHandler? Ins { get; private set; } = null;
+
         private readonly ILogger<TextDocumentHandler> _logger;
         private readonly ILanguageServerConfiguration _configuration;
+
+        private readonly Dictionary<DocumentUri, string> textCache = new();
 
         private readonly TextDocumentSelector _textDocumentSelector = new TextDocumentSelector(
             new TextDocumentFilter
@@ -32,11 +38,15 @@ namespace FanScript.LangServer
             }
         );
 
-        public TextDocumentHandler(ILogger<TextDocumentHandler> logger, Foo foo, ILanguageServerConfiguration configuration)
+        public TextDocumentHandler(ILogger<TextDocumentHandler> logger, CustomLogger customLogger, ILanguageServerConfiguration configuration)
         {
             _logger = logger;
             _configuration = configuration;
-            foo.SayFoo();
+
+            if (Ins is not null)
+                throw new Exception($"{nameof(Ins)} is not null");
+
+            Ins = this;
         }
 
         public TextDocumentSyncKind Change { get; } = TextDocumentSyncKind.Full;
@@ -44,6 +54,14 @@ namespace FanScript.LangServer
         public override Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken token)
         {
             _logger.LogInformation("Changed file: " + notification.TextDocument.Uri);
+
+            TextDocumentContentChangeEvent? first = notification.ContentChanges.FirstOrDefault();
+            if (notification.ContentChanges.Count() == 1 && first is not null && first.RangeLength == 0)
+            {
+                // for some reason vscode just sends the entire content of a file
+                textCache[notification.TextDocument.Uri] = first.Text;
+            }
+
             return Unit.Task;
         }
 
@@ -75,6 +93,31 @@ namespace FanScript.LangServer
         };
 
         public override TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri) => new TextDocumentAttributes(uri, "fanscript");
+
+        public async Task<string?> GetDocumentTextAsync(DocumentUri uri)
+        {
+            if (textCache.TryGetValue(uri, out string? text))
+                return text;
+
+            try
+            {
+                string? path = DocumentUri.GetFileSystemPath(uri);
+                if (!string.IsNullOrEmpty(path))
+                {
+                    text = await File.ReadAllTextAsync(path).ConfigureAwait(false);
+                    textCache.Add(uri, text);
+                }
+            }
+            catch { }
+
+            return text;
+        }
+
+        ~TextDocumentHandler()
+        {
+            if (ReferenceEquals(Ins, this))
+                Ins = null;
+        }
     }
 
     internal class MyDocumentSymbolHandler : IDocumentSymbolHandler
