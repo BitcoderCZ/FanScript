@@ -4,7 +4,9 @@ using FanScript.Compiler.Emit;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("FanScript.LangServer")]
 namespace FanScript.Compiler
 {
     public sealed class Compilation

@@ -7,7 +7,9 @@ using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("FanScript.LangServer")]
 namespace FanScript.Compiler.Binding
 {
     internal sealed class Binder

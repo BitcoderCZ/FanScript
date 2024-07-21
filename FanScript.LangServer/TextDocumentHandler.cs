@@ -6,6 +6,8 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FanScript.Compiler;
+using FanScript.Compiler.Binding;
 using FanScript.Compiler.Text;
 using FanScript.LangServer.Utils;
 using MediatR;
@@ -61,7 +63,7 @@ namespace FanScript.LangServer
             TextDocumentContentChangeEvent? first = notification.ContentChanges.FirstOrDefault();
             if (Change == TextDocumentSyncKind.Full && first is not null)
                 documentCache[notification.TextDocument.Uri].SetContent(first.Text, notification.TextDocument.Version);
-            
+
             if (findErrorsDict.TryGetValue(notification.TextDocument.Uri, out var runner))
                 runner.Invoke();
 
@@ -72,7 +74,7 @@ namespace FanScript.LangServer
         {
             await Task.Yield();
 
-            var runner = new DelayedRunner(() => findErrors(notification.TextDocument.Uri), TimeSpan.FromSeconds(0.5), TimeSpan.FromSeconds(3));
+            var runner = new DelayedRunner(() => findErrors(notification.TextDocument.Uri), TimeSpan.FromSeconds(0.75), TimeSpan.FromSeconds(4));
             findErrorsDict.AddOrUpdate(notification.TextDocument.Uri, runner, (uri, oldRunner) =>
             {
                 oldRunner.Stop();
@@ -98,7 +100,7 @@ namespace FanScript.LangServer
             return Unit.Task;
         }
 
-        public override Task<Unit> Handle(DidSaveTextDocumentParams notification, CancellationToken token) 
+        public override Task<Unit> Handle(DidSaveTextDocumentParams notification, CancellationToken token)
             => Unit.Task;
 
         protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities) => new TextDocumentSyncRegistrationOptions()
@@ -125,29 +127,47 @@ namespace FanScript.LangServer
         {
             Document document = GetDocument(uri);
 
-            List<Diagnostic> diagnostics = new();
-
             if (document.Tree is null)
                 return;
 
-            foreach (var diagnostic in document.Tree.Diagnostics)
-            {
-                TextLocation location = diagnostic.Location;
-
-                diagnostics.Add(new Diagnostic()
+            if (document.Tree.Diagnostics.HasErrors())
+                _facade.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams()
                 {
-                    Severity = diagnostic.IsError ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
-                    Message = diagnostic.Message,
-                    Range = new Range(location.StartLine, location.StartCharacter, location.EndLine, location.EndCharacter)
+                    Uri = uri,
+                    Version = document.ContentVersion,
+                    Diagnostics = new Container<Diagnostic>(convert(document.Tree.Diagnostics))
+                });
+            else
+            {
+                Compilation compilation = Compilation.CreateScript(null, document.Tree);
+                BoundGlobalScope scope = compilation.GlobalScope;
+
+                _facade.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams()
+                {
+                    Uri = uri,
+                    Version = document.ContentVersion,
+                    Diagnostics = new Container<Diagnostic>(convert(scope.Diagnostics))
                 });
             }
 
-            _facade.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams()
+            List<Diagnostic> convert(ImmutableArray<Compiler.Diagnostics.Diagnostic> diagnostics)
             {
-                Uri = uri,
-                Version = document.ContentVersion,
-                Diagnostics = new Container<Diagnostic>(diagnostics)
-            });
+                List<Diagnostic> result = new();
+
+                foreach (var diagnostic in diagnostics)
+                {
+                    TextLocation location = diagnostic.Location;
+
+                    result.Add(new Diagnostic()
+                    {
+                        Severity = diagnostic.IsError ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
+                        Message = diagnostic.Message,
+                        Range = new Range(location.StartLine, location.StartCharacter, location.EndLine, location.EndCharacter)
+                    });
+                }
+
+                return result;
+            }
         }
     }
 
