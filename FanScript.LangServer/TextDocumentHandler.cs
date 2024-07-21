@@ -1,9 +1,13 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using FanScript.Compiler.Text;
+using FanScript.LangServer.Utils;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.LanguageServer.Protocol;
@@ -28,7 +32,9 @@ namespace FanScript.LangServer
         private readonly ILogger<TextDocumentHandler> _logger;
         private readonly ILanguageServerConfiguration _configuration;
 
-        private readonly Dictionary<DocumentUri, string> textCache = new();
+        private readonly Dictionary<DocumentUri, Document> documentCache = new();
+
+        private ConcurrentDictionary<DocumentUri, DelayedRunner> findErrorsDict = new();
 
         private readonly TextDocumentSelector _textDocumentSelector = new TextDocumentSelector(
             new TextDocumentFilter
@@ -54,9 +60,10 @@ namespace FanScript.LangServer
             // if delete, start - first char deleted, RangeLength - numb chars deleted
             TextDocumentContentChangeEvent? first = notification.ContentChanges.FirstOrDefault();
             if (Change == TextDocumentSyncKind.Full && first is not null)
-            {
-                textCache[notification.TextDocument.Uri] = first.Text;
-            }
+                documentCache[notification.TextDocument.Uri].SetContent(first.Text, notification.TextDocument.Version);
+            
+            if (findErrorsDict.TryGetValue(notification.TextDocument.Uri, out var runner))
+                runner.Invoke();
 
             return Unit.Task;
         }
@@ -64,8 +71,19 @@ namespace FanScript.LangServer
         public override async Task<Unit> Handle(DidOpenTextDocumentParams notification, CancellationToken token)
         {
             await Task.Yield();
-            _logger.LogInformation("Opened file: " + notification.TextDocument.Uri);
+
+            var runner = new DelayedRunner(() => findErrors(notification.TextDocument.Uri), TimeSpan.FromSeconds(0.5), TimeSpan.FromSeconds(3));
+            findErrorsDict.AddOrUpdate(notification.TextDocument.Uri, runner, (uri, oldRunner) =>
+            {
+                oldRunner.Stop();
+                return runner;
+            });
+
+            runner.Invoke();
+
             await _configuration.GetScopedConfiguration(notification.TextDocument.Uri, token).ConfigureAwait(false);
+            _logger.LogInformation("Opened file: " + notification.TextDocument.Uri);
+
             return Unit.Value;
         }
 
@@ -73,6 +91,9 @@ namespace FanScript.LangServer
         {
             if (_configuration.TryGetScopedConfiguration(notification.TextDocument.Uri, out var disposable))
                 disposable.Dispose();
+
+            if (findErrorsDict.TryRemove(notification.TextDocument.Uri, out var runner))
+                runner.Stop();
 
             return Unit.Task;
         }
@@ -89,23 +110,44 @@ namespace FanScript.LangServer
 
         public override TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri) => new TextDocumentAttributes(uri, "fanscript");
 
-        public async Task<string?> GetDocumentTextAsync(DocumentUri uri)
+        public Document GetDocument(DocumentUri uri)
         {
-            if (textCache.TryGetValue(uri, out string? text))
-                return text;
+            if (documentCache.TryGetValue(uri, out Document? document))
+                return document;
 
-            try
+            document = new Document(uri);
+            documentCache.Add(uri, document);
+
+            return document;
+        }
+
+        private void findErrors(DocumentUri uri)
+        {
+            Document document = GetDocument(uri);
+
+            List<Diagnostic> diagnostics = new();
+
+            if (document.Tree is null)
+                return;
+
+            foreach (var diagnostic in document.Tree.Diagnostics)
             {
-                string? path = DocumentUri.GetFileSystemPath(uri);
-                if (!string.IsNullOrEmpty(path))
-                {
-                    text = await File.ReadAllTextAsync(path).ConfigureAwait(false);
-                    textCache.Add(uri, text);
-                }
-            }
-            catch { }
+                TextLocation location = diagnostic.Location;
 
-            return text;
+                diagnostics.Add(new Diagnostic()
+                {
+                    Severity = diagnostic.IsError ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
+                    Message = diagnostic.Message,
+                    Range = new Range(location.StartLine, location.StartCharacter, location.EndLine, location.EndCharacter)
+                });
+            }
+
+            _facade.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams()
+            {
+                Uri = uri,
+                Version = document.ContentVersion,
+                Diagnostics = new Container<Diagnostic>(diagnostics)
+            });
         }
     }
 

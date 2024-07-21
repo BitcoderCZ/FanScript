@@ -68,8 +68,8 @@ namespace FanScript.LangServer
             if (_documentHandler is null)
                 return;
 
-            string? path = DocumentUri.GetFileSystemPath(identifier);
-            string? content = await _documentHandler.GetDocumentTextAsync(identifier.TextDocument.Uri).ConfigureAwait(false);
+            Document document = _documentHandler.GetDocument(identifier.TextDocument.Uri);
+            string? content = await document.GetContentAsync().ConfigureAwait(false);
 
             await Task.Yield();
 
@@ -79,7 +79,9 @@ namespace FanScript.LangServer
             try
             {
                 // TODO: cache syntax tree?, versioning
-                SyntaxTree tree = SyntaxTree.Parse(SourceText.From(content, path ?? string.Empty));
+                SyntaxTree? tree = document.Tree;
+                if (tree is null)
+                    return;
 
                 TextSpan span = new TextSpan(0, int.MaxValue);
                 if (identifier is SemanticTokensRangeParams rangeParams)
