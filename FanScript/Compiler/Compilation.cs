@@ -51,25 +51,44 @@ namespace FanScript.Compiler
         }
 
         public IEnumerable<Symbol> GetSymbols()
+            => Enumerable.Concat<Symbol>(
+                GetFunctions(),
+                GetVariables()
+            );
+
+        public IEnumerable<FunctionSymbol> GetFunctions()
         {
             Compilation? submission = this;
-            HashSet<string> seenSymbolNames = new HashSet<string>();
 
-            List<FunctionSymbol> builtinFunctions = BuiltinFunctions.GetAll().ToList();
+            foreach (FunctionSymbol builtin in BuiltinFunctions.GetAll())
+                yield return builtin;
 
             while (submission is not null)
             {
                 foreach (FunctionSymbol function in submission.Functions)
-                    if (seenSymbolNames.Add(function.Name))
-                        yield return function;
+                    yield return function;
 
+                submission = submission.Previous;
+            }
+        }
+
+        public IEnumerable<VariableSymbol> GetVariables()
+        {
+            Compilation? submission = this;
+            HashSet<string> seenVariables = new HashSet<string>();
+
+            foreach (var constant in Constants.GetAll())
+            {
+                VariableSymbol var = new GlobalVariableSymbol(constant.Name, Modifiers.Constant, constant.Type);
+                var.Initialize(new BoundConstant(constant.Value));
+                yield return var;
+            }
+
+            while (submission is not null)
+            {
                 foreach (VariableSymbol variable in submission.Variables)
-                    if (seenSymbolNames.Add(variable.Name))
+                    if (seenVariables.Add(variable.Name))
                         yield return variable;
-
-                foreach (FunctionSymbol builtin in builtinFunctions)
-                    if (seenSymbolNames.Add(builtin.Name))
-                        yield return builtin;
 
                 submission = submission.Previous;
             }

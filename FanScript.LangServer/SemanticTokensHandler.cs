@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using FanScript.LangServer.Classification;
+using FanScript.LangServer.Utils;
 using Microsoft.Extensions.Logging;
 using OmniSharp.Extensions.JsonRpc;
 using OmniSharp.Extensions.LanguageServer.Protocol;
@@ -22,15 +23,15 @@ namespace FanScript.LangServer
 #pragma warning disable 618
     internal class SemanticTokensHandler : SemanticTokensHandlerBase
     {
-        private readonly ILanguageServerFacade _facade;
-        private readonly ILogger _logger;
+        private readonly ILanguageServerFacade facade;
+        private readonly ILogger logger;
 
-        private TextDocumentHandler? _documentHandler;
+        private TextDocumentHandler? documentHandler;
 
-        public SemanticTokensHandler(ILanguageServerFacade facade, ILogger<SemanticTokensHandler> logger)
+        public SemanticTokensHandler(ILanguageServerFacade _facade, ILogger<SemanticTokensHandler> _logger)
         {
-            _facade = facade;
-            _logger = logger;
+            facade = _facade;
+            logger = _logger;
         }
 
         public override async Task<SemanticTokens?> Handle(
@@ -63,12 +64,12 @@ namespace FanScript.LangServer
             CancellationToken cancellationToken
         )
         {
-            _documentHandler ??= _facade.Workspace.GetService(typeof(TextDocumentHandler)) as TextDocumentHandler;
+            documentHandler ??= facade.Workspace.GetService(typeof(TextDocumentHandler)) as TextDocumentHandler;
 
-            if (_documentHandler is null)
+            if (documentHandler is null)
                 return;
 
-            Document document = _documentHandler.GetDocument(identifier.TextDocument.Uri);
+            Document document = documentHandler.GetDocument(identifier.TextDocument.Uri);
             string? content = await document.GetContentAsync(cancellationToken).ConfigureAwait(false);
 
             await Task.Yield();
@@ -85,13 +86,7 @@ namespace FanScript.LangServer
 
                 TextSpan span = new TextSpan(0, int.MaxValue);
                 if (identifier is SemanticTokensRangeParams rangeParams)
-                {
-                    Range range = rangeParams.Range;
-                    span = new TextSpan(
-                        tree.Text.Lines[range.Start.Line].Start + range.Start.Character,
-                        tree.Text.Lines[range.End.Line].Start + range.End.Character
-                    );
-                }
+                    span = rangeParams.Range.ToSpan(tree.Text);
 
                 var nodes = Classifier.Classify(tree, span);
                 foreach (var node in nodes)
@@ -103,7 +98,7 @@ namespace FanScript.LangServer
                     if (location.StartLine == location.EndLine)
                     {
                         builder.Push(
-                            new Range(location.StartLine, location.StartCharacter, location.EndLine, location.EndCharacter),
+                            location.ToRange(),
                             tokenType
                         );
                     }
@@ -137,7 +132,7 @@ namespace FanScript.LangServer
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Failed to tokenize file '{identifier.TextDocument.Uri}'");
+                logger.LogError(ex, $"Failed to tokenize file '{identifier.TextDocument.Uri}'");
             }
 
             // fallback

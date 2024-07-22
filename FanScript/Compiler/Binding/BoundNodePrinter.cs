@@ -179,7 +179,7 @@ namespace FanScript.Compiler.Binding
                 writer.WriteModifiers(node.Variable.Modifiers);
                 writer.WriteSpace();
             }
-            writer.WriteType(node.Variable.Type);
+            node.Variable.Type.WriteTo(writer);
             writer.WriteSpace();
 
             if (node.OptionalAssignment is not null)
@@ -456,7 +456,7 @@ namespace FanScript.Compiler.Binding
             if (node.Function.IsGeneric)
             {
                 writer.WritePunctuation(SyntaxKind.LessToken);
-                writer.WriteType(node.GenericType);
+                node.GenericType?.WriteTo(writer);
                 writer.WritePunctuation(SyntaxKind.GreaterToken);
             }
 

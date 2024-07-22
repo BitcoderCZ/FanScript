@@ -30,9 +30,9 @@ namespace FanScript.LangServer
 {
     internal class TextDocumentHandler : TextDocumentSyncHandlerBase
     {
-        private readonly ILanguageServerFacade _facade;
-        private readonly ILogger<TextDocumentHandler> _logger;
-        private readonly ILanguageServerConfiguration _configuration;
+        private readonly ILanguageServerFacade facade;
+        private readonly ILogger<TextDocumentHandler> logger;
+        private readonly ILanguageServerConfiguration configuration;
 
         private readonly Dictionary<DocumentUri, Document> documentCache = new();
 
@@ -45,11 +45,11 @@ namespace FanScript.LangServer
             }
         );
 
-        public TextDocumentHandler(ILanguageServerFacade facade, ILogger<TextDocumentHandler> logger, CustomLogger customLogger, ILanguageServerConfiguration configuration)
+        public TextDocumentHandler(ILanguageServerFacade _facade, ILogger<TextDocumentHandler> _logger, CustomLogger customLogger, ILanguageServerConfiguration _configuration)
         {
-            _facade = facade;
-            _logger = logger;
-            _configuration = configuration;
+            facade = _facade;
+            logger = _logger;
+            configuration = _configuration;
         }
 
         // TODO: use Incremental, and make textCache use StringBuilder or wrapper over List<char/byte> (implement ToString()!!!)
@@ -57,7 +57,7 @@ namespace FanScript.LangServer
 
         public override Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken token)
         {
-            _logger.LogInformation("Changed file: " + notification.TextDocument.Uri);
+            logger.LogInformation("Changed file: " + notification.TextDocument.Uri);
 
             // if delete, start - first char deleted, RangeLength - numb chars deleted
             TextDocumentContentChangeEvent? first = notification.ContentChanges.FirstOrDefault();
@@ -83,15 +83,15 @@ namespace FanScript.LangServer
 
             runner.Invoke();
 
-            await _configuration.GetScopedConfiguration(notification.TextDocument.Uri, token).ConfigureAwait(false);
-            _logger.LogInformation("Opened file: " + notification.TextDocument.Uri);
+            await configuration.GetScopedConfiguration(notification.TextDocument.Uri, token).ConfigureAwait(false);
+            logger.LogInformation("Opened file: " + notification.TextDocument.Uri);
 
             return Unit.Value;
         }
 
         public override Task<Unit> Handle(DidCloseTextDocumentParams notification, CancellationToken token)
         {
-            if (_configuration.TryGetScopedConfiguration(notification.TextDocument.Uri, out var disposable))
+            if (configuration.TryGetScopedConfiguration(notification.TextDocument.Uri, out var disposable))
                 disposable.Dispose();
 
             if (findErrorsDict.TryRemove(notification.TextDocument.Uri, out var runner))
@@ -131,7 +131,7 @@ namespace FanScript.LangServer
                 return;
 
             if (document.Tree.Diagnostics.HasErrors())
-                _facade.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams()
+                facade.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams()
                 {
                     Uri = uri,
                     Version = document.ContentVersion,
@@ -139,15 +139,15 @@ namespace FanScript.LangServer
                 });
             else
             {
-                Compilation compilation = Compilation.CreateScript(null, document.Tree);
-                BoundGlobalScope scope = compilation.GlobalScope;
+                Compilation? compilation = document.Compilation;
 
-                _facade.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams()
-                {
-                    Uri = uri,
-                    Version = document.ContentVersion,
-                    Diagnostics = new Container<Diagnostic>(convert(scope.Diagnostics))
-                });
+                if (compilation is not null)
+                    facade.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams()
+                    {
+                        Uri = uri,
+                        Version = document.ContentVersion,
+                        Diagnostics = new Container<Diagnostic>(convert(compilation.GlobalScope.Diagnostics))
+                    });
             }
 
             List<Diagnostic> convert(ImmutableArray<Compiler.Diagnostics.Diagnostic> diagnostics)
@@ -155,16 +155,12 @@ namespace FanScript.LangServer
                 List<Diagnostic> result = new();
 
                 foreach (var diagnostic in diagnostics)
-                {
-                    TextLocation location = diagnostic.Location;
-
                     result.Add(new Diagnostic()
                     {
                         Severity = diagnostic.IsError ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
                         Message = diagnostic.Message,
-                        Range = new Range(location.StartLine, location.StartCharacter, location.EndLine, location.EndCharacter)
+                        Range = diagnostic.Location.ToRange()
                     });
-                }
 
                 return result;
             }

@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Syntax;
 using FanScript.Utils;
+using System.Xml.Linq;
 
 namespace FanScript.Compiler.Symbols
 {
@@ -29,11 +30,20 @@ namespace FanScript.Compiler.Symbols
             }
         }
 
-        private static void WriteFunctionTo(FunctionSymbol symbol, TextWriter writer)
+        internal static void WriteFunctionTo(FunctionSymbol symbol, TextWriter writer, bool onlyParams = false)
         {
-            writer.WriteKeyword(SyntaxKind.KeywordFunction);
-            writer.WriteSpace();
-            writer.WriteIdentifier(symbol.Name);
+            if (!onlyParams)
+            {
+                symbol.Type.WriteTo(writer);
+                writer.WriteSpace();
+                writer.WriteIdentifier(symbol.Name);
+            }
+
+            if (symbol.IsGeneric)
+            {
+                writer.WritePunctuation(SyntaxKind.LessToken);
+                writer.WritePunctuation(SyntaxKind.GreaterToken);
+            }
             writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
 
             for (int i = 0; i < symbol.Parameters.Length; i++)
@@ -48,46 +58,49 @@ namespace FanScript.Compiler.Symbols
             }
 
             writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
-
-            if (symbol.Type != TypeSymbol.Void)
-            {
-                writer.WritePunctuation(SyntaxKind.ColonToken);
-                writer.WriteSpace();
-                symbol.Type.WriteTo(writer);
-            }
         }
 
         private static void WriteGlobalVariableTo(GlobalVariableSymbol symbol, TextWriter writer)
         {
-            writer.WriteType(symbol.Type);
+            symbol.Type.WriteTo(writer);
             writer.WriteSpace();
             writer.WriteIdentifier(symbol.Name);
-            writer.WritePunctuation(SyntaxKind.ColonToken);
-            writer.WriteSpace();
-            symbol.Type.WriteTo(writer);
         }
 
         private static void WriteLocalVariableTo(LocalVariableSymbol symbol, TextWriter writer)
         {
-            writer.WriteType(symbol.Type);
+            symbol.Type.WriteTo(writer);
             writer.WriteSpace();
             writer.WriteIdentifier(symbol.Name);
-            writer.WritePunctuation(SyntaxKind.ColonToken);
-            writer.WriteSpace();
-            symbol.Type.WriteTo(writer);
         }
 
         private static void WriteParameterTo(ParameterSymbol symbol, TextWriter writer)
         {
-            writer.WriteIdentifier(symbol.Name);
-            writer.WritePunctuation(SyntaxKind.ColonToken);
-            writer.WriteSpace();
+            // always readonly, so no reason to print it
+            Modifiers modifiers = symbol.Modifiers ^ Modifiers.Readonly;
+            if (modifiers != 0)
+            {
+                writer.WriteModifiers(modifiers);
+                writer.WriteSpace();
+            }
             symbol.Type.WriteTo(writer);
+            writer.WriteSpace();
+            writer.WriteIdentifier(symbol.Name);
         }
 
-        private static void WriteTypeTo(TypeSymbol symbol, TextWriter writer)
+        private static void WriteTypeTo(TypeSymbol type, TextWriter writer)
         {
-            writer.WriteIdentifier(symbol.Name);
+            type ??= TypeSymbol.Error;
+            writer.SetForeground(type.IsGeneric ? ConsoleColor.DarkGreen : ConsoleColor.Blue);
+            writer.Write(type.Name);
+            writer.ResetColor();
+            if (type.IsGeneric)
+            {
+                writer.WritePunctuation(SyntaxKind.LessToken);
+                if (type.IsGenericInstance)
+                    type.InnerType.WriteTo(writer);
+                writer.WritePunctuation(SyntaxKind.GreaterToken);
+            }
         }
     }
 }

@@ -30,5 +30,19 @@ namespace FanScript.Compiler.Symbols
         [MemberNotNullWhen(true, nameof(AllowedGenericTypes))]
         public bool IsGeneric { get; }
         public ImmutableArray<TypeSymbol>? AllowedGenericTypes { get; }
+
+        public string? Description { get; init; }
+
+        public string ToString(bool onlyParams)
+        {
+            if (!onlyParams)
+                return ToString();
+
+            using (var writer = new StringWriter())
+            {
+                SymbolPrinter.WriteFunctionTo(this, writer, onlyParams);
+                return writer.ToString();
+            }
+        }
     }
 }

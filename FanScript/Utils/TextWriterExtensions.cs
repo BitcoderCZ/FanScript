@@ -25,13 +25,13 @@ namespace FanScript.Utils
             return false;
         }
 
-        private static void SetForeground(this TextWriter writer, ConsoleColor color)
+        internal static void SetForeground(this TextWriter writer, ConsoleColor color)
         {
             if (writer.IsConsole())
                 Console.ForegroundColor = color;
         }
 
-        private static void ResetColor(this TextWriter writer)
+        internal static void ResetColor(this TextWriter writer)
         {
             if (writer.IsConsole())
                 Console.ResetColor();
@@ -43,21 +43,6 @@ namespace FanScript.Utils
             Debug.Assert(kind.IsKeyword() && text is not null);
 
             writer.WriteKeyword(text);
-        }
-
-        public static void WriteType(this TextWriter writer, TypeSymbol? type)
-        {
-            type ??= TypeSymbol.Error;
-            writer.SetForeground(type.IsGeneric ? ConsoleColor.DarkGreen : ConsoleColor.Blue);
-            writer.Write(type.Name);
-            writer.ResetColor();
-            if (type.IsGeneric)
-            {
-                writer.WritePunctuation(SyntaxKind.LessToken);
-                if (type.IsGenericInstance)
-                    writer.WriteType(type.InnerType);
-                writer.WritePunctuation(SyntaxKind.GreaterToken);
-            }
         }
 
         public static void WriteModifiers(this TextWriter writer, Modifiers modifiers)

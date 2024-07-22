@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Syntax;
+﻿using FanScript.Compiler;
+using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using OmniSharp.Extensions.LanguageServer.Protocol;
 using System;
@@ -9,6 +10,7 @@ using System.Reflection.Metadata;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace FanScript.LangServer
 {
@@ -18,11 +20,11 @@ namespace FanScript.LangServer
 
         private readonly object lockObj = new object();
 
-        public int ContentVersion { get; private set; }
+        public int ContentVersion { get; private set; } = -1;
         private string? content;
         //public string? Content => content;
 
-        private int contentVersionByTree;
+        private int treeVersion = -2;
         private SyntaxTree? tree;
         public SyntaxTree? Tree
         {
@@ -30,14 +32,35 @@ namespace FanScript.LangServer
             {
                 lock (lockObj)
                 {
-                    if (tree is not null && contentVersionByTree == ContentVersion)
+                    if (treeVersion == ContentVersion)
                         return tree;
 
-                    contentVersionByTree = ContentVersion;
+                    treeVersion = ContentVersion;
                     if (string.IsNullOrEmpty(content))
                         return null;
 
                     return tree = SyntaxTree.Parse(SourceText.From(content, DocumentUri.GetFileSystemPath(Uri) ?? string.Empty));
+                }
+            }
+        }
+
+        private int compilationVersion = -3;
+        private Compilation? compilation;
+        public Compilation? Compilation
+        {
+            get
+            {
+                lock (lockObj)
+                {
+                    if (compilationVersion == treeVersion)
+                        return compilation;
+
+                    SyntaxTree? tree = this.tree;
+                    compilationVersion = treeVersion;
+                    if (tree is null)
+                        return null;
+
+                    return compilation = Compilation.CreateScript(null, tree);
                 }
             }
         }
@@ -73,7 +96,12 @@ namespace FanScript.LangServer
 
             lock (lockObj)
             {
-                content = _content;
+                if (!string.IsNullOrEmpty(_content))
+                {
+                    content = _content;
+                    ContentVersion++;
+                }
+
                 return content;
             }
         }

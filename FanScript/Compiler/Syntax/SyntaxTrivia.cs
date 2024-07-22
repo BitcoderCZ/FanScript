@@ -16,6 +16,7 @@ namespace FanScript.Compiler.Syntax
         public SyntaxKind Kind { get; }
         public int Position { get; }
         public TextSpan Span => new TextSpan(Position, Text?.Length ?? 0);
+        public TextLocation Location => new TextLocation(SyntaxTree.Text, Span);
         public string Text { get; }
     }
 }
