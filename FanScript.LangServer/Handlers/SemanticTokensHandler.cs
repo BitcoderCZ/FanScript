@@ -1,24 +1,20 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using FanScript.Compiler.Syntax;
+﻿using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using FanScript.LangServer.Classification;
 using FanScript.LangServer.Utils;
 using Microsoft.Extensions.Logging;
-using OmniSharp.Extensions.JsonRpc;
-using OmniSharp.Extensions.LanguageServer.Protocol;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
-namespace FanScript.LangServer
+namespace FanScript.LangServer.Handlers
 {
 #pragma warning disable 618
     internal class SemanticTokensHandler : SemanticTokensHandlerBase

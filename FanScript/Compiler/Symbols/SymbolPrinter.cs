@@ -1,6 +1,5 @@
 ﻿using FanScript.Compiler.Syntax;
 using FanScript.Utils;
-using System.Xml.Linq;
 
 namespace FanScript.Compiler.Symbols
 {

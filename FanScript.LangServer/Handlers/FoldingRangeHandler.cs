@@ -1,15 +1,16 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+﻿using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace FanScript.LangServer
+namespace FanScript.LangServer.Handlers
 {
     internal class FoldingRangeHandler : IFoldingRangeHandler
     {
         public FoldingRangeRegistrationOptions GetRegistrationOptions() =>
-            new FoldingRangeRegistrationOptions {
+            new FoldingRangeRegistrationOptions
+            {
                 DocumentSelector = TextDocumentSelector.ForLanguage("fanscript")
             };
 
@@ -19,7 +20,8 @@ namespace FanScript.LangServer
         ) =>
             Task.FromResult<Container<FoldingRange>?>(
                 new Container<FoldingRange>(
-                    new FoldingRange {
+                    new FoldingRange
+                    {
                         StartLine = 10,
                         EndLine = 20,
                         Kind = FoldingRangeKind.Region,
@@ -29,7 +31,8 @@ namespace FanScript.LangServer
                 )
             );
 
-        public FoldingRangeRegistrationOptions GetRegistrationOptions(FoldingRangeCapability capability, ClientCapabilities clientCapabilities) => new FoldingRangeRegistrationOptions {
+        public FoldingRangeRegistrationOptions GetRegistrationOptions(FoldingRangeCapability capability, ClientCapabilities clientCapabilities) => new FoldingRangeRegistrationOptions
+        {
             DocumentSelector = TextDocumentSelector.ForLanguage("fanscript")
         };
     }

@@ -7,16 +7,14 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
-using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace FanScript.LangServer
+namespace FanScript.LangServer.Handlers
 {
     internal class CompletionHandler : CompletionHandlerBase
     {
@@ -102,7 +100,7 @@ namespace FanScript.LangServer
                 return new CompletionList();
 
             CurrentRecomendations recomendation = getRecomendation(node);
-            
+
             if (recomendation == 0)
                 return new CompletionList();
 
@@ -144,7 +142,7 @@ namespace FanScript.LangServer
                         Label = var.ToString(),
                         LabelDetails = new CompletionItemLabelDetails()
                         {
-                            Description = (var.Constant is null ? 
+                            Description = (var.Constant is null ?
                                     string.Empty :
                                     var.Constant.Value + " ")
                                 + (var.Modifiers == 0 ?

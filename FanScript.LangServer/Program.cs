@@ -1,6 +1,4 @@
-using System;
-using System.Diagnostics;
-using System.Threading.Tasks;
+using FanScript.LangServer.Handlers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,6 +6,8 @@ using Newtonsoft.Json.Linq;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Server;
 using Serilog;
+using System;
+using System.Threading.Tasks;
 
 namespace FanScript.LangServer
 {

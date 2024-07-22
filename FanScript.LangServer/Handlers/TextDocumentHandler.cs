@@ -1,14 +1,4 @@
-using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.IO;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using FanScript.Compiler;
-using FanScript.Compiler.Binding;
-using FanScript.Compiler.Text;
 using FanScript.LangServer.Utils;
 using MediatR;
 using Microsoft.Extensions.Logging;
@@ -21,12 +11,20 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server.WorkDone;
 using OmniSharp.Extensions.LanguageServer.Protocol.Workspace;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 
 #pragma warning disable CS0618
 
-namespace FanScript.LangServer
+namespace FanScript.LangServer.Handlers
 {
     internal class TextDocumentHandler : TextDocumentSyncHandlerBase
     {

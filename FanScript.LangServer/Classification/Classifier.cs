@@ -2,11 +2,7 @@
 using FanScript.Compiler.Text;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FanScript.LangServer.Classification
 {
@@ -37,7 +33,7 @@ namespace FanScript.LangServer.Classification
             foreach (var leadingTrivia in token.LeadingTrivia)
                 ClassifyTrivia(leadingTrivia, span, result);
 
-            AddClassification(token.Kind, token.Span, span,  result);
+            AddClassification(token.Kind, token.Span, span, result);
 
             foreach (var trailingTrivia in token.TrailingTrivia)
                 ClassifyTrivia(trailingTrivia, span, result);
