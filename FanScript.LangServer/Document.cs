@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection.Metadata;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FanScript.LangServer
@@ -15,9 +16,11 @@ namespace FanScript.LangServer
     {
         public readonly DocumentUri Uri;
 
+        private readonly object lockObj = new object();
+
         public int ContentVersion { get; private set; }
         private string? content;
-        public string? Content => content;
+        //public string? Content => content;
 
         private int contentVersionByTree;
         private SyntaxTree? tree;
@@ -25,14 +28,17 @@ namespace FanScript.LangServer
         {
             get
             {
-                if (tree is not null && contentVersionByTree == ContentVersion)
-                    return tree;
+                lock (lockObj)
+                {
+                    if (tree is not null && contentVersionByTree == ContentVersion)
+                        return tree;
 
-                contentVersionByTree = ContentVersion;
-                if (string.IsNullOrEmpty(content))
-                    return null;
+                    contentVersionByTree = ContentVersion;
+                    if (string.IsNullOrEmpty(content))
+                        return null;
 
-                return tree = SyntaxTree.Parse(SourceText.From(content, DocumentUri.GetFileSystemPath(Uri) ?? string.Empty));
+                    return tree = SyntaxTree.Parse(SourceText.From(content, DocumentUri.GetFileSystemPath(Uri) ?? string.Empty));
+                }
             }
         }
 
@@ -43,24 +49,33 @@ namespace FanScript.LangServer
 
         public void SetContent(string content, int? version)
         {
-            this.content = content;
-            ContentVersion = version ?? ContentVersion + 1;
+            lock (lockObj)
+            {
+                this.content = content;
+                ContentVersion = version ?? ContentVersion + 1;
+            }
         }
 
-        public async Task<string?> GetContentAsync()
+        public async Task<string?> GetContentAsync(CancellationToken cancellationToken = default)
         {
-            if (!string.IsNullOrEmpty(Content))
-                return Content;
+            lock (lockObj)
+                if (!string.IsNullOrEmpty(content))
+                    return content;
 
+            string? _content = null;
             try
             {
                 string? path = DocumentUri.GetFileSystemPath(Uri);
                 if (!string.IsNullOrEmpty(path))
-                    content = await File.ReadAllTextAsync(path).ConfigureAwait(false);
+                    _content = await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false);
             }
             catch { }
 
-            return Content;
+            lock (lockObj)
+            {
+                content = _content;
+                return content;
+            }
         }
     }
 }

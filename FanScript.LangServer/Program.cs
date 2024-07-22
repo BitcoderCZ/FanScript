@@ -43,7 +43,7 @@ namespace FanScript.LangServer
                             services => services
                                 .AddSingleton<TextDocumentHandler>()
                         )
-                       //.WithHandler<TextDocumentHandler>()
+                       .WithHandler<CompletionHandler>()
                        .WithHandler<DidChangeWatchedFilesHandler>()
                        .WithHandler<FoldingRangeHandler>()
                        .WithHandler<MyWorkspaceSymbolsHandler>()

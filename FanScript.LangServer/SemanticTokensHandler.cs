@@ -69,7 +69,7 @@ namespace FanScript.LangServer
                 return;
 
             Document document = _documentHandler.GetDocument(identifier.TextDocument.Uri);
-            string? content = await document.GetContentAsync().ConfigureAwait(false);
+            string? content = await document.GetContentAsync(cancellationToken).ConfigureAwait(false);
 
             await Task.Yield();
 
