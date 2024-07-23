@@ -1,27 +1,24 @@
-﻿using FanScript.Compiler.Syntax;
+﻿using FanScript.Compiler.Binding;
+using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using System;
 
 namespace FanScript.LangServer.Utils
 {
-    internal static class SyntaxTreeExtensions
+    internal static class NodeFinder
     {
-        public static SyntaxNode? FindNode(this SyntaxTree tree, int location)
-            => tree.FindNode(span => location >= span.Start && location < span.End);
         public static SyntaxNode? FindNode(this SyntaxTree tree, TextSpan span)
-            => tree.FindNode(span.OverlapsWith);
-        public static SyntaxNode? FindNode(this SyntaxTree tree, Func<TextSpan, bool> overlapsWith)
         {
             SyntaxNode current = tree.Root;
 
-            if (!overlapsWith(current.Span))
+            if (!current.Span.OverlapsWith(span))
                 return null;
 
             while (true)
             {
                 bool overlapingChild = false;
                 foreach (SyntaxNode child in current.GetChildren())
-                    if (overlapsWith(child.Span))
+                    if (child.Span.OverlapsWith(span))
                     {
                         current = child;
                         overlapingChild = true;

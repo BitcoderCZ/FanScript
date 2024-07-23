@@ -300,39 +300,17 @@ namespace FanScript.Compiler.Binding
 
         private BoundStatement BindSpecialBlockStatement(SpecialBlockStatementSyntax syntax)
         {
-            SpecialBlockType type;
-            ImmutableArray<ParameterSymbol> parameters;
-            switch (syntax.Identifier.Text)
+            if (!Enum.TryParse(syntax.Identifier.Text, out SpecialBlockType type))
             {
-                case "Play":
-                    type = SpecialBlockType.Play;
-                    parameters = [];
-                    break;
-                case "LateUpdate":
-                    type = SpecialBlockType.LateUpdate;
-                    parameters = [];
-                    break;
-                case "BoxArt":
-                    type = SpecialBlockType.BoxArt;
-                    parameters = [];
-                    break;
-                case "Touch":
-                    type = SpecialBlockType.Touch;
-                    parameters = [
-                        new ParameterSymbol("screenX", Modifiers.Ref, TypeSymbol.Float, 0),
-                        new ParameterSymbol("screenY", Modifiers.Ref, TypeSymbol.Float, 1),
-                        new ParameterSymbol("TOUCH_STATE", TypeSymbol.Float, 2),
-                        new ParameterSymbol("TOUCH_INDEX", TypeSymbol.Float, 3),
-                    ];
-                    break;
-                case "Button":
-                    type = SpecialBlockType.Button;
-                    parameters = [new ParameterSymbol("BUTTON_TYPE", TypeSymbol.Float, 0)];
-                    break;
-                default:
-                    _diagnostics.ReportUnknownSpecialBlock(syntax.Identifier.Location, syntax.Identifier.Text);
-                    return BindErrorStatement(syntax);
+                _diagnostics.ReportUnknownSpecialBlock(syntax.Identifier.Location, syntax.Identifier.Text);
+                return BindErrorStatement(syntax);
             }
+
+            ImmutableArray<ParameterSymbol> parameters = type
+                .GetInfo()
+                .Parameters
+                .Select((param, index) => param.ToParameter(index))
+                .ToImmutableArray();
 
             BoundArgumentClause? argumentClause = BindArgumentClause(syntax.ArgumentClause, parameters, "SpecialBlock", syntax.Identifier.Text);
 

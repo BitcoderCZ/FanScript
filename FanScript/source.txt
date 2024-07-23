@@ -1,16 +1,23 @@
-float x
-float y
-
-on Touch(ref x, ref y, TOUCH_STATE_ENDS, TOUCH_INDEX_1) {
-    inspect(vec3(x, y, 0))
+on Play() {
+    
 }
 
-readonly float a = 1
+on LateUpdate() {
 
-on Button(BUTTON_TYPE_DIRECTION) {
+}
+
+on BoxArt() {
+
+}
+
+float a
+float b
+on Touch(ref a, ref b, TOUCH_STATE_BEGINS, TOUCH_INDEX_1) {
     inspect(a)
 }
 
-vec3 pos
-joystick(ref pos, JOYSTICK_TYPE_SCREEN)
-inspect(pos)
+on Button(BUTTON_TYPE_DIRECTION) {
+
+}
+
+array<float> arr = [5, 3, 7, 30]

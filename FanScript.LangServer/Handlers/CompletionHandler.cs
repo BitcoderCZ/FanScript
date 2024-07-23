@@ -25,7 +25,7 @@ namespace FanScript.LangServer.Handlers
             .Select(text => new CompletionItem()
             {
                 Label = text,
-                Kind = CompletionItemKind.Keyword
+                Kind = CompletionItemKind.Keyword,
             })
             .ToImmutableArray();
         private static readonly ImmutableArray<CompletionItem> modifiers = Enum.GetValues<SyntaxKind>()
@@ -33,21 +33,64 @@ namespace FanScript.LangServer.Handlers
             .Select(kind => new CompletionItem()
             {
                 Label = kind.GetText()!,
-                Kind = CompletionItemKind.Keyword
+                Kind = CompletionItemKind.Keyword,
             })
             .ToImmutableArray();
         private static readonly ImmutableArray<CompletionItem> types = TypeSymbol.BuiltInTypes
             .Select(type => new CompletionItem()
             {
                 Label = type.Name,
-                Kind = CompletionItemKind.Class // use Struct instead?
+                Kind = CompletionItemKind.Class, // use Struct instead?
             })
             .ToImmutableArray();
-        private static readonly ImmutableArray<CompletionItem> specialBlockTypes = Enum.GetNames<SpecialBlockType>()
+        private static readonly ImmutableArray<CompletionItem> specialBlockTypes = Enum.GetValues<SpecialBlockType>()
+            .Select(sbt =>
+            {
+                var info = sbt.GetInfo();
+
+                StringBuilder builder = new StringBuilder()
+                .Append(sbt.ToString())
+                .Append('(');
+
+                for (int i = 0; i < info.Parameters.Length; i++)
+                {
+                    var param = info.Parameters[i];
+
+                    if (i != 0)
+                        builder.Append(", ");
+
+                    // TODO: support out once added
+                    if (param.Modifiers.HasFlag(Modifiers.Ref))
+                        builder.Append("ref ");
+
+                    if (param.IsConstant)
+                        builder.Append(param.Name);
+                }
+
+                string insertText = builder
+                    .Append(')')
+                    .ToString();
+
+                return new CompletionItem()
+                {
+                    Label = info.ToString(),
+                    LabelDetails = new CompletionItemLabelDetails()
+                    {
+                        Description = info.Description,
+                    },
+                    Kind = CompletionItemKind.Function,
+                    SortText = sbt.ToString(),
+                    FilterText = sbt.ToString(),
+                    InsertText = insertText,
+                };
+            })
+            .ToImmutableArray();
+        private static readonly ImmutableArray<CompletionItem> values =
+            new List<string>() { "true", "false" }
             .Select(text => new CompletionItem()
             {
                 Label = text,
-                Kind = CompletionItemKind.Function
+                Kind = CompletionItemKind.Value,
             })
             .ToImmutableArray();
 
@@ -66,19 +109,20 @@ namespace FanScript.LangServer.Handlers
         }
 
         [Flags]
-        enum CurrentRecomendations : byte
+        enum CurrentRecomendations : ushort
         {
             Keywords = 1 << 0,
             Modifiers = 1 << 1,
             Types = 1 << 2,
             SpecialBlockTypes = 1 << 3,
-            Variables = 1 << 4,
-            Functions = 1 << 5,
-            NewIdentifier = 1 << 6,
+            Values = 1 << 4,
+            Variables = 1 << 5,
+            Functions = 1 << 6,
+            NewIdentifier = 1 << 7,
 
-            InExpression = Variables | Functions,
+            InExpression = Values | Variables | Functions,
 
-            All = 255
+            All = ushort.MaxValue,
         }
         public override async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
         {
@@ -113,6 +157,8 @@ namespace FanScript.LangServer.Handlers
                 length += types.Length;
             if (recomendation.HasFlag(CurrentRecomendations.SpecialBlockTypes))
                 length += specialBlockTypes.Length;
+            if (recomendation.HasFlag(CurrentRecomendations.Values))
+                length += values.Length;
 
             VariableSymbol[]? variables = null;
             FunctionSymbol[]? functions = null;
@@ -134,6 +180,8 @@ namespace FanScript.LangServer.Handlers
                 result.AddRange(types);
             if (recomendation.HasFlag(CurrentRecomendations.SpecialBlockTypes))
                 result.AddRange(specialBlockTypes);
+            if (recomendation.HasFlag(CurrentRecomendations.Values))
+                result.AddRange(values);
 
             if (variables is not null)
                 result.AddRange(variables
@@ -189,7 +237,6 @@ namespace FanScript.LangServer.Handlers
 
         private string getInsertText(FunctionSymbol function)
         {
-            //fun.Name + "(" + ", ".Repeat(Math.Max(fun.Parameters.Length - 1, 0)) + ")"
             StringBuilder builder = new StringBuilder()
                 .Append(function.Name)
                 .Append('(');
@@ -256,8 +303,14 @@ namespace FanScript.LangServer.Handlers
                             return CurrentRecomendations.SpecialBlockTypes;
                     }
                     break;
-                default:
-                    break;
+                case AssignmentStatementSyntax assignmentStatement when node == assignmentStatement.Expression:
+                case IfStatementSyntax ifStatement when node == ifStatement.Condition:
+                case WhileStatementSyntax whileStatement when node == whileStatement.Condition:
+                case ParenthesizedExpressionSyntax:
+                case BinaryExpressionSyntax:
+                case UnaryExpressionSyntax:
+                case ArrayInitializerStatementSyntax arrayInitializer when node != arrayInitializer.IdentifierToken:
+                    return CurrentRecomendations.InExpression;
             }
 
             return null;

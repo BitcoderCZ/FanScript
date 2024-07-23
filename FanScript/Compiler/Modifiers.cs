@@ -1,6 +1,7 @@
 ﻿using FanScript.Compiler.Syntax;
 using System.Collections.Frozen;
 using System.Collections.ObjectModel;
+using System.Text;
 
 namespace FanScript.Compiler
 {
@@ -51,6 +52,28 @@ namespace FanScript.Compiler
 
         public static IEnumerable<Modifiers> GetConflictingModifiers(this Modifiers mod)
             => lookup[mod].Conflicts;
+
+        public static string ToSyntaxString(this Modifiers mod)
+        {
+            StringBuilder builder = new StringBuilder();
+            mod.ToSyntaxString(builder);
+            return builder.ToString();
+        }
+        public static void ToSyntaxString(this Modifiers mod, StringBuilder builder)
+        {
+            bool isFirst = true;
+
+            foreach (var modifier in Enum.GetValues<Modifiers>())
+                if (mod.HasFlag(modifier))
+                {
+                    if (!isFirst)
+                        builder.Append(' ');
+
+                    isFirst = false;
+
+                    builder.Append(modifier.ToKind().GetText());
+                }
+        }
 
         private class ModifierInfo
         {

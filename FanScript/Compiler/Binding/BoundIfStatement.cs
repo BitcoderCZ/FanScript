@@ -13,6 +13,7 @@ namespace FanScript.Compiler.Binding
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.IfStatement;
+
         public BoundExpression Condition { get; }
         public BoundStatement ThenStatement { get; }
         public BoundStatement? ElseStatement { get; }

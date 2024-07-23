@@ -20,7 +20,6 @@ namespace FanScript.LangServer.Classification
             if (node is null || !node.FullSpan.OverlapsWith(span))
                 return;
 
-            // TODO: get parent and compare node with it's properties to get better classification, for ex: if parent is CallExpressionSyntax and node == Parent.Identifier, return SemanticTokenType.Function
             if (node is SyntaxToken token)
                 ClassifyToken(token, span, result);
 
@@ -33,7 +32,20 @@ namespace FanScript.LangServer.Classification
             foreach (var leadingTrivia in token.LeadingTrivia)
                 ClassifyTrivia(leadingTrivia, span, result);
 
-            AddClassification(token.Kind, token.Span, span, result);
+            SyntaxNode? node = token;
+            if (node.Parent is NameExpressionSyntax)
+                node = node.Parent;
+
+            switch (node.Parent)
+            {
+                case SpecialBlockStatementSyntax sb when node == sb.Identifier:
+                case CallExpressionSyntax call when node == call.Identifier:
+                    AddClassification(SemanticTokenType.Function, token.Span, span, result);
+                    break;
+                default:
+                    AddClassification(token.Kind, token.Span, span, result);
+                    break;
+            }
 
             foreach (var trailingTrivia in token.TrailingTrivia)
                 ClassifyTrivia(trailingTrivia, span, result);
@@ -58,6 +70,17 @@ namespace FanScript.LangServer.Classification
             TextSpan adjustedSpan = TextSpan.FromBounds(adjustedStart, adjustedEnd);
 
             result.Add(new ClassifiedSpan(adjustedSpan, classification.Value));
+        }
+        private static void AddClassification(SemanticTokenType classification, TextSpan elementSpan, TextSpan span, ImmutableArray<ClassifiedSpan>.Builder result)
+        {
+            if (!elementSpan.OverlapsWith(span))
+                return;
+
+            int adjustedStart = Math.Max(elementSpan.Start, span.Start);
+            int adjustedEnd = Math.Min(elementSpan.End, span.End);
+            TextSpan adjustedSpan = TextSpan.FromBounds(adjustedStart, adjustedEnd);
+
+            result.Add(new ClassifiedSpan(adjustedSpan, classification));
         }
 
         private static SemanticTokenType? GetClassification(SyntaxKind kind)

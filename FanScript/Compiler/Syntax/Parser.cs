@@ -563,9 +563,12 @@ namespace FanScript.Compiler.Syntax
             var nodesAndSeparators = ImmutableArray.CreateBuilder<SyntaxNode>();
             var modifiersBuilder = ImmutableArray.CreateBuilder<ImmutableArray<SyntaxToken>>();
 
+            if (Current.Kind == listEnd)
+                goto skip;
+
             bool parseNextArgument = true;
             while (parseNextArgument &&
-                   Current.Kind != listEnd &&
+                   //Current.Kind != listEnd &&
                    Current.Kind != SyntaxKind.EndOfFileToken)
             {
                 if (allowModifiers)
@@ -592,6 +595,7 @@ namespace FanScript.Compiler.Syntax
                     parseNextArgument = false; // TODO: this can just be break, right?
             }
 
+        skip:
             return (new SeparatedSyntaxList<ExpressionSyntax>(nodesAndSeparators.ToImmutable()), modifiersBuilder.ToImmutable());
         }
 

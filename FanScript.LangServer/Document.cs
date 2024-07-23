@@ -46,7 +46,7 @@ namespace FanScript.LangServer
             {
                 lock (lockObj)
                 {
-                    if (compilationVersion == treeVersion)
+                    if (compilationVersion == treeVersion && treeVersion == ContentVersion)
                         return compilation;
 
                     SyntaxTree? tree = this.tree;

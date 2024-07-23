@@ -44,6 +44,7 @@ namespace FanScript.LangServer
                                 .AddSingleton<TextDocumentHandler>()
                         )
                        .WithHandler<CompletionHandler>()
+                       .WithHandler<HoverHandler>()
                        .WithHandler<DidChangeWatchedFilesHandler>()
                        .WithHandler<FoldingRangeHandler>()
                        .WithHandler<MyWorkspaceSymbolsHandler>()
