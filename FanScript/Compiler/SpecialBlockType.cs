@@ -25,7 +25,7 @@ namespace FanScript.Compiler
                 new SpecialBlockTypeParam("screenX", Modifiers.Ref, TypeSymbol.Float),
                 new SpecialBlockTypeParam("screenY", Modifiers.Ref, TypeSymbol.Float),
                 new SpecialBlockTypeParam("TOUCH_STATE", 0, TypeSymbol.Float, true),
-                new SpecialBlockTypeParam("TOUCH_INDEX", 0, TypeSymbol.Float, true),
+                new SpecialBlockTypeParam("TOUCH_FINGER", 0, TypeSymbol.Float, true),
             ], "Runs code on touch"),
             new SpecialBlockTypeInfo(SpecialBlockType.Button, [
                 new SpecialBlockTypeParam("BUTTON_TYPE", 0, TypeSymbol.Float, true),

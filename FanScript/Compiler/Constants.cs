@@ -22,9 +22,9 @@ namespace FanScript.Compiler
         public static readonly Constant TOUCH_STATE_TOUCHING = new Constant(TypeSymbol.Float, "TOUCH_STATE_TOUCHING", 0f);
         public static readonly Constant TOUCH_STATE_BEGINS = new Constant(TypeSymbol.Float, "TOUCH_STATE_BEGINS", 1f);
         public static readonly Constant TOUCH_STATE_ENDS = new Constant(TypeSymbol.Float, "TOUCH_STATE_ENDS", 2f);
-        public static readonly Constant TOUCH_INDEX_1 = new Constant(TypeSymbol.Float, "TOUCH_INDEX_1", 0f);
-        public static readonly Constant TOUCH_INDEX_2 = new Constant(TypeSymbol.Float, "TOUCH_INDEX_2", 1f);
-        public static readonly Constant TOUCH_INDEX_3 = new Constant(TypeSymbol.Float, "TOUCH_INDEX_3", 2f);
+        public static readonly Constant TOUCH_FINGER_1 = new Constant(TypeSymbol.Float, "TOUCH_FINGER_1", 0f);
+        public static readonly Constant TOUCH_FINGER_2 = new Constant(TypeSymbol.Float, "TOUCH_FINGER_2", 1f);
+        public static readonly Constant TOUCH_FINGER_3 = new Constant(TypeSymbol.Float, "TOUCH_FINGER_3", 2f);
 
         public static readonly Constant BUTTON_TYPE_DIRECTION = new Constant(TypeSymbol.Float, "BUTTON_TYPE_DIRECTION", 0f);
         public static readonly Constant BUTTON_TYPE_BUTTON = new Constant(TypeSymbol.Float, "BUTTON_TYPE_BUTTON", 1f);
