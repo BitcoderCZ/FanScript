@@ -201,7 +201,7 @@ namespace FanScript.Compiler.Diagnostics
                     ExpressionSyntax expression = ((ExpressionStatementSyntax)node).Expression;
                     ReportUnreachableCode(expression);
                     return;
-                    case SyntaxKind.NameExpression:
+                case SyntaxKind.NameExpression:
                     ReportUnreachableCode(((NameExpressionSyntax)node).IdentifierToken.Location);
                     break;
                 case SyntaxKind.CallExpression:

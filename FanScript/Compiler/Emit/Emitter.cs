@@ -13,7 +13,6 @@ namespace FanScript.Compiler.Emit
         private EmitContext emitContext = null!;
 
         private DiagnosticBag diagnostics = new DiagnosticBag();
-        private List<VariableSymbol> variables = new List<VariableSymbol>();
         private CodeBuilder builder = null!;
         private BoundProgram program = null!;
 
@@ -716,19 +715,6 @@ namespace FanScript.Compiler.Emit
                         return new NopEmitStore();
                     }
             }
-        }
-
-        private bool VariableExists(string name, [NotNullWhen(true)] out VariableSymbol? symbol)
-        {
-            for (int i = 0; i < variables.Count; i++)
-                if (variables[i].Name == name)
-                {
-                    symbol = variables[i];
-                    return true;
-                }
-
-            symbol = null;
-            return false;
         }
 
         private void connect(EmitStore from, EmitStore to)

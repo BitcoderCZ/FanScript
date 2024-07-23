@@ -1,7 +1,5 @@
-﻿using FanScript.Compiler.Binding;
-using FanScript.Compiler.Syntax;
+﻿using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
-using System;
 
 namespace FanScript.LangServer.Utils
 {

@@ -76,8 +76,8 @@ namespace FanScript.LangServer.Handlers
                         return new Hover()
                         {
                             Contents = new MarkedStringsOrMarkupContent(functions
-                                .Select(func => 
-                                    new MarkedString("#### " + func.ToString() + 
+                                .Select(func =>
+                                    new MarkedString("#### " + func.ToString() +
                                         (string.IsNullOrEmpty(func.Description) ?
                                             string.Empty :
                                             "\n" + func.Description)
