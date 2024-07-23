@@ -3,6 +3,7 @@ using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Symbols;
 using FanScript.FCInfo;
 using FanScript.Utils;
+using MathUtils.Vectors;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
@@ -541,13 +542,13 @@ namespace FanScript.Compiler.Emit
                 switch (binary.Op.Kind)
                 {
                     case BoundBinaryOperatorKind.Addition: // Rotation
-                        return buildOperatorWithBreak(Blocks.Math.Break_Rotation, Blocks.Math.Make_Rotation, rotationBreakCache, Blocks.Math.Add_Number);
+                        return buildOperatorWithBreak(Blocks.Math.Make_Rotation, Blocks.Math.Add_Number);
                     case BoundBinaryOperatorKind.Subtraction: // Rotation
-                        return buildOperatorWithBreak(Blocks.Math.Break_Rotation, Blocks.Math.Make_Rotation, rotationBreakCache, Blocks.Math.Subtract_Number);
+                        return buildOperatorWithBreak(Blocks.Math.Make_Rotation, Blocks.Math.Subtract_Number);
                     case BoundBinaryOperatorKind.Division: // Vector3
-                        return buildOperatorWithBreak(Blocks.Math.Break_Vector, Blocks.Math.Make_Vector, vectorBreakCache, Blocks.Math.Divide_Number);
+                        return buildOperatorWithBreak(Blocks.Math.Make_Vector, Blocks.Math.Divide_Number);
                     case BoundBinaryOperatorKind.Modulo: // Vector3
-                        return buildOperatorWithBreak(Blocks.Math.Break_Vector, Blocks.Math.Make_Vector, vectorBreakCache, Blocks.Math.Modulo_Number);
+                        return buildOperatorWithBreak(Blocks.Math.Make_Vector, Blocks.Math.Modulo_Number);
                     case BoundBinaryOperatorKind.NotEquals:
                         {
                             if (binary.Left.Type == TypeSymbol.Vector3)
@@ -594,7 +595,7 @@ namespace FanScript.Compiler.Emit
                 return BasicEmitStore.COut(op, op.Type.Terminals[0]);
             }
 
-            EmitStore buildOperatorWithBreak(BlockDef defBreak, BlockDef defMake, Dictionary<VariableSymbol, BreakBlockCache> caches, BlockDef defOp)
+            EmitStore buildOperatorWithBreak(BlockDef defMake, BlockDef defOp)
             {
                 Block make = builder.AddBlock(defMake);
 
@@ -602,81 +603,39 @@ namespace FanScript.Compiler.Emit
                 {
                     Block op1 = builder.AddBlock(defOp);
 
-                    Block break1 = null!;
-                    Block? break2 = null;
-                    EmitStore right = null!;
+                    EmitStore leftX = null!;
+                    EmitStore leftY = null!;
+                    EmitStore leftZ = null!;
+                    EmitStore rightX = null!;
+                    EmitStore rightY = null!;
+                    EmitStore rightZ = null!;
                     builder.BlockPlacer.ExpressionBlock(() =>
                     {
-                        bool leftFromCache = false;
-
-                        if (binary.Left is BoundVariableExpression leftVar)
-                        {
-                            BreakBlockCache cache = caches.ComputeIfAbsent(leftVar.Variable, new BreakBlockCache());
-                            if (!cache.TryGet(out var cachedBreak))
-                            {
-                                break1 = builder.AddBlock(defBreak);
-                                cache.SetNewBlock(break1);
-                            }
-                            else
-                            {
-                                break1 = cachedBreak;
-                                leftFromCache = true;
-                            }
-                        }
-                        else
-                            break1 = builder.AddBlock(defBreak);
-
-                        BreakBlockCache? rightCache = null;
-                        if ((binary.Right.Type == TypeSymbol.Vector3 || binary.Right.Type == TypeSymbol.Rotation) && binary.Right is BoundVariableExpression rightVar)
-                            rightCache = caches.ComputeIfAbsent(rightVar.Variable, new BreakBlockCache());
-
-                        builder.BlockPlacer.ExpressionBlock(() =>
-                        {
-                            if (!leftFromCache)
-                            {
-                                EmitStore left = emitExpression(binary.Left);
-
-                                connect(left, BasicEmitStore.CIn(break1, break1.Type.Terminals[3]));
-                            }
-
-                            if (rightCache is null || !rightCache.CanGet())
-                                right = emitExpression(binary.Right);
-                        });
+                        (leftX, leftY, leftZ) = breakVector(binary.Left);
 
                         if (binary.Right.Type == TypeSymbol.Vector3 || binary.Right.Type == TypeSymbol.Rotation)
-                        {
-                            if (rightCache is not null)
-                            {
-                                if (!rightCache.TryGet(out break2))
-                                {
-                                    break2 = builder.AddBlock(defBreak);
-                                    rightCache.SetNewBlock(break2);
-                                }
-                            }
-                            else
-                                break2 = builder.AddBlock(defBreak);
-
-                            connect(right, BasicEmitStore.CIn(break2, break2.Type.Terminals[3]));
-                        }
+                            (rightX, rightY, rightZ) = breakVector(binary.Right);
+                        else
+                            rightZ = rightY = rightX = emitExpression(binary.Right);
                     });
 
                     Block op2 = builder.AddBlock(defOp);
                     Block op3 = builder.AddBlock(defOp);
 
                     // left to op
-                    connect(BasicEmitStore.COut(break1, break1.Type.Terminals[2]),
+                    connect(leftX,
                         BasicEmitStore.CIn(op1, op1.Type.Terminals[2]));
-                    connect(BasicEmitStore.COut(break1, break1.Type.Terminals[1]),
+                    connect(leftY,
                         BasicEmitStore.CIn(op2, op2.Type.Terminals[2]));
-                    connect(BasicEmitStore.COut(break1, break1.Type.Terminals[0]),
+                    connect(leftZ,
                         BasicEmitStore.CIn(op3, op3.Type.Terminals[2]));
 
                     // right to op
-                    connect(break2 is null ? right : BasicEmitStore.COut(break2, break2.Type.Terminals[2]),
+                    connect(rightX,
                         BasicEmitStore.CIn(op1, op1.Type.Terminals[1]));
-                    connect(break2 is null ? right : BasicEmitStore.COut(break2, break2.Type.Terminals[1]),
+                    connect(rightY,
                         BasicEmitStore.CIn(op2, op2.Type.Terminals[1]));
-                    connect(break2 is null ? right : BasicEmitStore.COut(break2, break2.Type.Terminals[0]),
+                    connect(rightZ,
                         BasicEmitStore.CIn(op3, op3.Type.Terminals[1]));
 
                     // op to make
@@ -751,6 +710,55 @@ namespace FanScript.Compiler.Emit
             }
 
             stores.Add(store);
+        }
+
+        /// <summary>
+        /// Breaks a vector expression into (x, y, z)
+        /// </summary>
+        /// <remarks>This method is optimised and may not use the <see cref="Blocks.Math.Break_Vector"/>/Rotation blocks</remarks>
+        /// <param name="expression">The vector expression; <see cref="BoundLiteralExpression"/>, <see cref="BoundConstructorExpression"/> or <see cref="BoundVariableExpression"/></param>
+        /// <returns>(x, y, z)</returns>
+        /// <exception cref="InvalidDataException"></exception>
+        private (EmitStore, EmitStore, EmitStore) breakVector(BoundExpression expression)
+        {
+            Vector3F? vector = null;
+            if (expression is BoundLiteralExpression literal)
+            {
+                if (literal.Value is Vector3F vec)
+                    vector = vec;
+                else if (literal.Value is Rotation rot)
+                    vector = rot.Value;
+                else
+                    throw new InvalidDataException($"Invalid value type '{literal.Value.GetType()}'");
+            } else if (expression is BoundConstructorExpression contructor && contructor.ConstantValue is not null)
+                vector = contructor.ConstantValue.Value is Vector3F ? 
+                    (Vector3F)contructor.ConstantValue.Value :
+                    ((Rotation)contructor.ConstantValue.Value).Value;
+
+            if (vector is not null)
+                return (emitLiteralExpression(vector.Value.X), emitLiteralExpression(vector.Value.Y), emitLiteralExpression(vector.Value.Z));
+            else if (expression is BoundConstructorExpression contructor)
+                return (emitExpression(contructor.ExpressionX), emitExpression(contructor.ExpressionY), emitExpression(contructor.ExpressionZ));
+            else if (expression is BoundVariableExpression var)
+            {
+                BreakBlockCache cache = (var.Type == TypeSymbol.Vector3 ? vectorBreakCache : rotationBreakCache)
+                    .ComputeIfAbsent(var.Variable, new BreakBlockCache());
+                if (!cache.TryGet(out Block? block))
+                {
+                    block = builder.AddBlock(var.Type == TypeSymbol.Vector3 ? Blocks.Math.Break_Vector : Blocks.Math.Break_Rotation);
+                    cache.SetNewBlock(block);
+
+                    builder.BlockPlacer.ExpressionBlock(() =>
+                    {
+                        EmitStore store = emitVariableExpression(var);
+                        connect(store, BasicEmitStore.CIn(block, block.Type.Terminals[3]));
+                    });
+                }
+
+                return (BasicEmitStore.COut(block, block.Type.Terminals[2]), BasicEmitStore.COut(block, block.Type.Terminals[1]), BasicEmitStore.COut(block, block.Type.Terminals[0]));
+            }
+            else
+                throw new InvalidDataException($"Invalid expression type '{expression.GetType()}'");
         }
     }
 }

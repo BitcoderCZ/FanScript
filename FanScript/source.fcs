@@ -1,1 +1,10 @@
-object o = getObject(vec3(0, 0, 0))
+vec3 v1 = vec3(1, 2, 3)
+const vec3 v1c = vec3(1, 2, 3)
+float numb = 2
+vec3 va = v1 / 2
+vec3 vb = v1c % numb
+
+rot r1 = rot(45, 90, 180)
+rot r2 = rot(-45, -90, -180)
+rot ra = r1 + r2
+rot rb = r1 - rot(-45, numb, 0)
