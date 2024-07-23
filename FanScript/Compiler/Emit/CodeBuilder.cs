@@ -10,6 +10,7 @@ namespace FanScript.Compiler.Emit
         public IBlockPlacer BlockPlacer { get; protected set; }
 
         protected List<Block> blocks = new();
+        protected List<RelativeRecord> relativeBlocks = new();
         protected List<ConnectionRecord> connections = new();
         protected List<ValueRecord> values = new();
 
@@ -23,6 +24,17 @@ namespace FanScript.Compiler.Emit
             Block block = BlockPlacer.Place(blockDef);
 
             blocks.Add(block);
+
+            return block;
+        }
+
+        public virtual Block AddBlockRelativeTo(BlockDef blockDef, Block relativeTo, Vector3I offset)
+        {
+            ArgumentNullException.ThrowIfNull(relativeTo);
+
+            Block block = new Block(default, blockDef);
+
+            relativeBlocks.Add(new RelativeRecord(block, relativeTo, offset));
 
             return block;
         }
@@ -69,11 +81,31 @@ namespace FanScript.Compiler.Emit
                 if (pos.Z < lowestPos.Z)
                     lowestPos.Z = pos.Z;
             }
+            for (int i = 0; i < relativeBlocks.Count; i++)
+            {
+                Vector3I pos = relativeBlocks[i].RelativeTo.Pos + relativeBlocks[i].Offset;
+
+                if (pos.X < lowestPos.X)
+                    lowestPos.X = pos.X;
+                if (pos.Y < lowestPos.Y)
+                    lowestPos.Y = pos.Y;
+                if (pos.Z < lowestPos.Z)
+                    lowestPos.Z = pos.Z;
+            }
 
             lowestPos -= startPos;
 
             for (int i = 0; i < blocks.Count; i++)
                 blocks[i].Pos -= lowestPos;
+
+            blocks.AddRange(relativeBlocks
+                .Select(relative =>
+                {
+                    relative.Block.Pos = relative.RelativeTo.Pos + relative.Offset;
+                    return relative.Block;
+                }));
+
+            relativeBlocks.Clear();
 
             blocks.Sort((a, b) =>
             {
@@ -85,14 +117,19 @@ namespace FanScript.Compiler.Emit
             });
         }
 
-        protected virtual Vector3I ChoseSubPos(Vector3I pos)
+        protected virtual Vector3I ChooseSubPos(Vector3I pos)
             => new Vector3I(7, 3, 3);
 
         public virtual void Clear()
         {
             blocks.Clear();
+            relativeBlocks.Clear();
             connections.Clear();
             values.Clear();
+        }
+
+        protected readonly record struct RelativeRecord(Block Block, Block RelativeTo, Vector3I Offset)
+        {
         }
 
         protected readonly record struct ConnectionRecord(ConnectTarget From, ConnectTarget To)

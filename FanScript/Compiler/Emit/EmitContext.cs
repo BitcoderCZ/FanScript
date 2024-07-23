@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
+using FanScript.FCInfo;
 
 namespace FanScript.Compiler.Emit
 {
@@ -52,6 +53,15 @@ namespace FanScript.Compiler.Emit
                 return null;
             else
                 return values;
+        }
+
+        public void WriteComment(string text)
+        {
+            for (int i = 0; i < text.Length; i += FancadeConstants.MaxCommentLength)
+            {
+                Block block = Builder.AddBlock(Blocks.Values.Comment);
+                Builder.SetBlockValue(block, 0, text.Substring(i, Math.Min(FancadeConstants.MaxCommentLength, text.Length - i)));
+            }
         }
     }
 }

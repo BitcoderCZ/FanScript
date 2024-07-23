@@ -339,24 +339,28 @@ namespace FanScript.Compiler.Symbols
           = new BuiltinFunctionSymbol("getObject", [
               new ParameterSymbol("position", TypeSymbol.Vector3, 0)
             ], TypeSymbol.Object, (call, context) =>
-              {
-                  if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
-                  {
-                      context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
-                      return new NopEmitStore();
-                  }
+            {
+                BoundConstant? constant = call.Arguments[0].ConstantValue;
+                if (constant is null)
+                {
+                    context.Diagnostics.ReportValueMustBeConstant(call.Arguments[0].Syntax.Location);
+                    return new NopEmitStore();
+                }
 
-                  BoundConstant? constant = call.Arguments[0].ConstantValue;
-                  if (constant is null)
-                  {
-                      context.Diagnostics.ReportValueMustBeConstant(call.Arguments[0].Syntax.Location);
-                      return new NopEmitStore();
-                  }
+                Vector3I pos = (Vector3I)((Vector3F)constant.Value); // unbox, then cast
 
-                  Vector3I pos = (Vector3I)((Vector3F)constant.Value); // unbox, then cast
+                if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
+                {
+                    context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
+                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    {
+                        context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
+                    });
+                    return new NopEmitStore();
+                }
 
-                  return new AbsoluteEmitStore(pos, null);
-              }
+                return new AbsoluteEmitStore(pos, null);
+            }
           );
         public static readonly FunctionSymbol Object_Get2
           = new BuiltinFunctionSymbol("getObject", [
@@ -364,21 +368,25 @@ namespace FanScript.Compiler.Symbols
               new ParameterSymbol("y", TypeSymbol.Float, 1),
               new ParameterSymbol("z", TypeSymbol.Float, 2)
             ], TypeSymbol.Object, (call, context) =>
-              {
-                  if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
-                  {
-                      context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
-                      return new NopEmitStore();
-                  }
+            {
+                object[]? args = context.ValidateConstants(call.Arguments.AsSpan(), true);
+                if (args is null)
+                    return new NopEmitStore();
 
-                  object[]? args = context.ValidateConstants(call.Arguments.AsSpan(), true);
-                  if (args is null)
-                      return new NopEmitStore();
+                Vector3I pos = new Vector3I((int)(float)args[0], (int)(float)args[1], (int)(float)args[2]); // unbox, then cast
 
-                  Vector3I pos = new Vector3I((int)(float)args[0], (int)(float)args[1], (int)(float)args[2]); // unbox, then cast
+                if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
+                {
+                    context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
+                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    {
+                        context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
+                    });
+                    return new NopEmitStore();
+                }
 
-                  return new AbsoluteEmitStore(pos, null);
-              }
+                return new AbsoluteEmitStore(pos, null);
+            }
           );
         public static readonly FunctionSymbol Object_SetPos
             = new BuiltinFunctionSymbol("setPos", [

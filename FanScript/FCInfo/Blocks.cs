@@ -217,6 +217,8 @@ namespace FanScript.FCInfo
             public static readonly BlockDef True = new BlockDef("True", 449, BlockType.Value, new Vector2I(2, 1), new Terminal(0, WireType.Bool, TerminalType.Out, "True"));
             public static readonly BlockDef False = new BlockDef("False", 451, BlockType.Value, new Vector2I(2, 1), new Terminal(0, WireType.Bool, TerminalType.Out, "False"));
 
+            public static readonly BlockDef Comment = new BlockDef("Comment", 15, BlockType.Value, new Vector2I(1, 1));
+
             public static readonly BlockDef Inspect_Number = new BlockDef("Inspect Number", 16, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Float, TerminalType.In, "Number"), new Terminal(2, WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef Inspect_Vector = new BlockDef("Inspect Vector", 20, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Vec3, TerminalType.In, "Vector"), new Terminal(2, WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef Inspect_Rotation = new BlockDef("Inspect Rotation", 24, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Rot, TerminalType.In, "Rotation"), new Terminal(2, WireType.Void, TerminalType.In, "Before"));

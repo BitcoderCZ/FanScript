@@ -21,7 +21,7 @@ namespace FanScript
     {
         static void Main(string[] args)
         {
-            SyntaxTree source = SyntaxTree.Load(@"C:\dev\VSProjects\FanScript.Core\FanScript\source.txt");
+            SyntaxTree source = SyntaxTree.Load(@"C:\dev\VSProjects\FanScript.Core\FanScript\source.fcs");
 
             if (source.Diagnostics.Any())
             {
@@ -82,7 +82,7 @@ namespace FanScript
 
             Console.WriteLine("Copied to console");
 #else
-            Game game = (Game)builder.Build(new Vector3I(2, 0, 2));
+            Game game = (Game)builder.Build(new Vector3I(0, 0, 0));
 
             using (FileStream fs = File.OpenWrite("658B97B57E427478"))
                 game.Save(fs);

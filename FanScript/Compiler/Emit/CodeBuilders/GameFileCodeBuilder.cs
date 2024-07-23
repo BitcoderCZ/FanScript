@@ -84,9 +84,9 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                 level.Connections.Add(new Connection()
                 {
                     From = (Vector3US)con.From.Pos,
-                    FromConnector = (Vector3US)(con.From.SubPos ?? ChoseSubPos(con.From.Pos)),
+                    FromConnector = (Vector3US)(con.From.SubPos ?? ChooseSubPos(con.From.Pos)),
                     To = (Vector3US)con.To.Pos,
-                    ToConnector = (Vector3US)(con.To.SubPos ?? ChoseSubPos(con.To.Pos)),
+                    ToConnector = (Vector3US)(con.To.SubPos ?? ChooseSubPos(con.To.Pos)),
                 });
             }
 
