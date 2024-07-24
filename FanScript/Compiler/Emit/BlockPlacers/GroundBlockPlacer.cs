@@ -1,6 +1,8 @@
-﻿using FanScript.Collections;
-using FanScript.FCInfo;
+﻿using FanScript.FCInfo;
+using FanScript.Utils;
 using MathUtils.Vectors;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace FanScript.Compiler.Emit.BlockPlacers
 {
@@ -27,6 +29,8 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         protected readonly Stack<StatementBlock> statements = new();
         protected readonly Stack<ExpressionBlock> expressions = new();
 
+        private readonly Dictionary<int, PositionStack> availableLayerInfo = new();
+
         protected int highestX = 0;
 
         public Block Place(BlockDef blockDef)
@@ -48,7 +52,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             if (expressions.Count != 0) throw new Exception();
 
             if (statements.Count == 0) statements.Push(createFunction());
-            else statements.Push(statements.Peek().CreateChild());
+            else statements.Push(statements.Peek().CreateStatementChild());
         }
         public void ExitStatementBlock()
         {
@@ -60,8 +64,8 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
         public void EnterExpressionBlock()
         {
-            if (expressions.Count == 0) expressions.Push(statements.Peek().CreateExpression());
-            else expressions.Push(expressions.Peek().CreateChild());
+            if (expressions.Count == 0) expressions.Push(statements.Peek().CreateExpressionChild());
+            else expressions.Push(expressions.Peek().CreateExpressionChild());
         }
         public void ExitExpressionBlock()
         {
@@ -79,55 +83,89 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             int x = highestX;
             highestX += blockXOffset;
 
-            return new StatementBlock(this, new Vector3I(x, 0, 0), new TreeNode<List<int>>([int.MaxValue]));
+            return new StatementBlock(this, new Vector3I(x, 0, 0));
         }
 
         protected abstract class CodeBlock
         {
             protected abstract int blockZOffset { get; }
 
-            public int BlockCount { get; protected set; }
-
             protected readonly GroundBlockPlacer Placer;
 
-            public readonly Vector3I StartPos;
+            public Vector3I StartPos { get; private set; }
             protected Vector3I blockPos;
             public Vector3I BlockPos => blockPos;
 
+            /// <summary>
+            /// Lowest position of a blocks placed by this <see cref="CodeBlock"/> or one of it's children
+            /// </summary>
             public int MinX { get; protected set; }
 
             protected BlockDef? lastPlacedBlock;
 
+            public int BlockCount => Blocks.Count;
             protected readonly List<Block> Blocks = new();
+            internal readonly List<(CodeBlock, List<Block>)> ChildBlocks = new();
 
-            protected TreeNode<List<int>> HeightNode;
+            [MemberNotNullWhen(true, nameof(Parent), nameof(offset))]
+            public bool HasParent { get; private set; }
+            public readonly CodeBlock? Parent;
+            protected int? offset { get; private set; }
+            public int LayerPos => HasParent ? Parent.LayerPos + offset.Value : 0;
 
-            public CodeBlock(GroundBlockPlacer _placer, Vector3I _pos, TreeNode<List<int>> _heightNode)
+            protected PositionStack.Request? YPosRequest;
+
+            public CodeBlock(GroundBlockPlacer _placer, Vector3I _pos, CodeBlock _parent, int _offset)
+            {
+                ArgumentNullException.ThrowIfNull(_parent);
+                Debug.Assert(_offset == 1 || _offset == -1, $"_offset == 1 || _offset == -1, Value: '{_offset}'");
+
+                Placer = _placer;
+                StartPos = _pos;
+                blockPos = StartPos;
+                HasParent = true;
+                Parent = _parent;
+                offset = _offset;
+
+                MinX = StartPos.X;
+            }
+            public CodeBlock(GroundBlockPlacer _placer, Vector3I _pos)
             {
                 Placer = _placer;
                 StartPos = _pos;
                 blockPos = StartPos;
-                HeightNode = _heightNode;
+                HasParent = false;
 
                 MinX = StartPos.X;
             }
 
-            public abstract CodeBlock CreateChild();
+            public abstract StatementBlock CreateStatementChild();
+            public abstract ExpressionBlock CreateExpressionChild();
+            public virtual void RequestYPos()
+            {
+                Debug.Assert(YPosRequest is null);
+
+                int acceptableZ = StartPos.Z + blockZOffset + (lastPlacedBlock is null ? 0 : lastPlacedBlock.Size.Y - 1);
+
+                YPosRequest = Placer.availableLayerInfo.AddIfAbsent(LayerPos, new PositionStack()).RequestYPos(acceptableZ, blockPos.Z);
+            }
+            public virtual void AssignYPos()
+            {
+                if (YPosRequest is null || YPosRequest.Result is null)
+                    return;
+
+                int yPos = YPosRequest.Result.Value;
+
+                for (int i = 0; i < Blocks.Count; i++)
+                    Blocks[i].Pos.Y = yPos;
+            }
             public virtual void HandlePopChild(CodeBlock child)
             {
                 if (child.MinX < MinX)
                     MinX = child.MinX;
 
-                int childBranch = child switch
-                {
-                    ExpressionBlock => 0,
-                    StatementBlock => 1,
-                    _ => throw new InvalidDataException($"Unknown CodeBlock type '{child.GetType().FullName}'"),
-                };
-
-                HeightNode[childBranch].Value[child.StartPos.Y] = Math.Min(child.BlockPos.Z, HeightNode[childBranch].Value[child.StartPos.Y]); // the min shouldn't be necessary, but I'll do it just in case
-
-                Blocks.AddRange(child.Blocks);
+                ChildBlocks.Add((child, child.Blocks));
+                ChildBlocks.AddRange(child.ChildBlocks);
             }
 
             public virtual Block PlaceBlock(BlockDef blockDef)
@@ -138,29 +176,29 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                     blockPos.Z -= blockDef.Size.Y - 1;
 
                 lastPlacedBlock = blockDef;
-                BlockCount++;
 
                 Block block = new Block(blockPos, blockDef);
                 Blocks.Add(block);
                 return block;
             }
 
-            protected virtual Vector3I nextChildPos(int childBranch, int xPos, int blockZOffset)
+            protected virtual Vector3I nextChildPos(int xPos, int blockZOffset)
+                => new Vector3I(xPos, 0, blockPos.Z + (lastPlacedBlock is null ? 0 : lastPlacedBlock.Size.Y - 1));
+
+            protected void incrementStatementOffset()
             {
-                List<int> maxZs = HeightNode.GetOrCreateChild(childBranch, [int.MaxValue]).Value;
+                CodeBlock? current = this;
 
-                int acceptableZ = blockPos.Z + blockZOffset + (lastPlacedBlock is null ? 0 : lastPlacedBlock.Size.Y - 1);
+                while (current is not null)
+                {
+                    if (current is StatementBlock)
+                    {
+                        current.offset++;
+                        return;
+                    }
 
-                for (int i = 0; i < maxZs.Count; i++)
-                    if (maxZs[i] > acceptableZ)
-                        return createPos(i);
-
-                maxZs.Add(blockPos.Z);
-
-                return createPos(maxZs.Count - 1);
-
-                Vector3I createPos(int y)
-                    => new Vector3I(xPos, y, blockPos.Z + (lastPlacedBlock is null ? 0 : lastPlacedBlock.Size.Y - 1));
+                    current = current.Parent;
+                }
             }
         }
 
@@ -168,33 +206,65 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         {
             protected override int blockZOffset => 2;
 
-            public StatementBlock(GroundBlockPlacer _placer, Vector3I _pos, TreeNode<List<int>> _heightNode) : base(_placer, _pos, _heightNode)
+            public StatementBlock(GroundBlockPlacer _placer, Vector3I _pos)
+                : base(_placer, _pos)
+            {
+            }
+            public StatementBlock(GroundBlockPlacer _placer, Vector3I _pos, CodeBlock _parent, int _offset)
+                : base(_placer, _pos, _parent, _offset)
             {
             }
 
-            public override StatementBlock CreateChild()
+            public override StatementBlock CreateStatementChild()
             {
-                return new StatementBlock(Placer, nextChildPos(1, blockPos.X + Placer.BlockXOffset, blockZOffset), HeightNode[1]);
+                return new StatementBlock(Placer, nextChildPos(blockPos.X + Placer.BlockXOffset, blockZOffset), this, 1);
             }
 
-            public ExpressionBlock CreateExpression()
+            public override ExpressionBlock CreateExpressionChild()
             {
-                return new ExpressionBlock(Placer, nextChildPos(0, blockPos.X - Placer.BlockXOffset, ExpressionBlock.BlockZOffset), HeightNode[0]);
+                int lp = LayerPos;
+                // is to the right of top statement
+                if (lp > 0)
+                {
+                    // if there is no space between this and the statement on the left, move self to the right
+                    if (Parent is not null && lp <= Parent.LayerPos + 1)
+                        incrementStatementOffset();
+                }
+
+                return new ExpressionBlock(Placer, nextChildPos(blockPos.X - Placer.BlockXOffset, ExpressionBlock.BlockZOffset), this, -1);
             }
 
             public override void HandlePopChild(CodeBlock child)
             {
                 int appropriateX = StartPos.X + Placer.BlockXOffset;
 
+                // if required, move the child to the right, necessary if it is statement and had expression children (to the left of it)
                 if (child is StatementBlock statement && child.MinX < appropriateX)
                 {
                     int move = appropriateX - child.MinX;
 
-                    for (int i = 0; i < statement.Blocks.Count; i++)
-                        statement.Blocks[i].Pos.X += move;
+                    foreach (Block block in statement.ChildBlocks
+                        .SelectMany(item => item.Item2)
+                        .Concat(statement.Blocks))
+                        block.Pos.X += move;
                 }
 
                 base.HandlePopChild(child);
+
+                // if this is the top statement, process and assign y position to blocks
+                if (Parent is null)
+                {
+                    child.RequestYPos();
+                    foreach (var _child in child.ChildBlocks.Select(item => item.Item1))
+                        _child.RequestYPos();
+
+                    foreach (var info in Placer.availableLayerInfo)
+                        info.Value.ProcessRequests();
+
+                    child.AssignYPos();
+                    foreach (var _child in child.ChildBlocks.Select(item => item.Item1))
+                        _child.AssignYPos();
+                }
             }
         }
 
@@ -203,13 +273,115 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             public static readonly int BlockZOffset = 0;
             protected override int blockZOffset => BlockZOffset;
 
-            public ExpressionBlock(GroundBlockPlacer _placer, Vector3I _pos, TreeNode<List<int>> _heightNode) : base(_placer, _pos, _heightNode)
+            public ExpressionBlock(GroundBlockPlacer _placer, Vector3I _pos, CodeBlock _parent, int _offset)
+                : base(_placer, _pos, _parent, _offset)
             {
             }
 
-            public override ExpressionBlock CreateChild()
+            public override StatementBlock CreateStatementChild()
+                => throw new InvalidOperationException();
+            public override ExpressionBlock CreateExpressionChild()
             {
-                return new ExpressionBlock(Placer, nextChildPos(0, blockPos.X - Placer.BlockXOffset, BlockZOffset), HeightNode[0]);
+                int lp = LayerPos;
+                // is to the right of top statement
+                if (lp > 0)
+                {
+                    StatementBlock? parent = getStatementParentOfParent();
+                    // if there is no space between this and the statement on the left, move self to the right
+                    if (parent is not null && lp <= parent.LayerPos + 1)
+                        incrementStatementOffset();
+                }
+
+                return new ExpressionBlock(Placer, nextChildPos(blockPos.X - Placer.BlockXOffset, blockZOffset), this, -1);
+
+                // returns the statement to the left of this expression block
+                StatementBlock? getStatementParentOfParent()
+                {
+                    int c = 0;
+                    CodeBlock? current = this;
+
+                    while (current is not null)
+                    {
+                        current = current.Parent;
+                        if (current is StatementBlock sb)
+                        {
+                            if (++c >= 2)
+                                return sb;
+                        }
+                    }
+
+                    return null;
+                }
+            }
+        }
+
+        [DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
+        protected class PositionStack
+        {
+            private List<int> positions = new();
+
+            private readonly List<Request> requests = new();
+
+            public void ProcessRequests()
+            {
+                if (requests.Count == 0)
+                    return;
+
+                // sort in descending order
+                requests.Sort((a, b) => b.PlaceZ.CompareTo(a.PlaceZ));
+
+                for (int i = 0; i < requests.Count; i++)
+                {
+                    Request request = requests[i];
+
+                    int yPos = -1;
+                    for (int j = 0; j < positions.Count; j++)
+                        if (positions[j] > request.AcceptableZ)
+                        {
+                            positions[j] = request.PlaceZ;
+                            yPos = j;
+                            break;
+                        }
+
+                    if (yPos == -1)
+                    {
+                        positions.Add(request.PlaceZ);
+                        yPos = positions.Count - 1;
+                    }
+
+                    request.Result = yPos;
+                }
+
+                requests.Clear();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="acceptableZ">Z position that should be free</param>
+            /// <param name="placeZ">Z position that will get written</param>
+            /// <returns>The <see cref="Request"/></returns>
+            public Request RequestYPos(int acceptableZ, int placeZ)
+            {
+                Request request = new Request(acceptableZ, placeZ);
+                requests.Add(request);
+                return request;
+            }
+
+            private string DebuggerDisplay => $"[{string.Join(", ", positions)}]";
+
+            public class Request
+            {
+                public readonly int AcceptableZ;
+                public readonly int PlaceZ;
+
+                public int? Result { get; internal set; }
+
+                internal Request(int acceptableZ, int placeZ)
+                {
+                    AcceptableZ = acceptableZ;
+                    PlaceZ = placeZ;
+                }
             }
         }
     }

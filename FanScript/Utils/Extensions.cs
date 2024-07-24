@@ -81,7 +81,7 @@ namespace FanScript.Utils
                 throw new Exception($"Cannot convert object of type: '{o.GetType()}' to Block Value");
         }
 
-        public static TValue ComputeIfAbsent<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue defaultValue)
+        public static TValue AddIfAbsent<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue defaultValue)
         {
             if (!dict.TryGetValue(key, out TValue? val))
             {

@@ -730,8 +730,9 @@ namespace FanScript.Compiler.Emit
                     vector = rot.Value;
                 else
                     throw new InvalidDataException($"Invalid value type '{literal.Value.GetType()}'");
-            } else if (expression is BoundConstructorExpression contructor && contructor.ConstantValue is not null)
-                vector = contructor.ConstantValue.Value is Vector3F ? 
+            }
+            else if (expression is BoundConstructorExpression contructor && contructor.ConstantValue is not null)
+                vector = contructor.ConstantValue.Value is Vector3F ?
                     (Vector3F)contructor.ConstantValue.Value :
                     ((Rotation)contructor.ConstantValue.Value).Value;
 
@@ -742,7 +743,7 @@ namespace FanScript.Compiler.Emit
             else if (expression is BoundVariableExpression var)
             {
                 BreakBlockCache cache = (var.Type == TypeSymbol.Vector3 ? vectorBreakCache : rotationBreakCache)
-                    .ComputeIfAbsent(var.Variable, new BreakBlockCache());
+                    .AddIfAbsent(var.Variable, new BreakBlockCache());
                 if (!cache.TryGet(out Block? block))
                 {
                     block = builder.AddBlock(var.Type == TypeSymbol.Vector3 ? Blocks.Math.Break_Vector : Blocks.Math.Break_Rotation);

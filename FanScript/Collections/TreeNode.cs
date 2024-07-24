@@ -13,10 +13,15 @@
 
         public TreeNode<T> this[int i]
         {
-            get { return children[i]; }
+            get => children[i];
+            set
+            {
+                value.Parent = this;
+                children[i] = value;
+            }
         }
 
-        public TreeNode<T>? Parent { get; private set; }
+        public TreeNode<T>? Parent { get; set; }
 
         //public TreeNode<T> AddChild(T value)
         //    => AddChild(children.Count, value);
@@ -39,6 +44,12 @@
             else
                 return AddChild(index, defaultValue);
         }
+
+        public bool Contains(int index)
+            => children.ContainsKey(index);
+
+        public bool RemoveChild(int index)
+            => children.Remove(index);
     }
 
     public class TreeIndex
