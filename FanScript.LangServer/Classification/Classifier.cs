@@ -38,6 +38,10 @@ namespace FanScript.LangServer.Classification
 
             switch (node.Parent)
             {
+                case AssignablePropertyClauseSyntax propertyClause when node == propertyClause.IdentifierToken:
+                case PropertyExpressionSyntax property when node == property.Expression:
+                    AddClassification(SemanticTokenType.Property, token.Span, span, result);
+                    break;
                 case SpecialBlockStatementSyntax sb when node == sb.Identifier:
                 case CallExpressionSyntax call when node == call.Identifier:
                     AddClassification(SemanticTokenType.Function, token.Span, span, result);

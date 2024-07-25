@@ -646,7 +646,8 @@ namespace FanScript.Compiler.Syntax
                 {
                     nextTokenIndex = 3;
                     return true;
-                } else
+                }
+                else
                 {
                     nextTokenIndex = 1;
                     return true;

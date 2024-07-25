@@ -8,7 +8,6 @@ using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
-using static FanScript.FCInfo.Blocks;
 
 [assembly: InternalsVisibleTo("FanScript.LangServer")]
 namespace FanScript.Compiler.Binding
@@ -383,7 +382,7 @@ namespace FanScript.Compiler.Binding
                 default:
                     throw new InvalidDataException($"Unknown {nameof(AssignableClauseSyntax)} '{syntax.AssignableClause.GetType()}'");
             }
-            
+
             if (syntax.AssignmentToken.Kind != SyntaxKind.EqualsToken)
             {
                 SyntaxKind equivalentOperatorTokenKind = SyntaxFacts.GetBinaryOperatorOfAssignmentOperator(syntax.AssignmentToken.Kind);
@@ -779,7 +778,8 @@ namespace FanScript.Compiler.Binding
                 // TODO: remove this method
                 _diagnostics.ReportMustBeName(syntax.Expression.Location);
                 return new BoundErrorExpression(syntax);
-            } else if (name.IdentifierToken.IsMissing)
+            }
+            else if (name.IdentifierToken.IsMissing)
                 return new BoundErrorExpression(syntax);
 
             PropertyDefinitionSymbol? property = baseVariable.Type.GetProperty(name.IdentifierToken.Text);

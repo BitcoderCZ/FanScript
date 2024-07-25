@@ -1,7 +1,6 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Symbols;
-using FanScript.FCInfo;
 
 namespace FanScript.Compiler.Emit
 {

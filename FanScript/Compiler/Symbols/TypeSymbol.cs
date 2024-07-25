@@ -56,7 +56,8 @@ namespace FanScript.Compiler.Symbols
         {
             BuiltinFunctions.Init();
 
-            Vector3.Properties = new Dictionary<string, PropertyDefinitionSymbol>() {
+            Vector3.Properties = new Dictionary<string, PropertyDefinitionSymbol>()
+            {
                 ["x"] = new PropertyDefinitionSymbol("x", Float, (context, variable) => getVectorComponent(context, variable, 0), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 0)),
                 ["y"] = new PropertyDefinitionSymbol("y", Float, (context, variable) => getVectorComponent(context, variable, 1), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 1)),
                 ["z"] = new PropertyDefinitionSymbol("z", Float, (context, variable) => getVectorComponent(context, variable, 2), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 2)),

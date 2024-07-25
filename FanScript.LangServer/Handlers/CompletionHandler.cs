@@ -18,6 +18,7 @@ namespace FanScript.LangServer.Handlers
 {
     internal class CompletionHandler : CompletionHandlerBase
     {
+        #region data
         private static readonly ImmutableArray<CompletionItem> keywords = Enum.GetValues<SyntaxKind>()
             .Where(kind => kind.IsKeyword())
             .Select(kind => kind.GetText()!)
@@ -93,6 +94,7 @@ namespace FanScript.LangServer.Handlers
                 Kind = CompletionItemKind.Value,
             })
             .ToImmutableArray();
+        #endregion
 
         private readonly ILanguageServerFacade facade;
 

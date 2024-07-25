@@ -1,6 +1,7 @@
 ﻿using FanScript.Compiler;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
+using FanScript.Compiler.Text;
 using FanScript.LangServer.Utils;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
@@ -36,37 +37,38 @@ namespace FanScript.LangServer.Handlers
             await Task.Yield();
 
             Document document = documentHandler.GetDocument(request.TextDocument.Uri);
+            SyntaxTree? tree = document.Tree;
+            Compilation? compilation = document.Compilation;
 
-            if (document.Tree is null || document.Compilation is null)
+            if (tree is null || compilation is null)
                 return null;
 
-            var node = document.Tree.FindNode(request.Position.ToSpan(document.Tree.Text));
+            var node = tree.FindNode(request.Position.ToSpan(tree.Text));
 
             if (node is null)
                 return null;
 
             switch (node.Parent)
             {
+                case NameExpressionSyntax name when name.Parent is PropertyExpressionSyntax prop:
+                    return getHoverForProperty(prop.IdentifierToken.Text, name.IdentifierToken.Text, name.Location);
                 case NameExpressionSyntax name:
+                    return getHoverByVariableName(name.IdentifierToken.Text, name.Location);
+                case PropertyExpressionSyntax property:
+                    return getHoverByVariableName(property.IdentifierToken.Text, property.IdentifierToken.Location);
+                case AssignableVariableClauseSyntax variableClause:
+                    return getHoverByVariableName(variableClause.IdentifierToken.Text, variableClause.Location);
+                case AssignablePropertyClauseSyntax propertyClause:
                     {
-                        IEnumerable<VariableSymbol> variables = document.Compilation.GetVariables();
-                        VariableSymbol? variable = variables.FirstOrDefault(var => var.Name == name.IdentifierToken.Text);
-
-                        if (variable is not null)
-                            return new Hover()
-                            {
-                                Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
-                                {
-                                    Kind = MarkupKind.PlainText,
-                                    Value = variableInfo(variable),
-                                }),
-                                Range = name.Location.ToRange(),
-                            };
+                        if (node == propertyClause.VariableToken)
+                            return getHoverByVariableName(propertyClause.VariableToken.Text, propertyClause.VariableToken.Location);
+                        else if (node == propertyClause.IdentifierToken)
+                            return getHoverForProperty(propertyClause.VariableToken.Text, propertyClause.IdentifierToken.Text, propertyClause.IdentifierToken.Location);
                     }
                     break;
                 case CallExpressionSyntax call when node == call.Identifier:
                     {
-                        List<FunctionSymbol> functions = document.Compilation.GetFunctions()
+                        List<FunctionSymbol> functions = compilation.GetFunctions()
                             .Where(func => func.Name == call.Identifier.Text && func.Parameters.Length == call.ArgumentClause.Arguments.Count)
                             .ToList();
 
@@ -110,6 +112,47 @@ namespace FanScript.LangServer.Handlers
             }
 
             return null;
+
+            // TODO/CUSTOM_FUNCTIONS: won't work
+            Hover? getHoverByVariableName(string name, TextLocation location)
+            {
+                IEnumerable<VariableSymbol> variables = document.Compilation!.GetVariables();
+                VariableSymbol? variable = variables.FirstOrDefault(var => var.Name == name);
+                if (variable is null)
+                    return null;
+                else
+                    return new Hover()
+                    {
+                        Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+                        {
+                            Kind = MarkupKind.PlainText,
+                            Value = variableInfo(variable),
+                        }),
+                        Range = location.ToRange(),
+                    };
+            }
+            // TODO/CUSTOM_FUNCTIONS: won't work
+            Hover? getHoverForProperty(string baseVarName, string propName, TextLocation location)
+            {
+                IEnumerable<VariableSymbol> variables = document.Compilation!.GetVariables();
+                VariableSymbol? variable = variables.FirstOrDefault(var => var.Name == baseVarName);
+                if (variable is null)
+                    return null;
+
+                PropertyDefinitionSymbol? property = variable.Type.GetProperty(propName);
+                if (property is null)
+                    return null;
+
+                return new Hover()
+                {
+                    Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+                    {
+                        Kind = MarkupKind.PlainText,
+                        Value = propertyInfo(new PropertySymbol(property, variable)),
+                    }),
+                    Range = location.ToRange(),
+                };
+            }
         }
 
         protected override HoverRegistrationOptions CreateRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities)
@@ -131,6 +174,26 @@ namespace FanScript.LangServer.Handlers
             {
                 builder.Append(" = ");
                 builder.Append(variable.Constant.Value);
+            }
+
+            return builder.ToString();
+        }
+
+        private string propertyInfo(PropertySymbol property)
+        {
+            StringBuilder builder = new StringBuilder();
+            property.Modifiers.ToSyntaxString(builder);
+            builder.Append(' ');
+            builder.Append(property.Type);
+            builder.Append(' ');
+            builder.Append(property.BaseVariable.Type);
+            builder.Append('.');
+            builder.Append(property.Name);
+
+            if (property.Constant is not null)
+            {
+                builder.Append(" = ");
+                builder.Append(property.Constant.Value);
             }
 
             return builder.ToString();
