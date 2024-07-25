@@ -6,6 +6,7 @@
         GlobalVariable,
         LocalVariable,
         Parameter,
+        Property,
         Type,
     }
 }

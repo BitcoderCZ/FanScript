@@ -1,0 +1,42 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace FanScript.Utils
+{
+    internal static class CollectionExtensions
+    {
+        public static TValue AddIfAbsent<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key, TValue defaultValue)
+        {
+            if (!dict.TryGetValue(key, out TValue? val))
+            {
+                val = defaultValue;
+                dict.Add(key, val);
+            }
+
+            return val;
+        }
+
+        public static IEnumerable<TResult> Zip<TFirst, TSecond, TResult>(this IEnumerable<TFirst> first, IEnumerable<TSecond> second, Func<TFirst, TSecond, (TResult, bool, bool)> selector)
+        {
+            var firstEnumerator = first.GetEnumerator();
+            var secondEnumerator = second.GetEnumerator();
+
+            bool moveFirst = true;
+            bool moveSecond = true;
+
+            while ((!moveFirst || firstEnumerator.MoveNext()) && (!moveSecond || secondEnumerator.MoveNext()))
+            {
+                (TResult result, moveFirst, moveSecond) = selector(firstEnumerator.Current, secondEnumerator.Current);
+
+                yield return result;
+            }
+        }
+
+        public static ReadOnlyMemory<T> AsMemory<T>(this ImmutableArray<T> array, Range range)
+            => array.AsMemory().Slice(range.Start.GetOffset(array.Length), range.End.GetOffset(array.Length));
+    }
+}

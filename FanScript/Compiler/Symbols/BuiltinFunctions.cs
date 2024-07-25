@@ -4,6 +4,7 @@ using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace FanScript.Compiler.Symbols
 {
@@ -141,7 +142,7 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("JOYSTICK_TYPE", TypeSymbol.Float, 1),
                 ], TypeSymbol.Void, (call, context) =>
                 {
-                    object[]? values = context.ValidateConstants(call.Arguments.AsSpan(Range.StartAt(1)), true);
+                    object[]? values = context.ValidateConstants(call.Arguments.AsMemory(Range.StartAt(1)), true);
                     if (values is null)
                         return new NopEmitStore();
 
@@ -369,7 +370,7 @@ namespace FanScript.Compiler.Symbols
               new ParameterSymbol("z", TypeSymbol.Float, 2)
             ], TypeSymbol.Object, (call, context) =>
             {
-                object[]? args = context.ValidateConstants(call.Arguments.AsSpan(), true);
+                object[]? args = context.ValidateConstants(call.Arguments.AsMemory(), true);
                 if (args is null)
                     return new NopEmitStore();
 
@@ -507,6 +508,13 @@ namespace FanScript.Compiler.Symbols
 
                 }
             );
+
+        public static void Init()
+        {
+            RuntimeHelpers.RunClassConstructor(typeof(BuiltinFunctions).TypeHandle);
+            RuntimeHelpers.RunClassConstructor(typeof(Control).TypeHandle);
+            RuntimeHelpers.RunClassConstructor(typeof(Math).TypeHandle);
+        }
 
         private static IEnumerable<FunctionSymbol>? functionsCache;
         internal static IEnumerable<FunctionSymbol> GetAll()

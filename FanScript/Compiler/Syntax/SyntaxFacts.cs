@@ -138,6 +138,8 @@
                     ":",
                 SyntaxKind.SemicolonToken =>
                     ",",
+                SyntaxKind.DotToken =>
+                    ".",
                 SyntaxKind.CommaToken =>
                     ",",
                 SyntaxKind.BangToken =>

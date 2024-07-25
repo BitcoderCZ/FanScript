@@ -186,14 +186,14 @@ namespace FanScript.Compiler.Binding
                 node.OptionalAssignment.WriteTo(writer);
             else
             {
-                writer.WriteIdentifier(node.Variable.Name);
+                WriteVariable(node.Variable, writer);
                 writer.WriteLine();
             }
         }
 
         private static void WriteAssignmentStatement(BoundAssignmentStatement node, IndentedTextWriter writer)
         {
-            writer.WriteIdentifier(node.Variable.Name);
+            WriteVariable(node.Variable, writer);
             writer.WriteSpace();
             writer.WritePunctuation(SyntaxKind.EqualsToken);
             writer.WriteSpace();
@@ -204,7 +204,7 @@ namespace FanScript.Compiler.Binding
 
         private static void WriteCompoundAssignmentStatement(BoundCompoundAssignmentStatement node, IndentedTextWriter writer)
         {
-            writer.WriteIdentifier(node.Variable.Name);
+            WriteVariable(node.Variable, writer);
             writer.WriteSpace();
             writer.WritePunctuation(node.Op.SyntaxKind);
             writer.WritePunctuation(SyntaxKind.EqualsToken);
@@ -216,7 +216,7 @@ namespace FanScript.Compiler.Binding
 
         private static void WriteArrayInitializerStatement(BoundArrayInitializerStatement node, IndentedTextWriter writer)
         {
-            writer.WriteIdentifier(node.Variable.Name);
+            WriteVariable(node.Variable, writer);
             writer.WriteSpace();
             writer.WritePunctuation(SyntaxKind.EqualsToken);
             writer.WriteSpace();
@@ -426,9 +426,7 @@ namespace FanScript.Compiler.Binding
         }
 
         private static void WriteVariableExpression(BoundVariableExpression node, IndentedTextWriter writer)
-        {
-            writer.WriteIdentifier(node.Variable.Name);
-        }
+            => WriteVariable(node.Variable, writer);
 
         private static void WriteUnaryExpression(BoundUnaryExpression node, IndentedTextWriter writer)
         {
@@ -516,6 +514,22 @@ namespace FanScript.Compiler.Binding
             }
 
             writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
+        }
+
+        private static void WriteVariable(VariableSymbol variable, IndentedTextWriter writer)
+        {
+            switch (variable)
+            {
+                case PropertySymbol propertySymbol:
+                    {
+                        WriteVariable(propertySymbol.BaseVariable, writer);
+                        writer.WritePunctuation(SyntaxKind.DotToken);
+                        goto default;
+                    }
+                default:
+                    writer.WriteIdentifier(variable.Name);
+                    break;
+            }
         }
     }
 }

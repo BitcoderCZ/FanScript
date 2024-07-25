@@ -71,7 +71,7 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportSymbolAlreadyDeclared(TextLocation location, string name)
             => ReportError(location, $"'{name}' is already declared.");
 
-        public void ReportCannotAssignReadOnly(TextLocation location, string name)
+        public void ReportCannotAssignReadOnlyVariable(TextLocation location, string name)
             => ReportError(location, $"Variable '{name}' is read-only and cannot be assigned to.");
 
         public void ReportUndefinedFunction(TextLocation location, string name)
@@ -90,7 +90,7 @@ namespace FanScript.Compiler.Diagnostics
             => ReportError(location, "Not all code paths return a Value.");
 
         public void ReportInvalidExpressionStatement(TextLocation location)
-            => ReportError(location, $"Only call expressions can be used as a statement.");
+            => ReportError(location, $"Only void call expressions can be used as a statement.");
 
         public void ReportOnlyOneFileCanHaveGlobalStatements(TextLocation location)
             => ReportError(location, $"At most one file can have global statements.");
@@ -157,6 +157,15 @@ namespace FanScript.Compiler.Diagnostics
 
         public void ReportRefMustBeVariable(TextLocation location)
             => ReportError(location, $"A ref argument must be an assignable variable.");
+
+        public void ReportMustBeName(TextLocation location)
+            => ReportError(location, "Expression must be a name");
+
+        public void ReportUndefinedProperty(TextLocation location, TypeSymbol type, string name)
+            => ReportError(location, $"Type '{type}' doesn't have a property '{name}'.");
+
+        public void ReportCannotAssignReadOnlyProperty(TextLocation location, string name)
+            => ReportError(location, $"Property '{name}' is read-only and cannot be assigned to.");
 
         public void ReportUnreachableCode(TextLocation location)
           => ReportWarning(location, $"Unreachable code detected.");

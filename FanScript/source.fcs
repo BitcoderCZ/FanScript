@@ -1,12 +1,14 @@
-float val = 5
+vec3 vec = vec3(1, 2, 3)
 
-on Play() {
-    float i = val + sin(cos(sin(val))) + val * val / 55
-}
+float vx = vec.x
+float vy = vec.y
+float vz = vec.z
 
-if (val > 3) {
-    if (val > 10)
-        inspect(val)
-    inspect(val)
-    inspect(val)
-} 
+vec.x = 5
+
+rot r = rot(1, 2, 3)
+float rz = r.z
+float ry = r.y
+float rx = r.x
+
+r.z = 10

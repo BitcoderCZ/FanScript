@@ -370,10 +370,14 @@ namespace FanScript.Compiler.Lexing
                         _position++;
                     }
                     break;
+                case '.' when !char.IsDigit(Peek(1)):
+                    _kind = SyntaxKind.DotToken;
+                    _position++;
+                    break;
                 //case '"':
                 //    ReadString();
                 //    break;
-                case '.' when char.IsDigit(Peek(1)):
+                case '.':
                 case '0':
                 case '1':
                 case '2':

@@ -49,11 +49,27 @@ namespace FanScript.Compiler.Syntax
             yield return CloseSquareToken;
         }
     }
-    partial class AssignmentStatementSyntax
+    partial class AssignablePropertyClauseSyntax
+    {
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return VariableToken;
+            yield return DotToken;
+            yield return IdentifierToken;
+        }
+    }
+    partial class AssignableVariableClauseSyntax
     {
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return IdentifierToken;
+        }
+    }
+    partial class AssignmentStatementSyntax
+    {
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return AssignableClause;
             yield return AssignmentToken;
             yield return Expression;
         }
@@ -226,6 +242,15 @@ namespace FanScript.Compiler.Syntax
             yield return OpenParenthesisToken;
             yield return Expression;
             yield return CloseParenthesisToken;
+        }
+    }
+    partial class PropertyExpressionSyntax
+    {
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return IdentifierToken;
+            yield return DotToken;
+            yield return Expression;
         }
     }
     //partial class ReturnStatementSyntax

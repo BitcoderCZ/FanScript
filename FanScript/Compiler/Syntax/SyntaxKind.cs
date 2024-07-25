@@ -43,7 +43,6 @@
         SpecialBlockStatement,
         ExpressionStatement,
         IfStatement,
-        ElseClause,
         WhileStatement,
         BreakStatement,
         ContinueStatement,
@@ -58,10 +57,13 @@
         CallExpression,
         NameExpression,
         ConstructorExpression,
-        ArgumentClause,
+        PropertyExpression,
 
         Parameter,
         TypeClause,
+        ArgumentClause,
+        ElseClause,
+        AssignableClause,
 
         FloatToken,
         StringToken,

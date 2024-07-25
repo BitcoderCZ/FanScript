@@ -2,16 +2,16 @@
 {
     public sealed partial class AssignmentStatementSyntax : StatementSyntax
     {
-        public AssignmentStatementSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken, SyntaxToken assignmentToken, ExpressionSyntax expression)
+        public AssignmentStatementSyntax(SyntaxTree syntaxTree, AssignableClauseSyntax assignableClause, SyntaxToken assignmentToken, ExpressionSyntax expression)
             : base(syntaxTree)
         {
-            IdentifierToken = identifierToken;
+            AssignableClause = assignableClause;
             AssignmentToken = assignmentToken;
             Expression = expression;
         }
 
         public override SyntaxKind Kind => SyntaxKind.AssignmentStatement;
-        public SyntaxToken IdentifierToken { get; }
+        public AssignableClauseSyntax AssignableClause { get; }
         public SyntaxToken AssignmentToken { get; }
         public ExpressionSyntax Expression { get; }
     }

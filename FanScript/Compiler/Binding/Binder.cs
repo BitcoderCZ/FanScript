@@ -8,6 +8,7 @@ using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
+using static FanScript.FCInfo.Blocks;
 
 [assembly: InternalsVisibleTo("FanScript.LangServer")]
 namespace FanScript.Compiler.Binding
@@ -176,6 +177,8 @@ namespace FanScript.Compiler.Binding
 
         private static BoundScope CreateParentScope(BoundGlobalScope? previous, DiagnosticBag diagnostics)
         {
+            RuntimeHelpers.RunClassConstructor(typeof(TypeSymbol).TypeHandle);
+
             Stack<BoundGlobalScope> stack = new Stack<BoundGlobalScope>();
             while (previous is not null)
             {
@@ -238,7 +241,7 @@ namespace FanScript.Compiler.Binding
                 if (result is BoundExpressionStatement es)
                 {
                     bool isAllowedExpression = es.Expression.Kind == BoundNodeKind.ErrorExpression ||
-                                              es.Expression.Kind == BoundNodeKind.CallExpression;
+                                              (es.Expression.Kind == BoundNodeKind.CallExpression && es.Expression.Type == TypeSymbol.Void);
                     if (!isAllowedExpression)
                         _diagnostics.ReportInvalidExpressionStatement(syntax.Location);
                 }
@@ -338,20 +341,49 @@ namespace FanScript.Compiler.Binding
 
         private BoundStatement BindAssignmentStatement(AssignmentStatementSyntax syntax)
         {
-            string name = syntax.IdentifierToken.Text;
             BoundExpression boundExpression = BindExpression(syntax.Expression);
 
-            VariableSymbol? variable = BindVariableReference(syntax.IdentifierToken);
-            if (variable is null)
-                return BindErrorStatement(syntax);
+            VariableSymbol? variable;
+            switch (syntax.AssignableClause)
+            {
+                case AssignableVariableClauseSyntax varClause:
+                    {
+                        variable = BindVariableReference(varClause.IdentifierToken);
+                        if (variable is null)
+                            return BindErrorStatement(syntax);
 
-            if (variable.IsReadOnly && variable.Initialized)
-                _diagnostics.ReportCannotAssignReadOnly(syntax.AssignmentToken.Location, name);
-            else if (variable.Modifiers.HasFlag(Modifiers.Constant) && boundExpression.ConstantValue is null)
-                _diagnostics.ReportValueMustBeConstant(syntax.Expression.Location);
+                        if (variable.IsReadOnly && variable.Initialized)
+                            _diagnostics.ReportCannotAssignReadOnlyVariable(syntax.AssignmentToken.Location, variable.Name);
+                        else if (variable.Modifiers.HasFlag(Modifiers.Constant) && boundExpression.ConstantValue is null)
+                            _diagnostics.ReportValueMustBeConstant(syntax.Expression.Location);
 
-            variable.Initialize(boundExpression.ConstantValue);
+                        variable.Initialize(boundExpression.ConstantValue);
+                    }
+                    break;
+                case AssignablePropertyClauseSyntax propertyClause:
+                    {
+                        VariableSymbol? baseVariable = BindVariableReference(propertyClause.VariableToken);
+                        if (baseVariable is null)
+                            return BindErrorStatement(syntax);
 
+                        PropertyDefinitionSymbol? property = baseVariable.Type.GetProperty(propertyClause.IdentifierToken.Text);
+
+                        if (property is null)
+                        {
+                            _diagnostics.ReportUndefinedProperty(syntax.Expression.Location, baseVariable.Type, propertyClause.IdentifierToken.Text);
+                            return BindErrorStatement(syntax);
+                        }
+
+                        if (property.IsReadOnly)
+                            _diagnostics.ReportCannotAssignReadOnlyProperty(syntax.AssignmentToken.Location, property.Name);
+
+                        variable = new PropertySymbol(property, baseVariable);
+                    }
+                    break;
+                default:
+                    throw new InvalidDataException($"Unknown {nameof(AssignableClauseSyntax)} '{syntax.AssignableClause.GetType()}'");
+            }
+            
             if (syntax.AssignmentToken.Kind != SyntaxKind.EqualsToken)
             {
                 SyntaxKind equivalentOperatorTokenKind = SyntaxFacts.GetBinaryOperatorOfAssignmentOperator(syntax.AssignmentToken.Kind);
@@ -363,7 +395,7 @@ namespace FanScript.Compiler.Binding
                     return BindErrorStatement(syntax);
                 }
 
-                BoundExpression convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, boundOperator.RightType/*variable.Type*/);
+                BoundExpression convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, boundOperator.RightType);
 
                 return new BoundCompoundAssignmentStatement(syntax, variable, boundOperator, convertedExpression);
             }
@@ -387,7 +419,7 @@ namespace FanScript.Compiler.Binding
                 return BindErrorStatement(syntax);
 
             if (variable.IsReadOnly && variable.Initialized)
-                _diagnostics.ReportCannotAssignReadOnly(syntax.EqualsToken.Location, variable.Name);
+                _diagnostics.ReportCannotAssignReadOnlyVariable(syntax.EqualsToken.Location, variable.Name);
 
             variable.Initialize(null);
 
@@ -552,6 +584,8 @@ namespace FanScript.Compiler.Binding
                     return BindCallExpression((CallExpressionSyntax)syntax);
                 case SyntaxKind.ConstructorExpression:
                     return BindConstructorExpression((ConstructorExpressionSyntax)syntax);
+                case SyntaxKind.PropertyExpression:
+                    return BindPropertyExpression((PropertyExpressionSyntax)syntax);
                 default:
                     throw new Exception($"Unexpected syntax {syntax.Kind}");
             }
@@ -733,6 +767,32 @@ namespace FanScript.Compiler.Binding
             return new BoundConstructorExpression(syntax, type, expressionX, expressionY, expressionZ);
         }
 
+        private BoundExpression BindPropertyExpression(PropertyExpressionSyntax syntax)
+        {
+            VariableSymbol? baseVariable = BindVariableReference(syntax.IdentifierToken);
+            if (baseVariable is null)
+                return new BoundErrorExpression(syntax);
+
+            // TODO: allow properties of properties, instance functions
+            if (syntax.Expression is not NameExpressionSyntax name)
+            {
+                // TODO: remove this method
+                _diagnostics.ReportMustBeName(syntax.Expression.Location);
+                return new BoundErrorExpression(syntax);
+            } else if (name.IdentifierToken.IsMissing)
+                return new BoundErrorExpression(syntax);
+
+            PropertyDefinitionSymbol? property = baseVariable.Type.GetProperty(name.IdentifierToken.Text);
+            if (property is null)
+            {
+                _diagnostics.ReportUndefinedProperty(syntax.Expression.Location, baseVariable.Type, name.IdentifierToken.Text);
+                return new BoundErrorExpression(syntax);
+            }
+
+            return new BoundVariableExpression(syntax, new PropertySymbol(property, baseVariable));
+        }
+
+        #region Helper Methods
         private BoundExpression BindConversion(ExpressionSyntax syntax, TypeSymbol type, bool allowExplicit = false)
         {
             BoundExpression expression = BindExpression(syntax);
@@ -955,5 +1015,6 @@ namespace FanScript.Compiler.Binding
 
             return modifiers;
         }
+        #endregion
     }
 }

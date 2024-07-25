@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
+using FanScript.Compiler.Symbols;
 using FanScript.FCInfo;
 
 namespace FanScript.Compiler.Emit
@@ -10,17 +11,35 @@ namespace FanScript.Compiler.Emit
         private Func<BoundExpression, EmitStore> emitExpression;
         private Action<EmitStore, EmitStore> connect;
 
+        private Func<object, EmitStore> emitLiteralExpression;
+
+        private Func<VariableSymbol, EmitStore> emitGetVariable;
+        private Func<VariableSymbol, Func<EmitStore>, EmitStore> emitSetVariable;
+        private Func<BoundExpression, (EmitStore, EmitStore, EmitStore)> breakVector;
+        private Func<BoundExpression, bool[], EmitStore?[]> breakVectorAny;
+        private Func<ReadOnlyMemory<BoundExpression>, bool, object[]?> validateConstants;
+        private Action<string> writeComment;
+
         public readonly CodeBuilder Builder;
         public readonly DiagnosticBag Diagnostics;
 
-        public EmitContext(CodeBuilder _builder, DiagnosticBag _diagnostics, Func<BoundStatement, EmitStore> _emitStatement, Func<BoundExpression, EmitStore> _emitExpression, Action<EmitStore, EmitStore> _connect)
+        public EmitContext(Emitter emitter)
         {
-            Builder = _builder;
+            Builder = emitter.builder;
+            Diagnostics = emitter.diagnostics;
 
-            emitStatement = _emitStatement;
-            emitExpression = _emitExpression;
-            connect = _connect;
-            Diagnostics = _diagnostics;
+            emitStatement = emitter.emitStatement;
+            emitExpression = emitter.emitExpression;
+            connect = emitter.connect;
+
+            emitLiteralExpression = emitter.emitLiteralExpression;
+
+            emitGetVariable = emitter.emitGetVariable;
+            emitSetVariable = emitter.emitSetVariable;
+            breakVector = emitter.breakVector;
+            breakVectorAny = emitter.breakVectorAny;
+            validateConstants = emitter.validateConstants;
+            writeComment = emitter.writeComment;
         }
 
         public EmitStore EmitStatement(BoundStatement statement)
@@ -31,37 +50,23 @@ namespace FanScript.Compiler.Emit
         public void Connect(EmitStore from, EmitStore to)
             => connect(from, to);
 
-        public object[]? ValidateConstants(ReadOnlySpan<BoundExpression> expressions, bool mustBeConstant)
-        {
-            object[] values = new object[expressions.Length];
-            bool invalid = false;
+        public EmitStore EmitLiteralExpression(object value)
+            => emitLiteralExpression(value);
 
-            for (int i = 0; i < expressions.Length; i++)
-            {
-                BoundConstant? constant = expressions[i].ConstantValue;
-                if (constant is null)
-                {
-                    if (mustBeConstant)
-                        Diagnostics.ReportValueMustBeConstant(expressions[i].Syntax.Location);
-                    invalid = true;
-                }
-                else
-                    values[i] = constant.Value;
-            }
+        public EmitStore EmitGetVariable(VariableSymbol variable)
+            => emitGetVariable(variable);
+        public EmitStore EmitSetVariable(VariableSymbol variable, Func<EmitStore> getStore)
+            => emitSetVariable(variable, getStore);
 
-            if (invalid)
-                return null;
-            else
-                return values;
-        }
+        public (EmitStore X, EmitStore Y, EmitStore Z) BreakVector(BoundExpression expression)
+            => breakVector(expression);
+        public EmitStore?[] BreakVectorAny(BoundExpression expression, bool[] useComponent)
+            => breakVectorAny(expression, useComponent);
+
+        public object[]? ValidateConstants(ReadOnlyMemory<BoundExpression> expressions, bool mustBeConstant)
+            => validateConstants(expressions, mustBeConstant);
 
         public void WriteComment(string text)
-        {
-            for (int i = 0; i < text.Length; i += FancadeConstants.MaxCommentLength)
-            {
-                Block block = Builder.AddBlock(Blocks.Values.Comment);
-                Builder.SetBlockValue(block, 0, text.Substring(i, Math.Min(FancadeConstants.MaxCommentLength, text.Length - i)));
-            }
-        }
+            => writeComment(text);
     }
 }

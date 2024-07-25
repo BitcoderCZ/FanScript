@@ -1,4 +1,9 @@
-﻿using System.Collections.Immutable;
+﻿using FanScript.Compiler.Binding;
+using FanScript.Compiler.Emit;
+using FanScript.FCInfo;
+using FanScript.Utils;
+using System.Collections.Frozen;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 
 namespace FanScript.Compiler.Symbols
@@ -25,6 +30,10 @@ namespace FanScript.Compiler.Symbols
         public bool IsGenericInstance { get; }
         public TypeSymbol? InnerType { get; }
 
+        public FrozenDictionary<string, PropertyDefinitionSymbol> Properties { get; private set; } = FrozenDictionary<string, PropertyDefinitionSymbol>.Empty;
+        // TODO:
+        // public ImmutableArray<FunctionSymbol> InstanceFunctions { get; private set; }
+
         public static readonly ImmutableArray<TypeSymbol> BuiltInTypes = [Bool, Float, Vector3, Rotation, Object, Array];
         public static readonly ImmutableArray<TypeSymbol> BuiltInNonGenericTypes = [Bool, Float, Vector3, Rotation, Object];
 
@@ -42,6 +51,65 @@ namespace FanScript.Compiler.Symbols
         }
 
         public override SymbolKind Kind => SymbolKind.Type;
+
+        static TypeSymbol()
+        {
+            BuiltinFunctions.Init();
+
+            Vector3.Properties = new Dictionary<string, PropertyDefinitionSymbol>() {
+                ["x"] = new PropertyDefinitionSymbol("x", Float, (context, variable) => getVectorComponent(context, variable, 0), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 0)),
+                ["y"] = new PropertyDefinitionSymbol("y", Float, (context, variable) => getVectorComponent(context, variable, 1), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 1)),
+                ["z"] = new PropertyDefinitionSymbol("z", Float, (context, variable) => getVectorComponent(context, variable, 2), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 2)),
+            }.ToFrozenDictionary();
+            Rotation.Properties = new Dictionary<string, PropertyDefinitionSymbol>()
+            {
+                ["x"] = new PropertyDefinitionSymbol("x", Float, (context, variable) => getVectorComponent(context, variable, 0), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 0)),
+                ["y"] = new PropertyDefinitionSymbol("y", Float, (context, variable) => getVectorComponent(context, variable, 1), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 1)),
+                ["z"] = new PropertyDefinitionSymbol("z", Float, (context, variable) => getVectorComponent(context, variable, 2), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 2)),
+            }.ToFrozenDictionary();
+            EmitStore getVectorComponent(EmitContext context, VariableSymbol variable, int index)
+            {
+                bool[] arr = new bool[3];
+                arr[index] = true;
+                return context.BreakVectorAny(new BoundVariableExpression(null!, variable), arr)[index]!;
+            }
+            EmitStore setVectorComponent(EmitContext context, VariableSymbol baseVariable, Func<EmitStore> getStore, int index)
+            {
+                WireType varType = baseVariable.Type.ToWireType();
+
+                return context.EmitSetVariable(baseVariable, () =>
+                {
+                    Block make = context.Builder.AddBlock(Blocks.Math.MakeByType(varType));
+
+                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    {
+                        Block @break = context.Builder.AddBlock(Blocks.Math.BreakByType(varType));
+
+                        context.Builder.BlockPlacer.ExpressionBlock(() =>
+                        {
+                            Block var = context.Builder.AddBlock(Blocks.Variables.VariableByType(varType));
+                            context.Builder.SetBlockValue(var, 0, baseVariable.Name);
+
+                            context.Connect(BasicEmitStore.COut(var, var.Type.Terminals[0]), BasicEmitStore.CIn(@break, @break.Type.Terminals[3]));
+                        });
+
+                        for (int i = 0; i < 3; i++)
+                        {
+                            if (i != index)
+                                context.Connect(BasicEmitStore.COut(@break, @break.Type.Terminals[2 - i]), BasicEmitStore.CIn(make, make.Type.Terminals[(2 - i) + 1]));
+                        }
+                    });
+                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    {
+                        EmitStore store = getStore();
+
+                        context.Connect(store, BasicEmitStore.CIn(make, make.Type.Terminals[(2 - index) + 1]));
+                    });
+
+                    return BasicEmitStore.COut(make, make.Type.Terminals[0]);
+                });
+            }
+        }
 
         public static TypeSymbol CreateGenericInstance(TypeSymbol type, TypeSymbol innerType)
         {
@@ -69,6 +137,9 @@ namespace FanScript.Compiler.Symbols
             => IsGenericDefinition && type.IsGenericInstance && NonGenericEquals(type);
         public bool IsGenericInstanceOf(TypeSymbol type)
             => IsGenericInstance && type.IsGenericDefinition && NonGenericEquals(type);
+
+        public PropertyDefinitionSymbol? GetProperty(string name)
+            => Properties.TryGetValue(name, out var property) ? property : null;
 
         public bool GenericEquals(TypeSymbol other)
             => Name == other.Name && Equals(InnerType, other.InnerType);
