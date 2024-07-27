@@ -14,6 +14,8 @@ namespace FanScript.Compiler.Binding
                     return RewriteSpecialBlockStatement((BoundSpecialBlockStatement)node);
                 case BoundNodeKind.NopStatement:
                     return RewriteNopStatement((BoundNopStatement)node);
+                case BoundNodeKind.PostfixStatement:
+                    return RewritePostfixStatement((BoundPostfixStatement)node);
                 case BoundNodeKind.VariableDeclarationStatement:
                     return RewriteVariableDeclaration((BoundVariableDeclarationStatement)node);
                 case BoundNodeKind.AssignmentStatement:
@@ -91,6 +93,9 @@ namespace FanScript.Compiler.Binding
         }
 
         protected virtual BoundStatement RewriteNopStatement(BoundNopStatement node)
+            => node;
+
+        protected virtual BoundStatement RewritePostfixStatement(BoundPostfixStatement node)
             => node;
 
         protected virtual BoundStatement RewriteVariableDeclaration(BoundVariableDeclarationStatement node)

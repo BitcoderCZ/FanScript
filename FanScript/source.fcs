@@ -1,8 +1,8 @@
 float i = 0
 while (i < 5) {
-    on Play() {
-        i = 20
-        break
-    }
-    i += 1
+    inspect(i)
+    i++
 }
+
+i--
+inspect(i)

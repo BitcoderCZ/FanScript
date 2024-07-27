@@ -17,6 +17,7 @@
         ConditionalGotoStatement,
         LabelStatement,
         ArrayInitializerStatement,
+        PostfixStatement,
 
         // Expressions
         ErrorExpression,

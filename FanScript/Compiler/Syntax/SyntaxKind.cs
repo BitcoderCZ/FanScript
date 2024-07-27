@@ -6,8 +6,10 @@
         EndOfFileToken,
         WhitespaceToken,
         PlusToken,
+        PlusPlusToken,
         PlusEqualsToken,
         MinusToken,
+        MinusMinusToken,
         MinusEqualsToken,
         StarToken,
         StarEqualsToken,
@@ -49,6 +51,7 @@
         VariableDeclarationStatement,
         AssignmentStatement,
         ArrayInitializerStatement,
+        PostfixStatement,
 
         UnaryExpression,
         BinaryExpression,

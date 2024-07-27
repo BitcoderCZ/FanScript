@@ -244,6 +244,14 @@ namespace FanScript.Compiler.Syntax
             yield return CloseParenthesisToken;
         }
     }
+    partial class PostfixStatementSyntax
+    {
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return IdentifierToken;
+            yield return OperatorToken;
+        }
+    }
     partial class PropertyExpressionSyntax
     {
         public override IEnumerable<SyntaxNode> GetChildren()

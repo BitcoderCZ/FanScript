@@ -222,23 +222,33 @@ namespace FanScript.Compiler.Lexing
                     break;
                 case '+':
                     _position++;
-                    if (Current != '=')
-                        _kind = SyntaxKind.PlusToken;
-                    else
+                    if (Current == '+')
+                    {
+                        _kind = SyntaxKind.PlusPlusToken;
+                        _position++;
+                    }
+                    else if (Current == '=')
                     {
                         _kind = SyntaxKind.PlusEqualsToken;
                         _position++;
                     }
+                    else
+                        _kind = SyntaxKind.PlusToken;
                     break;
                 case '-':
                     _position++;
-                    if (Current != '=')
-                        _kind = SyntaxKind.MinusToken;
-                    else
+                    if (Current == '-')
+                    {
+                        _kind = SyntaxKind.MinusMinusToken;
+                        _position++;
+                    }
+                    else if (Current == '=')
                     {
                         _kind = SyntaxKind.MinusEqualsToken;
                         _position++;
                     }
+                    else
+                        _kind = SyntaxKind.MinusToken;
                     break;
                 case '*':
                     _position++;

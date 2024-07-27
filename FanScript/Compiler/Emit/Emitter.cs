@@ -101,6 +101,7 @@ namespace FanScript.Compiler.Emit
                 BoundVariableDeclarationStatement declaration when declaration.OptionalAssignment is not null => emitStatement(declaration.OptionalAssignment),
                 BoundVariableDeclarationStatement => new NopEmitStore(),
                 BoundAssignmentStatement => emitAssigmentStatement((BoundAssignmentStatement)statement),
+                BoundPostfixStatement => emitPostfixStatement((BoundPostfixStatement)statement),
                 BoundGotoStatement => emitGotoStatement((BoundGotoStatement)statement),
                 BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundSpecialBlockCondition condition => emitSpecialBlockStatement(condition.SBType, condition.ArgumentClause.Arguments, conditionalGoto.Label),
                 BoundConditionalGotoStatement => emitConditionalGotoStatement((BoundConditionalGotoStatement)statement),
@@ -237,6 +238,33 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitAssigmentStatement(BoundAssignmentStatement assignment)
             => emitSetVariable(assignment.Variable, assignment.Expression);
+
+        private EmitStore emitPostfixStatement(BoundPostfixStatement postfix)
+        {
+            BlockDef def;
+            switch (postfix.PostfixKind)
+            {
+                case BoundPostfixKind.Increment:
+                    def = Blocks.Variables.PlusPlusFloat; 
+                    break;
+                case BoundPostfixKind.Decrement:
+                    def = Blocks.Variables.MinusMinusFloat;
+                    break;
+                default:
+                    throw new InvalidDataException($"Unknown {nameof(BoundPostfixKind)} '{postfix.PostfixKind}'");
+            }
+
+            Block block = builder.AddBlock(def);
+
+            builder.BlockPlacer.ExpressionBlock(() =>
+            {
+                EmitStore store = emitGetVariable(postfix.Variable);
+
+                connect(store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
+            });
+
+            return new BasicEmitStore(block);
+        }
 
         private EmitStore emitGotoStatement(BoundGotoStatement gotoStatement)
         {

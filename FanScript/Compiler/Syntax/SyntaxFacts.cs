@@ -106,10 +106,14 @@
             {
                 SyntaxKind.PlusToken =>
                     "+",
+                SyntaxKind.PlusPlusToken =>
+                    "++",
                 SyntaxKind.PlusEqualsToken =>
                     "+=",
                 SyntaxKind.MinusToken =>
                     "-",
+                SyntaxKind.MinusMinusToken =>
+                    "--",
                 SyntaxKind.MinusEqualsToken =>
                     "-=",
                 SyntaxKind.StarToken =>

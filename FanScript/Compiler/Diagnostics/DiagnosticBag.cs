@@ -50,6 +50,9 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportUndefinedBinaryOperator(TextLocation location, string operatorText, TypeSymbol? leftType, TypeSymbol? rightType)
             => ReportError(location, $"Binary operator '{operatorText}' is not defined for types '{leftType}' and '{rightType}'.");
 
+        public void ReportUndefinedPostfixOperator(TextLocation location, string operatorText, TypeSymbol? operandType)
+            => ReportError(location, $"Postfix operator '{operatorText}' is not defined for type '{operandType}'.");
+
         public void ReportParameterAlreadyDeclared(TextLocation location, string parameterName)
             => ReportError(location, $"A parameter with the name '{parameterName}' already exists.");
 

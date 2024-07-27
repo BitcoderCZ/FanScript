@@ -195,6 +195,13 @@ namespace FanScript.Compiler.Syntax
                     return ParseBlockStatement();
                 case SyntaxKind.KeywordOn:
                     return ParseSpecialBlockStatement();
+                case SyntaxKind.IdentifierToken when Peek(1).Kind switch
+                {
+                    SyntaxKind.PlusPlusToken => true,
+                    SyntaxKind.MinusMinusToken => true,
+                    _ => false,
+                }:
+                    return ParsePostfixStatement();
                 case SyntaxKind.IdentifierToken when IsAssignableClauseNext(out int nextTokenIndex) && Peek(nextTokenIndex).Kind switch
                 {
                     SyntaxKind.EqualsToken => true,
@@ -270,6 +277,14 @@ namespace FanScript.Compiler.Syntax
             BlockStatementSyntax block = ParseBlockStatement();
 
             return new SpecialBlockStatementSyntax(_syntaxTree, onKeyword, identifier, argumentClause, block);
+        }
+
+        private StatementSyntax ParsePostfixStatement()
+        {
+            SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
+            SyntaxToken operatorToken = MatchToken(SyntaxKind.PlusPlusToken, SyntaxKind.MinusMinusToken);
+
+            return new PostfixStatementSyntax(_syntaxTree, identifierToken, operatorToken);
         }
 
         private StatementSyntax ParseVariableDeclarationStatement(ImmutableArray<SyntaxToken>? modifiers = null)

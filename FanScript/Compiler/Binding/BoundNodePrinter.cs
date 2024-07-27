@@ -29,6 +29,9 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.NopStatement:
                     WriteNopStatement((BoundNopStatement)node, writer);
                     break;
+                case BoundNodeKind.PostfixStatement:
+                    WritePostfixStatement((BoundPostfixStatement)node, writer);
+                    break;
                 case BoundNodeKind.VariableDeclarationStatement:
                     WriteVariableDeclaration((BoundVariableDeclarationStatement)node, writer);
                     break;
@@ -169,6 +172,13 @@ namespace FanScript.Compiler.Binding
         private static void WriteNopStatement(BoundNopStatement node, IndentedTextWriter writer)
         {
             writer.WriteKeyword("nop");
+            writer.WriteLine();
+        }
+
+        private static void WritePostfixStatement(BoundPostfixStatement node, IndentedTextWriter writer)
+        {
+            WriteVariable(node.Variable, writer);
+            writer.WritePunctuation(node.PostfixKind.ToSyntaxString());
             writer.WriteLine();
         }
 

@@ -102,6 +102,7 @@ namespace FanScript.Compiler.Binding
                         case BoundNodeKind.EmitterHint:
                         case BoundNodeKind.VariableDeclarationStatement:
                         case BoundNodeKind.AssignmentStatement:
+                        case BoundNodeKind.PostfixStatement:
                         case BoundNodeKind.ExpressionStatement:
                             _statements.Add(statement);
                             break;
@@ -198,6 +199,7 @@ namespace FanScript.Compiler.Binding
                             case BoundNodeKind.EmitterHint:
                             case BoundNodeKind.VariableDeclarationStatement:
                             case BoundNodeKind.AssignmentStatement:
+                            case BoundNodeKind.PostfixStatement:
                             case BoundNodeKind.LabelStatement:
                             case BoundNodeKind.ExpressionStatement:
                                 if (isLastStatementInBlock)
