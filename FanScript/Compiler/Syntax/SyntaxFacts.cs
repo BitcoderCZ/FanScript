@@ -94,6 +94,8 @@
                     return SyntaxKind.ConstantModifier;
                 case "ref":
                     return SyntaxKind.RefModifier;
+                case "out":
+                    return SyntaxKind.OutModifier;
                 default:
                     return SyntaxKind.IdentifierToken;
             }
@@ -200,6 +202,8 @@
                     "const",
                 SyntaxKind.RefModifier =>
                     "ref",
+                SyntaxKind.OutModifier =>
+                    "out",
                 _ =>
                     null
             };

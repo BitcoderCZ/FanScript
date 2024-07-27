@@ -293,15 +293,27 @@ namespace FanScript.Compiler.Syntax
             yield return Operand;
         }
     }
-    partial class VariableDeclarationSyntax
+    partial class VariableDeclarationExpressionSyntax
     {
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             foreach (SyntaxNode modifier in Modifiers)
                 yield return modifier;
+
+            yield return TypeClause;
+            yield return IdentifierToken;
+        }
+    }
+    partial class VariableDeclarationStatementSyntax
+    {
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            foreach (SyntaxNode modifier in Modifiers)
+                yield return modifier;
+
             yield return TypeClause;
             if (OptionalAssignment is null)
-                yield return Identifier;
+                yield return IdentifierToken;
             else
                 yield return OptionalAssignment;
         }

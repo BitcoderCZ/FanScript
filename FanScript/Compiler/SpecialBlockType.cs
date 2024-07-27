@@ -22,8 +22,8 @@ namespace FanScript.Compiler
             new SpecialBlockTypeInfo(SpecialBlockType.LateUpdate, [], "Runs code after physics, before rendering"),
             new SpecialBlockTypeInfo(SpecialBlockType.BoxArt, [], "Runs code before taking a screenshot for the game cover"),
             new SpecialBlockTypeInfo(SpecialBlockType.Touch, [
-                new SpecialBlockTypeParam("screenX", Modifiers.Ref, TypeSymbol.Float),
-                new SpecialBlockTypeParam("screenY", Modifiers.Ref, TypeSymbol.Float),
+                new SpecialBlockTypeParam("screenX", Modifiers.Out, TypeSymbol.Float),
+                new SpecialBlockTypeParam("screenY", Modifiers.Out, TypeSymbol.Float),
                 new SpecialBlockTypeParam("TOUCH_STATE", 0, TypeSymbol.Float, true),
                 new SpecialBlockTypeParam("TOUCH_FINGER", 0, TypeSymbol.Float, true),
             ], "Runs code on touch"),
@@ -64,6 +64,8 @@ namespace FanScript.Compiler
                     builder.Append(' ');
                 }
 
+                builder.Append(param.Type.ToString());
+                builder.Append(' ');
                 builder.Append(param.Name);
             }
 

@@ -11,16 +11,16 @@ namespace FanScript.Compiler.Binding
         public static BoundBlockStatement Block(SyntaxNode syntax, params BoundStatement[] statements)
             => new BoundBlockStatement(syntax, ImmutableArray.Create(statements));
 
-        public static BoundVariableDeclaration VariableDeclaration(SyntaxNode syntax, VariableSymbol symbol, BoundAssignmentStatement? optionalAssignment)
-            => new BoundVariableDeclaration(syntax, symbol, optionalAssignment);
+        public static BoundVariableDeclarationStatement VariableDeclaration(SyntaxNode syntax, VariableSymbol symbol, BoundAssignmentStatement? optionalAssignment)
+            => new BoundVariableDeclarationStatement(syntax, symbol, optionalAssignment);
 
-        public static BoundVariableDeclaration VariableDeclaration(SyntaxNode syntax, string name, BoundAssignmentStatement? optionalAssignment)
+        public static BoundVariableDeclarationStatement VariableDeclaration(SyntaxNode syntax, string name, BoundAssignmentStatement? optionalAssignment)
             => VariableDeclarationInternal(syntax, name, optionalAssignment, isReadOnly: false);
 
-        public static BoundVariableDeclaration ConstantDeclaration(SyntaxNode syntax, string name, BoundAssignmentStatement? optionalAssignment)
+        public static BoundVariableDeclarationStatement ConstantDeclaration(SyntaxNode syntax, string name, BoundAssignmentStatement? optionalAssignment)
             => VariableDeclarationInternal(syntax, name, optionalAssignment, isReadOnly: true);
 
-        private static BoundVariableDeclaration VariableDeclarationInternal(SyntaxNode syntax, string name, BoundAssignmentStatement? optionalAssignment, bool isReadOnly)
+        private static BoundVariableDeclarationStatement VariableDeclarationInternal(SyntaxNode syntax, string name, BoundAssignmentStatement? optionalAssignment, bool isReadOnly)
         {
             throw new NotImplementedException();
             //var local = new LocalVariableSymbol(name, isReadOnly, initializer.Type, initializer.ConstantValue);
@@ -81,7 +81,7 @@ namespace FanScript.Compiler.Binding
             return new BoundUnaryExpression(syntax, op, condition);
         }
 
-        public static BoundVariableExpression Variable(SyntaxNode syntax, BoundVariableDeclaration variable)
+        public static BoundVariableExpression Variable(SyntaxNode syntax, BoundVariableDeclarationStatement variable)
             => Variable(syntax, variable.Variable);
 
         public static BoundVariableExpression Variable(SyntaxNode syntax, VariableSymbol variable)

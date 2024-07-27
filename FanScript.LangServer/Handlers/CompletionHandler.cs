@@ -60,9 +60,14 @@ namespace FanScript.LangServer.Handlers
                     if (i != 0)
                         builder.Append(", ");
 
-                    // TODO: support out once added
                     if (param.Modifiers.HasFlag(Modifiers.Ref))
                         builder.Append("ref ");
+                    if (param.Modifiers.HasFlag(Modifiers.Out))
+                    {
+                        builder.Append("out ");
+                        builder.Append(param.Type);
+                        builder.Append(' ');
+                    }
 
                     if (param.IsConstant)
                         builder.Append(param.Name);
@@ -250,9 +255,14 @@ namespace FanScript.LangServer.Handlers
                 if (i != 0)
                     builder.Append(", ");
 
-                // TODO: support out once added
                 if (param.Modifiers.HasFlag(Modifiers.Ref))
                     builder.Append("ref ");
+                else if (param.Modifiers.HasFlag(Modifiers.Out))
+                {
+                    builder.Append("out ");
+                    builder.Append(param.Type);
+                    builder.Append(' ');
+                }
             }
 
             return builder
@@ -297,8 +307,8 @@ namespace FanScript.LangServer.Handlers
                             return CurrentRecomendations.Functions;
                     }
                     break;
-                case ArgumentClauseSyntax argumentClause: // TODO: once (out float val) is added, add | CurrentRecomendations.Types
-                    return CurrentRecomendations.InExpression | CurrentRecomendations.Modifiers;
+                case ArgumentClauseSyntax argumentClause: 
+                    return CurrentRecomendations.InExpression | CurrentRecomendations.Modifiers | CurrentRecomendations.Types;
                 case SpecialBlockStatementSyntax specialBlock:
                     {
                         if (node == specialBlock.Identifier)

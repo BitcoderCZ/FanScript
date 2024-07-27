@@ -1,14 +1,10 @@
-vec3 vec = vec3(1, 2, 3)
+joystick(out vec3 dir, JOYSTICK_TYPE_XZ)
+inspect(dir)
 
-float vx = vec.x
-float vy = vec.y
-float vz = vec.z
+vec3 dir2
+joystick(out dir2, JOYSTICK_TYPE_XZ)
+inspect(dir2)
 
-vec.x = 5
-
-rot r = rot(1, 2, 3)
-float rz = r.z
-float ry = r.y
-float rx = r.x
-
-r.z = 10
+on Touch(out float x, out float y, TOUCH_STATE_BEGINS, TOUCH_FINGER_1) {
+    inspect(vec3(x, y, 0))
+}

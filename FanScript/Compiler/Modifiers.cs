@@ -1,6 +1,7 @@
 ﻿using FanScript.Compiler.Syntax;
 using System.Collections.Frozen;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace FanScript.Compiler
@@ -14,6 +15,7 @@ namespace FanScript.Compiler
         Readonly = 1 << 0,
         Constant = 1 << 1,
         Ref = 1 << 2,
+        Out = 1 << 3,
     }
 
     public enum ModifierTarget
@@ -32,7 +34,8 @@ namespace FanScript.Compiler
         {
             [Modifiers.Readonly] = new ModifierInfo(SyntaxKind.ReadOnlyModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Constant] },
             [Modifiers.Constant] = new ModifierInfo(SyntaxKind.ConstantModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Readonly] },
-            [Modifiers.Ref] = new ModifierInfo(SyntaxKind.RefModifier, [ModifierTarget.Parameter]) { Conflicts = [] },
+            [Modifiers.Ref] = new ModifierInfo(SyntaxKind.RefModifier, [ModifierTarget.Parameter]) { Conflicts = [Modifiers.Out], MakesTargetReference = true },
+            [Modifiers.Out] = new ModifierInfo(SyntaxKind.OutModifier, [ModifierTarget.Parameter]) { Conflicts = [Modifiers.Ref], MakesTargetReference = true },
         }.ToFrozenDictionary();
 
         public static Modifiers FromKind(SyntaxKind kind)
@@ -41,6 +44,7 @@ namespace FanScript.Compiler
                 SyntaxKind.ReadOnlyModifier => Modifiers.Readonly,
                 SyntaxKind.ConstantModifier => Modifiers.Constant,
                 SyntaxKind.RefModifier => Modifiers.Ref,
+                SyntaxKind.OutModifier => Modifiers.Out,
                 _ => throw new InvalidDataException($"SyntaxKind '{kind}' isn't a modifier"),
             };
 
@@ -52,6 +56,19 @@ namespace FanScript.Compiler
 
         public static IEnumerable<Modifiers> GetConflictingModifiers(this Modifiers mod)
             => lookup[mod].Conflicts;
+
+        public static bool MakesTargetReference(this Modifiers mods, [NotNullWhen(true)] out Modifiers? makesRefMod)
+        {
+            foreach (var (mod, info) in lookup)
+                if (mods.HasFlag(mod) && info.MakesTargetReference)
+                {
+                    makesRefMod = mod;
+                    return true;
+                }
+
+            makesRefMod = null;
+            return false;
+        }
 
         public static string ToSyntaxString(this Modifiers mod)
         {
@@ -80,6 +97,8 @@ namespace FanScript.Compiler
             public readonly SyntaxKind Kind;
             public IReadOnlyCollection<ModifierTarget> Targets { get; init; }
             public IReadOnlyCollection<Modifiers> Conflicts { get; init; }
+
+            public bool MakesTargetReference { get; init; } = false;
 
             public ModifierInfo(SyntaxKind _kind, IReadOnlyCollection<ModifierTarget> _targets)
             {

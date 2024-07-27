@@ -46,7 +46,7 @@
         WhileStatement,
         BreakStatement,
         ContinueStatement,
-        VariableDeclaration,
+        VariableDeclarationStatement,
         AssignmentStatement,
         ArrayInitializerStatement,
 
@@ -58,6 +58,7 @@
         NameExpression,
         ConstructorExpression,
         PropertyExpression,
+        VariableDeclarationExpression,
 
         Parameter,
         TypeClause,
@@ -97,5 +98,6 @@
         ReadOnlyModifier,
         ConstantModifier,
         RefModifier,
+        OutModifier,
     }
 }

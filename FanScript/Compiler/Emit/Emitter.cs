@@ -98,8 +98,8 @@ namespace FanScript.Compiler.Emit
             EmitStore store = statement switch
             {
                 BoundBlockStatement => emitBlockStatement((BoundBlockStatement)statement),
-                BoundVariableDeclaration declaration when declaration.OptionalAssignment is not null => emitStatement(declaration.OptionalAssignment),
-                BoundVariableDeclaration => new NopEmitStore(),
+                BoundVariableDeclarationStatement declaration when declaration.OptionalAssignment is not null => emitStatement(declaration.OptionalAssignment),
+                BoundVariableDeclarationStatement => new NopEmitStore(),
                 BoundAssignmentStatement => emitAssigmentStatement((BoundAssignmentStatement)statement),
                 BoundGotoStatement => emitGotoStatement((BoundGotoStatement)statement),
                 BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundSpecialBlockCondition condition => emitSpecialBlockStatement(condition.SBType, condition.ArgumentClause.Arguments, conditionalGoto.Label),

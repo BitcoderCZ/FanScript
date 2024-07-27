@@ -257,8 +257,8 @@ namespace FanScript.Compiler.Binding
                     return BindBlockStatement((BlockStatementSyntax)syntax);
                 case SyntaxKind.SpecialBlockStatement:
                     return BindSpecialBlockStatement((SpecialBlockStatementSyntax)syntax);
-                case SyntaxKind.VariableDeclaration:
-                    return BindVariableDeclaration((VariableDeclarationSyntax)syntax);
+                case SyntaxKind.VariableDeclarationStatement:
+                    return BindVariableDeclarationStatement((VariableDeclarationStatementSyntax)syntax);
                 case SyntaxKind.AssignmentStatement:
                     return BindAssignmentStatement((AssignmentStatementSyntax)syntax);
                 case SyntaxKind.IfStatement:
@@ -323,19 +323,19 @@ namespace FanScript.Compiler.Binding
             return new BoundSpecialBlockStatement(syntax, type, argumentClause, block);
         }
 
-        private BoundStatement BindVariableDeclaration(VariableDeclarationSyntax syntax)
+        private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax)
         {
             TypeSymbol? type = BindTypeClause(syntax.TypeClause);
 
             TypeSymbol? variableType = type;
-            VariableSymbol variable = BindVariableDeclaration(syntax.Identifier, syntax.Modifiers, variableType);
+            VariableSymbol variable = BindVariableDeclaration(syntax.IdentifierToken, syntax.Modifiers, variableType);
 
             if (variable.Modifiers.HasFlag(Modifiers.Constant) && syntax.OptionalAssignment is null)
-                _diagnostics.ReportConstantNotInitialized(syntax.Identifier.Location);
+                _diagnostics.ReportConstantNotInitialized(syntax.IdentifierToken.Location);
 
             BoundStatement? optionalAssignment = syntax.OptionalAssignment is null ? null : BindStatement(syntax.OptionalAssignment);
 
-            return new BoundVariableDeclaration(syntax, variable, optionalAssignment);
+            return new BoundVariableDeclarationStatement(syntax, variable, optionalAssignment);
         }
 
         private BoundStatement BindAssignmentStatement(AssignmentStatementSyntax syntax)
@@ -575,6 +575,8 @@ namespace FanScript.Compiler.Binding
                     return BindLiteralExpression((LiteralExpressionSyntax)syntax);
                 case SyntaxKind.NameExpression:
                     return BindNameExpression((NameExpressionSyntax)syntax);
+                case SyntaxKind.VariableDeclarationExpression:
+                    return BindVariableDeclarationExpression((VariableDeclarationExpressionSyntax)syntax);
                 case SyntaxKind.UnaryExpression:
                     return BindUnaryExpression((UnaryExpressionSyntax)syntax);
                 case SyntaxKind.BinaryExpression:
@@ -614,6 +616,19 @@ namespace FanScript.Compiler.Binding
             VariableSymbol? variable = BindVariableReference(syntax.IdentifierToken);
             if (variable is null)
                 return new BoundErrorExpression(syntax);
+
+            return new BoundVariableExpression(syntax, variable);
+        }
+
+        private BoundExpression BindVariableDeclarationExpression(VariableDeclarationExpressionSyntax syntax)
+        {
+            TypeSymbol? type = BindTypeClause(syntax.TypeClause);
+
+            TypeSymbol? variableType = type;
+            VariableSymbol variable = BindVariableDeclaration(syntax.IdentifierToken, syntax.Modifiers, variableType);
+
+            if (variable.Modifiers.HasFlag(Modifiers.Constant))
+                _diagnostics.ReportConstantNotInitialized(syntax.IdentifierToken.Location);
 
             return new BoundVariableExpression(syntax, variable);
         }
@@ -926,10 +941,11 @@ namespace FanScript.Compiler.Binding
                 {
                     var (modifier, token) = item;
 
-                    bool valid = modifier == Modifiers.Ref ? parameter.Modifiers.HasFlag(Modifiers.Ref) : true;
+                    bool valid = modifier == Modifiers.Ref ? parameter.Modifiers.HasFlag(Modifiers.Ref) : true &&
+                        modifier == Modifiers.Out ? parameter.Modifiers.HasFlag(Modifiers.Out) : true;
 
                     if (!valid)
-                        _diagnostics.ReportArgumentCannotHaveModifier(token.Location, parameter.Name, Modifiers.Ref);
+                        _diagnostics.ReportArgumentCannotHaveModifier(token.Location, parameter.Name, modifier);
 
                     return valid;
                 });
@@ -938,8 +954,10 @@ namespace FanScript.Compiler.Binding
 
                 if (parameter.Modifiers.HasFlag(Modifiers.Ref) && !modifiers.HasFlag(Modifiers.Ref))
                     _diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Ref);
-                else if (modifiers.HasFlag(Modifiers.Ref) && (argument is not BoundVariableExpression variable || variable.Variable.IsReadOnly))
-                    _diagnostics.ReportRefMustBeVariable(argumentLocation);
+                else if (parameter.Modifiers.HasFlag(Modifiers.Out) && !modifiers.HasFlag(Modifiers.Out))
+                    _diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Out);
+                else if (modifiers.MakesTargetReference(out Modifiers? makesRefMod) && (argument is not BoundVariableExpression variable || variable.Variable.IsReadOnly))
+                    _diagnostics.ReportRefMustBeVariable(argumentLocation, makesRefMod.Value);
 
                 boundArguments[i] = BindConversion(argumentLocation, argument, parameter.Type);
             }

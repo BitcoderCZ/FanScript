@@ -14,8 +14,8 @@ namespace FanScript.Compiler.Binding
                     return RewriteSpecialBlockStatement((BoundSpecialBlockStatement)node);
                 case BoundNodeKind.NopStatement:
                     return RewriteNopStatement((BoundNopStatement)node);
-                case BoundNodeKind.VariableDeclaration:
-                    return RewriteVariableDeclaration((BoundVariableDeclaration)node);
+                case BoundNodeKind.VariableDeclarationStatement:
+                    return RewriteVariableDeclaration((BoundVariableDeclarationStatement)node);
                 case BoundNodeKind.AssignmentStatement:
                     return RewriteAssignmentStatement((BoundAssignmentStatement)node);
                 case BoundNodeKind.CompoundAssignmentStatement:
@@ -93,7 +93,7 @@ namespace FanScript.Compiler.Binding
         protected virtual BoundStatement RewriteNopStatement(BoundNopStatement node)
             => node;
 
-        protected virtual BoundStatement RewriteVariableDeclaration(BoundVariableDeclaration node)
+        protected virtual BoundStatement RewriteVariableDeclaration(BoundVariableDeclarationStatement node)
         {
             if (node.OptionalAssignment is null)
                 return node;
@@ -101,7 +101,7 @@ namespace FanScript.Compiler.Binding
                 return new BoundBlockStatement(
                     node.Syntax,
                     [
-                        new BoundVariableDeclaration(node.Syntax, node.Variable, null),
+                        new BoundVariableDeclarationStatement(node.Syntax, node.Variable, null),
                         RewriteArrayInitializerStatement(arrayInitializer)
                     ]);
 
@@ -109,7 +109,7 @@ namespace FanScript.Compiler.Binding
             if (assignment == node.OptionalAssignment)
                 return node;
 
-            return new BoundVariableDeclaration(node.Syntax, node.Variable, assignment);
+            return new BoundVariableDeclarationStatement(node.Syntax, node.Variable, assignment);
         }
 
         protected virtual BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)

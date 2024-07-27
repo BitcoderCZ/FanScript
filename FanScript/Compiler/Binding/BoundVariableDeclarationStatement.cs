@@ -3,16 +3,16 @@ using FanScript.Compiler.Syntax;
 
 namespace FanScript.Compiler.Binding
 {
-    internal sealed class BoundVariableDeclaration : BoundStatement
+    internal sealed class BoundVariableDeclarationStatement : BoundStatement
     {
-        public BoundVariableDeclaration(SyntaxNode syntax, VariableSymbol variable, BoundStatement? optionalAssignment)
+        public BoundVariableDeclarationStatement(SyntaxNode syntax, VariableSymbol variable, BoundStatement? optionalAssignment)
             : base(syntax)
         {
             Variable = variable;
             OptionalAssignment = optionalAssignment;
         }
 
-        public override BoundNodeKind Kind => BoundNodeKind.VariableDeclaration;
+        public override BoundNodeKind Kind => BoundNodeKind.VariableDeclarationStatement;
 
         public VariableSymbol Variable { get; }
         public BoundStatement? OptionalAssignment { get; }

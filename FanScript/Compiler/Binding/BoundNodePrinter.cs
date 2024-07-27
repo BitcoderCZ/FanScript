@@ -29,8 +29,8 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.NopStatement:
                     WriteNopStatement((BoundNopStatement)node, writer);
                     break;
-                case BoundNodeKind.VariableDeclaration:
-                    WriteVariableDeclaration((BoundVariableDeclaration)node, writer);
+                case BoundNodeKind.VariableDeclarationStatement:
+                    WriteVariableDeclaration((BoundVariableDeclarationStatement)node, writer);
                     break;
                 case BoundNodeKind.AssignmentStatement:
                     WriteAssignmentStatement((BoundAssignmentStatement)node, writer);
@@ -172,7 +172,7 @@ namespace FanScript.Compiler.Binding
             writer.WriteLine();
         }
 
-        private static void WriteVariableDeclaration(BoundVariableDeclaration node, IndentedTextWriter writer)
+        private static void WriteVariableDeclaration(BoundVariableDeclarationStatement node, IndentedTextWriter writer)
         {
             if (node.Variable.Modifiers != 0)
             {

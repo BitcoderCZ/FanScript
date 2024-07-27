@@ -195,14 +195,7 @@ namespace FanScript.Compiler.Syntax
                     return ParseBlockStatement();
                 case SyntaxKind.KeywordOn:
                     return ParseSpecialBlockStatement();
-                case SyntaxKind.KeywordFloat:
-                case SyntaxKind.KeywordVector3:
-                case SyntaxKind.KeywordRotation:
-                case SyntaxKind.KeywordBool:
-                case SyntaxKind.KeywordObject:
-                case SyntaxKind.KeywordArray:
-                    return ParseVariableDeclarationStatement();
-                case SyntaxKind.IdentifierToken when TryParseAssignableClause(out int nextTokenIndex) && Peek(nextTokenIndex).Kind switch
+                case SyntaxKind.IdentifierToken when IsAssignableClauseNext(out int nextTokenIndex) && Peek(nextTokenIndex).Kind switch
                 {
                     SyntaxKind.EqualsToken => true,
                     SyntaxKind.PlusEqualsToken => true,
@@ -229,7 +222,9 @@ namespace FanScript.Compiler.Syntax
                 //    return ParseReturnStatement();
                 default:
                     {
-                        if (Current.Kind.IsModifier())
+                        if (IsTypeClauseNow(out _))
+                            return ParseVariableDeclarationStatement();
+                        else if (Current.Kind.IsModifier())
                             return ParseModifiers();
 
                         return ParseExpressionStatement();
@@ -302,7 +297,8 @@ namespace FanScript.Compiler.Syntax
                     assignment = new AssignmentStatementSyntax(_syntaxTree, new AssignableVariableClauseSyntax(_syntaxTree, identifier), equals, initializer);
                 }
             }
-            return new VariableDeclarationSyntax(_syntaxTree, modifiers ?? ImmutableArray<SyntaxToken>.Empty, typeClause, identifier, assignment);
+
+            return new VariableDeclarationStatementSyntax(_syntaxTree, modifiers ?? ImmutableArray<SyntaxToken>.Empty, typeClause, identifier, assignment);
         }
 
         private StatementSyntax ParseAssignmentStatement()
@@ -508,26 +504,16 @@ namespace FanScript.Compiler.Syntax
 
         private ExpressionSyntax ParseOtherExpressions()
         {
-            if (Peek(0).Kind == SyntaxKind.IdentifierToken &&
-                (Peek(1).Kind == SyntaxKind.OpenParenthesisToken ||
-                (Peek(1).Kind == SyntaxKind.LessToken && isType(Peek(2).Kind)))) // not sure of a better way to do this, neccesary because of less than operator, make some tryParseType method that doesn't consume tokens?
+            int offset = 0;
+            if (Peek(offset++).Kind == SyntaxKind.IdentifierToken &&
+                (Peek(offset).Kind == SyntaxKind.OpenParenthesisToken ||
+                (Peek(offset++).Kind == SyntaxKind.LessToken && IsTypeClauseNext(ref offset)))) // not sure of a better way to do this, neccesary because of less than operator, make some tryParseType method that doesn't consume tokens?
                 return ParseCallExpression();
             else if (Peek(0).Kind == SyntaxKind.IdentifierToken &&
                 Peek(1).Kind == SyntaxKind.DotToken)
                 return ParsePropertyExpression();
 
             return ParseNameExpression();
-
-            bool isType(SyntaxKind kind)
-                => kind switch
-                {
-                    SyntaxKind.KeywordBool => true,
-                    SyntaxKind.KeywordFloat => true,
-                    SyntaxKind.KeywordVector3 => true,
-                    SyntaxKind.KeywordRotation => true,
-                    SyntaxKind.KeywordObject => true,
-                    _ => false,
-                };
         }
 
         private ExpressionSyntax ParseCallExpression()
@@ -587,20 +573,34 @@ namespace FanScript.Compiler.Syntax
                    //Current.Kind != listEnd &&
                    Current.Kind != SyntaxKind.EndOfFileToken)
             {
+                bool hasOutMod = false;
+
                 if (allowModifiers)
                 {
                     var builder = ImmutableArray.CreateBuilder<SyntaxToken>();
 
                     while (Current.Kind.IsModifier())
+                    {
+                        if (Current.Kind == SyntaxKind.OutModifier)
+                            hasOutMod = true;
+
                         builder.Add(NextToken());
+                    }
 
                     modifiersBuilder.Add(builder.ToImmutable());
                 }
                 else
                     modifiersBuilder.Add(ImmutableArray<SyntaxToken>.Empty);
 
-                ExpressionSyntax expression = ParseExpression();
-                nodesAndSeparators.Add(expression);
+                if (hasOutMod && IsTypeClauseNow(out _))
+                {
+                    TypeClauseSyntax typeClause = ParseTypeClause(true);
+                    SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
+
+                    nodesAndSeparators.Add(new VariableDeclarationExpressionSyntax(_syntaxTree, modifiersBuilder[modifiersBuilder.Count - 1], typeClause, identifierToken));
+                }
+                else
+                    nodesAndSeparators.Add(ParseExpression());
 
                 if (Current.Kind == SyntaxKind.CommaToken)
                 {
@@ -615,6 +615,32 @@ namespace FanScript.Compiler.Syntax
             return (new SeparatedSyntaxList<ExpressionSyntax>(nodesAndSeparators.ToImmutable()), modifiersBuilder.ToImmutable());
         }
 
+        private bool IsTypeClauseNow(out int nextTokenIndex)
+        {
+            nextTokenIndex = 0;
+            return IsTypeClauseNext(ref nextTokenIndex);
+        }
+        private bool IsTypeClauseNext(ref int nextTokenIndex)
+        {
+            HashSet<SyntaxKind> allowedKinds = [SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordObject, SyntaxKind.KeywordArray];
+
+            if (allowedKinds.Contains(Peek(nextTokenIndex++).Kind))
+            {
+                int temp = nextTokenIndex;
+
+                if (Peek(nextTokenIndex++).Kind == SyntaxKind.LessToken &&
+                    IsTypeClauseNext(ref nextTokenIndex) &&
+                    Peek(nextTokenIndex++).Kind == SyntaxKind.GreaterToken)
+                    return true;
+                else
+                {
+                    nextTokenIndex = temp;
+                    return true;
+                }
+            }
+
+            return false;
+        }
         private TypeClauseSyntax ParseTypeClause(bool allowGeneric, bool gettingGenericParam = false)
         {
             SyntaxToken typeToken = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordObject, SyntaxKind.KeywordArray);
@@ -636,7 +662,7 @@ namespace FanScript.Compiler.Syntax
                 return new TypeClauseSyntax(_syntaxTree, typeToken);
         }
 
-        private bool TryParseAssignableClause(out int nextTokenIndex)
+        private bool IsAssignableClauseNext(out int nextTokenIndex)
         {
             nextTokenIndex = -1;
 
@@ -656,7 +682,6 @@ namespace FanScript.Compiler.Syntax
             else
                 return false;
         }
-
         private AssignableClauseSyntax ParseAssignableClause()
         {
             SyntaxToken identifier0 = MatchToken(SyntaxKind.IdentifierToken);

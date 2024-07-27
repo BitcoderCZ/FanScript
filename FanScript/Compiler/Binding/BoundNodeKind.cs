@@ -6,7 +6,7 @@
         BlockStatement,
         SpecialBlockStatement,
         NopStatement,
-        VariableDeclaration,
+        VariableDeclarationStatement,
         AssignmentStatement,
         CompoundAssignmentStatement,
         IfStatement,

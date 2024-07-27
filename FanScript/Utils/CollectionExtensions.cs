@@ -32,6 +32,9 @@ namespace FanScript.Utils
         }
 
         public static ReadOnlyMemory<T> AsMemory<T>(this ImmutableArray<T> array, Range range)
-            => array.AsMemory().Slice(range.Start.GetOffset(array.Length), range.End.GetOffset(array.Length));
+        {
+            var (start, length) = range.GetOffsetAndLength(array.Length);
+            return array.AsMemory().Slice(start, length);
+        }
     }
 }

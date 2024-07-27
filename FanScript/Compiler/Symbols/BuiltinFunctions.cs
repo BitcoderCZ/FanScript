@@ -138,7 +138,7 @@ namespace FanScript.Compiler.Symbols
             public static readonly FunctionSymbol Joystick
                 = new BuiltinFunctionSymbol("joystick",
                 [
-                    new ParameterSymbol("joyDir", Modifiers.Ref, TypeSymbol.Vector3, 0),
+                    new ParameterSymbol("joyDir", Modifiers.Out, TypeSymbol.Vector3, 0),
                     new ParameterSymbol("JOYSTICK_TYPE", TypeSymbol.Float, 1),
                 ], TypeSymbol.Void, (call, context) =>
                 {
@@ -268,15 +268,15 @@ namespace FanScript.Compiler.Symbols
                 [
                     new ParameterSymbol("screenX", TypeSymbol.Float, 0),
                     new ParameterSymbol("screenY", TypeSymbol.Float, 1),
-                    new ParameterSymbol("worldNear", Modifiers.Ref, TypeSymbol.Vector3, 2),
-                    new ParameterSymbol("worldFar", Modifiers.Ref, TypeSymbol.Vector3, 3),
+                    new ParameterSymbol("worldNear", Modifiers.Out, TypeSymbol.Vector3, 2),
+                    new ParameterSymbol("worldFar", Modifiers.Out, TypeSymbol.Vector3, 3),
                 ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Math.ScreenToWorld));
             public static readonly FunctionSymbol WorldToScreen
                 = new BuiltinFunctionSymbol("worldToScreen",
                 [
                     new ParameterSymbol("worldPos", TypeSymbol.Vector3, 0),
-                    new ParameterSymbol("screenX", Modifiers.Ref, TypeSymbol.Float, 1),
-                    new ParameterSymbol("screenY", Modifiers.Ref, TypeSymbol.Float, 2),
+                    new ParameterSymbol("screenX", Modifiers.Out, TypeSymbol.Float, 1),
+                    new ParameterSymbol("screenY", Modifiers.Out, TypeSymbol.Float, 2),
                 ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Math.WorldToScreen));
             public static readonly FunctionSymbol WorldToScreen2
                 = new BuiltinFunctionSymbol("worldToScreen",

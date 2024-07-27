@@ -100,7 +100,7 @@ namespace FanScript.Compiler.Binding
                             break;
                         case BoundNodeKind.NopStatement:
                         case BoundNodeKind.EmitterHint:
-                        case BoundNodeKind.VariableDeclaration:
+                        case BoundNodeKind.VariableDeclarationStatement:
                         case BoundNodeKind.AssignmentStatement:
                         case BoundNodeKind.ExpressionStatement:
                             _statements.Add(statement);
@@ -196,7 +196,7 @@ namespace FanScript.Compiler.Binding
                                 break;
                             case BoundNodeKind.NopStatement:
                             case BoundNodeKind.EmitterHint:
-                            case BoundNodeKind.VariableDeclaration:
+                            case BoundNodeKind.VariableDeclarationStatement:
                             case BoundNodeKind.AssignmentStatement:
                             case BoundNodeKind.LabelStatement:
                             case BoundNodeKind.ExpressionStatement:
