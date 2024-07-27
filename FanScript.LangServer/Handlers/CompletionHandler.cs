@@ -307,7 +307,7 @@ namespace FanScript.LangServer.Handlers
                             return CurrentRecomendations.Functions;
                     }
                     break;
-                case ArgumentClauseSyntax argumentClause: 
+                case ArgumentClauseSyntax argumentClause:
                     return CurrentRecomendations.InExpression | CurrentRecomendations.Modifiers | CurrentRecomendations.Types;
                 case SpecialBlockStatementSyntax specialBlock:
                     {

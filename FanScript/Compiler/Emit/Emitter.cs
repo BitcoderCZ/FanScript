@@ -116,11 +116,11 @@ namespace FanScript.Compiler.Emit
             return store;
         }
 
-        private EmitStore emitBlockStatement(BoundBlockStatement block)
+        private EmitStore emitBlockStatement(BoundBlockStatement statement)
         {
-            if (block.Statements.Length == 0)
+            if (statement.Statements.Length == 0)
                 return new NopEmitStore();
-            else if (block.Statements.Length == 1 && block.Statements[0] is BoundBlockStatement inBlock)
+            else if (statement.Statements.Length == 1 && statement.Statements[0] is BoundBlockStatement inBlock)
                 return emitBlockStatement(inBlock);
 
             MultiEmitStore store = MultiEmitStore.Empty;
@@ -130,9 +130,9 @@ namespace FanScript.Compiler.Emit
             if (newCodeBlock)
                 builder.BlockPlacer.EnterStatementBlock();
 
-            for (int i = 0; i < block.Statements.Length; i++)
+            for (int i = 0; i < statement.Statements.Length; i++)
             {
-                EmitStore __store = emitStatement(block.Statements[i]);
+                EmitStore __store = emitStatement(statement.Statements[i]);
                 if (store.InStore is NopEmitStore && __store is not NopEmitStore)
                     store.InStore = __store;
                 else if (__store is not NopEmitStore)
@@ -236,29 +236,29 @@ namespace FanScript.Compiler.Emit
             }
         }
 
-        private EmitStore emitAssigmentStatement(BoundAssignmentStatement assignment)
-            => emitSetVariable(assignment.Variable, assignment.Expression);
+        private EmitStore emitAssigmentStatement(BoundAssignmentStatement statement)
+            => emitSetVariable(statement.Variable, statement.Expression);
 
-        private EmitStore emitPostfixStatement(BoundPostfixStatement postfix)
+        private EmitStore emitPostfixStatement(BoundPostfixStatement statement)
         {
             BlockDef def;
-            switch (postfix.PostfixKind)
+            switch (statement.PostfixKind)
             {
                 case BoundPostfixKind.Increment:
-                    def = Blocks.Variables.PlusPlusFloat; 
+                    def = Blocks.Variables.PlusPlusFloat;
                     break;
                 case BoundPostfixKind.Decrement:
                     def = Blocks.Variables.MinusMinusFloat;
                     break;
                 default:
-                    throw new InvalidDataException($"Unknown {nameof(BoundPostfixKind)} '{postfix.PostfixKind}'");
+                    throw new InvalidDataException($"Unknown {nameof(BoundPostfixKind)} '{statement.PostfixKind}'");
             }
 
             Block block = builder.AddBlock(def);
 
             builder.BlockPlacer.ExpressionBlock(() =>
             {
-                EmitStore store = emitGetVariable(postfix.Variable);
+                EmitStore store = emitGetVariable(statement.Variable);
 
                 connect(store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
             });
@@ -266,35 +266,35 @@ namespace FanScript.Compiler.Emit
             return new BasicEmitStore(block);
         }
 
-        private EmitStore emitGotoStatement(BoundGotoStatement gotoStatement)
+        private EmitStore emitGotoStatement(BoundGotoStatement statement)
         {
-            if (gotoStatement is BoundRollbackGotoStatement) return new RollbackEmitStore();
-            else return new GotoEmitStore(gotoStatement.Label.Name);
+            if (statement is BoundRollbackGotoStatement) return new RollbackEmitStore();
+            else return new GotoEmitStore(statement.Label.Name);
         }
 
-        private EmitStore emitConditionalGotoStatement(BoundConditionalGotoStatement gotoStatement)
+        private EmitStore emitConditionalGotoStatement(BoundConditionalGotoStatement statement)
         {
             Block block = builder.AddBlock(Blocks.Control.If);
 
             builder.BlockPlacer.ExpressionBlock(() =>
             {
-                EmitStore condition = emitExpression(gotoStatement.Condition);
+                EmitStore condition = emitExpression(statement.Condition);
 
                 connect(condition, BasicEmitStore.CIn(block, block.Type.Terminals[3]));
             });
 
             ConditionalGotoEmitStore store = new ConditionalGotoEmitStore(block, block.Type.Before,
-                block, block.Type.Terminals[gotoStatement.JumpIfTrue ? 2 : 1], block,
-                block.Type.Terminals[gotoStatement.JumpIfTrue ? 1 : 2]);
+                block, block.Type.Terminals[statement.JumpIfTrue ? 2 : 1], block,
+                block.Type.Terminals[statement.JumpIfTrue ? 1 : 2]);
 
-            connectToLabel(gotoStatement.Label.Name, BasicEmitStore.COut(store.OnCondition, store.OnConditionTerminal));
+            connectToLabel(statement.Label.Name, BasicEmitStore.COut(store.OnCondition, store.OnConditionTerminal));
             return store;
 
         }
 
-        private EmitStore emitLabelStatement(BoundLabelStatement labelStatement)
+        private EmitStore emitLabelStatement(BoundLabelStatement statement)
         {
-            return new LabelEmitStore(labelStatement.Label.Name);
+            return new LabelEmitStore(statement.Label.Name);
         }
 
         private EmitStore emitHint(BoundEmitterHint statement)
@@ -331,8 +331,8 @@ namespace FanScript.Compiler.Emit
             return store;
         }
 
-        private EmitStore emitLiteralExpression(BoundLiteralExpression literal)
-            => emitLiteralExpression(literal.Value);
+        private EmitStore emitLiteralExpression(BoundLiteralExpression expression)
+            => emitLiteralExpression(expression.Value);
         internal EmitStore emitLiteralExpression(object value)
         {
             Block block = builder.AddBlock(Blocks.Values.ValueByType(value));
@@ -343,19 +343,19 @@ namespace FanScript.Compiler.Emit
             return BasicEmitStore.COut(block, block.Type.Terminals[0]);
         }
 
-        private EmitStore emitConstructorExpression(BoundConstructorExpression constructor)
+        private EmitStore emitConstructorExpression(BoundConstructorExpression expression)
         {
-            if (constructor.ConstantValue is not null)
-                return emitLiteralExpression(constructor.ConstantValue.Value);
+            if (expression.ConstantValue is not null)
+                return emitLiteralExpression(expression.ConstantValue.Value);
 
-            BlockDef def = Blocks.Math.MakeByType(constructor.Type.ToWireType());
+            BlockDef def = Blocks.Math.MakeByType(expression.Type.ToWireType());
             Block block = builder.AddBlock(def);
 
             builder.BlockPlacer.ExpressionBlock(() =>
             {
-                EmitStore xStore = emitExpression(constructor.ExpressionX);
-                EmitStore yStore = emitExpression(constructor.ExpressionY);
-                EmitStore zStore = emitExpression(constructor.ExpressionZ);
+                EmitStore xStore = emitExpression(expression.ExpressionX);
+                EmitStore yStore = emitExpression(expression.ExpressionY);
+                EmitStore zStore = emitExpression(expression.ExpressionZ);
 
                 connect(xStore, BasicEmitStore.CIn(block, def.Terminals[3]));
                 connect(yStore, BasicEmitStore.CIn(block, def.Terminals[2]));
@@ -365,21 +365,21 @@ namespace FanScript.Compiler.Emit
             return BasicEmitStore.COut(block, def.Terminals[0]);
         }
 
-        private EmitStore emitUnaryExpression(BoundUnaryExpression unary)
+        private EmitStore emitUnaryExpression(BoundUnaryExpression expression)
         {
-            switch (unary.Op.Kind)
+            switch (expression.Op.Kind)
             {
                 case BoundUnaryOperatorKind.Identity:
-                    return emitExpression(unary.Operand);
+                    return emitExpression(expression.Operand);
                 case BoundUnaryOperatorKind.Negation:
                     {
-                        if (unary.Type == TypeSymbol.Vector3)
+                        if (expression.Type == TypeSymbol.Vector3)
                         {
                             Block block = builder.AddBlock(Blocks.Math.Multiply_Vector);
 
                             builder.BlockPlacer.ExpressionBlock(() =>
                             {
-                                EmitStore _store = emitExpression(unary.Operand);
+                                EmitStore _store = emitExpression(expression.Operand);
 
                                 Block numb = builder.AddBlock(Blocks.Values.Number);
                                 builder.SetBlockValue(numb, 0, -1f);
@@ -393,11 +393,11 @@ namespace FanScript.Compiler.Emit
                         else
                         {
 
-                            Block block = builder.AddBlock(unary.Type == TypeSymbol.Float ? Blocks.Math.Negate : Blocks.Math.Inverse);
+                            Block block = builder.AddBlock(expression.Type == TypeSymbol.Float ? Blocks.Math.Negate : Blocks.Math.Inverse);
 
                             builder.BlockPlacer.ExpressionBlock(() =>
                             {
-                                EmitStore _store = emitExpression(unary.Operand);
+                                EmitStore _store = emitExpression(expression.Operand);
 
                                 connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
                             });
@@ -411,7 +411,7 @@ namespace FanScript.Compiler.Emit
 
                         builder.BlockPlacer.ExpressionBlock(() =>
                         {
-                            EmitStore _store = emitExpression(unary.Operand);
+                            EmitStore _store = emitExpression(expression.Operand);
 
                             connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
                         });
@@ -419,22 +419,22 @@ namespace FanScript.Compiler.Emit
                         return BasicEmitStore.COut(block, block.Type.Terminals[0]);
                     }
                 default:
-                    throw new Exception($"Unsuported BoundUnaryOperatorKind: '{unary.Op.Kind}'.");
+                    throw new Exception($"Unsuported BoundUnaryOperatorKind: '{expression.Op.Kind}'.");
             }
         }
 
-        private EmitStore emitBinaryExpression(BoundBinaryExpression binary)
+        private EmitStore emitBinaryExpression(BoundBinaryExpression expression)
         {
-            if ((binary.Left.Type == TypeSymbol.Float || binary.Left.Type == TypeSymbol.Bool)
-                && binary.Left.Type == binary.Right.Type)
-                return emitBinaryExpression_FloatOrBool(binary);
+            if ((expression.Left.Type == TypeSymbol.Float || expression.Left.Type == TypeSymbol.Bool)
+                && expression.Left.Type == expression.Right.Type)
+                return emitBinaryExpression_FloatOrBool(expression);
             else
-                return emitBinaryExpression_VecOrRot(binary);
+                return emitBinaryExpression_VecOrRot(expression);
         }
-        private EmitStore emitBinaryExpression_FloatOrBool(BoundBinaryExpression binary)
+        private EmitStore emitBinaryExpression_FloatOrBool(BoundBinaryExpression expression)
         {
             BlockDef op;
-            switch (binary.Op.Kind)
+            switch (expression.Op.Kind)
             {
                 case BoundBinaryOperatorKind.Addition:
                     op = Blocks.Math.Add_Number;
@@ -453,7 +453,7 @@ namespace FanScript.Compiler.Emit
                     break;
                 case BoundBinaryOperatorKind.Equals:
                 case BoundBinaryOperatorKind.NotEquals:
-                    op = Blocks.Math.EqualsByType(binary.Left.Type!.ToWireType());
+                    op = Blocks.Math.EqualsByType(expression.Left.Type!.ToWireType());
                     break;
                 case BoundBinaryOperatorKind.LogicalAnd:
                     op = Blocks.Math.LogicalAnd;
@@ -470,12 +470,12 @@ namespace FanScript.Compiler.Emit
                     op = Blocks.Math.Greater;
                     break;
                 default:
-                    throw new Exception($"Unexpected BoundBinaryOperatorKind: '{binary.Op.Kind}'.");
+                    throw new Exception($"Unexpected BoundBinaryOperatorKind: '{expression.Op.Kind}'.");
             }
 
-            if (binary.Op.Kind == BoundBinaryOperatorKind.NotEquals
-                || binary.Op.Kind == BoundBinaryOperatorKind.LessOrEquals
-                || binary.Op.Kind == BoundBinaryOperatorKind.GreaterOrEquals)
+            if (expression.Op.Kind == BoundBinaryOperatorKind.NotEquals
+                || expression.Op.Kind == BoundBinaryOperatorKind.LessOrEquals
+                || expression.Op.Kind == BoundBinaryOperatorKind.GreaterOrEquals)
             {
                 // invert output, >= or <=, >= can be accomplished as inverted <
                 Block not = builder.AddBlock(Blocks.Math.Not);
@@ -488,8 +488,8 @@ namespace FanScript.Compiler.Emit
 
                     builder.BlockPlacer.ExpressionBlock(() =>
                     {
-                        EmitStore store0 = emitExpression(binary.Left);
-                        EmitStore store1 = emitExpression(binary.Right);
+                        EmitStore store0 = emitExpression(expression.Left);
+                        EmitStore store1 = emitExpression(expression.Right);
 
                         connect(store0, BasicEmitStore.CIn(block, block.Type.Terminals[2]));
                         connect(store1, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
@@ -503,8 +503,8 @@ namespace FanScript.Compiler.Emit
                 Block block = builder.AddBlock(op);
                 builder.BlockPlacer.ExpressionBlock(() =>
                 {
-                    EmitStore store0 = emitExpression(binary.Left);
-                    EmitStore store1 = emitExpression(binary.Right);
+                    EmitStore store0 = emitExpression(expression.Left);
+                    EmitStore store1 = emitExpression(expression.Right);
 
                     connect(store0, BasicEmitStore.CIn(block, block.Type.Terminals[2]));
                     connect(store1, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
@@ -513,48 +513,48 @@ namespace FanScript.Compiler.Emit
                 return BasicEmitStore.COut(block, block.Type.Terminals[0]);
             }
         }
-        private EmitStore emitBinaryExpression_VecOrRot(BoundBinaryExpression binary)
+        private EmitStore emitBinaryExpression_VecOrRot(BoundBinaryExpression expression)
         {
             BlockDef? defOp = null;
-            switch (binary.Op.Kind)
+            switch (expression.Op.Kind)
             {
                 case BoundBinaryOperatorKind.Addition:
-                    if (binary.Left.Type == TypeSymbol.Vector3)
+                    if (expression.Left.Type == TypeSymbol.Vector3)
                         defOp = Blocks.Math.Add_Vector;
                     break;
                 case BoundBinaryOperatorKind.Subtraction:
-                    if (binary.Left.Type == TypeSymbol.Vector3)
+                    if (expression.Left.Type == TypeSymbol.Vector3)
                         defOp = Blocks.Math.Subtract_Vector;
                     break;
                 case BoundBinaryOperatorKind.Multiplication:
-                    if (binary.Left.Type == TypeSymbol.Vector3 && binary.Right.Type == TypeSymbol.Vector3)
+                    if (expression.Left.Type == TypeSymbol.Vector3 && expression.Right.Type == TypeSymbol.Vector3)
                         defOp = Blocks.Math.Multiply_Vector;
-                    else if (binary.Left.Type == TypeSymbol.Rotation && binary.Right.Type == TypeSymbol.Rotation)
+                    else if (expression.Left.Type == TypeSymbol.Rotation && expression.Right.Type == TypeSymbol.Rotation)
                         defOp = Blocks.Math.Multiply_Rotation;
-                    else if (binary.Left.Type == TypeSymbol.Vector3 && binary.Right.Type == TypeSymbol.Rotation)
+                    else if (expression.Left.Type == TypeSymbol.Vector3 && expression.Right.Type == TypeSymbol.Rotation)
                         defOp = Blocks.Math.Rotate_Vector;
                     else
-                        throw new Exception($"Unexpected BoundBinaryOperatorKind: '{binary.Op.Kind}'.");
+                        throw new Exception($"Unexpected BoundBinaryOperatorKind: '{expression.Op.Kind}'.");
                     break;
                 case BoundBinaryOperatorKind.Division:
                 case BoundBinaryOperatorKind.Modulo:
                     break; // supported, but not one block
                 case BoundBinaryOperatorKind.Equals:
-                    if (binary.Left.Type == TypeSymbol.Vector3)
+                    if (expression.Left.Type == TypeSymbol.Vector3)
                         defOp = Blocks.Math.Equals_Vector;
                     else
-                        throw new Exception($"Unexpected BoundBinaryOperatorKind: '{binary.Op.Kind}'.");
+                        throw new Exception($"Unexpected BoundBinaryOperatorKind: '{expression.Op.Kind}'.");
                     // rotation doesn't have equals???
                     break;
                 case BoundBinaryOperatorKind.NotEquals:
                     break; // supported, but not one block
                 default:
-                    throw new Exception($"Unexpected BoundBinaryOperatorKind: '{binary.Op.Kind}'.");
+                    throw new Exception($"Unexpected BoundBinaryOperatorKind: '{expression.Op.Kind}'.");
             }
 
             if (defOp is null)
             {
-                switch (binary.Op.Kind)
+                switch (expression.Op.Kind)
                 {
                     case BoundBinaryOperatorKind.Addition: // Rotation
                         return buildOperatorWithBreak(Blocks.Math.Make_Rotation, Blocks.Math.Add_Number);
@@ -566,10 +566,10 @@ namespace FanScript.Compiler.Emit
                         return buildOperatorWithBreak(Blocks.Math.Make_Vector, Blocks.Math.Modulo_Number);
                     case BoundBinaryOperatorKind.NotEquals:
                         {
-                            if (binary.Left.Type == TypeSymbol.Vector3)
+                            if (expression.Left.Type == TypeSymbol.Vector3)
                                 defOp = Blocks.Math.Equals_Vector;
                             else
-                                throw new Exception($"Unexpected BoundBinaryOperatorKind: '{binary.Op.Kind}'.");
+                                throw new Exception($"Unexpected BoundBinaryOperatorKind: '{expression.Op.Kind}'.");
 
                             Block not = builder.AddBlock(Blocks.Math.Not);
                             builder.BlockPlacer.ExpressionBlock(() =>
@@ -581,8 +581,8 @@ namespace FanScript.Compiler.Emit
 
                                 builder.BlockPlacer.ExpressionBlock(() =>
                                 {
-                                    EmitStore store0 = emitExpression(binary.Left);
-                                    EmitStore store1 = emitExpression(binary.Right);
+                                    EmitStore store0 = emitExpression(expression.Left);
+                                    EmitStore store1 = emitExpression(expression.Right);
 
                                     connect(store0, BasicEmitStore.CIn(op, op.Type.Terminals[2]));
                                     connect(store1, BasicEmitStore.CIn(op, op.Type.Terminals[1]));
@@ -592,7 +592,7 @@ namespace FanScript.Compiler.Emit
                             return BasicEmitStore.COut(not, not.Type.Terminals[0]);
                         }
                     default:
-                        throw new Exception($"Unexpected BoundBinaryOperatorKind: '{binary.Op.Kind}'.");
+                        throw new Exception($"Unexpected BoundBinaryOperatorKind: '{expression.Op.Kind}'.");
                 }
             }
             else
@@ -600,8 +600,8 @@ namespace FanScript.Compiler.Emit
                 Block op = builder.AddBlock(defOp);
                 builder.BlockPlacer.ExpressionBlock(() =>
                 {
-                    EmitStore store0 = emitExpression(binary.Left);
-                    EmitStore store1 = emitExpression(binary.Right);
+                    EmitStore store0 = emitExpression(expression.Left);
+                    EmitStore store1 = emitExpression(expression.Right);
 
                     connect(store0, BasicEmitStore.CIn(op, op.Type.Terminals[2]));
                     connect(store1, BasicEmitStore.CIn(op, op.Type.Terminals[1]));
@@ -626,12 +626,12 @@ namespace FanScript.Compiler.Emit
                     EmitStore rightZ = null!;
                     builder.BlockPlacer.ExpressionBlock(() =>
                     {
-                        (leftX, leftY, leftZ) = breakVector(binary.Left);
+                        (leftX, leftY, leftZ) = breakVector(expression.Left);
 
-                        if (binary.Right.Type == TypeSymbol.Vector3 || binary.Right.Type == TypeSymbol.Rotation)
-                            (rightX, rightY, rightZ) = breakVector(binary.Right);
+                        if (expression.Right.Type == TypeSymbol.Vector3 || expression.Right.Type == TypeSymbol.Rotation)
+                            (rightX, rightY, rightZ) = breakVector(expression.Right);
                         else
-                            rightZ = rightY = rightX = emitExpression(binary.Right);
+                            rightZ = rightY = rightX = emitExpression(expression.Right);
                     });
 
                     Block op2 = builder.AddBlock(defOp);
@@ -666,19 +666,19 @@ namespace FanScript.Compiler.Emit
             }
         }
 
-        private EmitStore emitVariableExpression(BoundVariableExpression name)
-            => emitGetVariable(name.Variable);
+        private EmitStore emitVariableExpression(BoundVariableExpression expression)
+            => emitGetVariable(expression.Variable);
 
-        private EmitStore emitCallExpression(BoundCallExpression call)
+        private EmitStore emitCallExpression(BoundCallExpression expression)
         {
-            if (call.Function is BuiltinFunctionSymbol builtinFunction)
-                return builtinFunction.Emit(call, emitContext);
+            if (expression.Function is BuiltinFunctionSymbol builtinFunction)
+                return builtinFunction.Emit(expression, emitContext);
 
-            switch (call.Function.Name)
+            switch (expression.Function.Name)
             {
                 default:
                     {
-                        diagnostics.ReportUndefinedFunction(call.Syntax.Location, call.Function.Name);
+                        diagnostics.ReportUndefinedFunction(expression.Syntax.Location, expression.Function.Name);
                         return new NopEmitStore();
                     }
             }
