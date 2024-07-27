@@ -19,6 +19,7 @@ namespace FanScript.Compiler.Binding
         private readonly FunctionSymbol? _function;
 
         private Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)> _loopStack = new Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)>();
+        private int onStatementDepth = 0;
         private int _labelCounter;
         private BoundScope _scope;
 
@@ -319,7 +320,10 @@ namespace FanScript.Compiler.Binding
             if (argumentClause is null)
                 return BindErrorStatement(syntax);
 
+            onStatementDepth++;
             BoundBlockStatement block = (BoundBlockStatement)BindBlockStatement(syntax.Block);
+            onStatementDepth--;
+
             return new BoundSpecialBlockStatement(syntax, type, argumentClause, block);
         }
 
@@ -488,6 +492,11 @@ namespace FanScript.Compiler.Binding
                 _diagnostics.ReportInvalidBreakOrContinue(syntax.Keyword.Location, syntax.Keyword.Text);
                 return BindErrorStatement(syntax);
             }
+            else if (onStatementDepth != 0)
+            {
+                _diagnostics.ReportBreakOrContinueInSB(syntax.Keyword.Location, syntax.Keyword.Text);
+                return BindErrorStatement(syntax);
+            }
 
             BoundLabel breakLabel = _loopStack.Peek().BreakLabel;
             return new BoundGotoStatement(syntax, breakLabel);
@@ -498,6 +507,11 @@ namespace FanScript.Compiler.Binding
             if (_loopStack.Count == 0)
             {
                 _diagnostics.ReportInvalidBreakOrContinue(syntax.Keyword.Location, syntax.Keyword.Text);
+                return BindErrorStatement(syntax);
+            }
+            else if (onStatementDepth != 0)
+            {
+                _diagnostics.ReportBreakOrContinueInSB(syntax.Keyword.Location, syntax.Keyword.Text);
                 return BindErrorStatement(syntax);
             }
 

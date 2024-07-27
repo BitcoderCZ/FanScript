@@ -98,6 +98,9 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportInvalidBreakOrContinue(TextLocation location, string text)
           => ReportError(location, $"The keyword '{text}' can only be used inside of loops.");
 
+        public void ReportBreakOrContinueInSB(TextLocation location, string text)
+          => ReportError(location, $"The keyword '{text}' cannot be used inside of an on block.");
+
         public void ReportValueMustBeConstant(TextLocation location)
             => ReportError(location, "Value must be constant.");
 
