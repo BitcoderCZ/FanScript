@@ -147,12 +147,8 @@ namespace FanScript.Compiler
 
         public ImmutableArray<Diagnostic> Emit(CodeBuilder builder)
         {
-            IEnumerable<Diagnostic> parseDiagnostics = SyntaxTrees.SelectMany(st => st.Diagnostics);
-
-            ImmutableArray<Diagnostic> diagnostics = parseDiagnostics.Concat(GlobalScope.Diagnostics).ToImmutableArray();
-
-            if (diagnostics.HasErrors())
-                return diagnostics;
+            if (GlobalScope.Diagnostics.HasErrors())
+                return GlobalScope.Diagnostics;
 
             BoundProgram program = GetProgram();
             return Emitter.Emit(program, builder);

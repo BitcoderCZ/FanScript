@@ -141,11 +141,12 @@ namespace FanScript.LangServer.Handlers
             await Task.Yield();
 
             Document document = documentHandler.GetDocument(request.TextDocument.Uri);
+            SyntaxTree? tree = document.Tree;
 
-            if (document.Tree is null)
+            if (tree is null)
                 return new CompletionList();
 
-            var node = document.Tree.FindNode(request.Position.ToSpan(document.Tree.Text) - 1);
+            var node = tree.FindNode(request.Position.ToSpan(tree.Text) - 1);
 
             if (node is null)
                 return new CompletionList();
@@ -169,12 +170,13 @@ namespace FanScript.LangServer.Handlers
 
             VariableSymbol[]? variables = null;
             FunctionSymbol[]? functions = null;
-            if (document.Compilation is not null)
+            Compilation? compilation = document.Compilation;
+            if (compilation is not null)
             {
                 if (recomendation.HasFlag(CurrentRecomendations.Variables))
-                    length += (variables = document.Compilation.GetVariables().ToArray()).Length;
+                    length += (variables = compilation.GetVariables().ToArray()).Length;
                 if (recomendation.HasFlag(CurrentRecomendations.Functions))
-                    length += (functions = document.Compilation.GetFunctions().ToArray()).Length;
+                    length += (functions = compilation.GetFunctions().ToArray()).Length;
             }
 
             List<CompletionItem> result = new List<CompletionItem>(length);

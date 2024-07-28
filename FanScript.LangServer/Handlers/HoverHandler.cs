@@ -116,7 +116,7 @@ namespace FanScript.LangServer.Handlers
             // TODO/CUSTOM_FUNCTIONS: won't work
             Hover? getHoverByVariableName(string name, TextLocation location)
             {
-                IEnumerable<VariableSymbol> variables = document.Compilation!.GetVariables();
+                IEnumerable<VariableSymbol> variables = compilation.GetVariables();
                 VariableSymbol? variable = variables.FirstOrDefault(var => var.Name == name);
                 if (variable is null)
                     return null;
@@ -134,7 +134,7 @@ namespace FanScript.LangServer.Handlers
             // TODO/CUSTOM_FUNCTIONS: won't work
             Hover? getHoverForProperty(string baseVarName, string propName, TextLocation location)
             {
-                IEnumerable<VariableSymbol> variables = document.Compilation!.GetVariables();
+                IEnumerable<VariableSymbol> variables = compilation.GetVariables();
                 VariableSymbol? variable = variables.FirstOrDefault(var => var.Name == baseVarName);
                 if (variable is null)
                     return null;

@@ -4,7 +4,6 @@
     {
         BadToken,
         EndOfFileToken,
-        WhitespaceToken,
         PlusToken,
         PlusPlusToken,
         PlusEqualsToken,
@@ -70,7 +69,7 @@
         AssignableClause,
 
         FloatToken,
-        StringToken,
+        //StringToken,
 
         KeywordTrue,
         KeywordFalse,

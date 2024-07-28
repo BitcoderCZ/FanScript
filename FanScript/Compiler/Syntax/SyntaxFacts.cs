@@ -88,6 +88,8 @@
                     return SyntaxKind.KeywordContinue;
                 case "on":
                     return SyntaxKind.KeywordOn;
+                case "func":
+                    return SyntaxKind.KeywordFunction;
                 case "readonly":
                     return SyntaxKind.ReadOnlyModifier;
                 case "const":
@@ -98,6 +100,26 @@
                     return SyntaxKind.OutModifier;
                 default:
                     return SyntaxKind.IdentifierToken;
+            }
+        }
+
+        public static IEnumerable<SyntaxKind> GetUnaryOperatorKinds()
+        {
+            SyntaxKind[] kinds = Enum.GetValues<SyntaxKind>();
+            foreach (var kind in kinds)
+            {
+                if (GetUnaryOperatorPrecedence(kind) > 0)
+                    yield return kind;
+            }
+        }
+
+        public static IEnumerable<SyntaxKind> GetBinaryOperatorKinds()
+        {
+            SyntaxKind[] kinds = Enum.GetValues<SyntaxKind>();
+            foreach (var kind in kinds)
+            {
+                if (GetBinaryOperatorPrecedence(kind) > 0)
+                    yield return kind;
             }
         }
 
@@ -143,7 +165,7 @@
                 SyntaxKind.ColonToken =>
                     ":",
                 SyntaxKind.SemicolonToken =>
-                    ",",
+                    ";",
                 SyntaxKind.DotToken =>
                     ".",
                 SyntaxKind.CommaToken =>
@@ -196,10 +218,10 @@
                     "break",
                 SyntaxKind.KeywordContinue =>
                     "continue",
-                SyntaxKind.KeywordFunction =>
-                    "function",
                 SyntaxKind.KeywordOn =>
                     "on",
+                SyntaxKind.KeywordFunction =>
+                    "func",
                 SyntaxKind.ReadOnlyModifier =>
                     "readonly",
                 SyntaxKind.ConstantModifier =>

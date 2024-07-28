@@ -59,9 +59,6 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportUndefinedVariable(TextLocation location, string name)
             => ReportError(location, $"Variable '{name}' doesn't exist.");
 
-        public void ReportNotAVariable(TextLocation location, string name)
-            => ReportError(location, $"'{name}' is not a variable.");
-
         public void ReportUndefinedType(TextLocation location, string name)
             => ReportError(location, $"Type '{name}' doesn't exist.");
 

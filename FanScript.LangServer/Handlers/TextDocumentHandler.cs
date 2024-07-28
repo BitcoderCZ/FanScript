@@ -124,29 +124,17 @@ namespace FanScript.LangServer.Handlers
         private void findErrors(DocumentUri uri)
         {
             Document document = GetDocument(uri);
+            Compilation? compilation = document.Compilation;
 
-            if (document.Tree is null)
+            if (compilation is null)
                 return;
 
-            if (document.Tree.Diagnostics.HasErrors())
-                facade.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams()
-                {
-                    Uri = uri,
-                    Version = document.ContentVersion,
-                    Diagnostics = new Container<Diagnostic>(convert(document.Tree.Diagnostics))
-                });
-            else
+            facade.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams()
             {
-                Compilation? compilation = document.Compilation;
-
-                if (compilation is not null)
-                    facade.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams()
-                    {
-                        Uri = uri,
-                        Version = document.ContentVersion,
-                        Diagnostics = new Container<Diagnostic>(convert(compilation.GlobalScope.Diagnostics))
-                    });
-            }
+                Uri = uri,
+                Version = document.ContentVersion,
+                Diagnostics = new Container<Diagnostic>(convert(compilation.GlobalScope.Diagnostics))
+            });
 
             List<Diagnostic> convert(ImmutableArray<Compiler.Diagnostics.Diagnostic> diagnostics)
             {

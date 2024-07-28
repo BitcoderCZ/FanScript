@@ -16,10 +16,15 @@ namespace FanScript.LangServer
 
         public int ContentVersion { get; private set; } = -1;
         private string? content;
-        //public string? Content => content;
 
         private int treeVersion = -2;
         private SyntaxTree? tree;
+        /// <summary>
+        /// Gets a <see cref="SyntaxTree"/> for the current content
+        /// </summary>
+        /// <remarks>
+        /// Make sure to make a local variable, might change between accesses
+        /// </remarks>
         public SyntaxTree? Tree
         {
             get
@@ -40,6 +45,12 @@ namespace FanScript.LangServer
 
         private int compilationVersion = -3;
         private Compilation? compilation;
+        /// <summary>
+        /// Gets a <see cref="Compiler.Compilation"/> for the current content
+        /// </summary>
+        /// <remarks>
+        /// Make sure to make a local variable, might change between accesses
+        /// </remarks>
         public Compilation? Compilation
         {
             get

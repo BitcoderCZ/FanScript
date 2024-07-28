@@ -728,57 +728,60 @@ namespace FanScript.Compiler.Binding
             }
 
             TypeSymbol? genericType = null;
-            if (function.IsGeneric)
+            if (function.Parameters.Length == boundArguments.Count)
             {
-                if (syntax.HasGenericParameter)
-                    genericType = BindTypeClause(syntax.GenericTypeClause);
-                else
+                if (function.IsGeneric)
                 {
-                    // try to infer generic type from arguments
-                    for (int i = 0; i < function.Parameters.Length; i++)
+                    if (syntax.HasGenericParameter)
+                        genericType = BindTypeClause(syntax.GenericTypeClause);
+                    else
                     {
-                        ParameterSymbol param = function.Parameters[i];
-                        BoundExpression arg = boundArguments[i];
-
-                        TypeSymbol? _genericType = null;
-                        if (param.Type == TypeSymbol.Generic)
-                            _genericType = arg.Type;
-                        else if (param.Type!.IsGenericDefinition && arg.Type!.IsGenericInstance)
-                            _genericType = arg.Type.InnerType;
-
-                        if (_genericType is not null)
+                        // try to infer generic type from arguments
+                        for (int i = 0; i < function.Parameters.Length; i++)
                         {
-                            if (genericType is null)
-                                genericType = _genericType;
-                            else if (!genericType.GenericEquals(_genericType))
+                            ParameterSymbol param = function.Parameters[i];
+                            BoundExpression arg = boundArguments[i];
+
+                            TypeSymbol? _genericType = null;
+                            if (param.Type == TypeSymbol.Generic)
+                                _genericType = arg.Type;
+                            else if (param.Type!.IsGenericDefinition && arg.Type!.IsGenericInstance)
+                                _genericType = arg.Type.InnerType;
+
+                            if (_genericType is not null)
                             {
-                                genericType = null;
-                                break;
+                                if (genericType is null)
+                                    genericType = _genericType;
+                                else if (!genericType.GenericEquals(_genericType))
+                                {
+                                    genericType = null;
+                                    break;
+                                }
                             }
                         }
                     }
-                }
 
-                if (genericType is null)
+                    if (genericType is null)
+                    {
+                        _diagnostics.ReportCannotInferGenericType(syntax.Location);
+                        return new BoundErrorExpression(syntax);
+                    }
+                    else if (genericType.IsGenericInstance)
+                    {
+                        _diagnostics.ReportGenericTypeRecursion(syntax.HasGenericParameter ? syntax.GenericTypeClause.Location : syntax.Location);
+                        return new BoundErrorExpression(syntax);
+                    }
+                    else if (!function.AllowedGenericTypes.Value.Contains(genericType))
+                    {
+                        _diagnostics.ReportSpecificGenericTypeNotAllowed(syntax.HasGenericParameter ? syntax.GenericTypeClause.Location : syntax.Location, genericType, function.AllowedGenericTypes.Value);
+                        return new BoundErrorExpression(syntax);
+                    }
+                }
+                else if (syntax.HasGenericParameter)
                 {
-                    _diagnostics.ReportCannotInferGenericType(syntax.Location);
+                    _diagnostics.ReportNonGenericMethodTypeArguments(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.LessThanToken.Span.Start, syntax.GreaterThanToken.Span.End)));
                     return new BoundErrorExpression(syntax);
                 }
-                else if (genericType.IsGenericInstance)
-                {
-                    _diagnostics.ReportGenericTypeRecursion(syntax.HasGenericParameter ? syntax.GenericTypeClause.Location : syntax.Location);
-                    return new BoundErrorExpression(syntax);
-                }
-                else if (!function.AllowedGenericTypes.Value.Contains(genericType))
-                {
-                    _diagnostics.ReportSpecificGenericTypeNotAllowed(syntax.HasGenericParameter ? syntax.GenericTypeClause.Location : syntax.Location, genericType, function.AllowedGenericTypes.Value);
-                    return new BoundErrorExpression(syntax);
-                }
-            }
-            else if (syntax.HasGenericParameter)
-            {
-                _diagnostics.ReportNonGenericMethodTypeArguments(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.LessThanToken.Span.Start, syntax.GreaterThanToken.Span.End)));
-                return new BoundErrorExpression(syntax);
             }
 
             BoundArgumentClause? argumentClause = BindArgumentClause(syntax.ArgumentClause,
@@ -917,12 +920,8 @@ namespace FanScript.Compiler.Binding
                 case VariableSymbol variable:
                     return variable;
 
-                case null:
-                    _diagnostics.ReportUndefinedVariable(identifierToken.Location, name);
-                    return null;
-
                 default:
-                    _diagnostics.ReportNotAVariable(identifierToken.Location, name);
+                    _diagnostics.ReportUndefinedVariable(identifierToken.Location, name);
                     return null;
             }
         }

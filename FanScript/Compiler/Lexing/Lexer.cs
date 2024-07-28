@@ -308,6 +308,10 @@ namespace FanScript.Compiler.Lexing
                     _kind = SyntaxKind.ColonToken;
                     _position++;
                     break;
+                case ';':
+                    _kind = SyntaxKind.SemicolonToken;
+                    _position++;
+                    break;
                 case ',':
                     _kind = SyntaxKind.CommaToken;
                     _position++;
@@ -417,55 +421,55 @@ namespace FanScript.Compiler.Lexing
             }
         }
 
-        private void ReadString()
-        {
-            // Skip the current quote
-            _position++;
+        //private void ReadString()
+        //{
+        //    // Skip the current quote
+        //    _position++;
 
-            var sb = new StringBuilder();
-            bool done = false;
+        //    var sb = new StringBuilder();
+        //    bool done = false;
 
-            while (!done)
-            {
-                switch (Current)
-                {
-                    case '\0':
-                    case '\r':
-                    case '\n':
-                        var span = new TextSpan(_start, 1);
-                        var location = new TextLocation(_text, span);
-                        _diagnostics.ReportUnterminatedString(location);
-                        done = true;
-                        break;
-                    case '/':
-                        if (Lookahead == '"')
-                        {
-                            sb.Append(Current);
-                            _position += 2;
-                        }
-                        else if (Lookahead == '\\')
-                        {
-                            sb.Append(Current);
-                            _position++;
-                        }
-                        else
-                            _diagnostics.ReportInvalidEscapeSequance(new TextLocation(_text,
-                                new TextSpan(_position, 2)), "\\" + Lookahead);
-                        break;
-                    case '"':
-                        _position++;
-                        done = true;
-                        break;
-                    default:
-                        sb.Append(Current);
-                        _position++;
-                        break;
-                }
-            }
+        //    while (!done)
+        //    {
+        //        switch (Current)
+        //        {
+        //            case '\0':
+        //            case '\r':
+        //            case '\n':
+        //                var span = new TextSpan(_start, 1);
+        //                var location = new TextLocation(_text, span);
+        //                _diagnostics.ReportUnterminatedString(location);
+        //                done = true;
+        //                break;
+        //            case '/':
+        //                if (Lookahead == '"')
+        //                {
+        //                    sb.Append(Current);
+        //                    _position += 2;
+        //                }
+        //                else if (Lookahead == '\\')
+        //                {
+        //                    sb.Append(Current);
+        //                    _position++;
+        //                }
+        //                else
+        //                    _diagnostics.ReportInvalidEscapeSequance(new TextLocation(_text,
+        //                        new TextSpan(_position, 2)), "\\" + Lookahead);
+        //                break;
+        //            case '"':
+        //                _position++;
+        //                done = true;
+        //                break;
+        //            default:
+        //                sb.Append(Current);
+        //                _position++;
+        //                break;
+        //        }
+        //    }
 
-            _kind = SyntaxKind.StringToken;
-            _value = sb.ToString();
-        }
+        //    _kind = SyntaxKind.StringToken;
+        //    _value = sb.ToString();
+        //}
 
         private void readNumber()
         {

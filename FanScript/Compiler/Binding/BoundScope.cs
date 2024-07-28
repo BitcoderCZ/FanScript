@@ -72,6 +72,8 @@ namespace FanScript.Compiler.Binding
 
         public FunctionSymbol? TryLookupFunction(string name, IEnumerable<TypeSymbol> arguments)
         {
+            int argumentCount = arguments.Count();
+
             if (functions.TryGetValue(name, out var symbolList))
                 foreach (var symbol in symbolList)
                     if (symbol is FunctionSymbol function && function.Parameters
@@ -79,7 +81,24 @@ namespace FanScript.Compiler.Binding
                         .SequenceEqual(arguments, new TypeSymbol.FuntionParamsComparer()))
                         return function;
 
-            return Parent?.TryLookupFunction(name, arguments);
+            FunctionSymbol? result = Parent?.TryLookupFunction(name, arguments);
+            if (result is not null)
+                return result;
+
+            if (functions.TryGetValue(name, out var funcs))
+                return funcs
+                    .Where(func => func.Name == name)
+                    .OrderBy(func =>
+                    {
+                        int diff = func.Parameters.Length - argumentCount;
+                        if (diff < 0)
+                            return Math.Abs(diff) + 2; // make funcs with lees params than args choosen less
+
+                        return diff;
+                    })
+                    .FirstOrDefault();
+
+            return null;
         }
 
         public ImmutableArray<VariableSymbol> GetDeclaredVariables()
