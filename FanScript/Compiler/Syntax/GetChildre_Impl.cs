@@ -1,6 +1,4 @@
-﻿using FanScript.Utils;
-
-namespace FanScript.Compiler.Syntax
+﻿namespace FanScript.Compiler.Syntax
 {
     partial class ArgumentClauseSyntax
     {

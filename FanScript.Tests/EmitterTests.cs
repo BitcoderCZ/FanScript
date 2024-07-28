@@ -1,18 +1,10 @@
-﻿using FanScript.Compiler.Symbols;
-using FanScript.Compiler.Syntax;
-using FanScript.Compiler;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using FanScript.Compiler.Emit;
+﻿using FanScript.Compiler;
+using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Emit.BlockPlacers;
 using FanScript.Compiler.Emit.CodeBuilders;
-using System.Collections.Immutable;
-using FanScript.Compiler.Diagnostics;
+using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
-using System.Xml.Linq;
+using System.Collections.Immutable;
 
 namespace FanScript.Tests
 {
@@ -946,7 +938,7 @@ namespace FanScript.Tests
                 {
                     foreach (var mod2 in Enum.GetValues<Modifiers>())
                         if (mod1.GetConflictingModifiers().Contains(mod2) && mod2.GetTargets().Contains(validTarget))
-                        yield return [mod1.ToSyntaxString(), mod2.ToSyntaxString()];
+                            yield return [mod1.ToSyntaxString(), mod2.ToSyntaxString()];
                 }
             }
         }

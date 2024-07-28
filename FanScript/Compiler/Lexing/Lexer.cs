@@ -4,7 +4,6 @@ using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using System.Collections.Immutable;
 using System.Globalization;
-using System.Text;
 
 namespace FanScript.Compiler.Lexing
 {
