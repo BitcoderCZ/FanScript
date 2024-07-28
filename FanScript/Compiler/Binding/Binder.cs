@@ -712,12 +712,12 @@ namespace FanScript.Compiler.Binding
         private BoundExpression BindCallExpression(CallExpressionSyntax syntax)
         {
             if (syntax.Arguments.Count == 1 && LookupType(syntax.Identifier.Text) is TypeSymbol type)
-                return BindConversion(syntax.Arguments[0], type, allowExplicit: true);
+                return BindConversion(syntax.Arguments[0].Expression, type, allowExplicit: true);
 
             ImmutableArray<BoundExpression>.Builder boundArguments = ImmutableArray.CreateBuilder<BoundExpression>(syntax.Arguments.Count);
 
-            foreach (ExpressionSyntax argument in syntax.Arguments)
-                boundArguments.Add(BindExpression(argument));
+            foreach (ModifierClauseSyntax argument in syntax.Arguments)
+                boundArguments.Add(BindExpression(argument.Expression));
 
             FunctionSymbol? function = _scope.TryLookupFunction(syntax.Identifier.Text, boundArguments.Select(arg => arg.Type!).ToList());
 
@@ -944,8 +944,8 @@ namespace FanScript.Compiler.Binding
             {
                 boundArguments = ImmutableArray.CreateBuilder<BoundExpression>(syntax.Arguments.Count);
 
-                foreach (ExpressionSyntax argument in syntax.Arguments)
-                    boundArguments.Add(BindExpression(argument));
+                foreach (ModifierClauseSyntax argument in syntax.Arguments)
+                    boundArguments.Add(BindExpression(argument.Expression));
             }
 
             if (syntax.Arguments.Count != parameters.Length)
@@ -958,7 +958,7 @@ namespace FanScript.Compiler.Binding
                         firstExceedingNode = syntax.Arguments.GetSeparator(parameters.Length - 1);
                     else
                         firstExceedingNode = syntax.Arguments[0];
-                    ExpressionSyntax lastExceedingArgument = syntax.Arguments[syntax.Arguments.Count - 1];
+                    SyntaxNode lastExceedingArgument = syntax.Arguments[syntax.Arguments.Count - 1];
                     span = TextSpan.FromBounds(firstExceedingNode.Span.Start, lastExceedingArgument.Span.End);
                 }
                 else
@@ -973,11 +973,11 @@ namespace FanScript.Compiler.Binding
 
             for (int i = 0; i < syntax.Arguments.Count; i++)
             {
-                TextLocation argumentLocation = syntax.Arguments[i].Location;
+                TextLocation argumentLocation = syntax.Arguments[i].Expression.Location;
                 BoundExpression argument = boundArguments[i];
                 ParameterSymbol parameter = parameters[i];
 
-                Modifiers modifiers = BindModifiers(syntax.ArgumentModifiers[i], ModifierTarget.Parameter, item =>
+                Modifiers modifiers = BindModifiers(syntax.Arguments[i].Modifiers, ModifierTarget.Parameter, item =>
                 {
                     var (modifier, token) = item;
 

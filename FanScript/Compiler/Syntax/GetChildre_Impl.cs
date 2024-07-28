@@ -8,31 +8,8 @@ namespace FanScript.Compiler.Syntax
         {
             yield return OpenParenthesisToken;
 
-            int modCounter = 0;
-            int counter = 0;
-            foreach (SyntaxNode child in ArgumentModifiers.Zip(Arguments.GetWithSeparators(), (modifiers, arg) =>
-            {
-                // first return all the modifiers for this arg
-                if (counter == 0)
-                {
-                    if (modCounter < modifiers.Length)
-                        return (modifiers[modCounter++], false, false); // nothing consumed
-
-                    modCounter = 0;
-                    counter++;
-                }
-
-                bool consumeMods = false;
-
-                if (++counter > 2)
-                {
-                    counter = 0;
-                    consumeMods = true;
-                }
-
-                return (arg, consumeMods, true); // if consumeMods is true on the next iteration we will be looking at a new param, so consume the current mods
-            }))
-                yield return child;
+            foreach (var node in Arguments.GetWithSeparators())
+                yield return node;
 
             yield return CloseParenthesisToken;
         }
@@ -218,6 +195,16 @@ namespace FanScript.Compiler.Syntax
         public override IEnumerable<SyntaxNode> GetChildren()
         {
             yield return LiteralToken;
+        }
+    }
+    partial class ModifierClauseSyntax
+    {
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            foreach (var modifier in Modifiers)
+                yield return modifier;
+
+            yield return Expression;
         }
     }
     partial class NameExpressionSyntax
