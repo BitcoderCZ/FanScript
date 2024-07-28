@@ -882,12 +882,14 @@ namespace FanScript.Compiler.Binding
             string name = identifier.Text ?? "?";
             bool declare = !identifier.IsMissing;
 
-            Modifiers validModifiers = Modifiers.Readonly;
+            Modifiers validModifiers = Modifiers.Readonly | Modifiers.Global;
             if (type.GenericEquals(TypeSymbol.Bool) ||
                 type.GenericEquals(TypeSymbol.Float) ||
                 type.GenericEquals(TypeSymbol.Vector3) ||
                 type.GenericEquals(TypeSymbol.Rotation))
                 validModifiers |= Modifiers.Constant;
+            if (type.GenericEquals(TypeSymbol.Float))
+                validModifiers |= Modifiers.Saved;
 
             Modifiers modifiers = BindModifiers(modifierArray, ModifierTarget.Variable, item =>
             {
@@ -900,9 +902,9 @@ namespace FanScript.Compiler.Binding
                 return valid;
             });
 
-            VariableSymbol variable = _function is null
-                                ? new GlobalVariableSymbol(name, modifiers, type)
-                                : new LocalVariableSymbol(name, modifiers, type);
+            VariableSymbol variable = modifiers.HasFlag(Modifiers.Global) || modifiers.HasFlag(Modifiers.Saved)
+                ? new GlobalVariableSymbol(name, modifiers, type)
+                : new LocalVariableSymbol(name, modifiers, type);
 
             if (declare && !_scope.TryDeclareVariable(variable))
                 _diagnostics.ReportSymbolAlreadyDeclared(identifier.Location, name);

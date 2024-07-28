@@ -51,7 +51,7 @@ namespace FanScript.Compiler.Symbols
                     VariableSymbol variable = ((BoundVariableExpression)call.Arguments[i]).Variable;
                     Block varBlock = context.Builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
 
-                    context.Builder.SetBlockValue(varBlock, 0, variable.Name);
+                    context.Builder.SetBlockValue(varBlock, 0, variable.ResultName);
 
                     if (i == 0)
                         context.Connect(BasicEmitStore.COut(block), BasicEmitStore.CIn(varBlock));
@@ -88,7 +88,7 @@ namespace FanScript.Compiler.Symbols
                 VariableSymbol variable = ((BoundVariableExpression)call.Arguments[i]).Variable;
                 Block varBlock = context.Builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
 
-                context.Builder.SetBlockValue(varBlock, 0, variable.Name);
+                context.Builder.SetBlockValue(varBlock, 0, variable.ResultName);
 
                 if (block is null)
                 {
@@ -156,7 +156,7 @@ namespace FanScript.Compiler.Symbols
                         VariableSymbol variable = ((BoundVariableExpression)call.Arguments[0]).Variable;
                         varBlock = context.Builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
 
-                        context.Builder.SetBlockValue(varBlock, 0, variable.Name);
+                        context.Builder.SetBlockValue(varBlock, 0, variable.ResultName);
 
                         context.Connect(BasicEmitStore.COut(joystick), BasicEmitStore.CIn(varBlock));
                         context.Connect(BasicEmitStore.COut(joystick, joystick.Type.Terminals[1]), BasicEmitStore.CIn(varBlock, varBlock.Type.Terminals[1]));

@@ -16,6 +16,8 @@ namespace FanScript.Compiler
         Constant = 1 << 1,
         Ref = 1 << 2,
         Out = 1 << 3,
+        Global = 1 << 4,
+        Saved = 1 << 5,
     }
 
     public enum ModifierTarget
@@ -36,6 +38,8 @@ namespace FanScript.Compiler
             [Modifiers.Constant] = new ModifierInfo(SyntaxKind.ConstantModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Readonly] },
             [Modifiers.Ref] = new ModifierInfo(SyntaxKind.RefModifier, [ModifierTarget.Parameter]) { Conflicts = [Modifiers.Out], MakesTargetReference = true },
             [Modifiers.Out] = new ModifierInfo(SyntaxKind.OutModifier, [ModifierTarget.Parameter]) { Conflicts = [Modifiers.Ref], MakesTargetReference = true },
+            [Modifiers.Global] = new ModifierInfo(SyntaxKind.GlobalModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Saved] },
+            [Modifiers.Saved] = new ModifierInfo(SyntaxKind.SavedModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Global, Modifiers.Constant] },
         }.ToFrozenDictionary();
 
         public static Modifiers FromKind(SyntaxKind kind)
@@ -45,6 +49,8 @@ namespace FanScript.Compiler
                 SyntaxKind.ConstantModifier => Modifiers.Constant,
                 SyntaxKind.RefModifier => Modifiers.Ref,
                 SyntaxKind.OutModifier => Modifiers.Out,
+                SyntaxKind.GlobalModifier => Modifiers.Global,
+                SyntaxKind.SavedModifier => Modifiers.Saved,
                 _ => throw new InvalidDataException($"SyntaxKind '{kind}' isn't a modifier"),
             };
 
@@ -70,18 +76,18 @@ namespace FanScript.Compiler
             return false;
         }
 
-        public static string ToSyntaxString(this Modifiers mod)
+        public static string ToSyntaxString(this Modifiers mods)
         {
             StringBuilder builder = new StringBuilder();
-            mod.ToSyntaxString(builder);
+            mods.ToSyntaxString(builder);
             return builder.ToString();
         }
-        public static void ToSyntaxString(this Modifiers mod, StringBuilder builder)
+        public static void ToSyntaxString(this Modifiers mods, StringBuilder builder)
         {
             bool isFirst = true;
 
             foreach (var modifier in Enum.GetValues<Modifiers>())
-                if (mod.HasFlag(modifier))
+                if (mods.HasFlag(modifier))
                 {
                     if (!isFirst)
                         builder.Append(' ');

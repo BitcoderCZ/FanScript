@@ -220,7 +220,7 @@ namespace FanScript.Compiler.Emit
                     VariableSymbol variable = ((BoundVariableExpression)arguments[i]).Variable;
                     Block varBlock = builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
 
-                    builder.SetBlockValue(varBlock, 0, variable.Name);
+                    builder.SetBlockValue(varBlock, 0, variable.ResultName);
 
                     if (i == 0)
                         connect(BasicEmitStore.COut(block, block.Type.Terminals[^2]), BasicEmitStore.CIn(varBlock));
@@ -730,7 +730,7 @@ namespace FanScript.Compiler.Emit
                     {
                         Block block = builder.AddBlock(Blocks.Variables.VariableByType(variable.Type!.ToWireType()));
 
-                        builder.SetBlockValue(block, 0, variable.Name);
+                        builder.SetBlockValue(block, 0, variable.ResultName);
 
                         return BasicEmitStore.COut(block, block.Type.Terminals[0]);
                     }
@@ -748,7 +748,7 @@ namespace FanScript.Compiler.Emit
                     {
                         Block block = builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
 
-                        builder.SetBlockValue(block, 0, variable.Name);
+                        builder.SetBlockValue(block, 0, variable.ResultName);
 
                         builder.BlockPlacer.ExpressionBlock(() =>
                         {

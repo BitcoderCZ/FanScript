@@ -98,6 +98,10 @@
                     return SyntaxKind.RefModifier;
                 case "out":
                     return SyntaxKind.OutModifier;
+                case "global":
+                    return SyntaxKind.GlobalModifier;
+                case "saved":
+                    return SyntaxKind.SavedModifier;
                 default:
                     return SyntaxKind.IdentifierToken;
             }
@@ -230,6 +234,10 @@
                     "ref",
                 SyntaxKind.OutModifier =>
                     "out",
+                SyntaxKind.GlobalModifier =>
+                    "global",
+                SyntaxKind.SavedModifier =>
+                    "saved",
                 _ =>
                     null
             };

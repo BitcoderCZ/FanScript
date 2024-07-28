@@ -101,5 +101,7 @@
         ConstantModifier,
         RefModifier,
         OutModifier,
+        GlobalModifier,
+        SavedModifier,
     }
 }

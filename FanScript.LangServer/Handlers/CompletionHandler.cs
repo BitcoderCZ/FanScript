@@ -143,15 +143,19 @@ namespace FanScript.LangServer.Handlers
             Document document = documentHandler.GetDocument(request.TextDocument.Uri);
             SyntaxTree? tree = document.Tree;
 
+            CurrentRecomendations recomendation;
+
             if (tree is null)
-                return new CompletionList();
+                recomendation = CurrentRecomendations.All;
+            else
+            {
+                var node = tree.FindNode(request.Position.ToSpan(tree.Text) - 1);
 
-            var node = tree.FindNode(request.Position.ToSpan(tree.Text) - 1);
-
-            if (node is null)
-                return new CompletionList();
-
-            CurrentRecomendations recomendation = getRecomendation(node);
+                if (node is null)
+                    recomendation = CurrentRecomendations.All;
+                else
+                    recomendation = getRecomendation(node);
+            }
 
             if (recomendation == 0)
                 return new CompletionList();

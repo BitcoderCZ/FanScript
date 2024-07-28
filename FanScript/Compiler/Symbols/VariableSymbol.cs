@@ -16,6 +16,8 @@ namespace FanScript.Compiler.Symbols
         public TypeSymbol Type { get; }
         internal BoundConstant? Constant { get; private set; }
 
+        public virtual string ResultName => Name;
+
         /// <summary>
         /// Used to know if a Read-Only variable has been assigned
         /// </summary>
