@@ -12,6 +12,7 @@ using FanScript.Compiler.Emit.CodeBuilders;
 using System.Collections.Immutable;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Text;
+using System.Xml.Linq;
 
 namespace FanScript.Tests
 {
@@ -24,7 +25,7 @@ namespace FanScript.Tests
                 {
                     float x = 10
                     float y = 100
-                    float [x] = 5
+                    float $[x]$ = 5
                 }
                 """;
 
@@ -40,7 +41,7 @@ namespace FanScript.Tests
         {
             var text = """
                 {
-                [)][]
+                $[)]$$[]$
                 """;
 
             var diagnostics = """
@@ -55,7 +56,7 @@ namespace FanScript.Tests
         public void Emitter_InvokeFunctionArguments_Missing()
         {
             var text = """
-                inspect([)]
+                inspect($[)]$
                 """;
 
             var diagnostics = """
@@ -69,7 +70,7 @@ namespace FanScript.Tests
         public void Emitter_InvokeFunctionArguments_Exceeding()
         {
             var text = """
-                inspect(1[, 2, 3])
+                inspect(1$[, 2, 3]$)
                 """;
 
             var diagnostics = """
@@ -83,7 +84,7 @@ namespace FanScript.Tests
         public void Emitter_InvokeFunctionArguments_NoInfiniteLoop()
         {
             var text = @"
-                inspect(1[[=]][)]
+                inspect(1$[$[=]$]$$[)]$
             ";
 
             var diagnostics = """
@@ -138,7 +139,7 @@ namespace FanScript.Tests
             var text = """
                 {
                     float x = 0
-                    if [10]
+                    if $[10]$
                         x = 10
                 }
                 """;
@@ -156,7 +157,7 @@ namespace FanScript.Tests
             var text = """
                 {
                     float x = 0
-                    while [10]
+                    while $[10]$
                         x = 10
                 }
                 """;
@@ -227,7 +228,7 @@ namespace FanScript.Tests
         public void Emitter_NameExpression_Reports_Undefined()
         {
             var text = """
-                [x] * 10
+                $[x]$ * 10
                 """;
 
             var diagnostics = """
@@ -241,7 +242,7 @@ namespace FanScript.Tests
         public void Emitter_NameExpression_Reports_NoErrorForInsertedToken()
         {
             var text = """
-                1 + []
+                1 + $[]$
                 """;
 
             var diagnostics = """
@@ -255,7 +256,7 @@ namespace FanScript.Tests
         public void Emitter_UnaryExpression_Reports_Undefined()
         {
             var text = """
-                [+]true
+                $[+]$true
                 """;
 
             var diagnostics = """
@@ -269,7 +270,7 @@ namespace FanScript.Tests
         public void Emitter_BinaryExpression_Reports_Undefined()
         {
             var text = """
-                10 [*] false
+                10 $[*]$ false
                 """;
 
             var diagnostics = """
@@ -284,7 +285,7 @@ namespace FanScript.Tests
         {
             var text = """
                 float x = 10
-                x [+=] false
+                x $[+=]$ false
                 """;
 
             var diagnostics = """
@@ -298,7 +299,7 @@ namespace FanScript.Tests
         public void Emitter_AssignmentExpression_Reports_Undefined()
         {
             var text = """
-                [x] = 10
+                $[x]$ = 10
                 """;
 
             var diagnostics = """
@@ -312,7 +313,7 @@ namespace FanScript.Tests
         public void Emitter_CompoundExpression_Assignemnt_NonDefinedVariable_Reports_Undefined()
         {
             var text = """
-                [x] += 10
+                $[x]$ += 10
                 """;
 
             var diagnostics = """
@@ -328,7 +329,7 @@ namespace FanScript.Tests
             var text = """
                 {
                     readonly float x = 10
-                    x [=] 0
+                    x $[=]$ 0
                 }
                 """;
 
@@ -345,12 +346,15 @@ namespace FanScript.Tests
             var text = """
                 {
                     readonly float x = 10
-                    x [+=] 1
+                    const float y = 10
+                    x $[+=]$ 1
+                    y $[+=]$ 1
                 }
                 """;
 
             var diagnostics = """
                 Variable 'x' is read-only and cannot be assigned to.
+                Variable 'y' is read-only and cannot be assigned to.
                 """;
 
             AssertDiagnostics(text, diagnostics);
@@ -362,7 +366,7 @@ namespace FanScript.Tests
             var text = """
                 {
                     float x = 10
-                    x = [true]
+                    x = $[true]$
                 }
                 """;
 
@@ -377,7 +381,7 @@ namespace FanScript.Tests
         public void Emitter_CallExpression_Reports_Undefined()
         {
             var text = """
-                [foo](42)
+                $[foo]$(42)
                 """;
 
             var diagnostics = """
@@ -526,13 +530,294 @@ namespace FanScript.Tests
         //    AssertDiagnostics(text, diagnostics);
         //}
 
+        [Fact]
+        public void Emitter_ExpressionStatement_Reports_Invalid()
+        {
+            var text = """
+                $[random(0, 10)]$
+                """;
+
+            var diagnostics = """
+                Only void call expressions can be used as a statement.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
         [Theory]
-        [InlineData("[break]", "break")]
-        [InlineData("[continue]", "continue")]
+        [InlineData("$[break]$", "break")]
+        [InlineData("$[continue]$", "continue")]
         public void Emitter_Invalid_Break_Or_Continue(string text, string keyword)
         {
             var diagnostics = $"""
                 The keyword '{keyword}' can only be used inside of loops.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Theory]
+        [InlineData("break")]
+        [InlineData("continue")]
+        public void Emitter_Break_Or_Continue_In_SB(string keyword)
+        {
+            var text = $$"""
+                float x
+                while (x > 0)
+                {
+                    on Play()
+                    {
+                        $[{{keyword}}]$
+                    }
+                }
+                """;
+
+            var diagnostics = $"""
+                The keyword '{keyword}' cannot be used inside of an on block.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Fact]
+        public void Emitter_Value_Must_Be_Constant()
+        {
+            var text = """
+                float x
+                object o = getObject($[x]$, 0, 0)
+                """;
+
+            var diagnostics = """
+                Value must be constant.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Fact]
+        public void Emitter_Generic_Type_Recursion()
+        {
+            var text = """
+                array<array$[<float>]$> x
+                """;
+
+            var diagnostics = """
+                Type argument cannot be generic.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+
+        [Fact]
+        public void Emitter_Not_A_Generic_Type()
+        {
+            var text = """
+                float$[<float>]$ x
+                """;
+
+            var diagnostics = """
+                Non generic type cannot have a type argument.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Fact]
+        public void Emitter_Type_Must_Have_Generic_Parameter()
+        {
+            var text = """
+                $[array]$ x
+                """;
+
+            var diagnostics = """
+                Type must have a type argument.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Fact]
+        public void Emitter_Non_Generic_Method_Type_Arguments()
+        {
+            var text = """
+                float x = min$[<float>]$(10, 5)
+                """;
+
+            var diagnostics = """
+                Non-generic methods cannot be used with a type argument.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Fact]
+        public void Emitter_Variable_Name_Too_Long()
+        {
+            string name = new string('x', FCInfo.FancadeConstants.MaxVariableNameLength + 1);
+
+            var text = $"""
+                float $[{name}]$
+                """;
+
+            var diagnostics = $"""
+                Variable name '{name}' is too long, maximum allowed length is {FCInfo.FancadeConstants.MaxVariableNameLength}
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Fact]
+        public void Emitter_Empty_Array_Initializer()
+        {
+            var text = """
+                array<float> x = $[[]]$
+                """;
+
+            var diagnostics = """
+                Array initializer cannot be empty.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetModifiersInvalidFor), ModifierTarget.Variable)]
+        public void Emitter_Invalid_Modifier_Target_Variable(string modifier, string validTargets)
+        {
+            var text = $"""
+                $[{modifier}]$ float x
+                """;
+
+            var diagnostics = $"""
+                Modifier '{modifier}' was used on <{ModifierTarget.Variable}>, but it can only be used on <{validTargets}>.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetModifiersValidFor), ModifierTarget.Variable)]
+        public void Emitter_Duplicate_Modifier(string modifier)
+        {
+            var text = $"""
+                {modifier} $[{modifier}]$ float x = 0
+                """;
+
+            var diagnostics = $"""
+                Duplicate '{modifier}' modifier.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Fact]
+        public void Emitter_Invalid_Modifier_On_Type()
+        {
+            var text = $"""
+                $[const]$ array<float> x
+                """;
+
+            var diagnostics = $"""
+                Modifier 'const' isn't valid on a variable of type 'array<float>'.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Fact]
+        public void Emitter_Constant_Not_Initialized()
+        {
+            var text = $"""
+                const float $[x]$
+                """;
+
+            var diagnostics = $"""
+                A constant variable needs to be initialized.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetConflictingModifiersFor), ModifierTarget.Variable)]
+        public void Emitter_Conflicting_Modifiers(string modifier1, string modifier2)
+        {
+            var text = $"""
+                $[{modifier1}]$ {modifier2} float x = 0
+                """;
+
+            var diagnostics = $"""
+                Modifier '{modifier1}' conflicts with modifier '{modifier2}'.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Fact]
+        public void Emitter_Unknown_Special_Block()
+        {
+            var text = """
+                on $[Foo]$()
+                {
+                }
+                """;
+
+            var diagnostics = $"""
+                Unknown special block 'Foo'.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Fact]
+        public void Emitter_Argument_Must_Have_Modifier()
+        {
+            var text = """
+                float x
+                float y
+                worldToScreen(vec3(0, 0, 0), $[x]$, out y)
+
+                on Touch(out x, $[y]$, 0, 0)
+                {
+                }
+                """;
+
+            var diagnostics = $"""
+                Argument for paramater 'screenX' must be passed with the 'out' modifier.
+                Argument for paramater 'screenY' must be passed with the 'out' modifier.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Fact]
+        public void Emitter_Argument_Cannot_Have_Modifier()
+        {
+            var text = """
+                float y
+                worldToScreen(vec3(0, 0, 0), out $[5]$, out y)
+                """;
+
+            var diagnostics = $"""
+                A out argument must be an assignable variable.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Fact]
+        public void Emitter_By_Ref_Arg_Must_Be_Variable()
+        {
+            var text = """
+                float x
+                inspect($[ref]$ x)
+                inspect($[out]$ x)
+                """;
+
+            var diagnostics = $"""
+                Argument for paramater 'value' cannot be passed with the 'ref' modifier.
+                Argument for paramater 'value' cannot be passed with the 'out' modifier.
                 """;
 
             AssertDiagnostics(text, diagnostics);
@@ -630,6 +915,39 @@ namespace FanScript.Tests
                 TextSpan expectedSpan = annotatedText.Spans[i];
                 TextSpan actualSpan = diagnostics[i].Location.Span;
                 Assert.Equal(expectedSpan, actualSpan);
+            }
+        }
+
+        public static IEnumerable<object[]> GetModifiersValidFor(ModifierTarget validTarget)
+        {
+            foreach (var mod in Enum.GetValues<Modifiers>())
+            {
+                var targets = mod.GetTargets();
+                if (targets.Contains(validTarget))
+                    yield return [mod.ToSyntaxString()];
+            }
+        }
+        public static IEnumerable<object[]> GetModifiersInvalidFor(ModifierTarget invalidTarget)
+        {
+            foreach (var mod in Enum.GetValues<Modifiers>())
+            {
+                var targets = mod.GetTargets();
+                if (!targets.Contains(invalidTarget))
+                    yield return [mod.ToSyntaxString(), string.Join(", ", targets)];
+            }
+        }
+
+        public static IEnumerable<object[]> GetConflictingModifiersFor(ModifierTarget validTarget)
+        {
+            foreach (var mod1 in Enum.GetValues<Modifiers>())
+            {
+                var mod1Targets = mod1.GetTargets();
+                if (mod1Targets.Contains(validTarget))
+                {
+                    foreach (var mod2 in Enum.GetValues<Modifiers>())
+                        if (mod1.GetConflictingModifiers().Contains(mod2) && mod2.GetTargets().Contains(validTarget))
+                        yield return [mod1.ToSyntaxString(), mod2.ToSyntaxString()];
+                }
             }
         }
     }

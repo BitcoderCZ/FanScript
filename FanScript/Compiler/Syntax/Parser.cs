@@ -662,14 +662,14 @@ namespace FanScript.Compiler.Syntax
 
             if (Current.Kind == SyntaxKind.LessToken)
             {
-                if (!allowGeneric)
-                    _diagnostics.ReportGenericTypeNotAllowed(typeToken.Location);
-                else if (gettingGenericParam)
-                    _diagnostics.ReportGenericTypeRecursion(typeToken.Location);
-
                 SyntaxToken lessToken = MatchToken(SyntaxKind.LessToken);
                 TypeClauseSyntax innerType = ParseTypeClause(allowGeneric, true);
                 SyntaxToken greaterToken = MatchToken(SyntaxKind.GreaterToken);
+
+                if (!allowGeneric)
+                    _diagnostics.ReportGenericTypeNotAllowed(typeToken.Location);
+                else if (gettingGenericParam)
+                    _diagnostics.ReportGenericTypeRecursion(new TextLocation(_syntaxTree.Text, TextSpan.FromBounds(lessToken.Span.Start, greaterToken.Span.End)));
 
                 return new TypeClauseSyntax(_syntaxTree, typeToken, lessToken, innerType, greaterToken);
             }

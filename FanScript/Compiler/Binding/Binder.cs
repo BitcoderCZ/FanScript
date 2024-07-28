@@ -236,16 +236,16 @@ namespace FanScript.Compiler.Binding
         {
             BoundStatement result = BindStatementInternal(syntax);
 
-            if (!_isScript || !isGlobal)
+            //if (!_isScript || !isGlobal)
+            //{
+            if (result is BoundExpressionStatement es)
             {
-                if (result is BoundExpressionStatement es)
-                {
-                    bool isAllowedExpression = es.Expression.Kind == BoundNodeKind.ErrorExpression ||
-                                              (es.Expression.Kind == BoundNodeKind.CallExpression && es.Expression.Type == TypeSymbol.Void);
-                    if (!isAllowedExpression)
-                        _diagnostics.ReportInvalidExpressionStatement(syntax.Location);
-                }
+                bool isAllowedExpression = es.Expression.Kind == BoundNodeKind.ErrorExpression ||
+                                          (es.Expression.Kind == BoundNodeKind.CallExpression && es.Expression.Type == TypeSymbol.Void);
+                if (!isAllowedExpression)
+                    _diagnostics.ReportInvalidExpressionStatement(syntax.Location);
             }
+            //}
 
             return result;
         }
@@ -438,7 +438,7 @@ namespace FanScript.Compiler.Binding
         {
             if (syntax.Elements.Count == 0)
             {
-                _diagnostics.ReportEmptyArrayInitializer(syntax.Location);
+                _diagnostics.ReportEmptyArrayInitializer(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.OpenSquareToken.Span.Start, syntax.CloseSquareToken.Span.End)));
                 return BindErrorStatement(syntax);
             }
 
@@ -568,7 +568,7 @@ namespace FanScript.Compiler.Binding
                 }
                 else
                 {
-                    _diagnostics.ReportNotAGenericType(syntax.Location);
+                    _diagnostics.ReportNotAGenericType(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.LessToken.Span.Start, syntax.GreaterToken.Span.End)));
                     return TypeSymbol.Error;
                 }
             }
@@ -995,7 +995,7 @@ namespace FanScript.Compiler.Binding
                 else if (parameter.Modifiers.HasFlag(Modifiers.Out) && !modifiers.HasFlag(Modifiers.Out))
                     _diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Out);
                 else if (modifiers.MakesTargetReference(out Modifiers? makesRefMod) && (argument is not BoundVariableExpression variable || variable.Variable.IsReadOnly))
-                    _diagnostics.ReportRefMustBeVariable(argumentLocation, makesRefMod.Value);
+                    _diagnostics.ReportByRefArgMustBeVariable(argumentLocation, makesRefMod.Value);
 
                 boundArguments[i] = BindConversion(argumentLocation, argument, parameter.Type);
             }

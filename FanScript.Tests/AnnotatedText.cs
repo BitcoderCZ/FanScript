@@ -29,19 +29,26 @@ namespace FanScript.Tests
 
             int position = 0;
 
-            foreach (char c in text)
+            for (int i = 0; i < text.Length; i++)
             {
-                if (c == '[')
+                char c = text[i];
+                char nextC = text[i + 1 < text.Length ? i + 1 : text.Length - 1];
+
+                if (c == '$' && nextC == '[')
+                {
                     startStack.Push(position);
-                else if (c == ']')
+                    i++;
+                }
+                else if (c == ']' && nextC == '$')
                 {
                     if (startStack.Count == 0)
-                        throw new ArgumentException("Too many ']' in text", nameof(text));
+                        throw new ArgumentException("Too many ']$' in text", nameof(text));
 
                     int start = startStack.Pop();
                     int end = position;
                     TextSpan span = TextSpan.FromBounds(start, end);
                     spanBuilder.Add(span);
+                    i++;
                 }
                 else
                 {
@@ -51,7 +58,7 @@ namespace FanScript.Tests
             }
 
             if (startStack.Count != 0)
-                throw new ArgumentException("Missing ']' in text", nameof(text));
+                throw new ArgumentException("Missing ']$' in text", nameof(text));
 
             return new AnnotatedText(textBuilder.ToString(), spanBuilder.ToImmutable());
         }

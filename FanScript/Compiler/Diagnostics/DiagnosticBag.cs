@@ -158,7 +158,7 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportArgumentCannotHaveModifier(TextLocation location, string name, Modifiers modifier)
             => ReportError(location, $"Argument for paramater '{name}' cannot be passed with the '{modifier.ToKind().GetText()}' modifier.");
 
-        public void ReportRefMustBeVariable(TextLocation location, Modifiers makesRefMod)
+        public void ReportByRefArgMustBeVariable(TextLocation location, Modifiers makesRefMod)
             => ReportError(location, $"A {makesRefMod.ToKind().GetText()} argument must be an assignable variable.");
 
         public void ReportMustBeName(TextLocation location)
