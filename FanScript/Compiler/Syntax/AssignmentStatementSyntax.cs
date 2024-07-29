@@ -2,7 +2,7 @@
 {
     public sealed partial class AssignmentStatementSyntax : StatementSyntax
     {
-        public AssignmentStatementSyntax(SyntaxTree syntaxTree, AssignableClauseSyntax assignableClause, SyntaxToken assignmentToken, ExpressionSyntax expression)
+        internal AssignmentStatementSyntax(SyntaxTree syntaxTree, AssignableClauseSyntax assignableClause, SyntaxToken assignmentToken, ExpressionSyntax expression)
             : base(syntaxTree)
         {
             AssignableClause = assignableClause;

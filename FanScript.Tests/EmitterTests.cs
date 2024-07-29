@@ -756,7 +756,7 @@ namespace FanScript.Tests
                 """;
 
             var diagnostics = $"""
-                Unknown special block 'Foo'.
+                Unknown on block 'Foo'.
                 """;
 
             AssertDiagnostics(text, diagnostics);
@@ -810,6 +810,22 @@ namespace FanScript.Tests
             var diagnostics = $"""
                 Argument for paramater 'value' cannot be passed with the 'ref' modifier.
                 Argument for paramater 'value' cannot be passed with the 'out' modifier.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Fact]
+        public void Emitter_SB_Must_Have_Arguments()
+        {
+            var text = """
+                on $[Touch]$
+                {
+                }
+                """;
+
+            var diagnostics = $"""
+                On block 'Touch' must have arguments.
                 """;
 
             AssertDiagnostics(text, diagnostics);

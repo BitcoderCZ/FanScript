@@ -261,7 +261,8 @@
         {
             yield return KeywordToken;
             yield return Identifier;
-            yield return ArgumentClause;
+            if (ArgumentClause is not null)
+                yield return ArgumentClause;
             yield return Block;
         }
     }

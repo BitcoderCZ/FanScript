@@ -317,10 +317,14 @@ namespace FanScript.Compiler.Binding
                 .Select((param, index) => param.ToParameter(index))
                 .ToImmutableArray();
 
-            BoundArgumentClause? argumentClause = BindArgumentClause(syntax.ArgumentClause, parameters, "SpecialBlock", syntax.Identifier.Text);
+            BoundArgumentClause? argumentClause = syntax.ArgumentClause is null ? null : BindArgumentClause(syntax.ArgumentClause, parameters, "SpecialBlock", syntax.Identifier.Text);
 
-            if (argumentClause is null)
+            if (argumentClause is null && parameters.Length != 0)
+            {
+                if (syntax.ArgumentClause is null)
+                    _diagnostics.ReportSBMustHaveArguments(syntax.Identifier.Location, syntax.Identifier.Text);
                 return BindErrorStatement(syntax);
+            }
 
             onStatementDepth++;
             BoundBlockStatement block = (BoundBlockStatement)BindBlockStatement(syntax.Block);

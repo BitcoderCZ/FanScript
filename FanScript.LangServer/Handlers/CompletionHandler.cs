@@ -50,31 +50,35 @@ namespace FanScript.LangServer.Handlers
                 var info = sbt.GetInfo();
 
                 StringBuilder builder = new StringBuilder()
-                .Append(sbt.ToString())
-                .Append('(');
+                    .Append(sbt.ToString());
 
-                for (int i = 0; i < info.Parameters.Length; i++)
+                if (info.Parameters.Length != 0)
                 {
-                    var param = info.Parameters[i];
-
-                    if (i != 0)
-                        builder.Append(", ");
-
-                    if (param.Modifiers.HasFlag(Modifiers.Ref))
-                        builder.Append("ref ");
-                    if (param.Modifiers.HasFlag(Modifiers.Out))
+                    builder.Append('(');
+                    for (int i = 0; i < info.Parameters.Length; i++)
                     {
-                        builder.Append("out ");
-                        builder.Append(param.Type);
-                        builder.Append(' ');
+                        var param = info.Parameters[i];
+
+                        if (i != 0)
+                            builder.Append(", ");
+
+                        if (param.Modifiers.HasFlag(Modifiers.Ref))
+                            builder.Append("ref ");
+                        if (param.Modifiers.HasFlag(Modifiers.Out))
+                        {
+                            builder.Append("out ");
+                            builder.Append(param.Type);
+                            builder.Append(' ');
+                        }
+
+                        if (param.IsConstant)
+                            builder.Append(param.Name);
                     }
 
-                    if (param.IsConstant)
-                        builder.Append(param.Name);
+                    builder.Append(')');
                 }
 
                 string insertText = builder
-                    .Append(')')
                     .ToString();
 
                 return new CompletionItem()

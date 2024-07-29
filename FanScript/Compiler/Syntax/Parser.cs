@@ -273,7 +273,9 @@ namespace FanScript.Compiler.Syntax
         {
             SyntaxToken onKeyword = MatchToken(SyntaxKind.KeywordOn);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
-            ArgumentClauseSyntax argumentClause = ParseArgumentClause();
+            ArgumentClauseSyntax? argumentClause = null;
+            if (Current.Kind == SyntaxKind.OpenParenthesisToken)
+                argumentClause = ParseArgumentClause();
             BlockStatementSyntax block = ParseBlockStatement();
 
             return new SpecialBlockStatementSyntax(_syntaxTree, onKeyword, identifier, argumentClause, block);

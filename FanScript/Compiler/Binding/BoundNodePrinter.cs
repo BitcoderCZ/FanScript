@@ -164,7 +164,8 @@ namespace FanScript.Compiler.Binding
             writer.WriteKeyword(SyntaxKind.KeywordOn);
             writer.WriteSpace();
             writer.WriteIdentifier(node.Type.ToString());
-            WriteArgumentClause(node.ArgumentClause, writer);
+            if (node.ArgumentClause is not null)
+                WriteArgumentClause(node.ArgumentClause, writer);
             writer.WriteLine();
             WriteBlockStatement(node.Block, writer);
         }
@@ -496,7 +497,8 @@ namespace FanScript.Compiler.Binding
         private static void WriteSpecialBlockCondition(BoundSpecialBlockCondition node, IndentedTextWriter writer)
         {
             writer.WriteIdentifier(node.SBType.ToString());
-            WriteArgumentClause(node.ArgumentClause, writer);
+            if (node.ArgumentClause is not null)
+                WriteArgumentClause(node.ArgumentClause, writer);
         }
 
         private static void WriteArgumentClause(BoundArgumentClause node, IndentedTextWriter writer)

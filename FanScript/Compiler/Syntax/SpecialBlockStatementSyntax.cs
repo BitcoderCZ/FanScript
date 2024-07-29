@@ -2,7 +2,7 @@
 {
     public sealed partial class SpecialBlockStatementSyntax : StatementSyntax
     {
-        public SpecialBlockStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keywordToken, SyntaxToken identifier, ArgumentClauseSyntax argumentClause, BlockStatementSyntax block)
+        public SpecialBlockStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keywordToken, SyntaxToken identifier, ArgumentClauseSyntax? argumentClause, BlockStatementSyntax block)
             : base(syntaxTree)
         {
             KeywordToken = keywordToken;
@@ -14,7 +14,7 @@
         public override SyntaxKind Kind => SyntaxKind.SpecialBlockStatement;
         public SyntaxToken KeywordToken { get; }
         public SyntaxToken Identifier { get; }
-        public ArgumentClauseSyntax ArgumentClause { get; }
+        public ArgumentClauseSyntax? ArgumentClause { get; }
         public BlockStatementSyntax Block { get; }
     }
 }

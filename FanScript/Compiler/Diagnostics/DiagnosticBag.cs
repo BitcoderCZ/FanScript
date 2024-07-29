@@ -150,7 +150,7 @@ namespace FanScript.Compiler.Diagnostics
             => ReportError(location, $"Modifier '{conflictingModifier.ToKind().GetText()}' conflicts with modifier '{modifier.ToKind().GetText()}'.");
 
         public void ReportUnknownSpecialBlock(TextLocation location, string text)
-            => ReportError(location, $"Unknown special block '{text}'.");
+            => ReportError(location, $"Unknown on block '{text}'.");
 
         public void ReportArgumentMustHaveModifier(TextLocation location, string name, Modifiers modifier)
             => ReportError(location, $"Argument for paramater '{name}' must be passed with the '{modifier.ToKind().GetText()}' modifier.");
@@ -169,6 +169,9 @@ namespace FanScript.Compiler.Diagnostics
 
         public void ReportCannotAssignReadOnlyProperty(TextLocation location, string name)
             => ReportError(location, $"Property '{name}' is read-only and cannot be assigned to.");
+
+        public void ReportSBMustHaveArguments(TextLocation location, string sbType)
+            => ReportError(location, $"On block '{sbType}' must have arguments.");
 
         public void ReportUnreachableCode(TextLocation location)
           => ReportWarning(location, $"Unreachable code detected.");

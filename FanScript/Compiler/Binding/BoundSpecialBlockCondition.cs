@@ -5,7 +5,7 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class BoundSpecialBlockCondition : BoundExpression
     {
-        public BoundSpecialBlockCondition(SyntaxNode syntax, SpecialBlockType sbType, BoundArgumentClause argumentClause) : base(syntax)
+        public BoundSpecialBlockCondition(SyntaxNode syntax, SpecialBlockType sbType, BoundArgumentClause? argumentClause) : base(syntax)
         {
             SBType = sbType;
             ArgumentClause = argumentClause;
@@ -15,6 +15,6 @@ namespace FanScript.Compiler.Binding
         public override TypeSymbol Type => TypeSymbol.Void;
 
         public SpecialBlockType SBType { get; }
-        public BoundArgumentClause ArgumentClause { get; }
+        public BoundArgumentClause? ArgumentClause { get; }
     }
 }

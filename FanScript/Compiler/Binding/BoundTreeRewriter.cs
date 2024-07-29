@@ -82,7 +82,7 @@ namespace FanScript.Compiler.Binding
 
         protected virtual BoundStatement RewriteSpecialBlockStatement(BoundSpecialBlockStatement node)
         {
-            BoundArgumentClause argumentClause = RewriteArgumentClause(node.ArgumentClause);
+            BoundArgumentClause? argumentClause = node.ArgumentClause is null ? null : RewriteArgumentClause(node.ArgumentClause);
 
             BoundBlockStatement block = (BoundBlockStatement)RewriteBlockStatement(node.Block);
 

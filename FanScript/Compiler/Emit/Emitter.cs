@@ -103,7 +103,7 @@ namespace FanScript.Compiler.Emit
                 BoundAssignmentStatement => emitAssigmentStatement((BoundAssignmentStatement)statement),
                 BoundPostfixStatement => emitPostfixStatement((BoundPostfixStatement)statement),
                 BoundGotoStatement => emitGotoStatement((BoundGotoStatement)statement),
-                BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundSpecialBlockCondition condition => emitSpecialBlockStatement(condition.SBType, condition.ArgumentClause.Arguments, conditionalGoto.Label),
+                BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundSpecialBlockCondition condition => emitSpecialBlockStatement(condition.SBType, condition.ArgumentClause?.Arguments, conditionalGoto.Label),
                 BoundConditionalGotoStatement => emitConditionalGotoStatement((BoundConditionalGotoStatement)statement),
                 BoundLabelStatement => emitLabelStatement((BoundLabelStatement)statement),
                 BoundEmitterHint => emitHint((BoundEmitterHint)statement),
@@ -153,7 +153,7 @@ namespace FanScript.Compiler.Emit
             return store;
         }
 
-        private EmitStore emitSpecialBlockStatement(SpecialBlockType type, ImmutableArray<BoundExpression> arguments, BoundLabel onTrueLabel)
+        private EmitStore emitSpecialBlockStatement(SpecialBlockType type, ImmutableArray<BoundExpression>? arguments, BoundLabel onTrueLabel)
         {
             BlockDef def;
             switch (type)
@@ -185,7 +185,7 @@ namespace FanScript.Compiler.Emit
             {
                 case SpecialBlockType.Button:
                     {
-                        object[]? values = emitContext.ValidateConstants(arguments.AsMemory(), true);
+                        object[]? values = emitContext.ValidateConstants(arguments!.Value.AsMemory(), true);
                         if (values is null)
                             break;
 
@@ -195,14 +195,14 @@ namespace FanScript.Compiler.Emit
                     break;
                 case SpecialBlockType.Touch:
                     {
-                        object[]? values = emitContext.ValidateConstants(arguments.AsMemory(2..), true);
+                        object[]? values = emitContext.ValidateConstants(arguments!.Value.AsMemory(2..), true);
                         if (values is null)
                             break;
 
                         for (int i = 0; i < values.Length; i++)
                             builder.SetBlockValue(block, i, (byte)(float)values[i]); // unbox, then cast
 
-                        connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments.AsSpan(..2)));
+                        connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(..2)));
                         return new BasicEmitStore(block);
                     }
             }

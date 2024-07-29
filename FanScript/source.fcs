@@ -1,4 +1,7 @@
-global float x = 5
-saved float y = 3
-global readonly float rox = 5
-saved readonly float roy = 3
+on Play {
+
+}
+
+on Touch {
+
+}
