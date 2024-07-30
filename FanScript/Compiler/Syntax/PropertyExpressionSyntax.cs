@@ -2,7 +2,7 @@
 {
     public sealed partial class PropertyExpressionSyntax : ExpressionSyntax
     {
-        public PropertyExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken, SyntaxToken dotToken, ExpressionSyntax expression) : base(syntaxTree)
+        internal PropertyExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken, SyntaxToken dotToken, ExpressionSyntax expression) : base(syntaxTree)
         {
             IdentifierToken = identifierToken;
             DotToken = dotToken;

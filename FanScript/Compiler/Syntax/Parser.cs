@@ -298,29 +298,9 @@ namespace FanScript.Compiler.Syntax
             if (Current.Kind == SyntaxKind.EqualsToken)
             {
                 SyntaxToken equals = MatchToken(SyntaxKind.EqualsToken);
+                ExpressionSyntax initializer = ParseExpression();
 
-                if (Current.Kind == SyntaxKind.OpenSquareToken)
-                {
-                    SyntaxToken openSquareToken = MatchToken(SyntaxKind.OpenSquareToken);
-                    var elements = ParseSeparatedList(SyntaxKind.CloseSquareToken);
-                    SyntaxToken closeSquareToken = MatchToken(SyntaxKind.CloseSquareToken);
-
-                    assignment = new ArrayInitializerStatementSyntax(_syntaxTree, identifier, equals, openSquareToken, new SeparatedSyntaxList<ExpressionSyntax>(elements.GetWithSeparators()
-                        .Select(node =>
-                        {
-                            if (node is ModifierClauseSyntax modifierClause)
-                                return modifierClause.Expression;
-
-                            return node;
-                        })
-                        .ToImmutableArray()), closeSquareToken);
-                }
-                else
-                {
-                    ExpressionSyntax initializer = ParseExpression();
-
-                    assignment = new AssignmentStatementSyntax(_syntaxTree, new AssignableVariableClauseSyntax(_syntaxTree, identifier), equals, initializer);
-                }
+                assignment = new AssignmentStatementSyntax(_syntaxTree, new AssignableVariableClauseSyntax(_syntaxTree, identifier), equals, initializer);
             }
 
             return new VariableDeclarationStatementSyntax(_syntaxTree, modifiers ?? ImmutableArray<SyntaxToken>.Empty, typeClause, identifier, assignment);
@@ -328,32 +308,10 @@ namespace FanScript.Compiler.Syntax
 
         private StatementSyntax ParseAssignmentStatement()
         {
-            if (Peek(2).Kind == SyntaxKind.OpenSquareToken)
-                return ParseArrayInitializerStatement();
-
             AssignableClauseSyntax assignableClause = ParseAssignableClause();
             SyntaxToken operatorToken = NextToken();
             ExpressionSyntax right = ParseExpression();
             return new AssignmentStatementSyntax(_syntaxTree, assignableClause, operatorToken, right);
-        }
-
-        private StatementSyntax ParseArrayInitializerStatement()
-        {
-            SyntaxToken identifierToken = NextToken();
-            SyntaxToken equalsToken = MatchToken(SyntaxKind.EqualsToken);
-            SyntaxToken openSquareToken = MatchToken(SyntaxKind.OpenSquareToken);
-            var elements = ParseSeparatedList(SyntaxKind.CloseSquareToken);
-            SyntaxToken closeSquareToken = MatchToken(SyntaxKind.CloseSquareToken);
-
-            return new ArrayInitializerStatementSyntax(_syntaxTree, identifierToken, equalsToken, openSquareToken, new SeparatedSyntaxList<ExpressionSyntax>(elements.GetWithSeparators()
-                .Select(node =>
-                {
-                    if (node is ModifierClauseSyntax modifierClause)
-                        return modifierClause.Expression;
-
-                    return node;
-                })
-                .ToImmutableArray()), closeSquareToken);
         }
 
         private StatementSyntax ParseIfStatement()
@@ -486,12 +444,15 @@ namespace FanScript.Compiler.Syntax
                 case SyntaxKind.FloatToken:
                     return ParseNumberLiteral();
 
+                //case SyntaxKind.StringToken:
+                //    return ParseStringLiteral();
+
                 case SyntaxKind.KeywordVector3:
                 case SyntaxKind.KeywordRotation:
                     return ParseVectorConstructorExpresion();
 
-                //case SyntaxKind.StringToken:
-                //    return ParseStringLiteral();
+                case SyntaxKind.OpenSquareToken:
+                    return ParseArraySegmentExpression();
 
                 case SyntaxKind.IdentifierToken:
                 default:
@@ -530,6 +491,23 @@ namespace FanScript.Compiler.Syntax
             SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
 
             return new ConstructorExpressionSyntax(_syntaxTree, keywordToken, openParenthesisToken, expressionX, comma0Token, expressionY, comma1Token, expressionZ, closeParenthesisToken);
+        }
+
+        private ExpressionSyntax ParseArraySegmentExpression()
+        {
+            SyntaxToken openSquareToken = MatchToken(SyntaxKind.OpenSquareToken);
+            var elements = ParseSeparatedList(SyntaxKind.CloseSquareToken);
+            SyntaxToken closeSquareToken = MatchToken(SyntaxKind.CloseSquareToken);
+
+            return new ArraySegmentExpressionSyntax(_syntaxTree, openSquareToken, new SeparatedSyntaxList<ExpressionSyntax>(elements.GetWithSeparators()
+                .Select(node =>
+                {
+                    if (node is ModifierClauseSyntax modifierClause)
+                        return modifierClause.Expression;
+
+                    return node;
+                })
+                .ToImmutableArray()), closeSquareToken);
         }
 
         //private ExpressionSyntax ParseStringLiteral()

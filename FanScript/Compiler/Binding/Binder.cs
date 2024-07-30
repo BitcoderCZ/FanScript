@@ -278,8 +278,6 @@ namespace FanScript.Compiler.Binding
                     return BindContinueStatement((ContinueStatementSyntax)syntax);
                 //case SyntaxKind.ReturnStatement:
                 //    return BindReturnStatement((ReturnStatementSyntax)syntax);
-                case SyntaxKind.ArrayInitializerStatement:
-                    return BindArrayInitializerStatement((ArrayInitializerStatementSyntax)syntax);
                 case SyntaxKind.ExpressionStatement:
                     return BindExpressionStatement((ExpressionStatementSyntax)syntax);
                 default:
@@ -427,49 +425,23 @@ namespace FanScript.Compiler.Binding
                     return BindErrorStatement(syntax);
                 }
 
-                BoundExpression convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, boundOperator.RightType);
+                BoundExpression convertedExpression = bindConversion(boundOperator.RightType);
 
                 return new BoundCompoundAssignmentStatement(syntax, variable, boundOperator, convertedExpression);
             }
             else
             {
-                BoundExpression convertedExpression = BindConversion(syntax.Expression.Location, boundExpression, variable.Type);
+                BoundExpression convertedExpression = bindConversion(variable.Type);
                 return new BoundAssignmentStatement(syntax, variable, convertedExpression);
             }
-        }
 
-        private BoundStatement BindArrayInitializerStatement(ArrayInitializerStatementSyntax syntax)
-        {
-            if (syntax.Elements.Count == 0)
+            BoundExpression bindConversion(TypeSymbol targetType)
             {
-                _diagnostics.ReportEmptyArrayInitializer(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.OpenSquareToken.Span.Start, syntax.CloseSquareToken.Span.End)));
-                return BindErrorStatement(syntax);
+                if (boundExpression.Type.NonGenericEquals(TypeSymbol.ArraySegment) && targetType.NonGenericEquals(TypeSymbol.Array) && boundExpression.Type.InnerType == targetType.InnerType)
+                    return boundExpression;
+                else
+                    return BindConversion(syntax.Expression.Location, boundExpression, targetType);
             }
-
-            VariableSymbol? variable = BindVariableReference(syntax.IdentifierToken);
-            if (variable is null)
-                return BindErrorStatement(syntax);
-
-            if (variable.IsReadOnly && variable.Initialized)
-                _diagnostics.ReportCannotAssignReadOnlyVariable(syntax.EqualsToken.Location, variable.Name);
-
-            variable.Initialize(null);
-
-            ImmutableArray<BoundExpression>.Builder boundElements = ImmutableArray.CreateBuilder<BoundExpression>(syntax.Elements.Count);
-
-            foreach (ExpressionSyntax argument in syntax.Elements)
-                boundElements.Add(BindExpression(argument));
-
-            TypeSymbol type = boundElements[0].Type;
-
-            for (int i = 0; i < syntax.Elements.Count; i++)
-            {
-                TextLocation elementLocation = syntax.Elements[i].Location;
-                BoundExpression element = boundElements[i];
-                boundElements[i] = BindConversion(elementLocation, element, type); // all elements must be of the same type
-            }
-
-            return new BoundArrayInitializerStatement(syntax, variable, boundElements.ToImmutable());
         }
 
         private BoundStatement BindIfStatement(IfStatementSyntax syntax)
@@ -630,6 +602,8 @@ namespace FanScript.Compiler.Binding
                     return BindConstructorExpression((ConstructorExpressionSyntax)syntax);
                 case SyntaxKind.PropertyExpression:
                     return BindPropertyExpression((PropertyExpressionSyntax)syntax);
+                    case SyntaxKind.ArraySegmentExpression:
+                        return BindArraySegmentExpression((ArraySegmentExpressionSyntax)syntax);
                 default:
                     throw new Exception($"Unexpected syntax {syntax.Kind}");
             }
@@ -851,6 +825,31 @@ namespace FanScript.Compiler.Binding
             }
 
             return new BoundVariableExpression(syntax, new PropertySymbol(property, baseVariable));
+        }
+
+        private BoundExpression BindArraySegmentExpression(ArraySegmentExpressionSyntax syntax)
+        {
+            if (syntax.Elements.Count == 0)
+            {
+                _diagnostics.ReportEmptyArrayInitializer(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.OpenSquareToken.Span.Start, syntax.CloseSquareToken.Span.End)));
+                return new BoundErrorExpression(syntax);
+            }
+
+            ImmutableArray<BoundExpression>.Builder boundElements = ImmutableArray.CreateBuilder<BoundExpression>(syntax.Elements.Count);
+
+            foreach (ExpressionSyntax argument in syntax.Elements)
+                boundElements.Add(BindExpression(argument));
+
+            TypeSymbol type = boundElements[0].Type;
+
+            for (int i = 0; i < syntax.Elements.Count; i++)
+            {
+                TextLocation elementLocation = syntax.Elements[i].Location;
+                BoundExpression element = boundElements[i];
+                boundElements[i] = BindConversion(elementLocation, element, type); // all elements must be of the same type
+            }
+
+            return new BoundArraySegmentExpression(syntax, type, boundElements.ToImmutable());
         }
 
         #region Helper Methods

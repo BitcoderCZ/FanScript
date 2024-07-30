@@ -20,6 +20,7 @@ namespace FanScript.Compiler.Symbols
         public static readonly TypeSymbol Rotation = new TypeSymbol("rot");
         public static readonly TypeSymbol Object = new TypeSymbol("object");
         public static readonly TypeSymbol Array = new TypeSymbol("array", true);
+        public static readonly TypeSymbol ArraySegment = new TypeSymbol("arraySegment", true);
         public static readonly TypeSymbol Void = new TypeSymbol("void");
 
         public bool IsGeneric => IsGenericDefinition || IsGenericInstance;

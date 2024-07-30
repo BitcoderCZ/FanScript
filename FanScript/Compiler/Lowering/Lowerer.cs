@@ -1,6 +1,7 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Symbols;
 using System.Collections.Immutable;
+using System.Xml.Linq;
 using static FanScript.Compiler.Binding.BoundNodeFactory;
 
 namespace FanScript.Compiler.Lowering
@@ -110,6 +111,14 @@ namespace FanScript.Compiler.Lowering
                 return Literal(node.Syntax, node.ConstantValue.Value);
 
             return base.RewriteVariableExpression(node);
+        }
+
+        protected override BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)
+        {
+            if (node.Expression is BoundArraySegmentExpression expression)
+                return lowerArraySegment(expression, node.Variable);
+
+            return base.RewriteAssignmentStatement(node);
         }
 
         protected override BoundStatement RewriteIfStatement(BoundIfStatement node)
@@ -283,9 +292,9 @@ namespace FanScript.Compiler.Lowering
             return result;
         }
 
-        protected override BoundStatement RewriteArrayInitializerStatement(BoundArrayInitializerStatement node)
+        private BoundStatement lowerArraySegment(BoundArraySegmentExpression expression, VariableSymbol arrayVariable, int startIndex = 0)
         {
-            BoundArrayInitializerStatement newNode = (BoundArrayInitializerStatement)base.RewriteArrayInitializerStatement(node);
+            BoundArraySegmentExpression node = (BoundArraySegmentExpression)base.RewriteArraySegmentExpression(expression);
 
             // x = [a, b, c, ...]
             //
@@ -296,24 +305,24 @@ namespace FanScript.Compiler.Lowering
             // set(x, 2, c)
             // ...
 
-            ImmutableArray<BoundStatement>.Builder builder = ImmutableArray.CreateBuilder<BoundStatement>(newNode.Elements.Length);
+            ImmutableArray<BoundStatement>.Builder builder = ImmutableArray.CreateBuilder<BoundStatement>(node.Elements.Length);
 
-            TypeSymbol elementType = newNode.Variable.Type!.InnerType!;
+            TypeSymbol elementType = arrayVariable.Type.InnerType!;
 
             float index = 0f;
-            foreach (BoundExpression element in newNode.Elements)
+            foreach (BoundExpression element in node.Elements)
             {
                 ImmutableArray<BoundExpression> arguments = [
-                    new BoundVariableExpression(newNode.Syntax, newNode.Variable),
-                    Literal(newNode.Syntax, index++),
+                    new BoundVariableExpression(node.Syntax, arrayVariable),
+                    Literal(node.Syntax, index++),
                     element,
                 ];
 
-                builder.Add(new BoundExpressionStatement(newNode.Syntax, new BoundCallExpression(newNode.Syntax, BuiltinFunctions.Array_Set, new BoundArgumentClause(newNode.Syntax, [0, 0, 0], arguments), TypeSymbol.Void, elementType)));
+                builder.Add(new BoundExpressionStatement(node.Syntax, new BoundCallExpression(node.Syntax, BuiltinFunctions.Array_Set, new BoundArgumentClause(node.Syntax, [0, 0, 0], arguments), TypeSymbol.Void, elementType)));
             }
 
             BoundBlockStatement result = new BoundBlockStatement(
-                newNode.Syntax,
+                node.Syntax,
                 builder.ToImmutable()
             );
 

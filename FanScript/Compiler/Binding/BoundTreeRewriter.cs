@@ -22,8 +22,6 @@ namespace FanScript.Compiler.Binding
                     return RewriteAssignmentStatement((BoundAssignmentStatement)node);
                 case BoundNodeKind.CompoundAssignmentStatement:
                     return RewriteCompoundAssignmentStatement((BoundCompoundAssignmentStatement)node);
-                case BoundNodeKind.ArrayInitializerStatement:
-                    return RewriteArrayInitializerStatement((BoundArrayInitializerStatement)node);
                 case BoundNodeKind.IfStatement:
                     return RewriteIfStatement((BoundIfStatement)node);
                 case BoundNodeKind.WhileStatement:
@@ -102,13 +100,6 @@ namespace FanScript.Compiler.Binding
         {
             if (node.OptionalAssignment is null)
                 return node;
-            else if (node.OptionalAssignment is BoundArrayInitializerStatement arrayInitializer)
-                return new BoundBlockStatement(
-                    node.Syntax,
-                    [
-                        new BoundVariableDeclarationStatement(node.Syntax, node.Variable, null),
-                        RewriteArrayInitializerStatement(arrayInitializer)
-                    ]);
 
             BoundStatement assignment = RewriteStatement(node.OptionalAssignment);
             if (assignment == node.OptionalAssignment)
@@ -133,35 +124,6 @@ namespace FanScript.Compiler.Binding
                 return node;
 
             return new BoundCompoundAssignmentStatement(node.Syntax, node.Variable, node.Op, expression);
-        }
-
-        protected virtual BoundStatement RewriteArrayInitializerStatement(BoundArrayInitializerStatement node)
-        {
-            ImmutableArray<BoundExpression>.Builder? builder = null;
-
-            for (var i = 0; i < node.Elements.Length; i++)
-            {
-                BoundExpression oldElement = node.Elements[i];
-                BoundExpression newElement = RewriteExpression(oldElement);
-                if (newElement != oldElement)
-                {
-                    if (builder is null)
-                    {
-                        builder = ImmutableArray.CreateBuilder<BoundExpression>(node.Elements.Length);
-
-                        for (int j = 0; j < i; j++)
-                            builder.Add(node.Elements[j]);
-                    }
-                }
-
-                if (builder is not null)
-                    builder.Add(newElement);
-            }
-
-            if (builder is null)
-                return node;
-
-            return new BoundArrayInitializerStatement(node.Syntax, node.Variable, builder.ToImmutable());
         }
 
         protected virtual BoundStatement RewriteIfStatement(BoundIfStatement node)
@@ -238,6 +200,8 @@ namespace FanScript.Compiler.Binding
                     return RewriteConversionExpression((BoundConversionExpression)node);
                 case BoundNodeKind.ConstructorExpression:
                     return RewriteConstructorExpression((BoundConstructorExpression)node);
+                    case BoundNodeKind.ArraySegmentExpression:
+                    return RewriteArraySegmentExpression((BoundArraySegmentExpression)node);
                 default:
                     throw new Exception($"Unexpected node: {node.Kind}");
             }
@@ -311,6 +275,35 @@ namespace FanScript.Compiler.Binding
                 );
             else
                 return node;
+        }
+
+        protected virtual BoundExpression RewriteArraySegmentExpression(BoundArraySegmentExpression node)
+        {
+            ImmutableArray<BoundExpression>.Builder? builder = null;
+
+            for (var i = 0; i < node.Elements.Length; i++)
+            {
+                BoundExpression oldElement = node.Elements[i];
+                BoundExpression newElement = RewriteExpression(oldElement);
+                if (newElement != oldElement)
+                {
+                    if (builder is null)
+                    {
+                        builder = ImmutableArray.CreateBuilder<BoundExpression>(node.Elements.Length);
+
+                        for (int j = 0; j < i; j++)
+                            builder.Add(node.Elements[j]);
+                    }
+                }
+
+                if (builder is not null)
+                    builder.Add(newElement);
+            }
+
+            if (builder is null)
+                return node;
+
+            return new BoundArraySegmentExpression(node.Syntax, node.Type, builder.ToImmutable());
         }
 
         protected virtual BoundArgumentClause RewriteArgumentClause(BoundArgumentClause node)

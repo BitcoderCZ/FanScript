@@ -12,12 +12,10 @@
             yield return CloseParenthesisToken;
         }
     }
-    partial class ArrayInitializerStatementSyntax
+    partial class ArraySegmentExpressionSyntax
     {
         public override IEnumerable<SyntaxNode> GetChildren()
         {
-            yield return IdentifierToken;
-            yield return EqualsToken;
             yield return OpenSquareToken;
             foreach (SyntaxNode child in Elements.GetWithSeparators())
                 yield return child;

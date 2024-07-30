@@ -1,7 +1,1 @@
-on Play {
-
-}
-
-on Touch {
-
-}
+array<float> arr = [1, 2, 3]

@@ -2,7 +2,7 @@
 {
     public sealed partial class SpecialBlockStatementSyntax : StatementSyntax
     {
-        public SpecialBlockStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keywordToken, SyntaxToken identifier, ArgumentClauseSyntax? argumentClause, BlockStatementSyntax block)
+        internal SpecialBlockStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keywordToken, SyntaxToken identifier, ArgumentClauseSyntax? argumentClause, BlockStatementSyntax block)
             : base(syntaxTree)
         {
             KeywordToken = keywordToken;

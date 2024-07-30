@@ -16,7 +16,6 @@
         RollbackGotoStatement,
         ConditionalGotoStatement,
         LabelStatement,
-        ArrayInitializerStatement,
         PostfixStatement,
 
         // Expressions
@@ -30,6 +29,7 @@
         ConversionExpression,
         ConstructorExpression,
         ArgumentClause,
+        ArraySegmentExpression,
 
         SpecialBlockCondition,
 

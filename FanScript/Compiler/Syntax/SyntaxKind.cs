@@ -49,7 +49,6 @@
         ContinueStatement,
         VariableDeclarationStatement,
         AssignmentStatement,
-        ArrayInitializerStatement,
         PostfixStatement,
 
         UnaryExpression,
@@ -61,6 +60,7 @@
         ConstructorExpression,
         PropertyExpression,
         VariableDeclarationExpression,
+        ArraySegmentExpression,
 
         Parameter,
         TypeClause,
