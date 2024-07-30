@@ -35,8 +35,9 @@ namespace FanScript.Compiler.Symbols
         // TODO:
         // public ImmutableArray<FunctionSymbol> InstanceFunctions { get; private set; }
 
-        public static readonly ImmutableArray<TypeSymbol> BuiltInTypes = [Bool, Float, Vector3, Rotation, Object, Array];
+        public static readonly ImmutableArray<TypeSymbol> BuiltInGenericTypes = [Array];
         public static readonly ImmutableArray<TypeSymbol> BuiltInNonGenericTypes = [Bool, Float, Vector3, Rotation, Object];
+        public static readonly ImmutableArray<TypeSymbol> BuiltInTypes = BuiltInGenericTypes.AddRange(BuiltInNonGenericTypes);
 
         private TypeSymbol(string name, bool isGenericDefinition = false)
             : base(name)

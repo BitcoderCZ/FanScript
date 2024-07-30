@@ -331,7 +331,7 @@ namespace FanScript.LangServer.Handlers
                 case ParenthesizedExpressionSyntax:
                 case BinaryExpressionSyntax:
                 case UnaryExpressionSyntax:
-                case ArrayInitializerStatementSyntax arrayInitializer when node != arrayInitializer.IdentifierToken:
+                case ArraySegmentExpressionSyntax:
                     return CurrentRecomendations.InExpression;
             }
 

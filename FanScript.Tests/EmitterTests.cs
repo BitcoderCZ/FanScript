@@ -2,6 +2,7 @@
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Emit.BlockPlacers;
 using FanScript.Compiler.Emit.CodeBuilders;
+using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using System.Collections.Immutable;
@@ -10,6 +11,27 @@ namespace FanScript.Tests
 {
     public class EmitterTests
     {
+        [Theory]
+        [MemberData(nameof(GetVariableDeclarations))]
+        [InlineData("on Play { }")]
+        [InlineData("on Play() { }")]
+        [InlineData("""
+            float x
+            float y
+            on Touch(out x, out y, 0, 0) { }
+            """)]
+        [InlineData("on Touch(out float x, out float y, 0, 0) { }")]
+        [InlineData("""
+            float x = 1
+            inspect(x)
+            """)]
+        [InlineData("""
+            float x = 1
+            inspect<float>(x)
+            """)]
+        public void Emitter_NoDiagnostics(string text)
+            => AssertDiagnostics(text, string.Empty);
+
         [Fact]
         public void Emitter_VariableDeclaration_Reports_Redeclaration()
         {
@@ -955,6 +977,91 @@ namespace FanScript.Tests
                     foreach (var mod2 in Enum.GetValues<Modifiers>())
                         if (mod1.GetConflictingModifiers().Contains(mod2) && mod2.GetTargets().Contains(validTarget))
                             yield return [mod1.ToSyntaxString(), mod2.ToSyntaxString()];
+                }
+            }
+        }
+
+        public static IEnumerable<object[]> GetVariableDeclarations()
+        {
+            var modsForVars = Enum.GetValues<Modifiers>()
+                .Where(mod => mod.GetTargets().Contains(ModifierTarget.Variable))
+                .ToList();
+
+            HashSet<Modifiers> allModCombinations = [0];
+
+            foreach (Modifiers mod in modsForVars)
+            {
+                Modifiers mods = mod;
+                allModCombinations.Add(mods);
+                foreach (Modifiers otherMod in modsForVars)
+                    if (!mods.HasFlag(otherMod))
+                    {
+                        bool hasConflict = false;
+                        foreach (Modifiers conflict in otherMod.GetConflictingModifiers())
+                            if (mods.HasFlag(conflict))
+                            {
+                                hasConflict = true;
+                                break;
+                            }
+
+                        if (!hasConflict)
+                        {
+                            mods |= otherMod;
+                            allModCombinations.Add(mods);
+                        }
+                    }
+            }
+
+            IReadOnlyDictionary<TypeSymbol, string?> initializers = new Dictionary<TypeSymbol, string?>()
+            {
+                [TypeSymbol.Bool] = "true",
+                [TypeSymbol.Float] = "1",
+                [TypeSymbol.Vector3] = "vec3(1, 2, 3)",
+                [TypeSymbol.Rotation] = "rot(1, 2, 3)",
+                [TypeSymbol.Object] = null,
+                [TypeSymbol.CreateGenericInstance(TypeSymbol.Array, TypeSymbol.Bool)] = "[true, false, true]",
+                [TypeSymbol.CreateGenericInstance(TypeSymbol.Array, TypeSymbol.Float)] = "[1, 2, 3]",
+                [TypeSymbol.CreateGenericInstance(TypeSymbol.Array, TypeSymbol.Vector3)] = "[vec3(1, 1, 1), vec3(2, 2, 2), vec3(3, 3, 3)]",
+                [TypeSymbol.CreateGenericInstance(TypeSymbol.Array, TypeSymbol.Rotation)] = "[rot(1, 1, 1), rot(2, 2, 2), rot(3, 3, 3)]",
+                [TypeSymbol.CreateGenericInstance(TypeSymbol.Array, TypeSymbol.Object)] = null,
+            }.AsReadOnly();
+
+            foreach (TypeSymbol type in TypeSymbol.BuiltInNonGenericTypes)
+            {
+                foreach (Modifiers mods in allModCombinations)
+                {
+                    if (type != TypeSymbol.Float && mods.HasFlag(Modifiers.Saved))
+                        continue;
+
+                    string declaration = mods.ToSyntaxString() + " " + type + " x";
+
+                    if (!mods.HasFlag(Modifiers.Constant))
+                        yield return [declaration];
+
+                    string? initializer = initializers[type];
+                    if (!string.IsNullOrEmpty(initializer))
+                        yield return [declaration + " = " + initializer];
+                }
+            }
+
+            foreach (TypeSymbol baseType in TypeSymbol.BuiltInGenericTypes)
+            {
+                foreach (TypeSymbol innerType in TypeSymbol.BuiltInNonGenericTypes)
+                {
+                    TypeSymbol type = TypeSymbol.CreateGenericInstance(baseType, innerType);
+
+                    foreach (Modifiers mods in allModCombinations)
+                    {
+                        if (mods.HasFlag(Modifiers.Constant) || mods.HasFlag(Modifiers.Saved))
+                            continue;
+
+                        string declaration = mods.ToSyntaxString() + " " + type + " x";
+
+                        yield return [declaration];
+                        string? initializer = initializers[type];
+                        if (!string.IsNullOrEmpty(initializer))
+                            yield return [declaration + " = " + initializer];
+                    }
                 }
             }
         }
