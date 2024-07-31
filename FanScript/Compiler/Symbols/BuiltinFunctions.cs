@@ -486,6 +486,50 @@ namespace FanScript.Compiler.Symbols
                     return new BasicEmitStore(setPtr);
                 }
             );
+        public static readonly FunctionSymbol Array_SetRange
+            = new BuiltinFunctionSymbol("setRange",
+            [
+                new ParameterSymbol("array", TypeSymbol.Array, 0),
+                new ParameterSymbol("index", TypeSymbol.Float, 1),
+                new ParameterSymbol("value", TypeSymbol.ArraySegment, 2),
+            ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
+            {
+                object[]? constants = context.ValidateConstants(call.Arguments.AsMemory(1..2), true);
+                if (constants is null)
+                    return new NopEmitStore();
+
+                EmitStore firstStore = null!;
+                EmitStore lastStore = null!;
+
+                var segment = (BoundArraySegmentExpression)call.Arguments[2];
+
+                float offset = (float)constants[0];
+
+                for (int i = 0; i < segment.Elements.Length; i++)
+                {
+                    EmitStore store = ((BuiltinFunctionSymbol)Array_Set)
+                        .Emit(
+                            new BoundCallExpression(
+                                call.Syntax, 
+                                Array_Set, 
+                                new BoundArgumentClause(call.ArgumentClause.Syntax, [0, 0, 0],
+                                    [
+                                        call.Arguments[0],
+                                        new BoundLiteralExpression(call.Syntax, i + offset),
+                                        segment.Elements[i],
+                                    ]), 
+                                TypeSymbol.Void, 
+                                call.GenericType
+                            ),
+                            context
+                        );
+
+                    firstStore ??= store;
+                    lastStore = store;
+                }
+
+                return new MultiEmitStore(firstStore, lastStore);
+            });
         public static readonly FunctionSymbol Ptr_SetValue
             = new BuiltinFunctionSymbol("setPtrValue",
             [

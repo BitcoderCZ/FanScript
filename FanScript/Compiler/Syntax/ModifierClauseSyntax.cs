@@ -10,7 +10,7 @@ namespace FanScript.Compiler.Syntax
             Expression = expression;
         }
 
-        public override SyntaxKind Kind => throw new NotImplementedException();
+        public override SyntaxKind Kind => SyntaxKind.ModifierClause;
 
         public ImmutableArray<SyntaxToken> Modifiers { get; }
         public ExpressionSyntax Expression { get; }

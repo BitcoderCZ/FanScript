@@ -67,6 +67,7 @@
         ArgumentClause,
         ElseClause,
         AssignableClause,
+        ModifierClause,
 
         FloatToken,
         //StringToken,
