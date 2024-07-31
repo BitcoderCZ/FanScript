@@ -725,7 +725,7 @@ namespace FanScript.Compiler.Emit
             switch (variable)
             {
                 case PropertySymbol property:
-                    return property.Definition.EmitGet.Invoke(emitContext, property.BaseVariable);
+                    return property.Definition.EmitGet.Invoke(emitContext, property.Expression);
                 default:
                     {
                         Block block = builder.AddBlock(Blocks.Variables.VariableByType(variable.Type!.ToWireType()));
@@ -736,14 +736,39 @@ namespace FanScript.Compiler.Emit
                     }
             }
         }
+        internal EmitStore emitSetExpression(BoundExpression expression, BoundExpression valueExpression)
+            => emitSetExpression(expression, () => emitExpression(valueExpression));
+        internal EmitStore emitSetExpression(BoundExpression expression, Func<EmitStore> getValueStore)
+        {
+            switch (expression)
+            {
+                case BoundVariableExpression var:
+                    return emitSetVariable(var.Variable, getValueStore);
+                default:
+                    {
+                        Block set = builder.AddBlock(Blocks.Variables.Set_PtrByType(expression.Type.ToWireType()));
+
+                        builder.BlockPlacer.ExpressionBlock(() =>
+                        {
+                            EmitStore exStore = emitExpression(expression);
+                            EmitStore valStore = getValueStore();
+
+                            connect(exStore, BasicEmitStore.CIn(set, set.Type.Terminals[2]));
+                            connect(valStore, BasicEmitStore.CIn(set, set.Type.Terminals[1]));
+                        });
+
+                        return new BasicEmitStore(set);
+                    }
+            }
+        }
         internal EmitStore emitSetVariable(VariableSymbol variable, BoundExpression expression)
             => emitSetVariable(variable, () => emitExpression(expression));
-        internal EmitStore emitSetVariable(VariableSymbol variable, Func<EmitStore> getStore)
+        internal EmitStore emitSetVariable(VariableSymbol variable, Func<EmitStore> getValueStore)
         {
             switch (variable)
             {
                 case PropertySymbol property:
-                    return property.Definition.EmitSet!.Invoke(emitContext, property.BaseVariable, getStore);
+                    return property.Definition.EmitSet!.Invoke(emitContext, property.Expression, getValueStore);
                 default:
                     {
                         Block block = builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
@@ -752,7 +777,7 @@ namespace FanScript.Compiler.Emit
 
                         builder.BlockPlacer.ExpressionBlock(() =>
                         {
-                            EmitStore _store = getStore();
+                            EmitStore _store = getValueStore();
 
                             connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
                         });
@@ -835,7 +860,21 @@ namespace FanScript.Compiler.Emit
                 ];
             }
             else
-                throw new InvalidDataException($"Invalid expression type '{expression.GetType()}'");
+            { // just break it
+                Block block = builder.AddBlock(expression.Type == TypeSymbol.Vector3 ? Blocks.Math.Break_Vector : Blocks.Math.Break_Rotation);
+
+                builder.BlockPlacer.ExpressionBlock(() =>
+                {
+                    EmitStore store = emitExpression(expression);
+                    connect(store, BasicEmitStore.CIn(block, block.Type.Terminals[3]));
+                });
+
+                return [
+                    useComponent[0] ? BasicEmitStore.COut(block, block.Type.Terminals[2]) : null,
+                    useComponent[1] ? BasicEmitStore.COut(block, block.Type.Terminals[1]) : null,
+                    useComponent[2] ? BasicEmitStore.COut(block, block.Type.Terminals[0]) : null,
+                ];
+            }
         }
 
         internal object[]? validateConstants(ReadOnlyMemory<BoundExpression> _expressions, bool mustBeConstant)

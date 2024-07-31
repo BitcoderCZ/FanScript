@@ -400,14 +400,14 @@ namespace FanScript.Compiler.Binding
 
                         if (property is null)
                         {
-                            _diagnostics.ReportUndefinedProperty(syntax.Expression.Location, baseVariable.Type, propertyClause.IdentifierToken.Text);
+                            _diagnostics.ReportUndefinedProperty(propertyClause.IdentifierToken.Location, baseVariable.Type, propertyClause.IdentifierToken.Text);
                             return BindErrorStatement(syntax);
                         }
 
                         if (property.IsReadOnly)
                             _diagnostics.ReportCannotAssignReadOnlyProperty(syntax.AssignmentToken.Location, property.Name);
 
-                        variable = new PropertySymbol(property, baseVariable);
+                        variable = new PropertySymbol(property, new BoundVariableExpression(propertyClause.VariableToken, baseVariable));
                     }
                     break;
                 default:
@@ -803,28 +803,16 @@ namespace FanScript.Compiler.Binding
 
         private BoundExpression BindPropertyExpression(PropertyExpressionSyntax syntax)
         {
-            VariableSymbol? baseVariable = BindVariableReference(syntax.IdentifierToken);
-            if (baseVariable is null)
-                return new BoundErrorExpression(syntax);
+            BoundExpression expression = BindExpression(syntax.Expression);
 
-            // TODO: allow properties of properties, instance functions
-            if (syntax.Expression is not NameExpressionSyntax name)
-            {
-                // TODO: remove this method
-                _diagnostics.ReportMustBeName(syntax.Expression.Location);
-                return new BoundErrorExpression(syntax);
-            }
-            else if (name.IdentifierToken.IsMissing)
-                return new BoundErrorExpression(syntax);
-
-            PropertyDefinitionSymbol? property = baseVariable.Type.GetProperty(name.IdentifierToken.Text);
+            PropertyDefinitionSymbol? property = expression.Type.GetProperty(syntax.IdentifierToken.Text);
             if (property is null)
             {
-                _diagnostics.ReportUndefinedProperty(syntax.Expression.Location, baseVariable.Type, name.IdentifierToken.Text);
+                _diagnostics.ReportUndefinedProperty(syntax.IdentifierToken.Location, expression.Type, syntax.IdentifierToken.Text);
                 return new BoundErrorExpression(syntax);
             }
 
-            return new BoundVariableExpression(syntax, new PropertySymbol(property, baseVariable));
+            return new BoundVariableExpression(syntax, new PropertySymbol(property, expression));
         }
 
         private BoundExpression BindArraySegmentExpression(ArraySegmentExpressionSyntax syntax)

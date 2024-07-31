@@ -13,6 +13,7 @@ namespace FanScript.Compiler.Emit
         private Func<object, EmitStore> emitLiteralExpression;
 
         private Func<VariableSymbol, EmitStore> emitGetVariable;
+        private Func<BoundExpression, Func<EmitStore>, EmitStore> emitSetExpression;
         private Func<VariableSymbol, Func<EmitStore>, EmitStore> emitSetVariable;
         private Func<BoundExpression, (EmitStore, EmitStore, EmitStore)> breakVector;
         private Func<BoundExpression, bool[], EmitStore?[]> breakVectorAny;
@@ -34,6 +35,7 @@ namespace FanScript.Compiler.Emit
             emitLiteralExpression = emitter.emitLiteralExpression;
 
             emitGetVariable = emitter.emitGetVariable;
+            emitSetExpression = emitter.emitSetExpression;
             emitSetVariable = emitter.emitSetVariable;
             breakVector = emitter.breakVector;
             breakVectorAny = emitter.breakVectorAny;
@@ -54,8 +56,10 @@ namespace FanScript.Compiler.Emit
 
         public EmitStore EmitGetVariable(VariableSymbol variable)
             => emitGetVariable(variable);
-        public EmitStore EmitSetVariable(VariableSymbol variable, Func<EmitStore> getStore)
-            => emitSetVariable(variable, getStore);
+        public EmitStore EmitSetExpression(BoundExpression expression, Func<EmitStore> getValueStore)
+            => emitSetExpression(expression, getValueStore);
+        public EmitStore EmitSetVariable(VariableSymbol variable, Func<EmitStore> getValueStore)
+            => emitSetVariable(variable, getValueStore);
 
         public (EmitStore X, EmitStore Y, EmitStore Z) BreakVector(BoundExpression expression)
             => breakVector(expression);

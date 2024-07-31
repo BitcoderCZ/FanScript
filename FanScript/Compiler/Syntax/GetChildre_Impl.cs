@@ -239,9 +239,9 @@
     {
         public override IEnumerable<SyntaxNode> GetChildren()
         {
-            yield return IdentifierToken;
-            yield return DotToken;
             yield return Expression;
+            yield return DotToken;
+            yield return IdentifierToken;
         }
     }
     //partial class ReturnStatementSyntax

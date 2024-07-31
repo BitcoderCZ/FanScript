@@ -400,6 +400,21 @@ namespace FanScript.Compiler.Syntax
 
         private ExpressionSyntax ParseExpression()
         {
+            ExpressionSyntax expression = ParseExpressionInternal();
+
+            while (Current.Kind == SyntaxKind.DotToken)
+            {
+                SyntaxToken dotToken = MatchToken(SyntaxKind.DotToken);
+                SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
+
+                expression = new PropertyExpressionSyntax(_syntaxTree, expression, dotToken, identifierToken);
+            }
+
+            return expression;
+        }
+
+        private ExpressionSyntax ParseExpressionInternal()
+        {
             return ParseBinaryExpression();
         }
 
@@ -456,7 +471,7 @@ namespace FanScript.Compiler.Syntax
 
                 case SyntaxKind.IdentifierToken:
                 default:
-                    return ParseOtherExpressions();
+                    return ParseNameOrCallExpressions();
             }
         }
 
@@ -513,16 +528,13 @@ namespace FanScript.Compiler.Syntax
         //private ExpressionSyntax ParseStringLiteral()
         //    => new LiteralExpressionSyntax(_syntaxTree, MatchToken(SyntaxKind.StringToken));
 
-        private ExpressionSyntax ParseOtherExpressions()
+        private ExpressionSyntax ParseNameOrCallExpressions()
         {
             int offset = 0;
             if (Peek(offset++).Kind == SyntaxKind.IdentifierToken &&
                 (Peek(offset).Kind == SyntaxKind.OpenParenthesisToken ||
                 (Peek(offset++).Kind == SyntaxKind.LessToken && IsTypeClauseNext(ref offset)))) // not sure of a better way to do this, neccesary because of less than operator, make some tryParseType method that doesn't consume tokens?
                 return ParseCallExpression();
-            else if (Peek(0).Kind == SyntaxKind.IdentifierToken &&
-                Peek(1).Kind == SyntaxKind.DotToken)
-                return ParsePropertyExpression();
 
             return ParseNameExpression();
         }
@@ -554,14 +566,6 @@ namespace FanScript.Compiler.Syntax
         {
             SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
             return new NameExpressionSyntax(_syntaxTree, identifierToken);
-        }
-
-        private ExpressionSyntax ParsePropertyExpression()
-        {
-            SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
-            SyntaxToken dotToken = MatchToken(SyntaxKind.DotToken);
-            ExpressionSyntax expression = ParseOtherExpressions(); // name, call or property
-            return new PropertyExpressionSyntax(_syntaxTree, identifierToken, dotToken, expression);
         }
 
         private ArgumentClauseSyntax ParseArgumentClause()

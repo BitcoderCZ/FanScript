@@ -6,6 +6,7 @@ using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using System.Collections.Immutable;
+using System.Xml.Linq;
 
 namespace FanScript.Tests
 {
@@ -28,6 +29,19 @@ namespace FanScript.Tests
         [InlineData("""
             float x = 1
             inspect<float>(x)
+            """)]
+        [InlineData("""
+            vec3 v = vec3(1, 2, 3)
+            float x = v.y
+            """)]
+        [InlineData("""
+            float x = vec3(1, 2, 3).y
+            """)]
+        [InlineData("""
+            vec3 v
+            v.x = 1
+            v.y = 2
+            v.z = 3
             """)]
         public void Emitter_NoDiagnostics(string text)
             => AssertDiagnostics(text, string.Empty);
@@ -832,6 +846,20 @@ namespace FanScript.Tests
             var diagnostics = $"""
                 Argument for paramater 'value' cannot be passed with the 'ref' modifier.
                 Argument for paramater 'value' cannot be passed with the 'out' modifier.
+                """;
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
+        [Fact]
+        public void Emitter_Undefined_Property()
+        {
+            var text = """
+                float x = vec3(1, 2, 3).$[a]$
+                """;
+
+            var diagnostics = $"""
+                Type 'vec3' doesn't have a property 'a'.
                 """;
 
             AssertDiagnostics(text, diagnostics);

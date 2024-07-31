@@ -5,21 +5,21 @@ namespace FanScript.Compiler.Symbols
 {
     public sealed class PropertySymbol : LocalVariableSymbol
     {
-        internal PropertySymbol(PropertyDefinitionSymbol definition, VariableSymbol baseVariable) : base(definition.Name, definition.Modifiers, definition.Type)
+        internal PropertySymbol(PropertyDefinitionSymbol definition, BoundExpression expression) : base(definition.Name, definition.Modifiers, definition.Type)
         {
             Initialize(definition.Constant);
             Definition = definition;
-            BaseVariable = baseVariable;
+            Expression = expression;
         }
 
         public PropertyDefinitionSymbol Definition { get; }
-        public VariableSymbol BaseVariable { get; }
+        internal BoundExpression Expression { get; }
     }
 
     public sealed class PropertyDefinitionSymbol : LocalVariableSymbol
     {
-        internal delegate EmitStore GetDelegate(EmitContext context, VariableSymbol baseVariable);
-        internal delegate EmitStore SetDelegate(EmitContext context, VariableSymbol baseVariable, Func<EmitStore> getStore);
+        internal delegate EmitStore GetDelegate(EmitContext context, BoundExpression expression);
+        internal delegate EmitStore SetDelegate(EmitContext context, BoundExpression expression, Func<EmitStore> getStore);
 
         internal PropertyDefinitionSymbol(string name, TypeSymbol type, GetDelegate emitGet)
             : base(name, Modifiers.Readonly, type)

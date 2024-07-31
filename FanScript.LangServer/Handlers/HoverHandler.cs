@@ -50,8 +50,8 @@ namespace FanScript.LangServer.Handlers
 
             switch (node.Parent)
             {
-                case NameExpressionSyntax name when name.Parent is PropertyExpressionSyntax prop:
-                    return getHoverForProperty(prop.IdentifierToken.Text, name.IdentifierToken.Text, name.Location);
+                //case NameExpressionSyntax name when name.Parent is PropertyExpressionSyntax prop:
+                //    return getHoverForProperty(prop.IdentifierToken.Text, name.IdentifierToken.Text, name.Location);
                 case NameExpressionSyntax name:
                     return getHoverByVariableName(name.IdentifierToken.Text, name.Location);
                 case PropertyExpressionSyntax property:
@@ -62,8 +62,8 @@ namespace FanScript.LangServer.Handlers
                     {
                         if (node == propertyClause.VariableToken)
                             return getHoverByVariableName(propertyClause.VariableToken.Text, propertyClause.VariableToken.Location);
-                        else if (node == propertyClause.IdentifierToken)
-                            return getHoverForProperty(propertyClause.VariableToken.Text, propertyClause.IdentifierToken.Text, propertyClause.IdentifierToken.Location);
+                        //else if (node == propertyClause.IdentifierToken)
+                        //    return getHoverForProperty(propertyClause.VariableToken.Text, propertyClause.IdentifierToken.Text, propertyClause.IdentifierToken.Location);
                     }
                     break;
                 case CallExpressionSyntax call when node == call.Identifier:
@@ -131,28 +131,28 @@ namespace FanScript.LangServer.Handlers
                         Range = location.ToRange(),
                     };
             }
-            // TODO/CUSTOM_FUNCTIONS: won't work
-            Hover? getHoverForProperty(string baseVarName, string propName, TextLocation location)
-            {
-                IEnumerable<VariableSymbol> variables = compilation.GetVariables();
-                VariableSymbol? variable = variables.FirstOrDefault(var => var.Name == baseVarName);
-                if (variable is null)
-                    return null;
+            // TODO:
+            //Hover? getHoverForProperty(string baseVarName, string propName, TextLocation location)
+            //{
+            //    IEnumerable<VariableSymbol> variables = compilation.GetVariables();
+            //    VariableSymbol? variable = variables.FirstOrDefault(var => var.Name == baseVarName);
+            //    if (variable is null)
+            //        return null;
 
-                PropertyDefinitionSymbol? property = variable.Type.GetProperty(propName);
-                if (property is null)
-                    return null;
+            //    PropertyDefinitionSymbol? property = variable.Type.GetProperty(propName);
+            //    if (property is null)
+            //        return null;
 
-                return new Hover()
-                {
-                    Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
-                    {
-                        Kind = MarkupKind.PlainText,
-                        Value = propertyInfo(new PropertySymbol(property, variable)),
-                    }),
-                    Range = location.ToRange(),
-                };
-            }
+            //    return new Hover()
+            //    {
+            //        Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+            //        {
+            //            Kind = MarkupKind.PlainText,
+            //            Value = propertyInfo(new PropertySymbol(property, variable)),
+            //        }),
+            //        Range = location.ToRange(),
+            //    };
+            //}
         }
 
         protected override HoverRegistrationOptions CreateRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities)
@@ -179,24 +179,24 @@ namespace FanScript.LangServer.Handlers
             return builder.ToString();
         }
 
-        private string propertyInfo(PropertySymbol property)
-        {
-            StringBuilder builder = new StringBuilder();
-            property.Modifiers.ToSyntaxString(builder);
-            builder.Append(' ');
-            builder.Append(property.Type);
-            builder.Append(' ');
-            builder.Append(property.BaseVariable.Type);
-            builder.Append('.');
-            builder.Append(property.Name);
+        //private string propertyInfo(PropertySymbol property)
+        //{
+        //    StringBuilder builder = new StringBuilder();
+        //    property.Modifiers.ToSyntaxString(builder);
+        //    builder.Append(' ');
+        //    builder.Append(property.Type);
+        //    builder.Append(' ');
+        //    builder.Append(property.BaseVariable.Type);
+        //    builder.Append('.');
+        //    builder.Append(property.Name);
 
-            if (property.Constant is not null)
-            {
-                builder.Append(" = ");
-                builder.Append(property.Constant.Value);
-            }
+        //    if (property.Constant is not null)
+        //    {
+        //        builder.Append(" = ");
+        //        builder.Append(property.Constant.Value);
+        //    }
 
-            return builder.ToString();
-        }
+        //    return builder.ToString();
+        //}
     }
 }

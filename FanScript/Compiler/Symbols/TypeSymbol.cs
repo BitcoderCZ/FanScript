@@ -60,27 +60,27 @@ namespace FanScript.Compiler.Symbols
 
             Vector3.Properties = new Dictionary<string, PropertyDefinitionSymbol>()
             {
-                ["x"] = new PropertyDefinitionSymbol("x", Float, (context, variable) => getVectorComponent(context, variable, 0), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 0)),
-                ["y"] = new PropertyDefinitionSymbol("y", Float, (context, variable) => getVectorComponent(context, variable, 1), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 1)),
-                ["z"] = new PropertyDefinitionSymbol("z", Float, (context, variable) => getVectorComponent(context, variable, 2), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 2)),
+                ["x"] = new PropertyDefinitionSymbol("x", Float, (context, expression) => getVectorComponent(context, expression, 0), (context, expression, getStore) => setVectorComponent(context, expression, getStore, 0)),
+                ["y"] = new PropertyDefinitionSymbol("y", Float, (context, expression) => getVectorComponent(context, expression, 1), (context, expression, getStore) => setVectorComponent(context, expression, getStore, 1)),
+                ["z"] = new PropertyDefinitionSymbol("z", Float, (context, expression) => getVectorComponent(context, expression, 2), (context, expression, getStore) => setVectorComponent(context, expression, getStore, 2)),
             }.ToFrozenDictionary();
             Rotation.Properties = new Dictionary<string, PropertyDefinitionSymbol>()
             {
-                ["x"] = new PropertyDefinitionSymbol("x", Float, (context, variable) => getVectorComponent(context, variable, 0), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 0)),
-                ["y"] = new PropertyDefinitionSymbol("y", Float, (context, variable) => getVectorComponent(context, variable, 1), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 1)),
-                ["z"] = new PropertyDefinitionSymbol("z", Float, (context, variable) => getVectorComponent(context, variable, 2), (context, variable, getStore) => setVectorComponent(context, variable, getStore, 2)),
+                ["x"] = new PropertyDefinitionSymbol("x", Float, (context, expression) => getVectorComponent(context, expression, 0), (context, expression, getStore) => setVectorComponent(context, expression, getStore, 0)),
+                ["y"] = new PropertyDefinitionSymbol("y", Float, (context, expression) => getVectorComponent(context, expression, 1), (context, expression, getStore) => setVectorComponent(context, expression, getStore, 1)),
+                ["z"] = new PropertyDefinitionSymbol("z", Float, (context, expression) => getVectorComponent(context, expression, 2), (context, expression, getStore) => setVectorComponent(context, expression, getStore, 2)),
             }.ToFrozenDictionary();
-            EmitStore getVectorComponent(EmitContext context, VariableSymbol variable, int index)
+            EmitStore getVectorComponent(EmitContext context, BoundExpression expression, int index)
             {
                 bool[] arr = new bool[3];
                 arr[index] = true;
-                return context.BreakVectorAny(new BoundVariableExpression(null!, variable), arr)[index]!;
+                return context.BreakVectorAny(expression, arr)[index]!;
             }
-            EmitStore setVectorComponent(EmitContext context, VariableSymbol baseVariable, Func<EmitStore> getStore, int index)
+            EmitStore setVectorComponent(EmitContext context, BoundExpression expression, Func<EmitStore> getStore, int index)
             {
-                WireType varType = baseVariable.Type.ToWireType();
+                WireType varType = expression.Type.ToWireType();
 
-                return context.EmitSetVariable(baseVariable, () =>
+                return context.EmitSetExpression(expression, () =>
                 {
                     Block make = context.Builder.AddBlock(Blocks.Math.MakeByType(varType));
 
@@ -90,10 +90,9 @@ namespace FanScript.Compiler.Symbols
 
                         context.Builder.BlockPlacer.ExpressionBlock(() =>
                         {
-                            Block var = context.Builder.AddBlock(Blocks.Variables.VariableByType(varType));
-                            context.Builder.SetBlockValue(var, 0, baseVariable.Name);
+                            EmitStore expressionStore = context.EmitExpression(expression);
 
-                            context.Connect(BasicEmitStore.COut(var, var.Type.Terminals[0]), BasicEmitStore.CIn(@break, @break.Type.Terminals[3]));
+                            context.Connect(expressionStore, BasicEmitStore.CIn(@break, @break.Type.Terminals[3]));
                         });
 
                         for (int i = 0; i < 3; i++)

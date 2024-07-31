@@ -538,7 +538,7 @@ namespace FanScript.Compiler.Binding
             {
                 case PropertySymbol propertySymbol:
                     {
-                        WriteVariable(propertySymbol.BaseVariable, writer);
+                        propertySymbol.Expression.WriteTo(writer);
                         writer.WritePunctuation(SyntaxKind.DotToken);
                         goto default;
                     }

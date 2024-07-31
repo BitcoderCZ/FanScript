@@ -2,7 +2,7 @@
 {
     public sealed partial class PropertyExpressionSyntax : ExpressionSyntax
     {
-        internal PropertyExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken, SyntaxToken dotToken, ExpressionSyntax expression) : base(syntaxTree)
+        internal PropertyExpressionSyntax(SyntaxTree syntaxTree, ExpressionSyntax expression, SyntaxToken dotToken, SyntaxToken identifierToken) : base(syntaxTree)
         {
             IdentifierToken = identifierToken;
             DotToken = dotToken;
@@ -11,8 +11,8 @@
 
         public override SyntaxKind Kind => SyntaxKind.PropertyExpression;
 
-        public SyntaxToken IdentifierToken { get; }
-        public SyntaxToken DotToken { get; }
         public ExpressionSyntax Expression { get; }
+        public SyntaxToken DotToken { get; }
+        public SyntaxToken IdentifierToken { get; }
     }
 }
