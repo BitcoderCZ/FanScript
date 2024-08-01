@@ -32,5 +32,17 @@ namespace FanScript.Compiler.Syntax
         public ArgumentClauseSyntax ArgumentClause { get; }
 
         public SeparatedSyntaxList<ModifierClauseSyntax> Arguments => ArgumentClause.Arguments;
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return Identifier;
+            if (HasGenericParameter)
+            {
+                yield return LessThanToken;
+                yield return GenericTypeClause;
+                yield return GreaterThanToken;
+            }
+            yield return ArgumentClause;
+        }
     }
 }

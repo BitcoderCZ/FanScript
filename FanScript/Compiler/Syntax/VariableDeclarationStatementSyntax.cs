@@ -19,5 +19,17 @@ namespace FanScript.Compiler.Syntax
         public TypeClauseSyntax TypeClause { get; }
         public SyntaxToken IdentifierToken { get; }
         public StatementSyntax? OptionalAssignment { get; }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            foreach (SyntaxNode modifier in Modifiers)
+                yield return modifier;
+
+            yield return TypeClause;
+            if (OptionalAssignment is null)
+                yield return IdentifierToken;
+            else
+                yield return OptionalAssignment;
+        }
     }
 }

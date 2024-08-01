@@ -28,5 +28,16 @@ namespace FanScript.Compiler.Syntax
         public SyntaxToken? LessToken { get; }
         public TypeClauseSyntax? InnerType { get; }
         public SyntaxToken? GreaterToken { get; }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+        {
+            yield return TypeToken;
+            if (HasGenericParameter)
+            {
+                yield return LessToken;
+                yield return InnerType;
+                yield return GreaterToken;
+            }
+        }
     }
 }
