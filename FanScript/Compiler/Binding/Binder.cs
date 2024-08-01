@@ -602,8 +602,8 @@ namespace FanScript.Compiler.Binding
                     return BindConstructorExpression((ConstructorExpressionSyntax)syntax);
                 case SyntaxKind.PropertyExpression:
                     return BindPropertyExpression((PropertyExpressionSyntax)syntax);
-                    case SyntaxKind.ArraySegmentExpression:
-                        return BindArraySegmentExpression((ArraySegmentExpressionSyntax)syntax);
+                case SyntaxKind.ArraySegmentExpression:
+                    return BindArraySegmentExpression((ArraySegmentExpressionSyntax)syntax);
                 default:
                     throw new Exception($"Unexpected syntax {syntax.Kind}");
             }

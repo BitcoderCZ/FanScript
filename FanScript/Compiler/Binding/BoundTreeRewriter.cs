@@ -200,7 +200,7 @@ namespace FanScript.Compiler.Binding
                     return RewriteConversionExpression((BoundConversionExpression)node);
                 case BoundNodeKind.ConstructorExpression:
                     return RewriteConstructorExpression((BoundConstructorExpression)node);
-                    case BoundNodeKind.ArraySegmentExpression:
+                case BoundNodeKind.ArraySegmentExpression:
                     return RewriteArraySegmentExpression((BoundArraySegmentExpression)node);
                 default:
                     throw new Exception($"Unexpected node: {node.Kind}");

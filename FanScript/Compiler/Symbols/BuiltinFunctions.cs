@@ -510,15 +510,15 @@ namespace FanScript.Compiler.Symbols
                     EmitStore store = ((BuiltinFunctionSymbol)Array_Set)
                         .Emit(
                             new BoundCallExpression(
-                                call.Syntax, 
-                                Array_Set, 
+                                call.Syntax,
+                                Array_Set,
                                 new BoundArgumentClause(call.ArgumentClause.Syntax, [0, 0, 0],
                                     [
                                         call.Arguments[0],
                                         new BoundLiteralExpression(call.Syntax, i + offset),
                                         segment.Elements[i],
-                                    ]), 
-                                TypeSymbol.Void, 
+                                    ]),
+                                TypeSymbol.Void,
                                 call.GenericType
                             ),
                             context

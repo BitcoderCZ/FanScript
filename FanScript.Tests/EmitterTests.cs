@@ -6,7 +6,6 @@ using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using System.Collections.Immutable;
-using System.Xml.Linq;
 
 namespace FanScript.Tests
 {

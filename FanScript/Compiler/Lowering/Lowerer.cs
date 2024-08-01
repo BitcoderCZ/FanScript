@@ -1,7 +1,6 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Symbols;
 using System.Collections.Immutable;
-using System.Xml.Linq;
 using static FanScript.Compiler.Binding.BoundNodeFactory;
 
 namespace FanScript.Compiler.Lowering

@@ -1,13 +1,12 @@
-﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis;
-using System;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 using System.CodeDom.Compiler;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using System.Linq;
-using Microsoft.CodeAnalysis.Text;
+using System.Text;
 
 namespace FanScript.Generators
 {
