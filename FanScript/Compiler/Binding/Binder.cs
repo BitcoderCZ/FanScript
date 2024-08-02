@@ -235,6 +235,7 @@ namespace FanScript.Compiler.Binding
         private BoundStatement BindStatement(StatementSyntax syntax, bool isGlobal = false)
         {
             BoundStatement result = BindStatementInternal(syntax);
+            syntax.BoundResult = result;
 
             //if (!_isScript || !isGlobal)
             //{
@@ -388,6 +389,8 @@ namespace FanScript.Compiler.Binding
                             _diagnostics.ReportValueMustBeConstant(syntax.Expression.Location);
 
                         variable.Initialize(boundExpression.ConstantValue);
+
+                        varClause.BoundResult = variable;
                     }
                     break;
                 case AssignablePropertyClauseSyntax propertyClause:
@@ -408,6 +411,8 @@ namespace FanScript.Compiler.Binding
                             _diagnostics.ReportCannotAssignReadOnlyProperty(syntax.AssignmentToken.Location, property.Name);
 
                         variable = new PropertySymbol(property, new BoundVariableExpression(propertyClause.VariableToken, baseVariable));
+
+                        propertyClause.BoundResult = variable;
                     }
                     break;
                 default:
@@ -540,7 +545,11 @@ namespace FanScript.Compiler.Binding
                     if (innerType is null)
                         return TypeSymbol.Error;
                     else
-                        return TypeSymbol.CreateGenericInstance(type, innerType);
+                    {
+                        TypeSymbol resultType = TypeSymbol.CreateGenericInstance(type, innerType);
+                        syntax.BoundResult = resultType;
+                        return resultType;
+                    }
                 }
                 else
                 {
@@ -554,6 +563,7 @@ namespace FanScript.Compiler.Binding
                 return TypeSymbol.Error;
             }
 
+            syntax.BoundResult = type;
             return type;
         }
 
@@ -576,6 +586,8 @@ namespace FanScript.Compiler.Binding
                 _diagnostics.ReportExpressionMustHaveValue(syntax.Location);
                 return new BoundErrorExpression(syntax);
             }
+
+            syntax.BoundResult = result;
 
             return result;
         }
@@ -993,7 +1005,11 @@ namespace FanScript.Compiler.Binding
                 boundArguments[i] = BindConversion(argumentLocation, argument, parameter.Type);
             }
 
-            return new BoundArgumentClause(syntax, argModifiersBuilder.ToImmutable(), boundArguments.ToImmutable());
+            var result = new BoundArgumentClause(syntax, argModifiersBuilder.ToImmutable(), boundArguments.ToImmutable());
+
+            syntax.BoundResult = result;
+
+            return result;
         }
 
         private Modifiers BindModifiers(IEnumerable<SyntaxToken> tokens, ModifierTarget target, Func<(Modifiers, SyntaxToken), bool>? checkModifier = null)
