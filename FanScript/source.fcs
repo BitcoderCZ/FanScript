@@ -1,12 +1,31 @@
 vec3 v1 = vec3(1, 2, 3)
 float y1 = v1.y
 
+inline float inlineF
+
+float f0 = inlineF
+
+inlineF = 5
+
 float y2 = vec3(1, 2, 3).y
 
-vec3 v2
-v2.x = 1
-v2.y = 2
-v2.z = 3
+float f1 = inlineF
 
-float f
-f = 5
+inlineF = 10
+
+float f2 = inlineF
+
+inspect(inlineF)
+
+on Touch(out inline float x, out float y, TOUCH_STATE_BEGINS, TOUCH_FINGER_1)
+{
+    inspect(vec3(x, y, 0))
+}
+
+joystick(out inline vec3 joyDir, JOYSTICK_TYPE_XZ)
+inspect(joyDir)
+
+screenToWorld(5, 2, out vec3 near, out vec3 far)
+inspect(near)
+inspect(far)
+

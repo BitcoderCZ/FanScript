@@ -102,6 +102,8 @@
                     return SyntaxKind.GlobalModifier;
                 case "saved":
                     return SyntaxKind.SavedModifier;
+                case "inline":
+                    return SyntaxKind.InlineModifier;
                 default:
                     return SyntaxKind.IdentifierToken;
             }
@@ -238,6 +240,8 @@
                     "global",
                 SyntaxKind.SavedModifier =>
                     "saved",
+                SyntaxKind.InlineModifier =>
+                    "inline",
                 _ =>
                     null
             };

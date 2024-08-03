@@ -173,6 +173,9 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportSBMustHaveArguments(TextLocation location, string sbType)
             => ReportError(location, $"On block '{sbType}' must have arguments.");
 
+        public void ReportMissignRequiredModifiers(TextLocation location, Modifiers mod, IEnumerable<Modifiers> required)
+            => ReportError(location, $"Modifier '{mod.ToKind().GetText()}' requires that one of <{string.Join(", ", required.Select(reqMod => reqMod.ToKind().GetText()))}> is present.");
+
         public void ReportUnreachableCode(TextLocation location)
           => ReportWarning(location, $"Unreachable code detected.");
         public void ReportUnreachableCode(SyntaxNode node)

@@ -33,9 +33,9 @@ namespace FanScript.Compiler.Symbols
 
             int retArgStart = call.Arguments.Length - numbReturnArgs;
 
-            EmitStore lastStore = null!;
-
             Block? block = context.Builder.AddBlock(blockDef);
+
+            EmitStore lastStore = BasicEmitStore.COut(block);
 
             if (retArgStart != 0)
                 context.Builder.BlockPlacer.ExpressionBlock(() =>
@@ -49,21 +49,13 @@ namespace FanScript.Compiler.Symbols
                 for (int i = retArgStart; i < call.Arguments.Length; i++)
                 {
                     VariableSymbol variable = ((BoundVariableExpression)call.Arguments[i]).Variable;
-                    Block varBlock = context.Builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
 
-                    context.Builder.SetBlockValue(varBlock, 0, variable.ResultName);
+                    EmitStore varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.Terminals[(call.Arguments.Length - 1) - i]));
 
-                    if (i == 0)
-                        context.Connect(BasicEmitStore.COut(block), BasicEmitStore.CIn(varBlock));
-                    else
-                        context.Connect(lastStore, BasicEmitStore.CIn(varBlock));
+                    context.Connect(lastStore, varStore);
 
-                    context.Connect(
-                        BasicEmitStore.COut(block, block.Type.Terminals[(call.Arguments.Length - 1) - i]),
-                        BasicEmitStore.CIn(varBlock, varBlock.Type.Terminals[1])
-                    );
-
-                    lastStore = BasicEmitStore.COut(varBlock);
+                    if (varStore is not NopEmitStore)
+                        lastStore = varStore;
                 }
             });
 
@@ -86,35 +78,43 @@ namespace FanScript.Compiler.Symbols
             for (int i = retArgStart; i < call.Arguments.Length; i++)
             {
                 VariableSymbol variable = ((BoundVariableExpression)call.Arguments[i]).Variable;
-                Block varBlock = context.Builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
 
-                context.Builder.SetBlockValue(varBlock, 0, variable.ResultName);
+                EmitStore varStore;
 
                 if (block is null)
                 {
-                    inStore = BasicEmitStore.CIn(varBlock);
                     block = null!;
-                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    varStore = context.EmitSetVariable(variable, () =>
                     {
-                        block = context.Builder.AddBlock(blockDef);
+                        context.Builder.BlockPlacer.ExpressionBlock(() =>
+                        {
+                            block = context.Builder.AddBlock(blockDef);
 
-                        if (retArgStart != 0)
-                            context.Builder.BlockPlacer.ExpressionBlock(() =>
-                            {
-                                for (int i = 0; i < retArgStart; i++)
-                                    context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[(retArgStart - 1) - i + numbReturnArgs]));
-                            });
+                            if (retArgStart != 0)
+                                context.Builder.BlockPlacer.ExpressionBlock(() =>
+                                {
+                                    for (int i = 0; i < retArgStart; i++)
+                                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[(retArgStart - 1) - i + numbReturnArgs]));
+                                });
+                        });
+
+                        return BasicEmitStore.COut(block, block.Type.Terminals[(call.Arguments.Length - 1) - i]);
                     });
                 }
                 else
-                    context.Connect(lastStore, BasicEmitStore.CIn(varBlock));
+                {
+                    varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.Terminals[(call.Arguments.Length - 1) - i]));
 
-                context.Connect(
-                    BasicEmitStore.COut(block, block.Type.Terminals[(call.Arguments.Length - 1) - i]),
-                    BasicEmitStore.CIn(varBlock, varBlock.Type.Terminals[1])
-                );
+                    context.Connect(lastStore, varStore);
+                }
 
-                lastStore = BasicEmitStore.COut(varBlock);
+                if (varStore is not NopEmitStore)
+                {
+                    if (inStore is null)
+                        inStore = varStore;
+
+                    lastStore = varStore;
+                }
             }
 
             return new MultiEmitStore(inStore, lastStore);
@@ -150,19 +150,17 @@ namespace FanScript.Compiler.Symbols
 
                     context.Builder.SetBlockValue(joystick, 0, (byte)(float)values[0]); // unbox, then cast
 
-                    Block varBlock = null!;
+                    EmitStore varStore = null!;
                     context.Builder.BlockPlacer.StatementBlock(() =>
                     {
                         VariableSymbol variable = ((BoundVariableExpression)call.Arguments[0]).Variable;
-                        varBlock = context.Builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
 
-                        context.Builder.SetBlockValue(varBlock, 0, variable.ResultName);
+                        varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(joystick, joystick.Type.Terminals[1]));
 
-                        context.Connect(BasicEmitStore.COut(joystick), BasicEmitStore.CIn(varBlock));
-                        context.Connect(BasicEmitStore.COut(joystick, joystick.Type.Terminals[1]), BasicEmitStore.CIn(varBlock, varBlock.Type.Terminals[1]));
+                        context.Connect(BasicEmitStore.COut(joystick), varStore);
                     });
 
-                    return new MultiEmitStore(BasicEmitStore.CIn(joystick), BasicEmitStore.COut(varBlock));
+                    return new MultiEmitStore(BasicEmitStore.CIn(joystick), varStore is NopEmitStore ? BasicEmitStore.COut(joystick) : varStore);
                 });
         }
 

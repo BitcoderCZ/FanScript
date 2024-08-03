@@ -24,6 +24,8 @@ namespace FanScript.Compiler.Emit
         // key - label name, item - the store to connect gotos to
         private Dictionary<string, EmitStore> afterLabel = new();
 
+        private Dictionary<VariableSymbol, EmitStore> inlineVariableInits = new();
+
         private Dictionary<VariableSymbol, BreakBlockCache> vectorBreakCache = new();
         private Dictionary<VariableSymbol, BreakBlockCache> rotationBreakCache = new();
 
@@ -213,23 +215,18 @@ namespace FanScript.Compiler.Emit
 
             EmitStore placeAndConnectRefArgs(ReadOnlySpan<BoundExpression> arguments)
             {
-                EmitStore lastStore = null!;
+                EmitStore lastStore = BasicEmitStore.COut(block, block.Type.Terminals[^2]);
 
                 for (int i = 0; i < arguments.Length; i++)
                 {
                     VariableSymbol variable = ((BoundVariableExpression)arguments[i]).Variable;
-                    Block varBlock = builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
 
-                    builder.SetBlockValue(varBlock, 0, variable.ResultName);
+                    EmitStore varStore = emitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.Terminals[Index.FromEnd(i + 3)]));
 
-                    if (i == 0)
-                        connect(BasicEmitStore.COut(block, block.Type.Terminals[^2]), BasicEmitStore.CIn(varBlock));
-                    else
-                        connect(lastStore, BasicEmitStore.CIn(varBlock));
+                    connect(lastStore, varStore);
 
-                    connect(BasicEmitStore.COut(block, block.Type.Terminals[Index.FromEnd(i + 3)]), BasicEmitStore.CIn(varBlock, varBlock.Type.Terminals[1]));
-
-                    lastStore = new BasicEmitStore(varBlock);
+                    if (varStore is not NopEmitStore)
+                        lastStore = varStore;
                 }
 
                 return lastStore;
@@ -728,6 +725,14 @@ namespace FanScript.Compiler.Emit
                     return property.Definition.EmitGet.Invoke(emitContext, property.Expression);
                 default:
                     {
+                        if (variable.Modifiers.HasFlag(Modifiers.Inline))
+                        {
+                            if (inlineVariableInits.TryGetValue(variable, out EmitStore? store))
+                                return store;
+                            else
+                                return new NopEmitStore();
+                        }
+
                         Block block = builder.AddBlock(Blocks.Variables.VariableByType(variable.Type!.ToWireType()));
 
                         builder.SetBlockValue(block, 0, variable.ResultName);
@@ -737,7 +742,13 @@ namespace FanScript.Compiler.Emit
             }
         }
         internal EmitStore emitSetExpression(BoundExpression expression, BoundExpression valueExpression)
-            => emitSetExpression(expression, () => emitExpression(valueExpression));
+            => emitSetExpression(expression, () =>
+            {
+                builder.BlockPlacer.EnterExpressionBlock();
+                EmitStore store = emitExpression(valueExpression);
+                builder.BlockPlacer.ExitExpressionBlock();
+                return store;
+            });
         internal EmitStore emitSetExpression(BoundExpression expression, Func<EmitStore> getValueStore)
         {
             switch (expression)
@@ -748,21 +759,24 @@ namespace FanScript.Compiler.Emit
                     {
                         Block set = builder.AddBlock(Blocks.Variables.Set_PtrByType(expression.Type.ToWireType()));
 
-                        builder.BlockPlacer.ExpressionBlock(() =>
-                        {
-                            EmitStore exStore = emitExpression(expression);
-                            EmitStore valStore = getValueStore();
+                        EmitStore exStore = emitExpression(expression);
+                        EmitStore valStore = getValueStore();
 
-                            connect(exStore, BasicEmitStore.CIn(set, set.Type.Terminals[2]));
-                            connect(valStore, BasicEmitStore.CIn(set, set.Type.Terminals[1]));
-                        });
+                        connect(exStore, BasicEmitStore.CIn(set, set.Type.Terminals[2]));
+                        connect(valStore, BasicEmitStore.CIn(set, set.Type.Terminals[1]));
 
                         return new BasicEmitStore(set);
                     }
             }
         }
         internal EmitStore emitSetVariable(VariableSymbol variable, BoundExpression expression)
-            => emitSetVariable(variable, () => emitExpression(expression));
+            => emitSetVariable(variable, () =>
+            {
+                builder.BlockPlacer.EnterExpressionBlock();
+                EmitStore store = emitExpression(expression);
+                builder.BlockPlacer.ExitExpressionBlock();
+                return store;
+            });
         internal EmitStore emitSetVariable(VariableSymbol variable, Func<EmitStore> getValueStore)
         {
             switch (variable)
@@ -771,18 +785,31 @@ namespace FanScript.Compiler.Emit
                     return property.Definition.EmitSet!.Invoke(emitContext, property.Expression, getValueStore);
                 default:
                     {
-                        Block block = builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
+                        bool inline = variable.Modifiers.HasFlag(Modifiers.Inline);
 
-                        builder.SetBlockValue(block, 0, variable.ResultName);
+                        Block block = builder.AddBlock(
+                            inline ?
+                                Blocks.None :
+                                Blocks.Variables.Set_VariableByType(variable.Type.ToWireType())
+                        );
 
-                        builder.BlockPlacer.ExpressionBlock(() =>
+                        if (!inline)
+                            builder.SetBlockValue(block, 0, variable.ResultName);
+
+                        if (!variable.Modifiers.HasFlag(Modifiers.Constant))
                         {
                             EmitStore _store = getValueStore();
 
-                            connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
-                        });
+                            if (inline)
+                                inlineVariableInits[variable] = _store;
+                            else
+                                connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
+                        }
 
-                        return new BasicEmitStore(block);
+                        if (inline)
+                            return new NopEmitStore();
+                        else
+                            return new BasicEmitStore(block);
                     }
             }
         }

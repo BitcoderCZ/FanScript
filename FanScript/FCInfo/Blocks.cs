@@ -53,6 +53,8 @@ namespace FanScript.FCInfo
             PositionsLoaded = true;
         }
 
+        public static readonly BlockDef None = new BlockDef("None", 0, BlockType.Pasive, new Vector2I(2, 2));
+
         public static class Objects
         {
             public static readonly BlockDef SetPos = new BlockDef("Set Position", 282, BlockType.Active, new Vector2I(2, 3), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Rot, TerminalType.In, "Rotation"), new Terminal(2, WireType.Vec3, TerminalType.In, "Position"), new Terminal(3, WireType.Obj, TerminalType.In, "Object"), new Terminal(4, WireType.Void, TerminalType.In));

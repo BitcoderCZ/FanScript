@@ -612,7 +612,20 @@ namespace FanScript.Compiler.Syntax
                     TypeClauseSyntax typeClause = ParseTypeClause(true);
                     SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
 
-                    nodesAndSeparators.Add(new ModifierClauseSyntax(_syntaxTree, modifiers, new VariableDeclarationExpressionSyntax(_syntaxTree, modifiers, typeClause, identifierToken)));
+                    nodesAndSeparators.Add(new ModifierClauseSyntax(
+                        _syntaxTree,
+                        modifiers
+                            .Where(token => !ModifiersE.FromKind(token.Kind).GetTargets().Contains(ModifierTarget.Variable))
+                            .ToImmutableArray(), 
+                        new VariableDeclarationExpressionSyntax(
+                            _syntaxTree, 
+                            modifiers
+                                .Where(token => ModifiersE.FromKind(token.Kind).GetTargets().Contains(ModifierTarget.Variable))
+                                .ToImmutableArray(), 
+                            typeClause, 
+                            identifierToken
+                        )
+                    ));
                 }
                 else
                     nodesAndSeparators.Add(new ModifierClauseSyntax(_syntaxTree, modifiers, ParseExpression()));

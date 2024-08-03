@@ -56,8 +56,26 @@ namespace FanScript.Compiler.Emit
 
         public EmitStore EmitGetVariable(VariableSymbol variable)
             => emitGetVariable(variable);
+        /// <summary>
+        /// Emits setting <paramref name="expression"/> to <paramref name="getValueStore"/>
+        /// </summary>
+        /// <remarks>
+        /// DOES NOT automatically <see cref="IBlockPlacer.ExpressionBlock(Action)"/>
+        /// </remarks>
+        /// <param name="expression"></param>
+        /// <param name="getValueStore"></param>
+        /// <returns></returns>
         public EmitStore EmitSetExpression(BoundExpression expression, Func<EmitStore> getValueStore)
             => emitSetExpression(expression, getValueStore);
+        /// <summary>
+        /// Emits setting <paramref name="variable"/> to <paramref name="getValueStore"/>
+        /// </summary>
+        /// <remarks>
+        /// DOES NOT automatically <see cref="IBlockPlacer.ExpressionBlock(Action)"/>
+        /// </remarks>
+        /// <param name="expression"></param>
+        /// <param name="getValueStore"></param>
+        /// <returns></returns>
         public EmitStore EmitSetVariable(VariableSymbol variable, Func<EmitStore> getValueStore)
             => emitSetVariable(variable, getValueStore);
 

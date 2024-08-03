@@ -6,6 +6,7 @@ using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using System.Collections.Immutable;
+using System.Diagnostics;
 
 namespace FanScript.Tests
 {
@@ -709,7 +710,7 @@ namespace FanScript.Tests
         }
 
         [Theory]
-        [MemberData(nameof(GetModifiersInvalidFor), ModifierTarget.Variable)]
+        [MemberData(nameof(GetModifiersFor), false, ModifierTarget.Variable, null)]
         public void Emitter_Invalid_Modifier_Target_Variable(string modifier, string validTargets)
         {
             var text = $"""
@@ -724,7 +725,7 @@ namespace FanScript.Tests
         }
 
         [Theory]
-        [MemberData(nameof(GetModifiersValidFor), ModifierTarget.Variable)]
+        [MemberData(nameof(GetModifiersFor), true, ModifierTarget.Variable, null)]
         public void Emitter_Duplicate_Modifier(string modifier)
         {
             var text = $"""
@@ -880,6 +881,22 @@ namespace FanScript.Tests
             AssertDiagnostics(text, diagnostics);
         }
 
+        // TODO: uncommend when a modifier uses required modifiers
+        //[Theory]
+        //[MemberData(nameof(GetModifiersWithMissingRequiredFor), ModifierTarget.Variable)]
+        //public void Emitter_Missign_Required_Modifiers(string modifier, string requiredModifiers)
+        //{
+        //    var text = $"""
+        //        $[{modifier}]$ float x = 0
+        //        """;
+
+        //    var diagnostics = $"""
+        //        Modifier '{modifier}' requires that one of <{requiredModifiers}> is present.
+        //        """;
+
+        //    AssertDiagnostics(text, diagnostics);
+        //}
+
         //[Fact]
         //public void Emitter_Parameter_Already_Declared()
         //{
@@ -975,22 +992,14 @@ namespace FanScript.Tests
             }
         }
 
-        public static IEnumerable<object[]> GetModifiersValidFor(ModifierTarget validTarget)
+        public static IEnumerable<object[]> GetModifiersFor(bool valid, ModifierTarget target, TypeSymbol? type = null)
         {
-            foreach (var mod in Enum.GetValues<Modifiers>())
+            foreach (var mod in getModifiersFor(valid, target, type))
             {
-                var targets = mod.GetTargets();
-                if (targets.Contains(validTarget))
+                if (valid)
                     yield return [mod.ToSyntaxString()];
-            }
-        }
-        public static IEnumerable<object[]> GetModifiersInvalidFor(ModifierTarget invalidTarget)
-        {
-            foreach (var mod in Enum.GetValues<Modifiers>())
-            {
-                var targets = mod.GetTargets();
-                if (!targets.Contains(invalidTarget))
-                    yield return [mod.ToSyntaxString(), string.Join(", ", targets)];
+                else
+                    yield return [mod.ToSyntaxString(), string.Join(", ", mod.GetTargets())];
             }
         }
 
@@ -1001,44 +1010,35 @@ namespace FanScript.Tests
                 var mod1Targets = mod1.GetTargets();
                 if (mod1Targets.Contains(validTarget))
                 {
+                    var required1 = mod1.GetRequiredModifiers();
+
                     foreach (var mod2 in Enum.GetValues<Modifiers>())
-                        if (mod1.GetConflictingModifiers().Contains(mod2) && mod2.GetTargets().Contains(validTarget))
+                    {
+                        var required2 = mod2.GetRequiredModifiers();
+
+                        if (mod1.GetConflictingModifiers().Contains(mod2) && mod2.GetTargets().Contains(validTarget) &&
+                            (required1.Count == 0 || required1.Contains(mod2)) &&
+                            (required2.Count == 0 || required2.Contains(mod1)))
                             yield return [mod1.ToSyntaxString(), mod2.ToSyntaxString()];
+                    }
                 }
             }
         }
 
+        // currently not used by anything
+        //public static IEnumerable<object[]> GetModifiersWithMissingRequiredFor(ModifierTarget target)
+        //{
+        //    Modifiers validMods = ModifiersE.GetValidModifiersFor(target, null);
+
+        //    foreach (var mod in Enum.GetValues<Modifiers>())
+        //    {
+        //        if (validMods.HasFlag(mod) && mod.GetRequiredModifiers().Count != 0)
+        //            yield return [mod.ToSyntaxString(), string.Join(", ", mod.GetRequiredModifiers().Select(mod => mod.ToSyntaxString()))];
+        //    }
+        //}
+
         public static IEnumerable<object[]> GetVariableDeclarations()
         {
-            var modsForVars = Enum.GetValues<Modifiers>()
-                .Where(mod => mod.GetTargets().Contains(ModifierTarget.Variable))
-                .ToList();
-
-            HashSet<Modifiers> allModCombinations = [0];
-
-            foreach (Modifiers mod in modsForVars)
-            {
-                Modifiers mods = mod;
-                allModCombinations.Add(mods);
-                foreach (Modifiers otherMod in modsForVars)
-                    if (!mods.HasFlag(otherMod))
-                    {
-                        bool hasConflict = false;
-                        foreach (Modifiers conflict in otherMod.GetConflictingModifiers())
-                            if (mods.HasFlag(conflict))
-                            {
-                                hasConflict = true;
-                                break;
-                            }
-
-                        if (!hasConflict)
-                        {
-                            mods |= otherMod;
-                            allModCombinations.Add(mods);
-                        }
-                    }
-            }
-
             IReadOnlyDictionary<TypeSymbol, string?> initializers = new Dictionary<TypeSymbol, string?>()
             {
                 [TypeSymbol.Bool] = "true",
@@ -1055,14 +1055,11 @@ namespace FanScript.Tests
 
             foreach (TypeSymbol type in TypeSymbol.BuiltInNonGenericTypes)
             {
-                foreach (Modifiers mods in allModCombinations)
+                foreach (Modifiers mods in getModifierCombinationsFor(true, ModifierTarget.Variable, type))
                 {
-                    if (type != TypeSymbol.Float && mods.HasFlag(Modifiers.Saved))
-                        continue;
-
                     string declaration = mods.ToSyntaxString() + " " + type + " x";
 
-                    if (!mods.HasFlag(Modifiers.Constant))
+                    if (!mods.HasFlag(Modifiers.Constant) && !mods.HasFlag(Modifiers.Readonly))
                         yield return [declaration];
 
                     string? initializer = initializers[type];
@@ -1077,14 +1074,13 @@ namespace FanScript.Tests
                 {
                     TypeSymbol type = TypeSymbol.CreateGenericInstance(baseType, innerType);
 
-                    foreach (Modifiers mods in allModCombinations)
+                    foreach (Modifiers mods in getModifierCombinationsFor(true, ModifierTarget.Variable, type))
                     {
-                        if (mods.HasFlag(Modifiers.Constant) || mods.HasFlag(Modifiers.Saved))
-                            continue;
-
                         string declaration = mods.ToSyntaxString() + " " + type + " x";
 
-                        yield return [declaration];
+                        if (!mods.HasFlag(Modifiers.Constant) && !mods.HasFlag(Modifiers.Readonly))
+                            yield return [declaration];
+
                         string? initializer = initializers[type];
                         if (!string.IsNullOrEmpty(initializer))
                             yield return [declaration + " = " + initializer];
@@ -1092,5 +1088,71 @@ namespace FanScript.Tests
                 }
             }
         }
+
+        #region Utils
+        private static IEnumerable<Modifiers> getModifiersFor(bool valid, ModifierTarget target, TypeSymbol? type = null)
+        {
+            Modifiers validMods = ModifiersE.GetValidModifiersFor(target, type);
+
+            foreach (var mod in Enum.GetValues<Modifiers>())
+            {
+                if (valid == validMods.HasFlag(mod) && (!valid || mod == validateModifiers(mod, target, type)))
+                    yield return mod;
+            }
+        }
+        private static IEnumerable<Modifiers> getModifierCombinationsFor(bool valid, ModifierTarget target, TypeSymbol? type = null)
+        {
+            Modifiers validMods = ModifiersE.GetValidModifiersFor(target, type);
+
+            HashSet<Modifiers> returnedMods = new();
+
+            int max = (int)ModifiersE.All();
+            for (int i = 0; i <= max; i++)
+            {
+                Modifiers mods = validateModifiers((Modifiers)i, target, type);
+                if (returnedMods.Add(mods)) // don't return the same modifiers multiple times
+                    yield return mods;
+            }
+        }
+
+        private static Modifiers validateModifiers(Modifiers mods, ModifierTarget? target = null, TypeSymbol? type = null)
+        {
+            Modifiers? validMods = null;
+            if (target is not null)
+                validMods = ModifiersE.GetValidModifiersFor(target.Value, type);
+
+            foreach (var mod in Enum.GetValues<Modifiers>())
+                if (mods.HasFlag(mod))
+                {
+                    if (validMods is not null && !validMods.Value.HasFlag(mod))
+                    {
+                        mods ^= mod; // toggle mod bit (remove)
+                        continue;
+                    }
+
+                    foreach (var conflict in mod.GetConflictingModifiers())
+                        if (mods.HasFlag(conflict))
+                            mods ^= conflict; // toggle conflict bit (remove)
+
+                    var requiredMods = mod.GetRequiredModifiers();
+                    if (requiredMods.Count != 0)
+                    {
+                        bool found = false;
+
+                        foreach (var required in requiredMods)
+                            if (mods.HasFlag(required))
+                            {
+                                found = true;
+                                break;
+                            }
+
+                        if (!found)
+                            mods |= requiredMods.First();
+                    }
+                }
+
+            return mods;
+        }
+        #endregion
     }
 }

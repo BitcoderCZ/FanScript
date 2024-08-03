@@ -32,11 +32,11 @@ namespace FanScript.Compiler.Symbols
         }
 
         public override int GetHashCode()
-            => HashCode.Combine(base.GetHashCode(), Type);
+            => HashCode.Combine(ResultName, Modifiers, Type);
 
         public override bool Equals(object? obj)
         {
-            if (obj is VariableSymbol other) return Name == other.Name && Modifiers == other.Modifiers && Equals(Type, other.Type);
+            if (obj is VariableSymbol other) return ResultName == other.ResultName && Modifiers == other.Modifiers && Equals(Type, other.Type);
             else return false;
         }
     }

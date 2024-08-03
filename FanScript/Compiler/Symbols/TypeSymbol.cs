@@ -82,30 +82,35 @@ namespace FanScript.Compiler.Symbols
 
                 return context.EmitSetExpression(expression, () =>
                 {
-                    Block make = context.Builder.AddBlock(Blocks.Math.MakeByType(varType));
+                    Block make = null!;
 
                     context.Builder.BlockPlacer.ExpressionBlock(() =>
                     {
-                        Block @break = context.Builder.AddBlock(Blocks.Math.BreakByType(varType));
+                        make = context.Builder.AddBlock(Blocks.Math.MakeByType(varType));
 
                         context.Builder.BlockPlacer.ExpressionBlock(() =>
                         {
-                            EmitStore expressionStore = context.EmitExpression(expression);
+                            Block @break = context.Builder.AddBlock(Blocks.Math.BreakByType(varType));
 
-                            context.Connect(expressionStore, BasicEmitStore.CIn(@break, @break.Type.Terminals[3]));
+                            context.Builder.BlockPlacer.ExpressionBlock(() =>
+                            {
+                                EmitStore expressionStore = context.EmitExpression(expression);
+
+                                context.Connect(expressionStore, BasicEmitStore.CIn(@break, @break.Type.Terminals[3]));
+                            });
+
+                            for (int i = 0; i < 3; i++)
+                            {
+                                if (i != index)
+                                    context.Connect(BasicEmitStore.COut(@break, @break.Type.Terminals[2 - i]), BasicEmitStore.CIn(make, make.Type.Terminals[(2 - i) + 1]));
+                            }
                         });
-
-                        for (int i = 0; i < 3; i++)
+                        context.Builder.BlockPlacer.ExpressionBlock(() =>
                         {
-                            if (i != index)
-                                context.Connect(BasicEmitStore.COut(@break, @break.Type.Terminals[2 - i]), BasicEmitStore.CIn(make, make.Type.Terminals[(2 - i) + 1]));
-                        }
-                    });
-                    context.Builder.BlockPlacer.ExpressionBlock(() =>
-                    {
-                        EmitStore store = getStore();
+                            EmitStore store = getStore();
 
-                        context.Connect(store, BasicEmitStore.CIn(make, make.Type.Terminals[(2 - index) + 1]));
+                            context.Connect(store, BasicEmitStore.CIn(make, make.Type.Terminals[(2 - index) + 1]));
+                        });
                     });
 
                     return BasicEmitStore.COut(make, make.Type.Terminals[0]);

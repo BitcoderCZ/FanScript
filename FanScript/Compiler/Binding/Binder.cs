@@ -289,7 +289,7 @@ namespace FanScript.Compiler.Binding
         private BoundStatement BindBlockStatement(BlockStatementSyntax syntax)
         {
             ImmutableArray<BoundStatement>.Builder statements = ImmutableArray.CreateBuilder<BoundStatement>();
-            _scope = new BoundScope(_scope);
+            //_scope = new BoundScope(_scope);
 
             foreach (StatementSyntax statementSyntax in syntax.Statements)
             {
@@ -297,7 +297,7 @@ namespace FanScript.Compiler.Binding
                 statements.Add(statement);
             }
 
-            _scope = _scope.Parent!;
+            //_scope = _scope.Parent!;
 
             return new BoundBlockStatement(syntax, statements.ToImmutable());
         }
@@ -362,7 +362,7 @@ namespace FanScript.Compiler.Binding
             TypeSymbol? variableType = type;
             VariableSymbol variable = BindVariableDeclaration(syntax.IdentifierToken, syntax.Modifiers, variableType);
 
-            if (variable.Modifiers.HasFlag(Modifiers.Constant) && syntax.OptionalAssignment is null)
+            if (variable.IsReadOnly && syntax.OptionalAssignment is null)
                 _diagnostics.ReportConstantNotInitialized(syntax.IdentifierToken.Location);
 
             BoundStatement? optionalAssignment = syntax.OptionalAssignment is null ? null : BindStatement(syntax.OptionalAssignment);
@@ -886,14 +886,7 @@ namespace FanScript.Compiler.Binding
             string name = identifier.Text ?? "?";
             bool declare = !identifier.IsMissing;
 
-            Modifiers validModifiers = Modifiers.Readonly | Modifiers.Global;
-            if (type.GenericEquals(TypeSymbol.Bool) ||
-                type.GenericEquals(TypeSymbol.Float) ||
-                type.GenericEquals(TypeSymbol.Vector3) ||
-                type.GenericEquals(TypeSymbol.Rotation))
-                validModifiers |= Modifiers.Constant;
-            if (type.GenericEquals(TypeSymbol.Float))
-                validModifiers |= Modifiers.Saved;
+            Modifiers validModifiers = ModifiersE.GetValidModifiersFor(ModifierTarget.Variable, type);
 
             Modifiers modifiers = BindModifiers(modifierArray, ModifierTarget.Variable, item =>
             {
@@ -1000,7 +993,8 @@ namespace FanScript.Compiler.Binding
                     _diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Ref);
                 else if (parameter.Modifiers.HasFlag(Modifiers.Out) && !modifiers.HasFlag(Modifiers.Out))
                     _diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Out);
-                else if (modifiers.MakesTargetReference(out Modifiers? makesRefMod) && (argument is not BoundVariableExpression variable || variable.Variable.IsReadOnly))
+                else if (modifiers.MakesTargetReference(out Modifiers? makesRefMod) && (argument is not BoundVariableExpression variable || 
+                    (variable.Variable.IsReadOnly && argument.Syntax.Kind != SyntaxKind.VariableDeclarationExpression)))
                     _diagnostics.ReportByRefArgMustBeVariable(argumentLocation, makesRefMod.Value);
 
                 boundArguments[i] = BindConversion(argumentLocation, argument, parameter.Type);
@@ -1015,7 +1009,7 @@ namespace FanScript.Compiler.Binding
 
         private Modifiers BindModifiers(IEnumerable<SyntaxToken> tokens, ModifierTarget target, Func<(Modifiers, SyntaxToken), bool>? checkModifier = null)
         {
-            if (tokens.Count() == 0)
+            if (!tokens.Any())
                 return 0;
 
             checkModifier ??= item => true;
@@ -1067,6 +1061,26 @@ namespace FanScript.Compiler.Binding
                     i--;
                 }
             }
+
+            // find missing required
+            foreach (var (mod, token) in modifiersAndTokens)
+            {
+                var required = mod.GetRequiredModifiers();
+
+                if (required.Count == 0)
+                    continue;
+
+                bool found = false;
+                foreach (var requiredMod in required)
+                    if (modifiersAndTokens.Where(item => item.Modifier == requiredMod).Any())
+                    {
+                        found = true;
+                        break;
+                    }
+
+                if (!found)
+                    _diagnostics.ReportMissignRequiredModifiers(token.Location, mod, required);
+                }
 
             // construct the enum
             Modifiers modifiers = 0;

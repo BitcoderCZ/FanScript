@@ -104,5 +104,6 @@
         OutModifier,
         GlobalModifier,
         SavedModifier,
+        InlineModifier,
     }
 }
