@@ -1,4 +1,5 @@
 ﻿using FanScript.Compiler;
+using FanScript.Compiler.Binding;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.LangServer.Utils;
@@ -13,6 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace FanScript.LangServer.Handlers
 {
@@ -146,58 +148,67 @@ namespace FanScript.LangServer.Handlers
 
             Document document = documentHandler.GetDocument(request.TextDocument.Uri);
             SyntaxTree? tree = document.Tree;
+            Compilation? compilation = document.Compilation;
+            var _ = compilation?.GlobalScope; // make BoundReult(s) available to getRecomendations
 
-            CurrentRecomendations recomendation;
+            CurrentRecomendations recomendations;
+
+            List<CompletionItem>? recomendationsList = null;
 
             if (tree is null)
-                recomendation = CurrentRecomendations.All;
+                recomendations = CurrentRecomendations.All;
             else
             {
                 var node = tree.FindNode(request.Position.ToSpan(tree.Text) - 1);
 
                 if (node is null)
-                    recomendation = CurrentRecomendations.All;
+                    recomendations = CurrentRecomendations.All;
                 else
-                    recomendation = getRecomendation(node);
+                    recomendations = getRecomendations(node, out recomendationsList);
             }
 
-            if (recomendation == 0)
+            if (recomendations == 0 && recomendationsList is null)
                 return new CompletionList();
 
             int length = 0;
-            if (recomendation.HasFlag(CurrentRecomendations.Keywords))
+            if (recomendationsList is not null)
+                length += recomendationsList.Count;
+
+            if (recomendations.HasFlag(CurrentRecomendations.Keywords))
                 length += keywords.Length;
-            if (recomendation.HasFlag(CurrentRecomendations.Modifiers))
+            if (recomendations.HasFlag(CurrentRecomendations.Modifiers))
                 length += modifiers.Length;
-            if (recomendation.HasFlag(CurrentRecomendations.Types))
+            if (recomendations.HasFlag(CurrentRecomendations.Types))
                 length += types.Length;
-            if (recomendation.HasFlag(CurrentRecomendations.SpecialBlockTypes))
+            if (recomendations.HasFlag(CurrentRecomendations.SpecialBlockTypes))
                 length += specialBlockTypes.Length;
-            if (recomendation.HasFlag(CurrentRecomendations.Values))
+            if (recomendations.HasFlag(CurrentRecomendations.Values))
                 length += values.Length;
 
             VariableSymbol[]? variables = null;
             FunctionSymbol[]? functions = null;
-            Compilation? compilation = document.Compilation;
             if (compilation is not null)
             {
-                if (recomendation.HasFlag(CurrentRecomendations.Variables))
+                if (recomendations.HasFlag(CurrentRecomendations.Variables))
                     length += (variables = compilation.GetVariables().ToArray()).Length;
-                if (recomendation.HasFlag(CurrentRecomendations.Functions))
+                if (recomendations.HasFlag(CurrentRecomendations.Functions))
                     length += (functions = compilation.GetFunctions().ToArray()).Length;
             }
 
             List<CompletionItem> result = new List<CompletionItem>(length);
 
-            if (recomendation.HasFlag(CurrentRecomendations.Keywords))
+            if (recomendationsList is not null)
+                result.AddRange(recomendationsList);
+
+            if (recomendations.HasFlag(CurrentRecomendations.Keywords))
                 result.AddRange(keywords);
-            if (recomendation.HasFlag(CurrentRecomendations.Modifiers))
+            if (recomendations.HasFlag(CurrentRecomendations.Modifiers))
                 result.AddRange(modifiers);
-            if (recomendation.HasFlag(CurrentRecomendations.Types))
+            if (recomendations.HasFlag(CurrentRecomendations.Types))
                 result.AddRange(types);
-            if (recomendation.HasFlag(CurrentRecomendations.SpecialBlockTypes))
+            if (recomendations.HasFlag(CurrentRecomendations.SpecialBlockTypes))
                 result.AddRange(specialBlockTypes);
-            if (recomendation.HasFlag(CurrentRecomendations.Values))
+            if (recomendations.HasFlag(CurrentRecomendations.Values))
                 result.AddRange(values);
 
             if (variables is not null)
@@ -280,8 +291,10 @@ namespace FanScript.LangServer.Handlers
                 .ToString();
         }
 
-        private CurrentRecomendations getRecomendation(SyntaxNode node)
+        private CurrentRecomendations getRecomendations(SyntaxNode node, out List<CompletionItem>? recomendationsList)
         {
+            recomendationsList = null;
+
             if (node is not SyntaxToken token)
             {
                 SyntaxNode? missing = fistMissing(node);
@@ -296,21 +309,50 @@ namespace FanScript.LangServer.Handlers
             if (parent is null)
                 return CurrentRecomendations.All;
 
-            CurrentRecomendations? recomendation = getRecomendationWithParent(node, parent);
+            CurrentRecomendations? recomendation = getRecomendationsWithParent(node, parent, out recomendationsList);
 
             return recomendation ?? CurrentRecomendations.All;
         }
 
-        private CurrentRecomendations? getRecomendationWithParent(SyntaxNode node, SyntaxNode parent)
+        private CurrentRecomendations? getRecomendationsWithParent(SyntaxNode node, SyntaxNode parent, out List<CompletionItem>? recomendationsList)
         {
+            recomendationsList = null;
+
             switch (parent)
             {
                 case NameExpressionSyntax:
                     {
                         if (parent.Parent is not null)
-                            return getRecomendationWithParent(parent, parent.Parent);
+                            return getRecomendationsWithParent(parent, parent.Parent, out recomendationsList);
                     }
                     break;
+                case PropertyExpressionSyntax property:
+                    {
+                        if (node == property.IdentifierToken && property.BoundResult is BoundVariableExpression varEx && varEx.Variable is PropertySymbol propSymbol)
+                        {
+                            TypeSymbol baseType = propSymbol.Expression.Type;
+
+                            recomendationsList = baseType.Properties
+                                .Select(item =>
+                                {
+                                    var (name, definition) = item;
+
+                                    return new CompletionItem()
+                                    {
+                                        Label = definition.Type + " " + baseType + "." + name,
+                                        Kind = CompletionItemKind.Property,
+                                        SortText = name,
+                                        FilterText = name,
+                                        InsertText = name,
+                                    };
+                                })
+                                .ToList();
+                            return 0;
+                        }
+                    }
+                    break;
+                case AssignableVariableClauseSyntax:
+                        return CurrentRecomendations.NewIdentifier;
                 case CallExpressionSyntax call:
                     {
                         if (node == call.Identifier)

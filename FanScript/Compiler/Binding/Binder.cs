@@ -587,7 +587,7 @@ namespace FanScript.Compiler.Binding
                 return new BoundErrorExpression(syntax);
             }
 
-            syntax.BoundResult = result;
+            syntax.BoundResult ??= result;
 
             return result;
         }
@@ -821,6 +821,7 @@ namespace FanScript.Compiler.Binding
             if (property is null)
             {
                 _diagnostics.ReportUndefinedProperty(syntax.IdentifierToken.Location, expression.Type, syntax.IdentifierToken.Text);
+                syntax.BoundResult = new BoundVariableExpression(syntax, new PropertySymbol(new PropertyDefinitionSymbol("?", TypeSymbol.Error, null!), expression));
                 return new BoundErrorExpression(syntax);
             }
 
