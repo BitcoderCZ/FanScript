@@ -44,5 +44,25 @@ namespace FanScript.Compiler.Symbols
                 return writer.ToString();
             }
         }
+
+        private int? hashCode;
+        public override int GetHashCode()
+            => hashCode ??= HashCode.Combine(
+                Name, 
+                Type, 
+                Parameters
+                    .Aggregate(new HashCode(), (hash, param) => { hash.Add(param); return hash; })
+                    .ToHashCode()
+            );
+
+        public override bool Equals(object? obj)
+        {
+            if (obj is FunctionSymbol other)
+                return Name == other.Name &&
+                    Type == other.Type &&
+                    Parameters.SequenceEqual(other.Parameters);
+            else
+                return false;
+        }
     }
 }

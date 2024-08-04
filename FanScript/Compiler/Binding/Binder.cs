@@ -338,6 +338,9 @@ namespace FanScript.Compiler.Binding
             if (variable is null)
                 return BindErrorStatement(syntax);
 
+            if (variable.IsReadOnly)
+                _diagnostics.ReportCannotAssignReadOnlyVariable(syntax.OperatorToken.Location, variable.Name);
+
             BoundPostfixKind kind;
             switch (syntax.OperatorToken.Kind)
             {
@@ -993,7 +996,7 @@ namespace FanScript.Compiler.Binding
                     _diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Ref);
                 else if (parameter.Modifiers.HasFlag(Modifiers.Out) && !modifiers.HasFlag(Modifiers.Out))
                     _diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Out);
-                else if (modifiers.MakesTargetReference(out Modifiers? makesRefMod) && (argument is not BoundVariableExpression variable || 
+                else if (modifiers.MakesTargetReference(out Modifiers? makesRefMod) && (argument is not BoundVariableExpression variable ||
                     (variable.Variable.IsReadOnly && argument.Syntax.Kind != SyntaxKind.VariableDeclarationExpression)))
                     _diagnostics.ReportByRefArgMustBeVariable(argumentLocation, makesRefMod.Value);
 
@@ -1080,7 +1083,7 @@ namespace FanScript.Compiler.Binding
 
                 if (!found)
                     _diagnostics.ReportMissignRequiredModifiers(token.Location, mod, required);
-                }
+            }
 
             // construct the enum
             Modifiers modifiers = 0;

@@ -145,7 +145,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             {
                 Debug.Assert(YPosRequest is null);
 
-                int acceptableZ = StartPos.Z + blockZOffset + (lastPlacedBlock is null ? 0 : lastPlacedBlock.Size.Y - 1);
+                int acceptableZ = StartPos.Z + blockZOffset;// + (lastPlacedBlock is null ? 0 : lastPlacedBlock.Size.Y - 1);
 
                 YPosRequest = Placer.availableLayerInfo.AddIfAbsent(LayerPos, new PositionStack()).RequestYPos(acceptableZ, blockPos.Z);
             }

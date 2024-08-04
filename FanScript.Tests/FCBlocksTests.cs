@@ -14,7 +14,22 @@ namespace FanScript.Tests
                 Assert.NotEqual(terminal.Pos, Vector3I.Zero);
         }
 
+        [Fact]
+        public void FCBlocks_IDsDoNotRepeated()
+        {
+            HashSet<ushort> ids = new();
+
+            foreach (var def in getBlockDefs())
+                if (!ids.Add(def.Id))
+                    Assert.Fail($"Id {def.Id} has been encountered multiple times");
+        }
+
         public static IEnumerable<object[]> GetBlockDefs()
+            => getBlockDefs()
+            .Select(def => new object[] { def });
+
+        #region Utils
+        private static IEnumerable<BlockDef> getBlockDefs()
         {
             loadBlocks();
 
@@ -32,13 +47,13 @@ namespace FanScript.Tests
                 )
                 .Where(field => field.FieldType == typeof(BlockDef))
             )
-                yield return [field.GetValue(null)!];
+                yield return (BlockDef)field.GetValue(null)!;
         }
-
         private static void loadBlocks()
         {
             if (!Blocks.PositionsLoaded)
                 Blocks.LoadPositions();
         }
+        #endregion
     }
 }

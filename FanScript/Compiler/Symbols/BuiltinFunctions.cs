@@ -11,7 +11,7 @@ namespace FanScript.Compiler.Symbols
     internal static class BuiltinFunctions
     {
         // (A) - active block (has before and after), num - numb inputs, num - number outputs
-        private static EmitStore emitAX0(BoundCallExpression call, EmitContext context, BlockDef blockDef)
+        private static EmitStore emitAX0(BoundCallExpression call, EmitContext context, BlockDef blockDef, int argumentOffset = 0)
         {
             Block block = context.Builder.AddBlock(blockDef);
 
@@ -19,11 +19,14 @@ namespace FanScript.Compiler.Symbols
                 context.Builder.BlockPlacer.ExpressionBlock(() =>
                 {
                     for (int i = 0; i < call.Arguments.Length; i++)
-                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[call.Arguments.Length - i]));
+                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[call.Arguments.Length - i + argumentOffset]));
                 });
 
             return new BasicEmitStore(block);
         }
+        /// <summary>
+        /// TODO: if used with anything differend than 11, test
+        /// </summary>
         private static EmitStore emitAXX(BoundCallExpression call, EmitContext context, int numbReturnArgs, BlockDef blockDef)
         {
             if (numbReturnArgs <= 0)
@@ -41,7 +44,7 @@ namespace FanScript.Compiler.Symbols
                 context.Builder.BlockPlacer.ExpressionBlock(() =>
                 {
                     for (int i = 0; i < retArgStart; i++)
-                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[(retArgStart - 1) - i + numbReturnArgs]));
+                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[retArgStart - i + numbReturnArgs]));
                 });
 
             context.Builder.BlockPlacer.StatementBlock(() =>
@@ -50,7 +53,7 @@ namespace FanScript.Compiler.Symbols
                 {
                     VariableSymbol variable = ((BoundVariableExpression)call.Arguments[i]).Variable;
 
-                    EmitStore varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.Terminals[(call.Arguments.Length - 1) - i]));
+                    EmitStore varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.Terminals[call.Arguments.Length - i]));
 
                     context.Connect(lastStore, varStore);
 
@@ -131,6 +134,109 @@ namespace FanScript.Compiler.Symbols
                 });
 
             return BasicEmitStore.COut(block, block.Type.Terminals[0]);
+        }
+
+        private static class Objects
+        {
+            public static readonly FunctionSymbol GetObject
+          = new BuiltinFunctionSymbol("getObject", [
+              new ParameterSymbol("position", TypeSymbol.Vector3, 0),
+            ], TypeSymbol.Object, (call, context) =>
+            {
+                BoundConstant? constant = call.Arguments[0].ConstantValue;
+                if (constant is null)
+                {
+                    context.Diagnostics.ReportValueMustBeConstant(call.Arguments[0].Syntax.Location);
+                    return new NopEmitStore();
+                }
+
+                Vector3I pos = (Vector3I)((Vector3F)constant.Value); // unbox, then cast
+
+                if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
+                {
+                    context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
+                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    {
+                        context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
+                    });
+                    return new NopEmitStore();
+                }
+
+                return new AbsoluteEmitStore(pos, null);
+            }
+          );
+            public static readonly FunctionSymbol GetObject2
+              = new BuiltinFunctionSymbol("getObject", [
+                  new ParameterSymbol("x", TypeSymbol.Float, 0),
+                  new ParameterSymbol("y", TypeSymbol.Float, 1),
+                  new ParameterSymbol("z", TypeSymbol.Float, 2),
+                ], TypeSymbol.Object, (call, context) =>
+                {
+                    object[]? args = context.ValidateConstants(call.Arguments.AsMemory(), true);
+                    if (args is null)
+                        return new NopEmitStore();
+
+                    Vector3I pos = new Vector3I((int)(float)args[0], (int)(float)args[1], (int)(float)args[2]); // unbox, then cast
+
+                    if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
+                    {
+                        context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
+                        context.Builder.BlockPlacer.ExpressionBlock(() =>
+                        {
+                            context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
+                        });
+                        return new NopEmitStore();
+                    }
+
+                    return new AbsoluteEmitStore(pos, null);
+                }
+              );
+            public static readonly FunctionSymbol SetPos
+                = new BuiltinFunctionSymbol("setPos", [
+                    new ParameterSymbol("object", TypeSymbol.Object, 0),
+                    new ParameterSymbol("position", TypeSymbol.Vector3, 1),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.SetPos, argumentOffset: 1));
+            public static readonly FunctionSymbol SetPosWithRot
+                = new BuiltinFunctionSymbol("setPos",
+                [
+                    new ParameterSymbol("object", TypeSymbol.Object, 0),
+                    new ParameterSymbol("position", TypeSymbol.Vector3, 1),
+                    new ParameterSymbol("rotation", TypeSymbol.Rotation, 2),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.SetPos));
+            public static readonly FunctionSymbol GetPos
+                = new BuiltinFunctionSymbol("getPos", [
+                    new ParameterSymbol("object", TypeSymbol.Object, 0),
+                    new ParameterSymbol("position", Modifiers.Out, TypeSymbol.Vector3, 1),
+                    new ParameterSymbol("rotation", Modifiers.Out, TypeSymbol.Rotation, 1),
+                ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Objects.GetPos));
+            public static readonly FunctionSymbol Raycast
+                = new BuiltinFunctionSymbol("raycast", [
+                    new ParameterSymbol("from", TypeSymbol.Vector3, 0),
+                    new ParameterSymbol("to", TypeSymbol.Vector3, 1),
+                    new ParameterSymbol("didHit", Modifiers.Out, TypeSymbol.Bool, 2),
+                    new ParameterSymbol("hitPos", Modifiers.Out, TypeSymbol.Vector3, 3),
+                    new ParameterSymbol("hitObj", Modifiers.Out, TypeSymbol.Object, 4),
+                ], TypeSymbol.Void, (call, context) => emitXX(call, context, 3, Blocks.Objects.Raycast));
+            public static readonly FunctionSymbol GetSize
+                = new BuiltinFunctionSymbol("getSize", [
+                    new ParameterSymbol("object", TypeSymbol.Object, 0),
+                    new ParameterSymbol("min", Modifiers.Out, TypeSymbol.Vector3, 1),
+                    new ParameterSymbol("max", Modifiers.Out, TypeSymbol.Vector3, 1),
+                ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Objects.GetSize));
+            public static readonly FunctionSymbol SetVisible
+                = new BuiltinFunctionSymbol("setVisible", [
+                    new ParameterSymbol("object", TypeSymbol.Object, 0),
+                    new ParameterSymbol("visible", TypeSymbol.Bool, 1),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.SetVisible));
+            public static readonly FunctionSymbol CreateObject
+                = new BuiltinFunctionSymbol("createObject", [
+                    new ParameterSymbol("object", TypeSymbol.Object, 0),
+                    new ParameterSymbol("copy", Modifiers.Out, TypeSymbol.Object, 1),
+                ], TypeSymbol.Void, (call, context) => emitAXX(call, context, 1, Blocks.Objects.CreateObject));
+            public static readonly FunctionSymbol DestroyObject
+                = new BuiltinFunctionSymbol("destroyObject", [
+                    new ParameterSymbol("object", TypeSymbol.Object, 0),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.DestroyObject));
         }
 
         private static class Control
@@ -332,103 +438,6 @@ namespace FanScript.Compiler.Symbols
                     });
 
                     return new BasicEmitStore(inspect);
-                }
-            );
-        public static readonly FunctionSymbol Object_Get
-          = new BuiltinFunctionSymbol("getObject", [
-              new ParameterSymbol("position", TypeSymbol.Vector3, 0)
-            ], TypeSymbol.Object, (call, context) =>
-            {
-                BoundConstant? constant = call.Arguments[0].ConstantValue;
-                if (constant is null)
-                {
-                    context.Diagnostics.ReportValueMustBeConstant(call.Arguments[0].Syntax.Location);
-                    return new NopEmitStore();
-                }
-
-                Vector3I pos = (Vector3I)((Vector3F)constant.Value); // unbox, then cast
-
-                if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
-                {
-                    context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
-                    context.Builder.BlockPlacer.ExpressionBlock(() =>
-                    {
-                        context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
-                    });
-                    return new NopEmitStore();
-                }
-
-                return new AbsoluteEmitStore(pos, null);
-            }
-          );
-        public static readonly FunctionSymbol Object_Get2
-          = new BuiltinFunctionSymbol("getObject", [
-              new ParameterSymbol("x", TypeSymbol.Float, 0),
-              new ParameterSymbol("y", TypeSymbol.Float, 1),
-              new ParameterSymbol("z", TypeSymbol.Float, 2)
-            ], TypeSymbol.Object, (call, context) =>
-            {
-                object[]? args = context.ValidateConstants(call.Arguments.AsMemory(), true);
-                if (args is null)
-                    return new NopEmitStore();
-
-                Vector3I pos = new Vector3I((int)(float)args[0], (int)(float)args[1], (int)(float)args[2]); // unbox, then cast
-
-                if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
-                {
-                    context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
-                    context.Builder.BlockPlacer.ExpressionBlock(() =>
-                    {
-                        context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
-                    });
-                    return new NopEmitStore();
-                }
-
-                return new AbsoluteEmitStore(pos, null);
-            }
-          );
-        public static readonly FunctionSymbol Object_SetPos
-            = new BuiltinFunctionSymbol("setPos", [
-                new ParameterSymbol("object", TypeSymbol.Object, 0),
-                new ParameterSymbol("position", TypeSymbol.Vector3, 1)
-            ], TypeSymbol.Void, (call, context) =>
-                {
-                    Block block = context.Builder.AddBlock(Blocks.Objects.SetPos);
-
-                    context.Builder.BlockPlacer.ExpressionBlock(() =>
-                    {
-                        EmitStore blockEmit = context.EmitExpression(call.Arguments[0]);
-                        EmitStore posEmit = context.EmitExpression(call.Arguments[1]);
-
-                        context.Connect(blockEmit, BasicEmitStore.CIn(block, block.Type.Terminals[3]));
-                        context.Connect(posEmit, BasicEmitStore.CIn(block, block.Type.Terminals[2]));
-                    });
-
-                    return new BasicEmitStore(block);
-                }
-            );
-        public static readonly FunctionSymbol Object_SetPos2
-            = new BuiltinFunctionSymbol("setPos",
-            [
-                new ParameterSymbol("object", TypeSymbol.Object, 0),
-                new ParameterSymbol("position", TypeSymbol.Vector3, 1),
-                new ParameterSymbol("rotation", TypeSymbol.Rotation, 2)
-            ], TypeSymbol.Void, (call, context) =>
-                {
-                    Block block = context.Builder.AddBlock(Blocks.Objects.SetPos);
-
-                    context.Builder.BlockPlacer.ExpressionBlock(() =>
-                    {
-                        EmitStore blockEmit = context.EmitExpression(call.Arguments[0]);
-                        EmitStore posEmit = context.EmitExpression(call.Arguments[1]);
-                        EmitStore rotEmit = context.EmitExpression(call.Arguments[2]);
-
-                        context.Connect(blockEmit, BasicEmitStore.CIn(block, block.Type.Terminals[3]));
-                        context.Connect(posEmit, BasicEmitStore.CIn(block, block.Type.Terminals[2]));
-                        context.Connect(rotEmit, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
-                    });
-
-                    return new BasicEmitStore(block);
                 }
             );
         public static readonly FunctionSymbol Array_Get

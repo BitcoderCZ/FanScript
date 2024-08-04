@@ -358,10 +358,14 @@ namespace FanScript.Tests
                 {
                     readonly float x = 10
                     x $[=]$ 0
+                    x $[+=]$ 5
+                    x$[++]$
                 }
                 """;
 
             var diagnostics = """
+                Variable 'x' is read-only and cannot be assigned to.
+                Variable 'x' is read-only and cannot be assigned to.
                 Variable 'x' is read-only and cannot be assigned to.
                 """;
 

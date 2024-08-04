@@ -1,31 +1,15 @@
-vec3 v1 = vec3(1, 2, 3)
-float y1 = v1.y
+object o
+setPos(o, vec3(0, 1, 0))
+setPos(o, vec3(0, 2, 0), rot(45, 45, 90))
 
-inline float inlineF
+getPos(o, out vec3 pos, out rot rotation)
 
-float f0 = inlineF
+raycast(vec3(0, 0, 0), vec3(0, 0, 10), out bool didHit, out vec3 hitPos, out object hitObj)
 
-inlineF = 5
+getSize(o, out vec3 sizeMin, out vec3 sizeMax)
 
-float y2 = vec3(1, 2, 3).y
+setVisible(o, true)
 
-float f1 = inlineF
+createObject(o, out inline object copy)
 
-inlineF = 10
-
-float f2 = inlineF
-
-inspect(inlineF)
-
-on Touch(out inline float x, out float y, TOUCH_STATE_BEGINS, TOUCH_FINGER_1)
-{
-    inspect(vec3(x, y, 0))
-}
-
-joystick(out inline vec3 joyDir, JOYSTICK_TYPE_XZ)
-inspect(joyDir)
-
-screenToWorld(5, 2, out vec3 near, out vec3 far)
-inspect(near)
-inspect(far)
-
+destroyObject(copy)

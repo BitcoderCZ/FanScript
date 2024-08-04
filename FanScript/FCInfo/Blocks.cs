@@ -57,7 +57,13 @@ namespace FanScript.FCInfo
 
         public static class Objects
         {
+            public static readonly BlockDef GetPos = new BlockDef("Get Position", 278, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Rot, TerminalType.Out, "Rotation"), new Terminal(1, WireType.Vec3, TerminalType.Out, "Position"), new Terminal(2, WireType.Obj, TerminalType.In, "Object"));
             public static readonly BlockDef SetPos = new BlockDef("Set Position", 282, BlockType.Active, new Vector2I(2, 3), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Rot, TerminalType.In, "Rotation"), new Terminal(2, WireType.Vec3, TerminalType.In, "Position"), new Terminal(3, WireType.Obj, TerminalType.In, "Object"), new Terminal(4, WireType.Void, TerminalType.In));
+            public static readonly BlockDef Raycast = new BlockDef("Raycast", 228, BlockType.Pasive, new Vector2I(2, 3), new Terminal(0, WireType.Obj, TerminalType.Out, "Hit Obj"), new Terminal(1, WireType.Vec3, TerminalType.Out, "Hit Pos"), new Terminal(2, WireType.Bool, TerminalType.Out, "Hit?"), new Terminal(3, WireType.Vec3, TerminalType.In, "To"), new Terminal(4, WireType.Vec3, TerminalType.In, "From"));
+            public static readonly BlockDef GetSize = new BlockDef("Get Size", 489, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Vec3, TerminalType.Out, "Max"), new Terminal(1, WireType.Vec3, TerminalType.Out, "Min"), new Terminal(2, WireType.Obj, TerminalType.In, "Object"));
+            public static readonly BlockDef SetVisible = new BlockDef("Set Visible", 306, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Bool, TerminalType.In, "Visible"), new Terminal(2, WireType.Obj, TerminalType.In, "Object"), new Terminal(3, WireType.Void, TerminalType.In));
+            public static readonly BlockDef CreateObject = new BlockDef("Create Object", 316, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Obj, TerminalType.Out, "Copy"), new Terminal(2, WireType.Obj, TerminalType.In, "Object"), new Terminal(3, WireType.Void, TerminalType.In));
+            public static readonly BlockDef DestroyObject = new BlockDef("Destroy Object", 320, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Obj, TerminalType.In, "Object"), new Terminal(2, WireType.Void, TerminalType.In));
         }
 
         public static class Control
