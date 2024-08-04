@@ -163,7 +163,7 @@ namespace FanScript.Compiler.Binding
                 if (!seenParameterNames.Add(parameterName))
                     _diagnostics.ReportParameterAlreadyDeclared(parameterSyntax.Location, parameterName);
                 else
-                    parameters.Add(new ParameterSymbol(parameterName, parameterType, parameters.Count));
+                    parameters.Add(new ParameterSymbol(parameterName, parameterType));
             }
 
             TypeSymbol type = BindTypeClause(syntax.TypeClause) ?? TypeSymbol.Void;
@@ -313,7 +313,7 @@ namespace FanScript.Compiler.Binding
             ImmutableArray<ParameterSymbol> parameters = type
                 .GetInfo()
                 .Parameters
-                .Select((param, index) => param.ToParameter(index))
+                .Select(param => param.ToParameter())
                 .ToImmutableArray();
 
             BoundArgumentClause? argumentClause = syntax.ArgumentClause is null ? null : BindArgumentClause(syntax.ArgumentClause, parameters, "SpecialBlock", syntax.Identifier.Text);
@@ -779,7 +779,7 @@ namespace FanScript.Compiler.Binding
 
             BoundArgumentClause? argumentClause = BindArgumentClause(syntax.ArgumentClause,
                 function.Parameters
-                    .Select(param => new ParameterSymbol(param.Name, param.Modifiers, fixType(param.Type), param.Ordinal))
+                    .Select(param => new ParameterSymbol(param.Name, param.Modifiers, fixType(param.Type)))
                     .ToImmutableArray(),
                 "Function", function.Name, boundArguments);
 

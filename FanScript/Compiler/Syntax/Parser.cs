@@ -616,13 +616,13 @@ namespace FanScript.Compiler.Syntax
                         _syntaxTree,
                         modifiers
                             .Where(token => !ModifiersE.FromKind(token.Kind).GetTargets().Contains(ModifierTarget.Variable))
-                            .ToImmutableArray(), 
+                            .ToImmutableArray(),
                         new VariableDeclarationExpressionSyntax(
-                            _syntaxTree, 
+                            _syntaxTree,
                             modifiers
                                 .Where(token => ModifiersE.FromKind(token.Kind).GetTargets().Contains(ModifierTarget.Variable))
-                                .ToImmutableArray(), 
-                            typeClause, 
+                                .ToImmutableArray(),
+                            typeClause,
                             identifierToken
                         )
                     ));

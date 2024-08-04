@@ -77,7 +77,7 @@ namespace FanScript.Compiler
 
     public record SpecialBlockTypeParam(string Name, Modifiers Modifiers, TypeSymbol Type, bool IsConstant = false)
     {
-        public ParameterSymbol ToParameter(int ordinal)
-            => new ParameterSymbol(Name, Modifiers, Type, ordinal);
+        public ParameterSymbol ToParameter()
+            => new ParameterSymbol(Name, Modifiers, Type);
     }
 }

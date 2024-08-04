@@ -140,7 +140,7 @@ namespace FanScript.Compiler.Symbols
         {
             public static readonly FunctionSymbol GetObject
           = new BuiltinFunctionSymbol("getObject", [
-              new ParameterSymbol("position", TypeSymbol.Vector3, 0),
+              new ParameterSymbol("position", TypeSymbol.Vector3),
             ], TypeSymbol.Object, (call, context) =>
             {
                 BoundConstant? constant = call.Arguments[0].ConstantValue;
@@ -167,9 +167,9 @@ namespace FanScript.Compiler.Symbols
           );
             public static readonly FunctionSymbol GetObject2
               = new BuiltinFunctionSymbol("getObject", [
-                  new ParameterSymbol("x", TypeSymbol.Float, 0),
-                  new ParameterSymbol("y", TypeSymbol.Float, 1),
-                  new ParameterSymbol("z", TypeSymbol.Float, 2),
+                  new ParameterSymbol("x", TypeSymbol.Float),
+                  new ParameterSymbol("y", TypeSymbol.Float),
+                  new ParameterSymbol("z", TypeSymbol.Float),
                 ], TypeSymbol.Object, (call, context) =>
                 {
                     object[]? args = context.ValidateConstants(call.Arguments.AsMemory(), true);
@@ -193,49 +193,49 @@ namespace FanScript.Compiler.Symbols
               );
             public static readonly FunctionSymbol SetPos
                 = new BuiltinFunctionSymbol("setPos", [
-                    new ParameterSymbol("object", TypeSymbol.Object, 0),
-                    new ParameterSymbol("position", TypeSymbol.Vector3, 1),
+                    new ParameterSymbol("object", TypeSymbol.Object),
+                    new ParameterSymbol("position", TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.SetPos, argumentOffset: 1));
             public static readonly FunctionSymbol SetPosWithRot
                 = new BuiltinFunctionSymbol("setPos",
                 [
-                    new ParameterSymbol("object", TypeSymbol.Object, 0),
-                    new ParameterSymbol("position", TypeSymbol.Vector3, 1),
-                    new ParameterSymbol("rotation", TypeSymbol.Rotation, 2),
+                    new ParameterSymbol("object", TypeSymbol.Object),
+                    new ParameterSymbol("position", TypeSymbol.Vector3),
+                    new ParameterSymbol("rotation", TypeSymbol.Rotation),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.SetPos));
             public static readonly FunctionSymbol GetPos
                 = new BuiltinFunctionSymbol("getPos", [
-                    new ParameterSymbol("object", TypeSymbol.Object, 0),
-                    new ParameterSymbol("position", Modifiers.Out, TypeSymbol.Vector3, 1),
-                    new ParameterSymbol("rotation", Modifiers.Out, TypeSymbol.Rotation, 1),
+                    new ParameterSymbol("object", TypeSymbol.Object),
+                    new ParameterSymbol("position", Modifiers.Out, TypeSymbol.Vector3),
+                    new ParameterSymbol("rotation", Modifiers.Out, TypeSymbol.Rotation),
                 ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Objects.GetPos));
             public static readonly FunctionSymbol Raycast
                 = new BuiltinFunctionSymbol("raycast", [
-                    new ParameterSymbol("from", TypeSymbol.Vector3, 0),
-                    new ParameterSymbol("to", TypeSymbol.Vector3, 1),
-                    new ParameterSymbol("didHit", Modifiers.Out, TypeSymbol.Bool, 2),
-                    new ParameterSymbol("hitPos", Modifiers.Out, TypeSymbol.Vector3, 3),
-                    new ParameterSymbol("hitObj", Modifiers.Out, TypeSymbol.Object, 4),
+                    new ParameterSymbol("from", TypeSymbol.Vector3),
+                    new ParameterSymbol("to", TypeSymbol.Vector3),
+                    new ParameterSymbol("didHit", Modifiers.Out, TypeSymbol.Bool),
+                    new ParameterSymbol("hitPos", Modifiers.Out, TypeSymbol.Vector3),
+                    new ParameterSymbol("hitObj", Modifiers.Out, TypeSymbol.Object),
                 ], TypeSymbol.Void, (call, context) => emitXX(call, context, 3, Blocks.Objects.Raycast));
             public static readonly FunctionSymbol GetSize
                 = new BuiltinFunctionSymbol("getSize", [
-                    new ParameterSymbol("object", TypeSymbol.Object, 0),
-                    new ParameterSymbol("min", Modifiers.Out, TypeSymbol.Vector3, 1),
-                    new ParameterSymbol("max", Modifiers.Out, TypeSymbol.Vector3, 1),
+                    new ParameterSymbol("object", TypeSymbol.Object),
+                    new ParameterSymbol("min", Modifiers.Out, TypeSymbol.Vector3),
+                    new ParameterSymbol("max", Modifiers.Out, TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Objects.GetSize));
             public static readonly FunctionSymbol SetVisible
                 = new BuiltinFunctionSymbol("setVisible", [
-                    new ParameterSymbol("object", TypeSymbol.Object, 0),
-                    new ParameterSymbol("visible", TypeSymbol.Bool, 1),
+                    new ParameterSymbol("object", TypeSymbol.Object),
+                    new ParameterSymbol("visible", TypeSymbol.Bool),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.SetVisible));
             public static readonly FunctionSymbol CreateObject
                 = new BuiltinFunctionSymbol("createObject", [
-                    new ParameterSymbol("object", TypeSymbol.Object, 0),
-                    new ParameterSymbol("copy", Modifiers.Out, TypeSymbol.Object, 1),
+                    new ParameterSymbol("object", TypeSymbol.Object),
+                    new ParameterSymbol("copy", Modifiers.Out, TypeSymbol.Object),
                 ], TypeSymbol.Void, (call, context) => emitAXX(call, context, 1, Blocks.Objects.CreateObject));
             public static readonly FunctionSymbol DestroyObject
                 = new BuiltinFunctionSymbol("destroyObject", [
-                    new ParameterSymbol("object", TypeSymbol.Object, 0),
+                    new ParameterSymbol("object", TypeSymbol.Object),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.DestroyObject));
         }
 
@@ -244,8 +244,8 @@ namespace FanScript.Compiler.Symbols
             public static readonly FunctionSymbol Joystick
                 = new BuiltinFunctionSymbol("joystick",
                 [
-                    new ParameterSymbol("joyDir", Modifiers.Out, TypeSymbol.Vector3, 0),
-                    new ParameterSymbol("JOYSTICK_TYPE", TypeSymbol.Float, 1),
+                    new ParameterSymbol("joyDir", Modifiers.Out, TypeSymbol.Vector3),
+                    new ParameterSymbol("JOYSTICK_TYPE", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) =>
                 {
                     object[]? values = context.ValidateConstants(call.Arguments.AsMemory(Range.StartAt(1)), true);
@@ -275,117 +275,117 @@ namespace FanScript.Compiler.Symbols
             public static readonly FunctionSymbol Random
                 = new BuiltinFunctionSymbol("random",
                 [
-                    new ParameterSymbol("min", TypeSymbol.Float, 0),
-                    new ParameterSymbol("max", TypeSymbol.Float, 1),
+                    new ParameterSymbol("min", TypeSymbol.Float),
+                    new ParameterSymbol("max", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Random));
             public static readonly FunctionSymbol RandomSeed
                 = new BuiltinFunctionSymbol("setRandomSeed",
                 [
-                    new ParameterSymbol("seed", TypeSymbol.Float, 0),
+                    new ParameterSymbol("seed", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Math.RandomSeed));
             public static readonly FunctionSymbol Min
                 = new BuiltinFunctionSymbol("min",
                 [
-                    new ParameterSymbol("num1", TypeSymbol.Float, 0),
-                    new ParameterSymbol("num2", TypeSymbol.Float, 1),
+                    new ParameterSymbol("num1", TypeSymbol.Float),
+                    new ParameterSymbol("num2", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Min));
             public static readonly FunctionSymbol Max
                 = new BuiltinFunctionSymbol("max",
                 [
-                    new ParameterSymbol("num1", TypeSymbol.Float, 0),
-                    new ParameterSymbol("num2", TypeSymbol.Float, 1),
+                    new ParameterSymbol("num1", TypeSymbol.Float),
+                    new ParameterSymbol("num2", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Max));
             public static readonly FunctionSymbol Sin
                 = new BuiltinFunctionSymbol("sin",
                 [
-                    new ParameterSymbol("num", TypeSymbol.Float, 0),
+                    new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Sin));
             public static readonly FunctionSymbol Cos
                 = new BuiltinFunctionSymbol("cos",
                 [
-                    new ParameterSymbol("num", TypeSymbol.Float, 0),
+                    new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Cos));
             public static readonly FunctionSymbol Round
                 = new BuiltinFunctionSymbol("round",
                 [
-                    new ParameterSymbol("num", TypeSymbol.Float, 0),
+                    new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Round));
             public static readonly FunctionSymbol Floor
                 = new BuiltinFunctionSymbol("floor",
                 [
-                    new ParameterSymbol("num", TypeSymbol.Float, 0),
+                    new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Floor));
             public static readonly FunctionSymbol Ceiling
                 = new BuiltinFunctionSymbol("ceiling",
                 [
-                    new ParameterSymbol("num", TypeSymbol.Float, 0),
+                    new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Ceiling));
             public static readonly FunctionSymbol Abs
                 = new BuiltinFunctionSymbol("abs",
                 [
-                    new ParameterSymbol("num", TypeSymbol.Float, 0),
+                    new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Absolute));
             public static readonly FunctionSymbol Log
                 = new BuiltinFunctionSymbol("log",
                 [
-                    new ParameterSymbol("number", TypeSymbol.Float, 0),
-                    new ParameterSymbol("base", TypeSymbol.Float, 1),
+                    new ParameterSymbol("number", TypeSymbol.Float),
+                    new ParameterSymbol("base", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Logarithm));
             public static readonly FunctionSymbol Normalize
                 = new BuiltinFunctionSymbol("normalize",
                 [
-                    new ParameterSymbol("vector", TypeSymbol.Vector3, 0),
+                    new ParameterSymbol("vector", TypeSymbol.Vector3),
                 ], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Math.Normalize));
             public static readonly FunctionSymbol DotProduct
                 = new BuiltinFunctionSymbol("dot",
                 [
-                    new ParameterSymbol("vector", TypeSymbol.Vector3, 0),
-                    new ParameterSymbol("vector", TypeSymbol.Vector3, 1),
+                    new ParameterSymbol("vector", TypeSymbol.Vector3),
+                    new ParameterSymbol("vector", TypeSymbol.Vector3),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.DotProduct));
             public static readonly FunctionSymbol CrossProduct
                 = new BuiltinFunctionSymbol("cross",
                 [
-                    new ParameterSymbol("vector", TypeSymbol.Vector3, 0),
-                    new ParameterSymbol("vector", TypeSymbol.Vector3, 1),
+                    new ParameterSymbol("vector", TypeSymbol.Vector3),
+                    new ParameterSymbol("vector", TypeSymbol.Vector3),
                 ], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Math.CrossProduct));
             public static readonly FunctionSymbol Distance
                 = new BuiltinFunctionSymbol("dist",
                 [
-                    new ParameterSymbol("vector", TypeSymbol.Vector3, 0),
-                    new ParameterSymbol("vector", TypeSymbol.Vector3, 1),
+                    new ParameterSymbol("vector", TypeSymbol.Vector3),
+                    new ParameterSymbol("vector", TypeSymbol.Vector3),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Distance));
             public static readonly FunctionSymbol Lerp
                 = new BuiltinFunctionSymbol("lerp",
                 [
-                    new ParameterSymbol("from", TypeSymbol.Rotation, 0),
-                    new ParameterSymbol("to", TypeSymbol.Rotation, 1),
-                    new ParameterSymbol("amount", TypeSymbol.Float, 2),
+                    new ParameterSymbol("from", TypeSymbol.Rotation),
+                    new ParameterSymbol("to", TypeSymbol.Rotation),
+                    new ParameterSymbol("amount", TypeSymbol.Float),
                 ], TypeSymbol.Rotation, (call, context) => emitX1(call, context, Blocks.Math.Lerp));
             public static readonly FunctionSymbol AxisAngle
                 = new BuiltinFunctionSymbol("axisAngle",
                 [
-                    new ParameterSymbol("axis", TypeSymbol.Vector3, 0),
-                    new ParameterSymbol("angle", TypeSymbol.Float, 1),
+                    new ParameterSymbol("axis", TypeSymbol.Vector3),
+                    new ParameterSymbol("angle", TypeSymbol.Float),
                 ], TypeSymbol.Rotation, (call, context) => emitX1(call, context, Blocks.Math.AxisAngle));
             public static readonly FunctionSymbol ScreenToWorld
                 = new BuiltinFunctionSymbol("screenToWorld",
                 [
-                    new ParameterSymbol("screenX", TypeSymbol.Float, 0),
-                    new ParameterSymbol("screenY", TypeSymbol.Float, 1),
-                    new ParameterSymbol("worldNear", Modifiers.Out, TypeSymbol.Vector3, 2),
-                    new ParameterSymbol("worldFar", Modifiers.Out, TypeSymbol.Vector3, 3),
+                    new ParameterSymbol("screenX", TypeSymbol.Float),
+                    new ParameterSymbol("screenY", TypeSymbol.Float),
+                    new ParameterSymbol("worldNear", Modifiers.Out, TypeSymbol.Vector3),
+                    new ParameterSymbol("worldFar", Modifiers.Out, TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Math.ScreenToWorld));
             public static readonly FunctionSymbol WorldToScreen
                 = new BuiltinFunctionSymbol("worldToScreen",
                 [
-                    new ParameterSymbol("worldPos", TypeSymbol.Vector3, 0),
-                    new ParameterSymbol("screenX", Modifiers.Out, TypeSymbol.Float, 1),
-                    new ParameterSymbol("screenY", Modifiers.Out, TypeSymbol.Float, 2),
+                    new ParameterSymbol("worldPos", TypeSymbol.Vector3),
+                    new ParameterSymbol("screenX", Modifiers.Out, TypeSymbol.Float),
+                    new ParameterSymbol("screenY", Modifiers.Out, TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Math.WorldToScreen));
             public static readonly FunctionSymbol WorldToScreen2
                 = new BuiltinFunctionSymbol("worldToScreen",
                 [
-                    new ParameterSymbol("worldPos", TypeSymbol.Vector3, 0),
+                    new ParameterSymbol("worldPos", TypeSymbol.Vector3),
                 ], TypeSymbol.Vector3, (call, context) =>
                 {
                     Block make = context.Builder.AddBlock(Blocks.Math.Make_Vector);
@@ -409,23 +409,23 @@ namespace FanScript.Compiler.Symbols
             public static readonly FunctionSymbol LookRotation
                 = new BuiltinFunctionSymbol("lookRotation",
                 [
-                    new ParameterSymbol("direction", TypeSymbol.Vector3, 0),
-                    new ParameterSymbol("up", TypeSymbol.Vector3, 1),
+                    new ParameterSymbol("direction", TypeSymbol.Vector3),
+                    new ParameterSymbol("up", TypeSymbol.Vector3),
                 ], TypeSymbol.Rotation, (call, context) => emitX1(call, context, Blocks.Math.LookRotation));
             public static readonly FunctionSymbol LineVsPlane
                 = new BuiltinFunctionSymbol("lineVsPlane",
                 [
-                    new ParameterSymbol("lineFrom", TypeSymbol.Vector3, 0),
-                    new ParameterSymbol("lineTo", TypeSymbol.Vector3, 1),
-                    new ParameterSymbol("planePoint", TypeSymbol.Vector3, 2),
-                    new ParameterSymbol("planeNormal", TypeSymbol.Vector3, 3),
+                    new ParameterSymbol("lineFrom", TypeSymbol.Vector3),
+                    new ParameterSymbol("lineTo", TypeSymbol.Vector3),
+                    new ParameterSymbol("planePoint", TypeSymbol.Vector3),
+                    new ParameterSymbol("planeNormal", TypeSymbol.Vector3),
                 ], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Math.LineVsPlane));
         }
 
         public static readonly FunctionSymbol Inspect
             = new BuiltinFunctionSymbol("inspect",
             [
-                new ParameterSymbol("value", TypeSymbol.Generic, 0)
+                new ParameterSymbol("value", TypeSymbol.Generic)
             ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
                 {
                     Block inspect = context.Builder.AddBlock(Blocks.Values.InspectByType(call.GenericType!.ToWireType()));
@@ -443,8 +443,8 @@ namespace FanScript.Compiler.Symbols
         public static readonly FunctionSymbol Array_Get
             = new BuiltinFunctionSymbol("get",
             [
-                new ParameterSymbol("array", TypeSymbol.Array, 0),
-                new ParameterSymbol("index", TypeSymbol.Float, 1),
+                new ParameterSymbol("array", TypeSymbol.Array),
+                new ParameterSymbol("index", TypeSymbol.Float),
             ], TypeSymbol.Generic, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
                 {
                     Block list = context.Builder.AddBlock(Blocks.Variables.ListByType(call.GenericType!.ToWireType()));
@@ -464,9 +464,9 @@ namespace FanScript.Compiler.Symbols
         public static readonly FunctionSymbol Array_Set
             = new BuiltinFunctionSymbol("set",
             [
-                new ParameterSymbol("array", TypeSymbol.Array, 0),
-                new ParameterSymbol("index", TypeSymbol.Float, 1),
-                new ParameterSymbol("value", TypeSymbol.Generic, 2),
+                new ParameterSymbol("array", TypeSymbol.Array),
+                new ParameterSymbol("index", TypeSymbol.Float),
+                new ParameterSymbol("value", TypeSymbol.Generic),
             ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
                 {
                     Block setPtr = context.Builder.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));
@@ -496,9 +496,9 @@ namespace FanScript.Compiler.Symbols
         public static readonly FunctionSymbol Array_SetRange
             = new BuiltinFunctionSymbol("setRange",
             [
-                new ParameterSymbol("array", TypeSymbol.Array, 0),
-                new ParameterSymbol("index", TypeSymbol.Float, 1),
-                new ParameterSymbol("value", TypeSymbol.ArraySegment, 2),
+                new ParameterSymbol("array", TypeSymbol.Array),
+                new ParameterSymbol("index", TypeSymbol.Float),
+                new ParameterSymbol("value", TypeSymbol.ArraySegment),
             ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
             {
                 object[]? constants = context.ValidateConstants(call.Arguments.AsMemory(1..2), true);
@@ -540,8 +540,8 @@ namespace FanScript.Compiler.Symbols
         public static readonly FunctionSymbol Ptr_SetValue
             = new BuiltinFunctionSymbol("setPtrValue",
             [
-                new ParameterSymbol("pointer", TypeSymbol.Generic, 0),
-                new ParameterSymbol("value", TypeSymbol.Generic, 1),
+                new ParameterSymbol("pointer", TypeSymbol.Generic),
+                new ParameterSymbol("value", TypeSymbol.Generic),
             ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
                 {
                     Block setPtr = context.Builder.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));

@@ -48,8 +48,8 @@ namespace FanScript.Compiler.Symbols
         private int? hashCode;
         public override int GetHashCode()
             => hashCode ??= HashCode.Combine(
-                Name, 
-                Type, 
+                Name,
+                Type,
                 Parameters
                     .Aggregate(new HashCode(), (hash, param) => { hash.Add(param); return hash; })
                     .ToHashCode()

@@ -14,7 +14,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace FanScript.LangServer.Handlers
 {
@@ -352,7 +351,7 @@ namespace FanScript.LangServer.Handlers
                     }
                     break;
                 case AssignableVariableClauseSyntax:
-                        return CurrentRecomendations.NewIdentifier;
+                    return CurrentRecomendations.NewIdentifier;
                 case CallExpressionSyntax call:
                     {
                         if (node == call.Identifier)
