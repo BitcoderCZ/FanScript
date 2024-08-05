@@ -203,6 +203,11 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                         writer.WriteInt32(0);
                         writer.WriteSingle(numB); // javascript only has float type, so no reason to add a value type (other than saving space)
                     }
+                    else if (val.Value is ushort numS)
+                    {
+                        writer.WriteInt32(0);
+                        writer.WriteSingle(numS); // javascript only has float type, so no reason to add a value type (other than saving space)
+                    }
                     else if (val.Value is float numF)
                     {
                         writer.WriteInt32(0);

@@ -1,1 +1,5 @@
-"text"
+playSound(1, 0.2, out inline float channel, true, SOUND_HIT)
+
+setVolumePitch(channel, .5, .1)
+
+stopSound(channel)

@@ -3,18 +3,8 @@ using System.Reflection;
 
 namespace FanScript.Compiler
 {
-    internal class Constant
+    internal record Constant(TypeSymbol Type, string Name, object Value)
     {
-        public readonly TypeSymbol Type;
-        public readonly string Name;
-        public readonly object Value;
-
-        public Constant(TypeSymbol type, string name, object value)
-        {
-            Type = type;
-            Name = name;
-            Value = value;
-        }
     }
 
     internal static class Constants
@@ -31,6 +21,24 @@ namespace FanScript.Compiler
 
         public static readonly Constant JOYSTICK_TYPE_XZ = new Constant(TypeSymbol.Float, "JOYSTICK_TYPE_XZ", 0f);
         public static readonly Constant JOYSTICK_TYPE_SCREEN = new Constant(TypeSymbol.Float, "JOYSTICK_TYPE_SCREEN", 1f);
+
+        public static readonly Constant SOUND_CHIRP = new Constant(TypeSymbol.Float, "SOUND_CHIRP", 0f);
+        public static readonly Constant SOUND_SCRAPE = new Constant(TypeSymbol.Float, "SOUND_SCRAPE", 1f);
+        public static readonly Constant SOUND_SQUEEK = new Constant(TypeSymbol.Float, "SOUND_SQUEEK", 2f);
+        public static readonly Constant SOUND_ENGINE = new Constant(TypeSymbol.Float, "SOUND_ENGINE", 3f);
+        public static readonly Constant SOUND_BUTTON = new Constant(TypeSymbol.Float, "SOUND_BUTTON", 4f);
+        public static readonly Constant SOUND_BALL = new Constant(TypeSymbol.Float, "SOUND_BALL", 5f);
+        public static readonly Constant SOUND_PIANO = new Constant(TypeSymbol.Float, "SOUND_PIANO", 6f);
+        public static readonly Constant SOUND_MARIMBA = new Constant(TypeSymbol.Float, "SOUND_MARIMBA", 7f);
+        public static readonly Constant SOUND_PAD = new Constant(TypeSymbol.Float, "SOUND_PAD", 8f);
+        public static readonly Constant SOUND_BEEP = new Constant(TypeSymbol.Float, "SOUND_BEEP", 9f);
+        public static readonly Constant SOUND_PLOP = new Constant(TypeSymbol.Float, "SOUND_PLOP", 10f);
+        public static readonly Constant SOUND_FLOP = new Constant(TypeSymbol.Float, "SOUND_FLOP", 11f);
+        public static readonly Constant SOUND_SPLASH = new Constant(TypeSymbol.Float, "SOUND_SPLASH", 12f);
+        public static readonly Constant SOUND_BOOM = new Constant(TypeSymbol.Float, "SOUND_BOOM", 13f);
+        public static readonly Constant SOUND_HIT = new Constant(TypeSymbol.Float, "SOUND_HIT", 14f);
+        public static readonly Constant SOUND_CLANG = new Constant(TypeSymbol.Float, "SOUND_CLANG", 15f);
+        public static readonly Constant SOUND_JUMP = new Constant(TypeSymbol.Float, "SOUND_JUMP", 16f);
 
         private static IEnumerable<Constant>? cache;
         public static IEnumerable<Constant> GetAll()

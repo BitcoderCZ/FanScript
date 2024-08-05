@@ -66,6 +66,13 @@ namespace FanScript.FCInfo
             public static readonly BlockDef DestroyObject = new BlockDef("Destroy Object", 320, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Obj, TerminalType.In, "Object"), new Terminal(2, WireType.Void, TerminalType.In));
         }
 
+        public static class Sound
+        {
+            public static readonly BlockDef PlaySound = new BlockDef("Play Sound", 264, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Float, TerminalType.Out, "Channel"), new Terminal(2, WireType.Float, TerminalType.In, "Pitch"), new Terminal(3, WireType.Float, TerminalType.In, "Volume"), new Terminal(4, WireType.Void, TerminalType.In));
+            public static readonly BlockDef StopSound = new BlockDef("Stop Sound", 397, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Float, TerminalType.In, "Channel"), new Terminal(2, WireType.Void, TerminalType.In));
+            public static readonly BlockDef VolumePitch = new BlockDef("VolumePitch", 391, BlockType.Active, new Vector2I(2, 3), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Float, TerminalType.In, "Pitch"), new Terminal(2, WireType.Float, TerminalType.In, "Volume"), new Terminal(3, WireType.Float, TerminalType.In, "Channel"), new Terminal(4, WireType.Void, TerminalType.In));
+        }
+
         public static class Control
         {
             public static readonly BlockDef If = new BlockDef("If", 234, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Void, TerminalType.Out, "False"), new Terminal(2, WireType.Void, TerminalType.Out, "True"), new Terminal(3, WireType.Bool, TerminalType.In, "Condition"), new Terminal(4, WireType.Void, TerminalType.In));

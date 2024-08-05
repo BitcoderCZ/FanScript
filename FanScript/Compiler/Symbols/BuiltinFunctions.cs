@@ -239,6 +239,62 @@ namespace FanScript.Compiler.Symbols
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.DestroyObject));
         }
 
+        private static class Sound
+        {
+            public static readonly FunctionSymbol PlaySound
+                  = new BuiltinFunctionSymbol("playSound",
+                  [
+                    new ParameterSymbol("volume", TypeSymbol.Float),
+                    new ParameterSymbol("pitch", TypeSymbol.Float),
+                    new ParameterSymbol("channel", Modifiers.Out, TypeSymbol.Float),
+                    new ParameterSymbol("LOOP", TypeSymbol.Bool),
+                    new ParameterSymbol("SOUND", TypeSymbol.Float),
+                  ], TypeSymbol.Void, (call, context) =>
+              {
+                  object[]? values = context.ValidateConstants(call.Arguments.AsMemory(^2..), true);
+                  if (values is null)
+                      return new NopEmitStore();
+
+                  Block playSound = context.Builder.AddBlock(Blocks.Sound.PlaySound);
+
+                  context.Builder.SetBlockValue(playSound, 0, (byte)((bool)values[0] ? 1 : 0)); // loop
+                  context.Builder.SetBlockValue(playSound, 1, (ushort)(float)values[1]); // sound
+
+                  context.Builder.BlockPlacer.ExpressionBlock(() =>
+                  {
+                      EmitStore volume = context.EmitExpression(call.Arguments[0]);
+                      EmitStore pitch = context.EmitExpression(call.Arguments[1]);
+
+                      context.Connect(volume, BasicEmitStore.CIn(playSound, playSound.Type.Terminals[3]));
+                      context.Connect(pitch, BasicEmitStore.CIn(playSound, playSound.Type.Terminals[2]));
+                  });
+
+                  EmitStore varStore = null!;
+                  context.Builder.BlockPlacer.StatementBlock(() =>
+                  {
+                      VariableSymbol variable = ((BoundVariableExpression)call.Arguments[2]).Variable;
+
+                      varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(playSound, playSound.Type.Terminals[1]));
+
+                      context.Connect(BasicEmitStore.COut(playSound), varStore);
+                  });
+
+                  return new MultiEmitStore(BasicEmitStore.CIn(playSound), varStore is NopEmitStore ? BasicEmitStore.COut(playSound) : varStore);
+              });
+            public static readonly FunctionSymbol StopSound
+                 = new BuiltinFunctionSymbol("stopSound",
+                 [
+                    new ParameterSymbol("channel", TypeSymbol.Float),
+                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Sound.StopSound));
+            public static readonly FunctionSymbol SetVolumePitch
+                 = new BuiltinFunctionSymbol("setVolumePitch",
+                 [
+                    new ParameterSymbol("channel", TypeSymbol.Float),
+                    new ParameterSymbol("volume", TypeSymbol.Float),
+                    new ParameterSymbol("pitch", TypeSymbol.Float),
+                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Sound.VolumePitch));
+        }
+
         private static class Control
         {
             public static readonly FunctionSymbol Joystick
