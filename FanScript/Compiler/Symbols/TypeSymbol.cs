@@ -16,6 +16,7 @@ namespace FanScript.Compiler.Symbols
         public static readonly TypeSymbol Generic = new TypeSymbol("generic");
         public static readonly TypeSymbol Bool = new TypeSymbol("bool");
         public static readonly TypeSymbol Float = new TypeSymbol("float");
+        public static readonly TypeSymbol String = new TypeSymbol("string");
         public static readonly TypeSymbol Vector3 = new TypeSymbol("vec3");
         public static readonly TypeSymbol Rotation = new TypeSymbol("rot");
         public static readonly TypeSymbol Object = new TypeSymbol("object");

@@ -13,6 +13,8 @@ namespace FanScript.Compiler.Binding
                 Type = TypeSymbol.Bool;
             else if (value is float)
                 Type = TypeSymbol.Float;
+            else if (value is string)
+                Type = TypeSymbol.String;
             else if (value is Vector3F)
                 Type = TypeSymbol.Vector3;
             else if (value is Rotation)

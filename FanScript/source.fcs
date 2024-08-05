@@ -1,15 +1,1 @@
-object o
-setPos(o, vec3(0, 1, 0))
-setPos(o, vec3(0, 2, 0), rot(45, 45, 90))
-
-getPos(o, out vec3 pos, out rot rotation)
-
-raycast(vec3(0, 0, 0), vec3(0, 0, 10), out bool didHit, out vec3 hitPos, out object hitObj)
-
-getSize(o, out vec3 sizeMin, out vec3 sizeMax)
-
-setVisible(o, true)
-
-createObject(o, out inline object copy)
-
-destroyObject(copy)
+"text"

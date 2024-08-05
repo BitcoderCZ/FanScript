@@ -70,7 +70,7 @@
         ModifierClause,
 
         FloatToken,
-        //StringToken,
+        StringToken,
 
         KeywordTrue,
         KeywordFalse,

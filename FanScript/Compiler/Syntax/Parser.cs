@@ -459,8 +459,8 @@ namespace FanScript.Compiler.Syntax
                 case SyntaxKind.FloatToken:
                     return ParseNumberLiteral();
 
-                //case SyntaxKind.StringToken:
-                //    return ParseStringLiteral();
+                case SyntaxKind.StringToken:
+                    return ParseStringLiteral();
 
                 case SyntaxKind.KeywordVector3:
                 case SyntaxKind.KeywordRotation:
@@ -525,8 +525,8 @@ namespace FanScript.Compiler.Syntax
                 .ToImmutableArray()), closeSquareToken);
         }
 
-        //private ExpressionSyntax ParseStringLiteral()
-        //    => new LiteralExpressionSyntax(_syntaxTree, MatchToken(SyntaxKind.StringToken));
+        private ExpressionSyntax ParseStringLiteral()
+            => new LiteralExpressionSyntax(_syntaxTree, MatchToken(SyntaxKind.StringToken));
 
         private ExpressionSyntax ParseNameOrCallExpressions()
         {

@@ -1,26 +1,27 @@
 ﻿using FanScript.Compiler.Syntax;
+using FanScript.Compiler.Text;
 using System.Collections.Immutable;
 
 namespace FanScript.Tests.Syntax
 {
     public class LexerTests
     {
-        //[Fact]
-        //public void Lexer_Lexes_UnterminatedString()
-        //{
-        //    string text = "\"text";
-        //    ImmutableArray<SyntaxToken> tokens = SyntaxTree.ParseTokens(text, out var diagnostics);
+        [Fact]
+        public void Lexer_Lexes_UnterminatedString()
+        {
+            string text = "\"text";
+            ImmutableArray<SyntaxToken> tokens = SyntaxTree.ParseTokens(text, out var diagnostics);
 
-        //    SyntaxToken token = Assert.Single(tokens);
+            SyntaxToken token = Assert.Single(tokens);
 
-        //    Assert.Equal(SyntaxKind.StringToken, token.Kind);
-        //    Assert.Equal(text, token.Text);
+            Assert.Equal(SyntaxKind.StringToken, token.Kind);
+            Assert.Equal(text, token.Text);
 
-        //    Compiler.Diagnostics.Diagnostic diagnostic = Assert.Single(diagnostics);
+            Compiler.Diagnostics.Diagnostic diagnostic = Assert.Single(diagnostics);
 
-        //    Assert.Equal(new TextSpan(0, 1), diagnostic.Location.Span);
-        //    Assert.Equal("Unterminated string literal.", diagnostic.Message);
-        //}
+            Assert.Equal(new TextSpan(0, 1), diagnostic.Location.Span);
+            Assert.Equal("Unterminated string literal.", diagnostic.Message);
+        }
 
         [Fact]
         public void Lexer_Covers_AllTokens()
@@ -157,8 +158,8 @@ namespace FanScript.Tests.Syntax
                 (SyntaxKind.FloatToken, "123"),
                 (SyntaxKind.IdentifierToken, "a"),
                 (SyntaxKind.IdentifierToken, "abc"),
-                //(SyntaxKind.StringToken, "\"Test\""),
-                //(SyntaxKind.StringToken, "\"Te\"\"st\""),
+                (SyntaxKind.StringToken, "\"Test\""),
+                (SyntaxKind.StringToken, "\"Te\\\"st\""),
             };
 
             return fixedTokens.Concat(dynamicTokens);
@@ -217,9 +218,6 @@ namespace FanScript.Tests.Syntax
             // 1.
             if (t1Kind == SyntaxKind.FloatToken && t2Kind == SyntaxKind.DotToken)
                 return true;
-
-            //if (t1Kind == SyntaxKind.StringToken && t2Kind == SyntaxKind.StringToken)
-            //    return true;
 
             // ==
             if (t1Kind == SyntaxKind.EqualsToken && t2Kind == SyntaxKind.EqualsToken)
