@@ -256,7 +256,7 @@ namespace FanScript.Compiler.Lowering
         {
             if (node.Condition.ConstantValue is not null)
             {
-                bool condition = (bool)node.Condition.ConstantValue.Value;
+                bool condition = (bool)node.Condition.ConstantValue.GetValueOrDefault(TypeSymbol.Bool);
                 condition = node.JumpIfTrue ? condition : !condition;
                 if (condition)
                     return RewriteStatement(Goto(node.Syntax, node.Label));

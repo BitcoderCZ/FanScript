@@ -4,22 +4,22 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class Conversion
     {
-        public static readonly Conversion None = new Conversion(exists: false, isIdentity: false, isImplicit: false);
-        public static readonly Conversion Identity = new Conversion(exists: true, isIdentity: true, isImplicit: true);
-        public static readonly Conversion Implicit = new Conversion(exists: true, isIdentity: false, isImplicit: true);
-        public static readonly Conversion Explicit = new Conversion(exists: true, isIdentity: false, isImplicit: false);
+        public static readonly Conversion None = new Conversion(exists: false, isIdentity: false, type: TypeEnum.None);
+        public static readonly Conversion Identity = new Conversion(exists: true, isIdentity: true, type: TypeEnum.Direct);
+        public static readonly Conversion Explicit = new Conversion(exists: true, isIdentity: false, type: TypeEnum.None);
+        public static readonly Conversion Implicit = new Conversion(exists: true, isIdentity: false, type: TypeEnum.Implicit);
+        public static readonly Conversion Direct = new Conversion(exists: true, isIdentity: false, type: TypeEnum.Direct);
 
-        private Conversion(bool exists, bool isIdentity, bool isImplicit)
+        private Conversion(bool exists, bool isIdentity, TypeEnum type)
         {
             Exists = exists;
             IsIdentity = isIdentity;
-            IsImplicit = isImplicit;
+            Type = type;
         }
 
         public bool Exists { get; }
         public bool IsIdentity { get; }
-        public bool IsImplicit { get; }
-        public bool IsExplicit => Exists && !IsImplicit;
+        public TypeEnum Type { get; }
 
         public static Conversion Classify(TypeSymbol? from, TypeSymbol? to)
         {
@@ -29,11 +29,8 @@ namespace FanScript.Compiler.Binding
             if (from.GenericEquals(to))
                 return Identity;
 
-            if (from != TypeSymbol.Void && to == TypeSymbol.Any)
-                return Implicit;
-
-            if (from == TypeSymbol.Any && to != TypeSymbol.Void)
-                return Explicit;
+            if (from == TypeSymbol.Null && to != TypeSymbol.Void)
+                return Direct;
 
             //if (from == TypeSymbol.Bool || from == TypeSymbol.Float)
             //    if (to == TypeSymbol.String)
@@ -44,6 +41,14 @@ namespace FanScript.Compiler.Binding
             //        return Explicit;
 
             return None;
+        }
+
+        public enum TypeEnum
+        {
+            None,
+            Explicit,
+            Implicit,
+            Direct,
         }
     }
 }

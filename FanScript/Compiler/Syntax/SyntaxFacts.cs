@@ -88,6 +88,8 @@
                     return SyntaxKind.KeywordContinue;
                 case "on":
                     return SyntaxKind.KeywordOn;
+                case "null":
+                    return SyntaxKind.KeywordNull;
                 case "func":
                     return SyntaxKind.KeywordFunction;
                 case "readonly":
@@ -226,6 +228,8 @@
                     "continue",
                 SyntaxKind.KeywordOn =>
                     "on",
+                SyntaxKind.KeywordNull =>
+                    "null",
                 SyntaxKind.KeywordFunction =>
                     "func",
                 SyntaxKind.ReadOnlyModifier =>

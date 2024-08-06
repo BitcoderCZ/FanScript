@@ -1,4 +1,5 @@
-﻿using System.CodeDom.Compiler;
+﻿using FanScript.Compiler.Symbols;
+using System.CodeDom.Compiler;
 
 namespace FanScript.Compiler.Binding
 {
@@ -231,7 +232,7 @@ namespace FanScript.Compiler.Binding
             {
                 if (condition is BoundLiteralExpression l)
                 {
-                    bool value = (bool)l.Value;
+                    bool value = (bool)l.ConstantValue.GetValueOrDefault(TypeSymbol.Bool);
                     if (value)
                         condition = null;
                     else

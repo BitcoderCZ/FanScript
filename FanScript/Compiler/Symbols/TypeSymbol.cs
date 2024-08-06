@@ -11,7 +11,7 @@ namespace FanScript.Compiler.Symbols
     public sealed class TypeSymbol : Symbol
     {
         public static readonly TypeSymbol Error = new TypeSymbol("?");
-        public static readonly TypeSymbol Any = new TypeSymbol("any");
+        public static readonly TypeSymbol Null = new TypeSymbol("null");
         // used in function return type or parameter
         public static readonly TypeSymbol Generic = new TypeSymbol("generic");
         public static readonly TypeSymbol Bool = new TypeSymbol("bool");

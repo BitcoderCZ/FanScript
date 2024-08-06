@@ -66,19 +66,29 @@ namespace FanScript.Compiler.Binding
             new BoundBinaryOperator(SyntaxKind.MinusToken, BoundBinaryOperatorKind.Subtraction, TypeSymbol.Rotation),
             new BoundBinaryOperator(SyntaxKind.StarToken, BoundBinaryOperatorKind.Multiplication, TypeSymbol.Rotation),
 
-            new BoundBinaryOperator(SyntaxKind.EqualsEqualsToken, BoundBinaryOperatorKind.Equals, TypeSymbol.Any),
-            new BoundBinaryOperator(SyntaxKind.BangEqualsToken, BoundBinaryOperatorKind.NotEquals, TypeSymbol.Any)
+            new BoundBinaryOperator(SyntaxKind.EqualsEqualsToken, BoundBinaryOperatorKind.Equals, TypeSymbol.Null),
+            new BoundBinaryOperator(SyntaxKind.BangEqualsToken, BoundBinaryOperatorKind.NotEquals, TypeSymbol.Null)
         };
 
-        public static BoundBinaryOperator? Bind(SyntaxKind syntaxKind, TypeSymbol? leftType, TypeSymbol? rightType)
+        public static BoundBinaryOperator? Bind(SyntaxKind syntaxKind, TypeSymbol leftType, TypeSymbol rightType)
         {
+            bool is1Null = (leftType == TypeSymbol.Null) != (rightType == TypeSymbol.Null);
+
             foreach (BoundBinaryOperator op in _operators)
             {
-                if (op.SyntaxKind == syntaxKind && op.LeftType == leftType && op.RightType == rightType)
+                if (op.SyntaxKind == syntaxKind && typeEquals(op.LeftType, leftType) && typeEquals(op.RightType, rightType))
                     return op;
             }
-
+            
             return null;
+
+            bool typeEquals(TypeSymbol opType, TypeSymbol type)
+            {
+                if (is1Null && type == TypeSymbol.Null)
+                    return true;
+
+                return opType == type;
+            }
         }
     }
 }

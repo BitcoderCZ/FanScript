@@ -452,6 +452,9 @@ namespace FanScript.Compiler.Syntax
                 case SyntaxKind.OpenParenthesisToken:
                     return ParseParenthesizedExpression();
 
+                case SyntaxKind.KeywordNull:
+                    return ParseNullLiteral();
+
                 case SyntaxKind.KeywordFalse:
                 case SyntaxKind.KeywordTrue:
                     return ParseBooleanLiteral();
@@ -482,6 +485,9 @@ namespace FanScript.Compiler.Syntax
             SyntaxToken right = MatchToken(SyntaxKind.CloseParenthesisToken);
             return new ParenthesizedExpressionSyntax(_syntaxTree, left, expression, right);
         }
+
+        private ExpressionSyntax ParseNullLiteral()
+            => new LiteralExpressionSyntax(_syntaxTree, MatchToken(SyntaxKind.KeywordNull));
 
         private ExpressionSyntax ParseBooleanLiteral()
         {

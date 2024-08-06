@@ -458,7 +458,7 @@ namespace FanScript.Compiler.Binding
 
             if (condition.ConstantValue is not null)
             {
-                if ((bool)condition.ConstantValue.Value == false)
+                if ((bool)condition.ConstantValue.GetValueOrDefault(TypeSymbol.Bool) == false)
                     _diagnostics.ReportUnreachableCode(syntax.ThenStatement);
                 else if (syntax.ElseClause is not null)
                     _diagnostics.ReportUnreachableCode(syntax.ElseClause.ElseStatement);
@@ -474,7 +474,7 @@ namespace FanScript.Compiler.Binding
             BoundExpression condition = BindExpression(syntax.Condition, TypeSymbol.Bool);
 
             if (condition.ConstantValue != null)
-                if (!(bool)condition.ConstantValue.Value)
+                if (!(bool)condition.ConstantValue.GetValueOrDefault(TypeSymbol.Bool))
                     _diagnostics.ReportUnreachableCode(syntax.Body);
 
             BoundStatement body = BindLoopBody(syntax.Body, out var breakLabel, out var continueLabel);
@@ -631,8 +631,7 @@ namespace FanScript.Compiler.Binding
 
         private BoundExpression BindLiteralExpression(LiteralExpressionSyntax syntax)
         {
-            object value = syntax.Value ?? 0;
-            return new BoundLiteralExpression(syntax, value);
+            return new BoundLiteralExpression(syntax, syntax.Value);
         }
 
         private BoundExpression BindNameExpression(NameExpressionSyntax syntax)
@@ -806,7 +805,7 @@ namespace FanScript.Compiler.Binding
 
             if (expressionX.ConstantValue is not null && expressionY.ConstantValue is not null && expressionZ.ConstantValue is not null)
             {
-                Vector3F val = new Vector3F((float)expressionX.ConstantValue.Value, (float)expressionY.ConstantValue.Value, (float)expressionZ.ConstantValue.Value);
+                Vector3F val = new Vector3F((float)expressionX.ConstantValue.GetValueOrDefault(TypeSymbol.Float), (float)expressionY.ConstantValue.GetValueOrDefault(TypeSymbol.Float), (float)expressionZ.ConstantValue.GetValueOrDefault(TypeSymbol.Float));
                 if (type == TypeSymbol.Rotation)
                     return new BoundLiteralExpression(syntax, new Rotation(val));
                 else
@@ -875,10 +874,10 @@ namespace FanScript.Compiler.Binding
                 return new BoundErrorExpression(expression.Syntax);
             }
 
-            if (!allowExplicit && conversion.IsExplicit)
+            if (!allowExplicit && conversion.Type == Conversion.TypeEnum.Explicit)
                 _diagnostics.ReportCannotConvertImplicitly(diagnosticLocation, expression.Type, type);
 
-            if (conversion.IsIdentity)
+            if (conversion.IsIdentity || conversion.Type == Conversion.TypeEnum.Direct)
                 return expression;
 
             return new BoundConversionExpression(expression.Syntax, type, expression);

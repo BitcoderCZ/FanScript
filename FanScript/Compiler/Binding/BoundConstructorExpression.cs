@@ -16,7 +16,7 @@ namespace FanScript.Compiler.Binding
 
             if (ExpressionX.ConstantValue is not null && ExpressionY.ConstantValue is not null && ExpressionZ.ConstantValue is not null)
             {
-                Vector3F val = new Vector3F((float)ExpressionX.ConstantValue.Value, (float)ExpressionY.ConstantValue.Value, (float)ExpressionZ.ConstantValue.Value);
+                Vector3F val = new Vector3F((float)ExpressionX.ConstantValue.GetValueOrDefault(TypeSymbol.Float), (float)ExpressionY.ConstantValue.GetValueOrDefault(TypeSymbol.Float), (float)ExpressionZ.ConstantValue.GetValueOrDefault(TypeSymbol.Float));
 
                 if (Type == TypeSymbol.Rotation)
                     ConstantValue = new BoundConstant(new Rotation(val));

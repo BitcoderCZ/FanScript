@@ -87,9 +87,9 @@ namespace FanScript.Compiler.Binding
         public static BoundVariableExpression Variable(SyntaxNode syntax, VariableSymbol variable)
             => new BoundVariableExpression(syntax, variable);
 
-        public static BoundLiteralExpression Literal(SyntaxNode syntax, object literal)
+        public static BoundLiteralExpression Literal(SyntaxNode syntax, object? literal)
         {
-            Debug.Assert(literal is string || literal is bool || literal is float || literal is Vector3F || literal is Rotation);
+            Debug.Assert(literal is null || literal is string || literal is bool || literal is float || literal is Vector3F || literal is Rotation);
 
             return new BoundLiteralExpression(syntax, literal);
         }

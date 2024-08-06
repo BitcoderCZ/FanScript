@@ -1,5 +1,15 @@
-playSound(1, 0.2, out inline float channel, true, SOUND_HIT)
+bool b = null
+float f = null
+vec3 v = null
+rot r = null
+object o = null
 
-setVolumePitch(channel, .5, .1)
+array<float> ar = null
 
-stopSound(channel)
+bool b2 = b || null
+float f2 = f + null + 2
+bool b3 = false || null
+float f3 = 5 + null + 2
+
+bool b4 = null == null
+bool b5 = null != null

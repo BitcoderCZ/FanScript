@@ -42,10 +42,7 @@ namespace FanScript.Compiler.Emit
         internal void Connect(EmitStore? from, EmitStore to)
         {
             if (from is NopEmitStore || to is NopEmitStore)
-            {
-                Console.WriteLine("Tried To connect nop store");
                 return;
-            }
 
             if (to.In is null)
                 return;

@@ -87,6 +87,7 @@
         KeywordBreak,
         KeywordContinue,
         KeywordOn,
+        KeywordNull,
 
         SkippedTextTrivia,
         LineBreakTrivia,

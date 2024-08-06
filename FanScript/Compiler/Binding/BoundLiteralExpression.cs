@@ -6,10 +6,12 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class BoundLiteralExpression : BoundExpression
     {
-        public BoundLiteralExpression(SyntaxNode syntax, object value)
+        public BoundLiteralExpression(SyntaxNode syntax, object? value)
             : base(syntax)
         {
-            if (value is bool)
+            if (value is null)
+                Type = TypeSymbol.Null;
+            else if (value is bool)
                 Type = TypeSymbol.Bool;
             else if (value is float)
                 Type = TypeSymbol.Float;
@@ -27,7 +29,7 @@ namespace FanScript.Compiler.Binding
 
         public override BoundNodeKind Kind => BoundNodeKind.LiteralExpression;
         public override TypeSymbol Type { get; }
-        public object Value => ConstantValue.Value;
+        public object? Value => ConstantValue.Value;
         public override BoundConstant ConstantValue { get; }
     }
 }

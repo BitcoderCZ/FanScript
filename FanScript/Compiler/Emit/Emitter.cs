@@ -187,22 +187,22 @@ namespace FanScript.Compiler.Emit
             {
                 case SpecialBlockType.Button:
                     {
-                        object[]? values = emitContext.ValidateConstants(arguments!.Value.AsMemory(), true);
+                        object?[]? values = emitContext.ValidateConstants(arguments!.Value.AsMemory(), true);
                         if (values is null)
                             break;
 
                         for (int i = 0; i < values.Length; i++)
-                            builder.SetBlockValue(block, i, (byte)(float)values[i]); // unbox, then cast
+                            builder.SetBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
                     }
                     break;
                 case SpecialBlockType.Touch:
                     {
-                        object[]? values = emitContext.ValidateConstants(arguments!.Value.AsMemory(2..), true);
+                        object?[]? values = emitContext.ValidateConstants(arguments!.Value.AsMemory(2..), true);
                         if (values is null)
                             break;
 
                         for (int i = 0; i < values.Length; i++)
-                            builder.SetBlockValue(block, i, (byte)(float)values[i]); // unbox, then cast
+                            builder.SetBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
 
                         connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(..2)));
                         return new BasicEmitStore(block);
@@ -330,8 +330,11 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitLiteralExpression(BoundLiteralExpression expression)
             => emitLiteralExpression(expression.Value);
-        internal EmitStore emitLiteralExpression(object value)
+        internal EmitStore emitLiteralExpression(object? value)
         {
+            if (value is null)
+                return new NopEmitStore();
+
             Block block = builder.AddBlock(Blocks.Values.ValueByType(value));
 
             if (value is not bool)
@@ -422,11 +425,12 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitBinaryExpression(BoundBinaryExpression expression)
         {
-            if ((expression.Left.Type == TypeSymbol.Float || expression.Left.Type == TypeSymbol.Bool)
-                && expression.Left.Type == expression.Right.Type)
+            if (expression.Type == TypeSymbol.Bool || expression.Type == TypeSymbol.Float)
                 return emitBinaryExpression_FloatOrBool(expression);
-            else
+            else if (expression.Type == TypeSymbol.Vector3 || expression.Type == TypeSymbol.Rotation)
                 return emitBinaryExpression_VecOrRot(expression);
+            else
+                throw new InvalidDataException($"Unknown TypeSymbol '{expression.Type}'");
         }
         private EmitStore emitBinaryExpression_FloatOrBool(BoundBinaryExpression expression)
         {
@@ -841,16 +845,16 @@ namespace FanScript.Compiler.Emit
                 else if (literal.Value is Rotation rot)
                     vector = rot.Value;
                 else
-                    throw new InvalidDataException($"Invalid value type '{literal.Value.GetType()}'");
+                    throw new InvalidDataException($"Invalid value type '{literal.Value?.GetType()}'");
             }
             else if (expression is BoundConstructorExpression contructor && contructor.ConstantValue is not null)
                 vector = contructor.ConstantValue.Value is Vector3F ?
                     (Vector3F)contructor.ConstantValue.Value :
-                    ((Rotation)contructor.ConstantValue.Value).Value;
+                    ((Rotation)contructor.ConstantValue.Value!).Value;
             else if (expression is BoundVariableExpression variable && variable.ConstantValue is not null)
                 vector = variable.ConstantValue.Value is Vector3F ?
                     (Vector3F)variable.ConstantValue.Value :
-                    ((Rotation)variable.ConstantValue.Value).Value;
+                    ((Rotation)variable.ConstantValue.Value!).Value;
 
             if (vector is not null)
                 return [
@@ -904,11 +908,11 @@ namespace FanScript.Compiler.Emit
             }
         }
 
-        internal object[]? validateConstants(ReadOnlyMemory<BoundExpression> _expressions, bool mustBeConstant)
+        internal object?[]? validateConstants(ReadOnlyMemory<BoundExpression> _expressions, bool mustBeConstant)
         {
             ReadOnlySpan<BoundExpression> expressions = _expressions.Span;
 
-            object[] values = new object[expressions.Length];
+            object?[] values = new object?[expressions.Length];
             bool invalid = false;
 
             for (int i = 0; i < expressions.Length; i++)

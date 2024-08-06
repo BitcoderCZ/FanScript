@@ -150,7 +150,7 @@ namespace FanScript.Compiler.Symbols
                     return new NopEmitStore();
                 }
 
-                Vector3I pos = (Vector3I)((Vector3F)constant.Value); // unbox, then cast
+                Vector3I pos = (Vector3I)((Vector3F)constant.GetValueOrDefault(TypeSymbol.Vector3)); // unbox, then cast
 
                 if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
                 {
@@ -172,11 +172,11 @@ namespace FanScript.Compiler.Symbols
                   new ParameterSymbol("z", TypeSymbol.Float),
                 ], TypeSymbol.Object, (call, context) =>
                 {
-                    object[]? args = context.ValidateConstants(call.Arguments.AsMemory(), true);
+                    object?[]? args = context.ValidateConstants(call.Arguments.AsMemory(), true);
                     if (args is null)
                         return new NopEmitStore();
 
-                    Vector3I pos = new Vector3I((int)(float)args[0], (int)(float)args[1], (int)(float)args[2]); // unbox, then cast
+                    Vector3I pos = new Vector3I((int)((float?)args[0] ?? 0f), (int)((float?)args[1] ?? 0f), (int)((float?)args[2] ?? 0f)); // unbox, then cast
 
                     if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
                     {
@@ -251,14 +251,14 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("SOUND", TypeSymbol.Float),
                   ], TypeSymbol.Void, (call, context) =>
               {
-                  object[]? values = context.ValidateConstants(call.Arguments.AsMemory(^2..), true);
+                  object?[]? values = context.ValidateConstants(call.Arguments.AsMemory(^2..), true);
                   if (values is null)
                       return new NopEmitStore();
 
                   Block playSound = context.Builder.AddBlock(Blocks.Sound.PlaySound);
 
-                  context.Builder.SetBlockValue(playSound, 0, (byte)((bool)values[0] ? 1 : 0)); // loop
-                  context.Builder.SetBlockValue(playSound, 1, (ushort)(float)values[1]); // sound
+                  context.Builder.SetBlockValue(playSound, 0, (byte)(((bool?)values[0] ?? false) ? 1 : 0)); // loop
+                  context.Builder.SetBlockValue(playSound, 1, (ushort)((float?)values[1] ?? 0f)); // sound
 
                   context.Builder.BlockPlacer.ExpressionBlock(() =>
                   {
@@ -304,13 +304,13 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("JOYSTICK_TYPE", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) =>
                 {
-                    object[]? values = context.ValidateConstants(call.Arguments.AsMemory(Range.StartAt(1)), true);
+                    object?[]? values = context.ValidateConstants(call.Arguments.AsMemory(Range.StartAt(1)), true);
                     if (values is null)
                         return new NopEmitStore();
 
                     Block joystick = context.Builder.AddBlock(Blocks.Control.Joystick);
 
-                    context.Builder.SetBlockValue(joystick, 0, (byte)(float)values[0]); // unbox, then cast
+                    context.Builder.SetBlockValue(joystick, 0, (byte)((float?)values[0] ?? 0f)); // unbox, then cast
 
                     EmitStore varStore = null!;
                     context.Builder.BlockPlacer.StatementBlock(() =>
@@ -557,7 +557,7 @@ namespace FanScript.Compiler.Symbols
                 new ParameterSymbol("value", TypeSymbol.ArraySegment),
             ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
             {
-                object[]? constants = context.ValidateConstants(call.Arguments.AsMemory(1..2), true);
+                object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(1..2), true);
                 if (constants is null)
                     return new NopEmitStore();
 
@@ -566,7 +566,7 @@ namespace FanScript.Compiler.Symbols
 
                 var segment = (BoundArraySegmentExpression)call.Arguments[2];
 
-                float offset = (float)constants[0];
+                float offset = (float?)constants[0] ?? 0f;
 
                 for (int i = 0; i < segment.Elements.Length; i++)
                 {

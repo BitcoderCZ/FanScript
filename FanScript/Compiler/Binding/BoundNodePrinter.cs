@@ -375,22 +375,24 @@ namespace FanScript.Compiler.Binding
 
         private static void WriteLiteralExpression(BoundLiteralExpression node, IndentedTextWriter writer)
         {
-            if (node.Type == TypeSymbol.Bool)
-                writer.WriteKeyword((bool)node.Value ? SyntaxKind.KeywordTrue : SyntaxKind.KeywordFalse);
+            if (node.Type == TypeSymbol.Null)
+                writer.WriteKeyword(SyntaxKind.KeywordNull);
+            else if (node.Type == TypeSymbol.Bool)
+                writer.WriteKeyword((bool)node.Value! ? SyntaxKind.KeywordTrue : SyntaxKind.KeywordFalse);
             else if (node.Type == TypeSymbol.Float)
-                writer.WriteNumber((float)node.Value);
+                writer.WriteNumber((float)node.Value!);
             else if (node.Type == TypeSymbol.Vector3 || node.Type == TypeSymbol.Rotation)
             {
                 Vector3F val;
                 SyntaxKind keyword;
                 if (node.Type == TypeSymbol.Rotation)
                 {
-                    val = ((Rotation)node.Value).Value;
+                    val = ((Rotation)node.Value!).Value;
                     keyword = SyntaxKind.KeywordRotation;
                 }
                 else
                 {
-                    val = (Vector3F)node.Value;
+                    val = (Vector3F)node.Value!;
                     keyword = SyntaxKind.KeywordVector3;
                 }
 

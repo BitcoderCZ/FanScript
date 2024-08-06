@@ -10,14 +10,14 @@ namespace FanScript.Compiler.Emit
         private Func<BoundExpression, EmitStore> emitExpression;
         private Action<EmitStore, EmitStore> connect;
 
-        private Func<object, EmitStore> emitLiteralExpression;
+        private Func<object?, EmitStore> emitLiteralExpression;
 
         private Func<VariableSymbol, EmitStore> emitGetVariable;
         private Func<BoundExpression, Func<EmitStore>, EmitStore> emitSetExpression;
         private Func<VariableSymbol, Func<EmitStore>, EmitStore> emitSetVariable;
         private Func<BoundExpression, (EmitStore, EmitStore, EmitStore)> breakVector;
         private Func<BoundExpression, bool[], EmitStore?[]> breakVectorAny;
-        private Func<ReadOnlyMemory<BoundExpression>, bool, object[]?> validateConstants;
+        private Func<ReadOnlyMemory<BoundExpression>, bool, object?[]?> validateConstants;
         private Action<string> writeComment;
 
         public readonly CodeBuilder Builder;
@@ -51,7 +51,7 @@ namespace FanScript.Compiler.Emit
         public void Connect(EmitStore from, EmitStore to)
             => connect(from, to);
 
-        public EmitStore EmitLiteralExpression(object value)
+        public EmitStore EmitLiteralExpression(object? value)
             => emitLiteralExpression(value);
 
         public EmitStore EmitGetVariable(VariableSymbol variable)
@@ -84,7 +84,7 @@ namespace FanScript.Compiler.Emit
         public EmitStore?[] BreakVectorAny(BoundExpression expression, bool[] useComponent)
             => breakVectorAny(expression, useComponent);
 
-        public object[]? ValidateConstants(ReadOnlyMemory<BoundExpression> expressions, bool mustBeConstant)
+        public object?[]? ValidateConstants(ReadOnlyMemory<BoundExpression> expressions, bool mustBeConstant)
             => validateConstants(expressions, mustBeConstant);
 
         public void WriteComment(string text)
