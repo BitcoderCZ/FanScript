@@ -1,15 +1,1 @@
-bool b = null
-float f = null
-vec3 v = null
-rot r = null
-object o = null
-
-array<float> ar = null
-
-bool b2 = b || null
-float f2 = f + null + 2
-bool b3 = false || null
-float f3 = 5 + null + 2
-
-bool b4 = null == null
-bool b5 = null != null
+raycast(null, vec3(0, 0, 10), out bool hit, out _, out object o)

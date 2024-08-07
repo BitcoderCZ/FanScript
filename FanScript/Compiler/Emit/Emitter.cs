@@ -727,6 +727,8 @@ namespace FanScript.Compiler.Emit
             {
                 case PropertySymbol property:
                     return property.Definition.EmitGet.Invoke(emitContext, property.Expression);
+                case NullVariableSymbol:
+                    return new NopEmitStore();
                 default:
                     {
                         if (variable.Modifiers.HasFlag(Modifiers.Inline))
@@ -787,6 +789,8 @@ namespace FanScript.Compiler.Emit
             {
                 case PropertySymbol property:
                     return property.Definition.EmitSet!.Invoke(emitContext, property.Expression, getValueStore);
+                case NullVariableSymbol:
+                    return new NopEmitStore();
                 default:
                     {
                         bool inline = variable.Modifiers.HasFlag(Modifiers.Inline);

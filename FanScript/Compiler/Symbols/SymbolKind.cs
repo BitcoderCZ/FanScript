@@ -5,6 +5,7 @@
         Function,
         GlobalVariable,
         LocalVariable,
+        NullVariable,
         Parameter,
         Property,
         Type,

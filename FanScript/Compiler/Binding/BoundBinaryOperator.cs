@@ -79,7 +79,7 @@ namespace FanScript.Compiler.Binding
                 if (op.SyntaxKind == syntaxKind && typeEquals(op.LeftType, leftType) && typeEquals(op.RightType, rightType))
                     return op;
             }
-            
+
             return null;
 
             bool typeEquals(TypeSymbol opType, TypeSymbol type)

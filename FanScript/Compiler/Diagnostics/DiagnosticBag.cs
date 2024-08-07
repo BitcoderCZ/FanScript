@@ -176,6 +176,9 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportMissignRequiredModifiers(TextLocation location, Modifiers mod, IEnumerable<Modifiers> required)
             => ReportError(location, $"Modifier '{mod.ToKind().GetText()}' requires that one of <{string.Join(", ", required.Select(reqMod => reqMod.ToKind().GetText()))}> is present.");
 
+        public void ReportInvalidName(TextLocation location, string name)
+            => ReportError(location, $"Name '{name}' cannot be used.");
+
         public void ReportUnreachableCode(TextLocation location)
           => ReportWarning(location, $"Unreachable code detected.");
         public void ReportUnreachableCode(SyntaxNode node)
@@ -234,8 +237,8 @@ namespace FanScript.Compiler.Diagnostics
         {
             string msg = platformInfo switch
             {
-                BuildPlatformInfo.CanGetBlocks => $"Current {nameof(CodeBuilder)} can't connect object wires to blocks.",
-                BuildPlatformInfo.CanCreateCustomBlocks => $"Current {nameof(CodeBuilder)} can't create custom blocks.",
+                BuildPlatformInfo.CanGetBlocks => $"Current {nameof(CodeBuilder)} cannot connect object wires to blocks.",
+                BuildPlatformInfo.CanCreateCustomBlocks => $"Current {nameof(CodeBuilder)} cannot create custom blocks.",
                 _ => $"Operation not supported by current {nameof(CodeBuilder)}.",
             };
 

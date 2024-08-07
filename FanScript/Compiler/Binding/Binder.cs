@@ -888,6 +888,9 @@ namespace FanScript.Compiler.Binding
             string name = identifier.Text ?? "?";
             bool declare = !identifier.IsMissing;
 
+            if (name == "_")
+                _diagnostics.ReportInvalidName(identifier.Location, name);
+
             Modifiers validModifiers = ModifiersE.GetValidModifiersFor(ModifierTarget.Variable, type);
 
             Modifiers modifiers = BindModifiers(modifierArray, ModifierTarget.Variable, item =>
@@ -916,6 +919,10 @@ namespace FanScript.Compiler.Binding
         private VariableSymbol? BindVariableReference(SyntaxToken identifierToken)
         {
             string name = identifierToken.Text;
+
+            if (name == "_")
+                return new NullVariableSymbol();
+
             switch (_scope.TryLookupVariable(name))
             {
                 case VariableSymbol variable:
@@ -996,7 +1003,7 @@ namespace FanScript.Compiler.Binding
                 else if (parameter.Modifiers.HasFlag(Modifiers.Out) && !modifiers.HasFlag(Modifiers.Out))
                     _diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Out);
                 else if (modifiers.MakesTargetReference(out Modifiers? makesRefMod) && (argument is not BoundVariableExpression variable ||
-                    (variable.Variable.IsReadOnly && argument.Syntax.Kind != SyntaxKind.VariableDeclarationExpression)))
+                    (variable.Variable.IsReadOnly && argument.Syntax.Kind != SyntaxKind.VariableDeclarationExpression && variable.Variable is not NullVariableSymbol)))
                     _diagnostics.ReportByRefArgMustBeVariable(argumentLocation, makesRefMod.Value);
 
                 boundArguments[i] = BindConversion(argumentLocation, argument, parameter.Type);
