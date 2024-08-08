@@ -179,6 +179,9 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportInvalidName(TextLocation location, string name)
             => ReportError(location, $"Name '{name}' cannot be used.");
 
+        public void ReportDiscardCannotBeUsed(TextLocation location)
+            => ReportError(location, "_ cannot be used as a variable.");
+
         public void ReportUnreachableCode(TextLocation location)
           => ReportWarning(location, $"Unreachable code detected.");
         public void ReportUnreachableCode(SyntaxNode node)

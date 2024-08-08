@@ -1,6 +1,8 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Syntax;
+using FanScript.Compiler.Text;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
@@ -255,7 +257,7 @@ namespace FanScript.Compiler.Emit
 
             builder.BlockPlacer.ExpressionBlock(() =>
             {
-                EmitStore store = emitGetVariable(statement.Variable);
+                EmitStore store = emitGetVariable(statement.Variable, ((PostfixStatementSyntax)statement.Syntax).IdentifierToken.Location);
 
                 connect(store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
             });
@@ -668,7 +670,7 @@ namespace FanScript.Compiler.Emit
         }
 
         private EmitStore emitVariableExpression(BoundVariableExpression expression)
-            => emitGetVariable(expression.Variable);
+            => emitGetVariable(expression.Variable, expression.Syntax.Location);
 
         private EmitStore emitCallExpression(BoundCallExpression expression)
         {
@@ -721,14 +723,17 @@ namespace FanScript.Compiler.Emit
             stores.Add(store);
         }
 
-        internal EmitStore emitGetVariable(VariableSymbol variable)
+        internal EmitStore emitGetVariable(VariableSymbol variable, TextLocation location)
         {
             switch (variable)
             {
                 case PropertySymbol property:
                     return property.Definition.EmitGet.Invoke(emitContext, property.Expression);
                 case NullVariableSymbol:
-                    return new NopEmitStore();
+                    {
+                        diagnostics.ReportDiscardCannotBeUsed(location);
+                        return new NopEmitStore();
+                    }
                 default:
                     {
                         if (variable.Modifiers.HasFlag(Modifiers.Inline))

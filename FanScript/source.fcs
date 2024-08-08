@@ -1,1 +1,3 @@
-raycast(null, vec3(0, 0, 10), out bool hit, out _, out object o)
+raycast(null, vec3(0, 0, 10), out bool hit, out _, out object hitObj)
+
+float f = _
