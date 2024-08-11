@@ -42,6 +42,17 @@ namespace FanScript.Tests
             v.y = 2
             v.z = 3
             """)]
+        [InlineData("""
+            raycast(null, vec3(0, 0, 10), out bool didHit, out vec3 pos, out object hitObj)
+            """)]
+        [InlineData("""
+            raycast(null, vec3(0, 0, 10), out _, out _, out _)
+            """)]
+        [InlineData("""
+            array<float> arr
+            arr.setRange(0, [1, 2, 3])
+            float first = arr.get(0)
+            """)]
         public void Emitter_NoDiagnostics(string text)
             => AssertDiagnostics(text, string.Empty);
 

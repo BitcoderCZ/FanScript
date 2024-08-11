@@ -58,12 +58,13 @@ namespace FanScript.LangServer.Handlers
                         else
                             return getHoverByVariableName(name.IdentifierToken.Text, name.Location);
                     }
-                case PropertyExpressionSyntax property:
-                    {
-                        if (node == property.IdentifierToken && property.BoundResult is BoundVariableExpression varEx && varEx.Variable is PropertySymbol prop)
-                            return getHoverForProperty(prop, node.Location);
-                    }
-                    break;
+                    // TODO:
+                //case PropertyExpressionSyntax property:
+                //    {
+                //        if (node == property.IdentifierToken && property.BoundResult is BoundVariableExpression varEx && varEx.Variable is PropertySymbol prop)
+                //            return getHoverForProperty(prop, node.Location);
+                //    }
+                //    break;
                 case VariableDeclarationStatementSyntax variableDeclarationStatement:
                     {
                         if (node == variableDeclarationStatement.IdentifierToken && variableDeclarationStatement.BoundResult is BoundVariableDeclarationStatement boundDeclaration)

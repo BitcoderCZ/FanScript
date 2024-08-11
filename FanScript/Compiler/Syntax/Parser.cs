@@ -395,6 +395,7 @@ namespace FanScript.Compiler.Syntax
             return ParseVariableDeclarationStatement(builder.ToImmutable());
         }
 
+        // TODO: handle assignment here (something like properties are parsed)
         private ExpressionStatementSyntax ParseExpressionStatement()
             => new ExpressionStatementSyntax(_syntaxTree, ParseExpression());
 
@@ -405,9 +406,9 @@ namespace FanScript.Compiler.Syntax
             while (Current.Kind == SyntaxKind.DotToken)
             {
                 SyntaxToken dotToken = MatchToken(SyntaxKind.DotToken);
-                SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
+                ExpressionSyntax nameOrCall = ParseNameOrCallExpressions();
 
-                expression = new PropertyExpressionSyntax(_syntaxTree, expression, dotToken, identifierToken);
+                expression = new PropertyExpressionSyntax(_syntaxTree, expression, dotToken, nameOrCall);
             }
 
             return expression;

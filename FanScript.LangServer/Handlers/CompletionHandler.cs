@@ -325,31 +325,32 @@ namespace FanScript.LangServer.Handlers
                             return getRecomendationsWithParent(parent, parent.Parent, out recomendationsList);
                     }
                     break;
-                case PropertyExpressionSyntax property:
-                    {
-                        if (node == property.IdentifierToken && property.BoundResult is BoundVariableExpression varEx && varEx.Variable is PropertySymbol propSymbol)
-                        {
-                            TypeSymbol baseType = propSymbol.Expression.Type;
+                // TODO:
+                //case PropertyExpressionSyntax property:
+                //    {
+                //        if (node == property.IdentifierToken && property.BoundResult is BoundVariableExpression varEx && varEx.Variable is PropertySymbol propSymbol)
+                //        {
+                //            TypeSymbol baseType = propSymbol.Expression.Type;
 
-                            recomendationsList = baseType.Properties
-                                .Select(item =>
-                                {
-                                    var (name, definition) = item;
+                //            recomendationsList = baseType.Properties
+                //                .Select(item =>
+                //                {
+                //                    var (name, definition) = item;
 
-                                    return new CompletionItem()
-                                    {
-                                        Label = definition.Type + " " + baseType + "." + name,
-                                        Kind = CompletionItemKind.Property,
-                                        SortText = name,
-                                        FilterText = name,
-                                        InsertText = name,
-                                    };
-                                })
-                                .ToList();
-                            return 0;
-                        }
-                    }
-                    break;
+                //                    return new CompletionItem()
+                //                    {
+                //                        Label = definition.Type + " " + baseType + "." + name,
+                //                        Kind = CompletionItemKind.Property,
+                //                        SortText = name,
+                //                        FilterText = name,
+                //                        InsertText = name,
+                //                    };
+                //                })
+                //                .ToList();
+                //            return 0;
+                //        }
+                //    }
+                //    break;
                 case AssignableVariableClauseSyntax:
                     return CurrentRecomendations.NewIdentifier;
                 case CallExpressionSyntax call:

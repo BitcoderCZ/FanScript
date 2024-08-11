@@ -7,6 +7,7 @@ using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("FanScript.LangServer")]
@@ -576,14 +577,14 @@ namespace FanScript.Compiler.Binding
             return new BoundExpressionStatement(syntax, expression);
         }
 
-        private BoundExpression BindExpression(ExpressionSyntax syntax, TypeSymbol targetType)
+        private BoundExpression BindExpression(ExpressionSyntax syntax, TypeSymbol targetType, Context? context = null)
         {
-            return BindConversion(syntax, targetType);
+            return BindConversion(syntax, targetType, context: context);
         }
 
-        private BoundExpression BindExpression(ExpressionSyntax syntax, bool canBeVoid = false)
+        private BoundExpression BindExpression(ExpressionSyntax syntax, bool canBeVoid = false, Context? context = null)
         {
-            BoundExpression result = BindExpressionInternal(syntax);
+            BoundExpression result = BindExpressionInternal(syntax, context);
             if (!canBeVoid && result.Type == TypeSymbol.Void)
             {
                 _diagnostics.ReportExpressionMustHaveValue(syntax.Location);
@@ -595,7 +596,7 @@ namespace FanScript.Compiler.Binding
             return result;
         }
 
-        private BoundExpression BindExpressionInternal(ExpressionSyntax syntax)
+        private BoundExpression BindExpressionInternal(ExpressionSyntax syntax, Context? context = null)
         {
             switch (syntax.Kind)
             {
@@ -604,7 +605,7 @@ namespace FanScript.Compiler.Binding
                 case SyntaxKind.LiteralExpression:
                     return BindLiteralExpression((LiteralExpressionSyntax)syntax);
                 case SyntaxKind.NameExpression:
-                    return BindNameExpression((NameExpressionSyntax)syntax);
+                    return BindNameExpression((NameExpressionSyntax)syntax, context);
                 case SyntaxKind.VariableDeclarationExpression:
                     return BindVariableDeclarationExpression((VariableDeclarationExpressionSyntax)syntax);
                 case SyntaxKind.UnaryExpression:
@@ -612,7 +613,7 @@ namespace FanScript.Compiler.Binding
                 case SyntaxKind.BinaryExpression:
                     return BindBinaryExpression((BinaryExpressionSyntax)syntax);
                 case SyntaxKind.CallExpression:
-                    return BindCallExpression((CallExpressionSyntax)syntax);
+                    return BindCallExpression((CallExpressionSyntax)syntax, context);
                 case SyntaxKind.ConstructorExpression:
                     return BindConstructorExpression((ConstructorExpressionSyntax)syntax);
                 case SyntaxKind.PropertyExpression:
@@ -634,7 +635,7 @@ namespace FanScript.Compiler.Binding
             return new BoundLiteralExpression(syntax, syntax.Value);
         }
 
-        private BoundExpression BindNameExpression(NameExpressionSyntax syntax)
+        private BoundExpression BindNameExpression(NameExpressionSyntax syntax, Context? context = null)
         {
             string name = syntax.IdentifierToken.Text;
             if (syntax.IdentifierToken.IsMissing)
@@ -644,7 +645,7 @@ namespace FanScript.Compiler.Binding
                 return new BoundErrorExpression(syntax);
             }
 
-            VariableSymbol? variable = BindVariableReference(syntax.IdentifierToken);
+            VariableSymbol? variable = BindVariableReference(syntax.IdentifierToken, context);
             if (variable is null)
                 return new BoundErrorExpression(syntax);
 
@@ -701,17 +702,34 @@ namespace FanScript.Compiler.Binding
             return new BoundBinaryExpression(syntax, boundLeft, boundOperator, boundRight);
         }
 
-        private BoundExpression BindCallExpression(CallExpressionSyntax syntax)
+        private BoundExpression BindCallExpression(CallExpressionSyntax syntax, Context? context = null)
         {
             if (syntax.Arguments.Count == 1 && LookupType(syntax.Identifier.Text) is TypeSymbol type)
                 return BindConversion(syntax.Arguments[0].Expression, type, allowExplicit: true);
 
-            ImmutableArray<BoundExpression>.Builder boundArguments = ImmutableArray.CreateBuilder<BoundExpression>(syntax.Arguments.Count);
+            context ??= Context.Default;
 
-            foreach (ModifierClauseSyntax argument in syntax.Arguments)
-                boundArguments.Add(BindExpression(argument.Expression));
+            var arguments = syntax.Arguments;
+            if (context.MethodObject is not null)
+            {
+                arguments = new SeparatedSyntaxList<ModifierClauseSyntax>(
+                    new SyntaxNode[] {
+                        new ModifierClauseSyntax(context.MethodObject.SyntaxTree, [], context.MethodObject),
+                        new SyntaxToken(context.MethodObject.SyntaxTree, SyntaxKind.CommaToken, context.MethodObject.Span.Start, null, null, [], []),
+                    }.Concat(arguments.GetWithSeparators())
+                    .ToImmutableArray()
+                );
+            }
 
-            FunctionSymbol? function = _scope.TryLookupFunction(syntax.Identifier.Text, boundArguments.Select(arg => arg.Type!).ToList());
+            ImmutableArray<BoundExpression>.Builder boundArguments = ImmutableArray.CreateBuilder<BoundExpression>(arguments.Count);
+
+            foreach (ModifierClauseSyntax argument in arguments)
+                boundArguments.Add(BindExpression(argument.Expression, context: new Context()
+                {
+                    OutArgument = argument.Modifiers.Any(token => token.Kind == SyntaxKind.OutModifier)
+                }));
+
+            FunctionSymbol? function = _scope.TryLookupFunction(syntax.Identifier.Text, boundArguments.Select(arg => arg.Type!).ToList(), context.MethodObject is not null);
 
             if (function is null)
             {
@@ -776,7 +794,7 @@ namespace FanScript.Compiler.Binding
                 }
             }
 
-            BoundArgumentClause? argumentClause = BindArgumentClause(syntax.ArgumentClause,
+            BoundArgumentClause? argumentClause = BindArgumentClause(new ArgumentClauseSyntax(syntax.ArgumentClause.SyntaxTree, syntax.ArgumentClause.OpenParenthesisToken, arguments, syntax.ArgumentClause.CloseParenthesisToken),
                 function.Parameters
                     .Select(param => new ParameterSymbol(param.Name, param.Modifiers, fixType(param.Type)))
                     .ToImmutableArray(),
@@ -817,17 +835,34 @@ namespace FanScript.Compiler.Binding
 
         private BoundExpression BindPropertyExpression(PropertyExpressionSyntax syntax)
         {
-            BoundExpression expression = BindExpression(syntax.Expression);
+            BoundExpression baseEx = BindExpression(syntax.BaseExpression);
 
-            PropertyDefinitionSymbol? property = expression.Type.GetProperty(syntax.IdentifierToken.Text);
-            if (property is null)
+            switch (syntax.Expression.Kind)
             {
-                _diagnostics.ReportUndefinedProperty(syntax.IdentifierToken.Location, expression.Type, syntax.IdentifierToken.Text);
-                syntax.BoundResult = new BoundVariableExpression(syntax, new PropertySymbol(new PropertyDefinitionSymbol("?", TypeSymbol.Error, null!), expression));
-                return new BoundErrorExpression(syntax);
+                case SyntaxKind.NameExpression:
+                    {
+                        NameExpressionSyntax nameEx = (NameExpressionSyntax)syntax.Expression;
+
+                        PropertyDefinitionSymbol? property = baseEx.Type.GetProperty(nameEx.IdentifierToken.Text);
+                        if (property is null)
+                        {
+                            _diagnostics.ReportUndefinedProperty(nameEx.IdentifierToken.Location, baseEx.Type, nameEx.IdentifierToken.Text);
+                            syntax.BoundResult = new BoundVariableExpression(syntax, new PropertySymbol(new PropertyDefinitionSymbol("?", TypeSymbol.Error, null!), baseEx));
+                            return new BoundErrorExpression(syntax);
+                        }
+
+                        return new BoundVariableExpression(syntax, new PropertySymbol(property, baseEx));
+                    }
+                case SyntaxKind.CallExpression:
+                    return BindCallExpression((CallExpressionSyntax)syntax.Expression, new Context()
+                    {
+                        MethodObject = syntax.BaseExpression,
+                    });
+                default:
+                    Debug.Fail($"Invalid property expression: '{syntax.Expression.Kind}'");
+                    return new BoundErrorExpression(syntax);
             }
 
-            return new BoundVariableExpression(syntax, new PropertySymbol(property, expression));
         }
 
         private BoundExpression BindArraySegmentExpression(ArraySegmentExpressionSyntax syntax)
@@ -856,9 +891,9 @@ namespace FanScript.Compiler.Binding
         }
 
         #region Helper Methods
-        private BoundExpression BindConversion(ExpressionSyntax syntax, TypeSymbol type, bool allowExplicit = false)
+        private BoundExpression BindConversion(ExpressionSyntax syntax, TypeSymbol type, bool allowExplicit = false, Context? context = null)
         {
-            BoundExpression expression = BindExpression(syntax);
+            BoundExpression expression = BindExpression(syntax, context: context);
             return BindConversion(syntax.Location, expression, type, allowExplicit);
         }
 
@@ -916,11 +951,13 @@ namespace FanScript.Compiler.Binding
             return variable;
         }
 
-        private VariableSymbol? BindVariableReference(SyntaxToken identifierToken)
+        private VariableSymbol? BindVariableReference(SyntaxToken identifierToken, Context? context = null)
         {
+            context ??= Context.Default;
+
             string name = identifierToken.Text;
 
-            if (name == "_")
+            if (context.OutArgument && name == "_")
                 return new NullVariableSymbol();
 
             switch (_scope.TryLookupVariable(name))
@@ -951,7 +988,10 @@ namespace FanScript.Compiler.Binding
                 boundArguments = ImmutableArray.CreateBuilder<BoundExpression>(syntax.Arguments.Count);
 
                 foreach (ModifierClauseSyntax argument in syntax.Arguments)
-                    boundArguments.Add(BindExpression(argument.Expression));
+                    boundArguments.Add(BindExpression(argument.Expression, context: new Context()
+                    {
+                        OutArgument = argument.Modifiers.Any(token => token.Kind == SyntaxKind.OutModifier)
+                    }));
             }
 
             if (syntax.Arguments.Count != parameters.Length)
@@ -1105,5 +1145,13 @@ namespace FanScript.Compiler.Binding
             return modifiers;
         }
         #endregion
+
+        private class Context
+        {
+            public static readonly Context Default = new Context();
+
+            public bool OutArgument { get; init; }
+            public ExpressionSyntax? MethodObject { get; init; }
+        }
     }
 }

@@ -25,6 +25,7 @@ namespace FanScript.Compiler.Symbols
 
         public override SymbolKind Kind => SymbolKind.Function;
         public FunctionDeclarationSyntax? Declaration { get; }
+        public bool IsMethod { get; init; }
         public ImmutableArray<ParameterSymbol> Parameters { get; }
         public TypeSymbol Type { get; }
         [MemberNotNullWhen(true, nameof(AllowedGenericTypes))]

@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using FanScript.Compiler.Symbols;
+using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Binding
 {
@@ -214,7 +215,22 @@ namespace FanScript.Compiler.Binding
             => node;
 
         protected virtual BoundExpression RewriteVariableExpression(BoundVariableExpression node)
-            => node;
+        {
+            switch (node.Variable)
+            {
+                case PropertySymbol prop:
+                    {
+                        BoundExpression newEx = RewriteExpression(prop.Expression);
+
+                        if (newEx == prop.Expression)
+                            return node;
+
+                        return new BoundVariableExpression(node.Syntax, new PropertySymbol(prop.Definition, newEx));
+                    }
+                default:
+                    return node;
+            }
+        }
 
         protected virtual BoundExpression RewriteUnaryExpression(BoundUnaryExpression node)
         {

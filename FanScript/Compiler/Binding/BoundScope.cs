@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Symbols;
 using System.Collections.Immutable;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FanScript.Compiler.Binding
 {
@@ -70,24 +71,24 @@ namespace FanScript.Compiler.Binding
             return Parent?.TryLookupVariable(name);
         }
 
-        public FunctionSymbol? TryLookupFunction(string name, IEnumerable<TypeSymbol> arguments)
+        public FunctionSymbol? TryLookupFunction(string name, IEnumerable<TypeSymbol> arguments, bool method)
         {
             int argumentCount = arguments.Count();
 
             if (functions.TryGetValue(name, out var symbolList))
                 foreach (var symbol in symbolList)
-                    if (symbol is FunctionSymbol function && function.Parameters
+                    if (symbol is FunctionSymbol function && (!method || function.IsMethod) && function.Parameters
                         .Select(param => param.Type)
                         .SequenceEqual(arguments, new TypeSymbol.FuntionParamsComparer()))
                         return function;
 
-            FunctionSymbol? result = Parent?.TryLookupFunction(name, arguments);
+            FunctionSymbol? result = Parent?.TryLookupFunction(name, arguments, method);
             if (result is not null)
                 return result;
 
             if (functions.TryGetValue(name, out var funcs))
                 return funcs
-                    .Where(func => func.Name == name)
+                    .Where(func => func.Name == name && (!method || func.IsMethod))
                     .OrderBy(func =>
                     {
                         int diff = func.Parameters.Length - argumentCount;

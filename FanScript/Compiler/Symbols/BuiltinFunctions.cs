@@ -195,20 +195,29 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("setPos", [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("position", TypeSymbol.Vector3),
-                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.SetPos, argumentOffset: 1));
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.SetPos, argumentOffset: 1))
+                {
+                    IsMethod = true,
+                };
             public static readonly FunctionSymbol SetPosWithRot
                 = new BuiltinFunctionSymbol("setPos",
                 [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("position", TypeSymbol.Vector3),
                     new ParameterSymbol("rotation", TypeSymbol.Rotation),
-                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.SetPos));
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.SetPos))
+                {
+                    IsMethod = true,
+                };
             public static readonly FunctionSymbol GetPos
                 = new BuiltinFunctionSymbol("getPos", [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("position", Modifiers.Out, TypeSymbol.Vector3),
                     new ParameterSymbol("rotation", Modifiers.Out, TypeSymbol.Rotation),
-                ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Objects.GetPos));
+                ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Objects.GetPos))
+                {
+                    IsMethod = true,
+                };
             public static readonly FunctionSymbol Raycast
                 = new BuiltinFunctionSymbol("raycast", [
                     new ParameterSymbol("from", TypeSymbol.Vector3),
@@ -222,21 +231,33 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("min", Modifiers.Out, TypeSymbol.Vector3),
                     new ParameterSymbol("max", Modifiers.Out, TypeSymbol.Vector3),
-                ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Objects.GetSize));
+                ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Objects.GetSize))
+                {
+                    IsMethod = true,
+                };
             public static readonly FunctionSymbol SetVisible
                 = new BuiltinFunctionSymbol("setVisible", [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("visible", TypeSymbol.Bool),
-                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.SetVisible));
-            public static readonly FunctionSymbol CreateObject
-                = new BuiltinFunctionSymbol("createObject", [
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.SetVisible))
+                {
+                    IsMethod = true,
+                };
+            public static readonly FunctionSymbol Clone
+                = new BuiltinFunctionSymbol("clone", [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("copy", Modifiers.Out, TypeSymbol.Object),
-                ], TypeSymbol.Void, (call, context) => emitAXX(call, context, 1, Blocks.Objects.CreateObject));
-            public static readonly FunctionSymbol DestroyObject
-                = new BuiltinFunctionSymbol("destroyObject", [
+                ], TypeSymbol.Void, (call, context) => emitAXX(call, context, 1, Blocks.Objects.CreateObject))
+                {
+                    IsMethod = true,
+                };
+            public static readonly FunctionSymbol Destroy
+                = new BuiltinFunctionSymbol("destroy", [
                     new ParameterSymbol("object", TypeSymbol.Object),
-                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.DestroyObject));
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.DestroyObject))
+                {
+                    IsMethod = true,
+                };
         }
 
         private static class Sound
@@ -516,7 +537,10 @@ namespace FanScript.Compiler.Symbols
 
                     return BasicEmitStore.COut(list, list.Type.Terminals[0]);
                 }
-            );
+            )
+            {
+                IsMethod = true,
+            };
         public static readonly FunctionSymbol Array_Set
             = new BuiltinFunctionSymbol("set",
             [
@@ -548,7 +572,10 @@ namespace FanScript.Compiler.Symbols
 
                     return new BasicEmitStore(setPtr);
                 }
-            );
+            )
+            {
+                IsMethod = true,
+            };
         public static readonly FunctionSymbol Array_SetRange
             = new BuiltinFunctionSymbol("setRange",
             [
@@ -592,7 +619,10 @@ namespace FanScript.Compiler.Symbols
                 }
 
                 return new MultiEmitStore(firstStore, lastStore);
-            });
+            })
+            {
+                IsMethod = true,
+            };
         public static readonly FunctionSymbol Ptr_SetValue
             = new BuiltinFunctionSymbol("setPtrValue",
             [
