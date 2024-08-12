@@ -11,25 +11,42 @@ namespace FanScript.Compiler
         LateUpdate,
         BoxArt,
         Touch,
+        Swipe,
         Button,
+        Collision,
+        Loop,
     }
 
     public static class SpecialBlockTypeE
     {
         private static readonly SpecialBlockCollection types = new SpecialBlockCollection()
         {
-            new SpecialBlockTypeInfo(SpecialBlockType.Play, [], "Runs code only on the first frame"),
-            new SpecialBlockTypeInfo(SpecialBlockType.LateUpdate, [], "Runs code after physics, before rendering"),
-            new SpecialBlockTypeInfo(SpecialBlockType.BoxArt, [], "Runs code before taking a screenshot for the game cover"),
+            new SpecialBlockTypeInfo(SpecialBlockType.Play, [], "Runs only on the first frame"),
+            new SpecialBlockTypeInfo(SpecialBlockType.LateUpdate, [], "Runs after physics, before rendering"),
+            new SpecialBlockTypeInfo(SpecialBlockType.BoxArt, [], "Runs before taking a screenshot for the game cover"),
             new SpecialBlockTypeInfo(SpecialBlockType.Touch, [
                 new SpecialBlockTypeParam("screenX", Modifiers.Out, TypeSymbol.Float),
                 new SpecialBlockTypeParam("screenY", Modifiers.Out, TypeSymbol.Float),
                 new SpecialBlockTypeParam("TOUCH_STATE", 0, TypeSymbol.Float, true),
                 new SpecialBlockTypeParam("TOUCH_FINGER", 0, TypeSymbol.Float, true),
-            ], "Runs code on touch"),
+            ], "Runs on touch"),
+            new SpecialBlockTypeInfo(SpecialBlockType.Swipe, [
+                new SpecialBlockTypeParam("direction", Modifiers.Out, TypeSymbol.Vector3),
+            ], "Runs on swipe"),
             new SpecialBlockTypeInfo(SpecialBlockType.Button, [
                 new SpecialBlockTypeParam("BUTTON_TYPE", 0, TypeSymbol.Float, true),
-            ], "Runs code when the button is pressed"),
+            ], "Runs when the button is pressed"),
+            new SpecialBlockTypeInfo(SpecialBlockType.Collision, [
+                new SpecialBlockTypeParam("object1", 0, TypeSymbol.Object),
+                new SpecialBlockTypeParam("object2", Modifiers.Out, TypeSymbol.Object),
+                new SpecialBlockTypeParam("impulse", Modifiers.Out, TypeSymbol.Float),
+                new SpecialBlockTypeParam("normal", Modifiers.Out, TypeSymbol.Vector3),
+            ], "Runs when 2 objects collide"),
+            new SpecialBlockTypeInfo(SpecialBlockType.Loop, [
+                new SpecialBlockTypeParam("start", 0, TypeSymbol.Float),
+                new SpecialBlockTypeParam("stop", 0, TypeSymbol.Float),
+                new SpecialBlockTypeParam("counter", Modifiers.Out, TypeSymbol.Float),
+            ], "Runs multiple times from start to end (start: 2, end: 5, counter: [2, 3, 4])"),
         };
 
         public static SpecialBlockTypeInfo GetInfo(this SpecialBlockType sbt)

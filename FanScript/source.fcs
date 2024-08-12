@@ -1,8 +1,12 @@
-saved float f
-object pic
+on Swipe(out vec3 dir) {
+    inspect(dir)
+}
 
-menuItem(ref f, pic, "Item 0", MAX_ITEMS_ONOFF, PRICE_INCREASE_FREE)
-shopSection("Section 1")
-menuItem(ref f, pic, "Item 1", MAX_ITEMS_ONOFF, PRICE_INCREASE_FIXED_10)
-shopSection("Section 2")
-menuItem(ref f, pic, "Item 2", MAX_ITEMS_ONOFF, PRICE_INCREASE_DOUBLE_100)
+object obj1
+on Collision(obj1, out object obj2, out float impulse, out vec3 normal) {
+    inspect(obj2)
+}
+
+on Loop(0, 10, out float index) {
+    inspect(index)
+}

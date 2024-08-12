@@ -52,12 +52,13 @@ namespace FanScript.Compiler.Emit
             vectorBreakCache.Clear();
             rotationBreakCache.Clear();
 
-            builder.BlockPlacer.StatementBlock(() =>
-            {
-                emitStatement(program.Functions.First().Value);
+            if (program.Functions.Count != 0)
+                builder.BlockPlacer.StatementBlock(() =>
+                {
+                    emitStatement(program.Functions.First().Value);
 
-                processLabelsAndGotos();
-            });
+                    processLabelsAndGotos();
+                });
 
             return diagnostics.ToImmutableArray();
         }
@@ -174,8 +175,17 @@ namespace FanScript.Compiler.Emit
                 case SpecialBlockType.Touch:
                     def = Blocks.Control.TouchSensor;
                     break;
+                case SpecialBlockType.Swipe:
+                    def = Blocks.Control.SwipeSensor;
+                    break;
                 case SpecialBlockType.Button:
                     def = Blocks.Control.Button;
+                    break;
+                case SpecialBlockType.Collision:
+                    def = Blocks.Control.Collision;
+                    break;
+                case SpecialBlockType.Loop:
+                    def = Blocks.Control.Loop;
                     break;
                 default:
                     throw new Exception($"Unknown {typeof(SpecialBlockType)}: {type}");
@@ -187,16 +197,6 @@ namespace FanScript.Compiler.Emit
 
             switch (type)
             {
-                case SpecialBlockType.Button:
-                    {
-                        object?[]? values = emitContext.ValidateConstants(arguments!.Value.AsMemory(), true);
-                        if (values is null)
-                            break;
-
-                        for (int i = 0; i < values.Length; i++)
-                            builder.SetBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
-                    }
-                    break;
                 case SpecialBlockType.Touch:
                     {
                         object?[]? values = emitContext.ValidateConstants(arguments!.Value.AsMemory(2..), true);
@@ -209,21 +209,67 @@ namespace FanScript.Compiler.Emit
                         connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(..2)));
                         return new BasicEmitStore(block);
                     }
+                case SpecialBlockType.Swipe:
+                    {
+                        connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan()));
+                        return new BasicEmitStore(block);
+                    }
+                case SpecialBlockType.Button:
+                    {
+                        object?[]? values = emitContext.ValidateConstants(arguments!.Value.AsMemory(), true);
+                        if (values is null)
+                            break;
+
+                        for (int i = 0; i < values.Length; i++)
+                            builder.SetBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
+                    }
+                    break;
+                case SpecialBlockType.Collision:
+                    {
+                        connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(1..), arguments!.Value.AsMemory(..1)));
+                        return new BasicEmitStore(block);
+                    }
+                case SpecialBlockType.Loop:
+                    {
+                        connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(2..), arguments!.Value.AsMemory(..2)));
+                        return new BasicEmitStore(block);
+                    }
             }
 
             connectToLabel(onTrueLabel.Name, BasicEmitStore.COut(block, block.Type.Terminals[^2]));
 
             return new BasicEmitStore(block);
 
-            EmitStore placeAndConnectRefArgs(ReadOnlySpan<BoundExpression> arguments)
+            EmitStore placeAndConnectRefArgs(ReadOnlySpan<BoundExpression> outArguments, ReadOnlyMemory<BoundExpression>? _arguments = null)
             {
-                EmitStore lastStore = BasicEmitStore.COut(block, block.Type.Terminals[^2]);
+                _arguments ??= ReadOnlyMemory<BoundExpression>.Empty;
 
-                for (int i = 0; i < arguments.Length; i++)
+                EmitStore lastStore = BasicEmitStore.COut(block, block.Type.Terminals[Index.FromEnd(2 + _arguments.Value.Length)]);
+
+                if (_arguments.Value.Length != 0)
                 {
-                    VariableSymbol variable = ((BoundVariableExpression)arguments[i]).Variable;
+                    builder.BlockPlacer.ExitStatementBlock();
 
-                    EmitStore varStore = emitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.Terminals[Index.FromEnd(i + 3)]));
+                    builder.BlockPlacer.ExpressionBlock(() =>
+                    {
+                        var arguments = _arguments.Value.Span;
+
+                        for (int i = 0; i < arguments.Length; i++)
+                        {
+                            EmitStore store = emitExpression(arguments[i]);
+
+                            connect(store, BasicEmitStore.CIn(block, block.Type.Terminals[Index.FromEnd(i + 2)]));
+                        }
+                    });
+
+                    builder.BlockPlacer.EnterStatementBlock();
+                }
+
+                for (int i = 0; i < outArguments.Length; i++)
+                {
+                    VariableSymbol variable = ((BoundVariableExpression)outArguments[i]).Variable;
+
+                    EmitStore varStore = emitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.Terminals[Index.FromEnd(i + _arguments.Value.Length + 3)]));
 
                     connect(lastStore, varStore);
 
