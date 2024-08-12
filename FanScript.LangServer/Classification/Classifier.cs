@@ -99,6 +99,8 @@ namespace FanScript.LangServer.Classification
                 return SemanticTokenType.Variable;
             else if (kind == SyntaxKind.FloatToken)
                 return SemanticTokenType.Number;
+            else if (kind == SyntaxKind.StringToken)
+                return SemanticTokenType.String;
             else if (kind.IsComment())
                 return SemanticTokenType.Comment;
             else

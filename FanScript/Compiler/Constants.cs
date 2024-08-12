@@ -46,6 +46,20 @@ namespace FanScript.Compiler
         public static readonly Constant RANKING_TIME_FASTEST = new Constant(TypeSymbol.Float, "RANKING_TIME_FASTEST", 4f);
         public static readonly Constant RANKING_TIME_LONGEST = new Constant(TypeSymbol.Float, "RANKING_TIME_LONGEST", 5f);
 
+        public static readonly Constant MAX_ITEMS_ONOFF = new Constant(TypeSymbol.Float, "MAX_ITEMS_ONOFF", 1f);
+        public static readonly Constant MAX_ITEMS_NO_LIMIT = new Constant(TypeSymbol.Float, "MAX_ITEMS_NO_LIMIT", 101f);
+        public static readonly Constant PRICE_INCREASE_FREE = new Constant(TypeSymbol.Float, "PRICE_INCREASE_FREE", 0f);
+        public static readonly Constant PRICE_INCREASE_FIXED_10 = new Constant(TypeSymbol.Float, "PRICE_INCREASE_FIXED_10", 1f);
+        public static readonly Constant PRICE_INCREASE_FIXED_100 = new Constant(TypeSymbol.Float, "PRICE_INCREASE_FIXED_100", 4f);
+        public static readonly Constant PRICE_INCREASE_FIXED_1000 = new Constant(TypeSymbol.Float, "PRICE_INCREASE_FIXED_1000", 7f);
+        public static readonly Constant PRICE_INCREASE_FIXED_10000 = new Constant(TypeSymbol.Float, "PRICE_INCREASE_FIXED_10000", 10f);
+        public static readonly Constant PRICE_INCREASE_LINEAR_10 = new Constant(TypeSymbol.Float, "PRICE_INCREASE_LINEAR_10", 2f);
+        public static readonly Constant PRICE_INCREASE_LINEAR_100 = new Constant(TypeSymbol.Float, "PRICE_INCREASE_LINEAR_100", 5f);
+        public static readonly Constant PRICE_INCREASE_LINEAR_1000 = new Constant(TypeSymbol.Float, "PRICE_INCREASE_LINEAR_1000", 8f);
+        public static readonly Constant PRICE_INCREASE_DOUBLE_10 = new Constant(TypeSymbol.Float, "PRICE_INCREASE_DOUBLE_10", 3f);
+        public static readonly Constant PRICE_INCREASE_DOUBLE_100 = new Constant(TypeSymbol.Float, "PRICE_INCREASE_DOUBLE_100", 6f);
+        public static readonly Constant PRICE_INCREASE_DOUBLE_1000 = new Constant(TypeSymbol.Float, "PRICE_INCREASE_DOUBLE_1000", 9f);
+
         private static IEnumerable<Constant>? cache;
         public static IEnumerable<Constant> GetAll()
             => cache ??= typeof(Constants)

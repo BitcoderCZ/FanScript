@@ -1,6 +1,7 @@
 ﻿using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
+using MathUtils.Measures;
 using MathUtils.Vectors;
 using System.CodeDom.Compiler;
 
@@ -407,11 +408,12 @@ namespace FanScript.Compiler.Binding
                 writer.WriteNumber(val.Z);
                 writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
             }
-            //else if (node.Type == TypeSymbol.String)
-            //{
-            //    value = "\"" + value.Replace("\"", "\"\"") + "\"";
-            //    writer.WriteString(value);
-            //}
+            else if (node.Type == TypeSymbol.String)
+                writer.WriteString("\"" + 
+                    ((string)node.Value!)
+                        .Replace("\\", "\\\\")
+                        .Replace("\"", "\\\"")
+                    + "\"");
             else
                 throw new Exception($"Unexpected type {node.Type}");
         }

@@ -177,7 +177,7 @@ namespace FanScript.Compiler.Emit.CodeBuilders
         {
             byte[] bufer;
             using (MemoryStream stream = new MemoryStream())
-            using (Utils.SaveWriter writer = new Utils.SaveWriter(stream))
+            using (SaveWriter writer = new SaveWriter(stream))
             {
                 writer.WriteInt32(blocks.Count);
                 for (int i = 0; i < blocks.Count; i++)

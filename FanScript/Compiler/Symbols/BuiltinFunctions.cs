@@ -42,8 +42,13 @@ namespace FanScript.Compiler.Symbols
 
                     if (val is null)
                     {
-                        Debug.Assert(type.IsValueType);
-                        val = RuntimeHelpers.GetUninitializedObject(type);
+                        if (type == typeof(string))
+                            val = string.Empty;
+                        else
+                        {
+                            Debug.Assert(type.IsValueType);
+                            val = RuntimeHelpers.GetUninitializedObject(type);
+                        }
                     }
                     else
                         val = Convert.ChangeType(val, type);
@@ -182,6 +187,50 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("coins", TypeSymbol.Float),
                     new ParameterSymbol("RANKING", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.SetScore, constantTypes: [typeof(byte)]));
+            public static readonly FunctionSymbol SetCamera
+                = new BuiltinFunctionSymbol("setCamera", [
+                    new ParameterSymbol("position", TypeSymbol.Vector3),
+                    new ParameterSymbol("rotation", TypeSymbol.Rotation),
+                    new ParameterSymbol("range", TypeSymbol.Float),
+                    new ParameterSymbol("PERSPECTIVE", TypeSymbol.Bool),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.SetCamera, constantTypes: [typeof(byte)]));
+            public static readonly FunctionSymbol SetLight
+                = new BuiltinFunctionSymbol("setLight", [
+                    new ParameterSymbol("position", TypeSymbol.Vector3),
+                    new ParameterSymbol("rotation", TypeSymbol.Rotation),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.SetLight));
+            public static readonly FunctionSymbol GetScreenSize
+                = new BuiltinFunctionSymbol("getScreenSize", [
+                    new ParameterSymbol("width", Modifiers.Out, TypeSymbol.Float),
+                    new ParameterSymbol("height", Modifiers.Out, TypeSymbol.Float),
+                ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Game.ScreenSize));
+            public static readonly FunctionSymbol GetScreenSize2
+               = new BuiltinFunctionSymbol("getScreenSize", [], TypeSymbol.Vector3, (call, context) =>
+               {
+                   Block make = context.Builder.AddBlock(Blocks.Math.Make_Vector);
+
+                   context.Builder.BlockPlacer.ExpressionBlock(() =>
+                   {
+                       Block ss = context.Builder.AddBlock(Blocks.Game.ScreenSize);
+
+                       context.Connect(BasicEmitStore.COut(ss, ss.Type.Terminals[1]), BasicEmitStore.CIn(make, make.Type.Terminals[3]));
+                       context.Connect(BasicEmitStore.COut(ss, ss.Type.Terminals[0]), BasicEmitStore.CIn(make, make.Type.Terminals[2]));
+                   });
+
+                   return BasicEmitStore.COut(make, make.Type.Terminals[0]);
+               });
+            public static readonly FunctionSymbol GetAccelerometer
+                = new BuiltinFunctionSymbol("getAccelerometer", [], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Game.Accelerometer));
+            public static readonly FunctionSymbol GetCurrentFrame
+                = new BuiltinFunctionSymbol("getCurrentFrame", [], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Game.CurrentFrame));
+            public static readonly FunctionSymbol MenuItem
+                = new BuiltinFunctionSymbol("menuItem", [
+                    new ParameterSymbol("variable", Modifiers.Ref, TypeSymbol.Float),
+                    new ParameterSymbol("picture", TypeSymbol.Object),
+                    new ParameterSymbol("NAME", TypeSymbol.String),
+                    new ParameterSymbol("MAX_ITEMS", TypeSymbol.Float),
+                    new ParameterSymbol("PRICE_INCREASE", TypeSymbol.Float),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.MenuItem, constantTypes: [typeof(string), typeof(byte), typeof(byte)]));
         }
 
         private static class Objects
