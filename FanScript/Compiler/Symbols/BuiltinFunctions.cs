@@ -223,6 +223,22 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("getAccelerometer", [], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Game.Accelerometer));
             public static readonly FunctionSymbol GetCurrentFrame
                 = new BuiltinFunctionSymbol("getCurrentFrame", [], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Game.CurrentFrame));
+            public static readonly FunctionSymbol ShopSection
+                = new BuiltinFunctionSymbol("shopSection", [
+                    new ParameterSymbol("NAME", TypeSymbol.String),
+                ], TypeSymbol.Void, (call, context) =>
+                {
+                    object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), true);
+
+                    if (constants is null)
+                        return new NopEmitStore();
+
+                    Block block = context.Builder.AddBlock(Blocks.Game.MenuItem);
+
+                    context.Builder.SetBlockValue(block, 0, constants[0] ?? string.Empty);
+
+                    return new BasicEmitStore(block);
+                });
             public static readonly FunctionSymbol MenuItem
                 = new BuiltinFunctionSymbol("menuItem", [
                     new ParameterSymbol("variable", Modifiers.Ref, TypeSymbol.Float),

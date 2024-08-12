@@ -1,42 +1,8 @@
-win(0)
-win(2)
-
-lose(0)
-lose(2)
-
-setScore(null, null, null)
-setScore(0, null, RANKING_POINST_FEWEST)
-setScore(5, null, RANKING_POINTS_MOST)
-setScore(null, 0, RANKING_TIME_FASTEST)
-setScore(null, 5, RANKING_TIME_LONGEST)
-
-setCamera(null, rot(0, 90, 0), 100, null)
-setCamera(null, rot(0, 90, 0), 100, true)
-
-setLight(null, rot(45, 45, 45))
-
-getScreenSize(out float width, out float height)
-inspect(vec3(width, height, null))
-inspect(getScreenSize())
-
-inspect(getAccelerometer())
-inspect(getCurrentFrame())
-
 saved float f
 object pic
 
-menuItem(ref f, null, null, null, null)
-menuItem(ref f, pic, "item0", MAX_ITEMS_ONOFF, PRICE_INCREASE_FREE)
-menuItem(ref f, pic, "item0", MAX_ITEMS_ONOFF, PRICE_INCREASE_FIXED_10)
-menuItem(ref f, null, "item1", 2, PRICE_INCREASE_FIXED_10)
-menuItem(ref f, null, "item2", 100, PRICE_INCREASE_FIXED_10)
-menuItem(ref f, null, "item2", MAX_ITEMS_NO_LIMIT, PRICE_INCREASE_FIXED_10)
-menuItem(ref f, pic, "item0", MAX_ITEMS_ONOFF, PRICE_INCREASE_FIXED_100)
-menuItem(ref f, pic, "item0", MAX_ITEMS_ONOFF, PRICE_INCREASE_FIXED_1000)
-menuItem(ref f, pic, "item0", MAX_ITEMS_ONOFF, PRICE_INCREASE_FIXED_10000)
-menuItem(ref f, pic, "item0", MAX_ITEMS_ONOFF, PRICE_INCREASE_LINEAR_10)
-menuItem(ref f, pic, "item0", MAX_ITEMS_ONOFF, PRICE_INCREASE_LINEAR_100)
-menuItem(ref f, pic, "item0", MAX_ITEMS_ONOFF, PRICE_INCREASE_LINEAR_1000)
-menuItem(ref f, pic, "item0", MAX_ITEMS_ONOFF, PRICE_INCREASE_DOUBLE_10)
-menuItem(ref f, pic, "item0", MAX_ITEMS_ONOFF, PRICE_INCREASE_DOUBLE_100)
-menuItem(ref f, pic, "item0", MAX_ITEMS_ONOFF, PRICE_INCREASE_DOUBLE_1000)
+menuItem(ref f, pic, "Item 0", MAX_ITEMS_ONOFF, PRICE_INCREASE_FREE)
+shopSection("Section 1")
+menuItem(ref f, pic, "Item 1", MAX_ITEMS_ONOFF, PRICE_INCREASE_FIXED_10)
+shopSection("Section 2")
+menuItem(ref f, pic, "Item 2", MAX_ITEMS_ONOFF, PRICE_INCREASE_DOUBLE_100)
