@@ -40,6 +40,12 @@ namespace FanScript.Compiler
         public static readonly Constant SOUND_CLANG = new Constant(TypeSymbol.Float, "SOUND_CLANG", 15f);
         public static readonly Constant SOUND_JUMP = new Constant(TypeSymbol.Float, "SOUND_JUMP", 16f);
 
+        // were there more in the past?, 0 is "NONE"
+        public static readonly Constant RANKING_POINTS_MOST = new Constant(TypeSymbol.Float, "RANKING_POINTS_MOST", 2f);
+        public static readonly Constant RANKING_POINST_FEWEST = new Constant(TypeSymbol.Float, "RANKING_POINST_FEWEST", 3f);
+        public static readonly Constant RANKING_TIME_FASTEST = new Constant(TypeSymbol.Float, "RANKING_TIME_FASTEST", 4f);
+        public static readonly Constant RANKING_TIME_LONGEST = new Constant(TypeSymbol.Float, "RANKING_TIME_LONGEST", 5f);
+
         private static IEnumerable<Constant>? cache;
         public static IEnumerable<Constant> GetAll()
             => cache ??= typeof(Constants)

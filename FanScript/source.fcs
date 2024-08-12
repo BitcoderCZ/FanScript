@@ -1,4 +1,11 @@
-array<float> arr = [1, 2, 3]
+win(0)
+win(2)
 
-set(arr, 0, 5)
-arr.set(1, 6)
+lose(0)
+lose(2)
+
+setScore(null, null, null)
+setScore(0, null, RANKING_POINST_FEWEST)
+setScore(5, null, RANKING_POINTS_MOST)
+setScore(null, 0, RANKING_TIME_FASTEST)
+setScore(null, 5, RANKING_TIME_LONGEST)

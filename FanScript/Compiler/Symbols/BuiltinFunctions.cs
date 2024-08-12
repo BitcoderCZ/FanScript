@@ -3,6 +3,7 @@ using FanScript.Compiler.Emit;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
+using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -11,16 +12,45 @@ namespace FanScript.Compiler.Symbols
     internal static class BuiltinFunctions
     {
         // (A) - active block (has before and after), num - numb inputs, num - number outputs
-        private static EmitStore emitAX0(BoundCallExpression call, EmitContext context, BlockDef blockDef, int argumentOffset = 0)
+        private static EmitStore emitAX0(BoundCallExpression call, EmitContext context, BlockDef blockDef, int argumentOffset = 0, Type[]? constantTypes = null)
         {
+            constantTypes ??= [];
+
             Block block = context.Builder.AddBlock(blockDef);
 
-            if (call.Arguments.Length != 0)
+            int argLength = call.Arguments.Length - constantTypes.Length;
+            Debug.Assert(argLength >= 0);
+
+            if (argLength != 0)
                 context.Builder.BlockPlacer.ExpressionBlock(() =>
                 {
-                    for (int i = 0; i < call.Arguments.Length; i++)
-                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[call.Arguments.Length - i + argumentOffset]));
+                    for (int i = 0; i < argLength; i++)
+                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[argLength - i + argumentOffset]));
                 });
+
+            if (constantTypes.Length != 0)
+            {
+                object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(^constantTypes.Length..), true);
+
+                if (constants is null)
+                    return new NopEmitStore();
+
+                for (int i = 0; i < constantTypes.Length; i++)
+                {
+                    object? val = constants[i];
+                    Type type = constantTypes[i];
+
+                    if (val is null)
+                    {
+                        Debug.Assert(type.IsValueType);
+                        val = RuntimeHelpers.GetUninitializedObject(type);
+                    }
+                    else
+                        val = Convert.ChangeType(val, type);
+
+                    context.Builder.SetBlockValue(block, i, val);
+                }
+            }
 
             return new BasicEmitStore(block);
         }
@@ -134,6 +164,24 @@ namespace FanScript.Compiler.Symbols
                 });
 
             return BasicEmitStore.COut(block, block.Type.Terminals[0]);
+        }
+
+        private static class Game
+        {
+            public static readonly FunctionSymbol Win
+                = new BuiltinFunctionSymbol("win", [
+                    new ParameterSymbol("DELAY", TypeSymbol.Float),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.Win, constantTypes: [typeof(byte)]));
+            public static readonly FunctionSymbol Lose
+                = new BuiltinFunctionSymbol("lose", [
+                    new ParameterSymbol("DELAY", TypeSymbol.Float),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.Lose, constantTypes: [typeof(byte)]));
+            public static readonly FunctionSymbol SetScore
+                = new BuiltinFunctionSymbol("setScore", [
+                    new ParameterSymbol("score", TypeSymbol.Float),
+                    new ParameterSymbol("coins", TypeSymbol.Float),
+                    new ParameterSymbol("RANKING", TypeSymbol.Float),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.SetScore, constantTypes: [typeof(byte)]));
         }
 
         private static class Objects

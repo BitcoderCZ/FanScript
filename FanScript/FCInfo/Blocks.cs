@@ -55,6 +55,13 @@ namespace FanScript.FCInfo
 
         public static readonly BlockDef None = new BlockDef("None", 0, BlockType.Pasive, new Vector2I(2, 2));
 
+        public static class Game
+        {
+            public static readonly BlockDef Win = new BlockDef("Win", 252, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Void, TerminalType.In));
+            public static readonly BlockDef Lose = new BlockDef("Lose", 256, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Void, TerminalType.In));
+            public static readonly BlockDef SetScore = new BlockDef("Set Score", 260, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Float, TerminalType.In, "Coins"), new Terminal(2, WireType.Float, TerminalType.In, "Score"), new Terminal(3, WireType.Void, TerminalType.In));
+        }
+
         public static class Objects
         {
             public static readonly BlockDef GetPos = new BlockDef("Get Position", 278, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Rot, TerminalType.Out, "Rotation"), new Terminal(1, WireType.Vec3, TerminalType.Out, "Position"), new Terminal(2, WireType.Obj, TerminalType.In, "Object"));
