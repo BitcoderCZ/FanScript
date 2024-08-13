@@ -82,6 +82,7 @@
         KeywordVector3,
         KeywordRotation,
         KeywordObject,
+        KeywordConstraint,
         KeywordArray,
         KeywordWhile,
         KeywordBreak,

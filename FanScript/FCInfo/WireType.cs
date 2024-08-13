@@ -16,6 +16,6 @@
         Obj = 10,
         ObjPtr = 11,
         Con = 12,
-        ConPtr = 12,
+        ConPtr = 13,
     }
 }

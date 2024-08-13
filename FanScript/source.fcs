@@ -12,3 +12,9 @@ o.setLocked(null, vec3(0, 1, 0))
 o.setMass(10)
 
 o.setFriction(0.7)
+
+o.setBounciness(0.4)
+
+setGravity(vec3(0, -5, 0))
+
+o.addConstraint(null, vec3(10, 5, 0), out constr con)

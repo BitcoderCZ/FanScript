@@ -75,7 +75,7 @@ namespace FanScript.Compiler
                 if (!type.IsGeneric)
                 {
                     validMods |= Modifiers.Inline;
-                    if (type != TypeSymbol.Object)
+                    if (type != TypeSymbol.Object && type != TypeSymbol.Constraint)
                         validMods |= Modifiers.Constant;
                 }
                 if (type == TypeSymbol.Float)

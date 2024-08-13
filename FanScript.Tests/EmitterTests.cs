@@ -1060,11 +1060,13 @@ namespace FanScript.Tests
                 [TypeSymbol.Vector3] = "vec3(1, 2, 3)",
                 [TypeSymbol.Rotation] = "rot(1, 2, 3)",
                 [TypeSymbol.Object] = null,
+                [TypeSymbol.Constraint] = null,
                 [TypeSymbol.CreateGenericInstance(TypeSymbol.Array, TypeSymbol.Bool)] = "[true, false, true]",
                 [TypeSymbol.CreateGenericInstance(TypeSymbol.Array, TypeSymbol.Float)] = "[1, 2, 3]",
                 [TypeSymbol.CreateGenericInstance(TypeSymbol.Array, TypeSymbol.Vector3)] = "[vec3(1, 1, 1), vec3(2, 2, 2), vec3(3, 3, 3)]",
                 [TypeSymbol.CreateGenericInstance(TypeSymbol.Array, TypeSymbol.Rotation)] = "[rot(1, 1, 1), rot(2, 2, 2), rot(3, 3, 3)]",
                 [TypeSymbol.CreateGenericInstance(TypeSymbol.Array, TypeSymbol.Object)] = null,
+                [TypeSymbol.CreateGenericInstance(TypeSymbol.Array, TypeSymbol.Constraint)] = null,
             }.AsReadOnly();
 
             foreach (TypeSymbol type in TypeSymbol.BuiltInNonGenericTypes)

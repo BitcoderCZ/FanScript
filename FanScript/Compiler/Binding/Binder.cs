@@ -243,7 +243,7 @@ namespace FanScript.Compiler.Binding
             if (result is BoundExpressionStatement es)
             {
                 bool isAllowedExpression = es.Expression.Kind == BoundNodeKind.ErrorExpression ||
-                                          (es.Expression.Kind == BoundNodeKind.CallExpression && es.Expression.Type == TypeSymbol.Void);
+                                          es.Expression.Type == TypeSymbol.Void;
                 if (!isAllowedExpression)
                     _diagnostics.ReportInvalidExpressionStatement(syntax.Location);
             }

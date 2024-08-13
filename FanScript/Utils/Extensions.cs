@@ -59,6 +59,8 @@ namespace FanScript.Utils
                 return WireType.Bool;
             else if (type == TypeSymbol.Object)
                 return WireType.Obj;
+            else if (type == TypeSymbol.Constraint)
+                return WireType.Con;
 
             throw new Exception($"Cannot convert TypeSymbol '{type}' to WireType");
         }

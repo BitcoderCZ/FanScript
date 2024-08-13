@@ -20,6 +20,7 @@ namespace FanScript.Compiler.Symbols
         public static readonly TypeSymbol Vector3 = new TypeSymbol("vec3");
         public static readonly TypeSymbol Rotation = new TypeSymbol("rot");
         public static readonly TypeSymbol Object = new TypeSymbol("object");
+        public static readonly TypeSymbol Constraint = new TypeSymbol("constr");
         public static readonly TypeSymbol Array = new TypeSymbol("array", true);
         public static readonly TypeSymbol ArraySegment = new TypeSymbol("arraySegment", true);
         public static readonly TypeSymbol Void = new TypeSymbol("void");
@@ -37,7 +38,7 @@ namespace FanScript.Compiler.Symbols
         // public ImmutableArray<FunctionSymbol> InstanceFunctions { get; private set; }
 
         public static readonly ImmutableArray<TypeSymbol> BuiltInGenericTypes = [Array];
-        public static readonly ImmutableArray<TypeSymbol> BuiltInNonGenericTypes = [Bool, Float, Vector3, Rotation, Object];
+        public static readonly ImmutableArray<TypeSymbol> BuiltInNonGenericTypes = [Bool, Float, Vector3, Rotation, Object, Constraint];
         public static readonly ImmutableArray<TypeSymbol> BuiltInTypes = BuiltInGenericTypes.AddRange(BuiltInNonGenericTypes);
 
         private TypeSymbol(string name, bool isGenericDefinition = false)

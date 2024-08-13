@@ -657,7 +657,7 @@ namespace FanScript.Compiler.Syntax
         }
         private bool IsTypeClauseNext(ref int nextTokenIndex)
         {
-            HashSet<SyntaxKind> allowedKinds = [SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordObject, SyntaxKind.KeywordArray];
+            HashSet<SyntaxKind> allowedKinds = [SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordObject, SyntaxKind.KeywordConstraint, SyntaxKind.KeywordArray];
 
             if (allowedKinds.Contains(Peek(nextTokenIndex++).Kind))
             {
@@ -678,7 +678,7 @@ namespace FanScript.Compiler.Syntax
         }
         private TypeClauseSyntax ParseTypeClause(bool allowGeneric, bool gettingGenericParam = false)
         {
-            SyntaxToken typeToken = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordObject, SyntaxKind.KeywordArray);
+            SyntaxToken typeToken = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordObject, SyntaxKind.KeywordConstraint, SyntaxKind.KeywordArray);
 
             if (Current.Kind == SyntaxKind.LessToken)
             {

@@ -94,6 +94,9 @@ namespace FanScript.FCInfo
             public static readonly BlockDef SetLocked = new BlockDef("Set Locked", 310, BlockType.Active, new Vector2I(2, 3), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Vec3, TerminalType.In, "Rotation"), new Terminal(2, WireType.Vec3, TerminalType.In, "Position"), new Terminal(3, WireType.Obj, TerminalType.In, "Object"), new Terminal(4, WireType.Void, TerminalType.In));
             public static readonly BlockDef SetMass = new BlockDef("Set Mass", 328, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Float, TerminalType.In, "Mass"), new Terminal(2, WireType.Obj, TerminalType.In, "Object"), new Terminal(3, WireType.Void, TerminalType.In));
             public static readonly BlockDef SetFriction = new BlockDef("Set Friction", 332, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Float, TerminalType.In, "Friction"), new Terminal(2, WireType.Obj, TerminalType.In, "Object"), new Terminal(3, WireType.Void, TerminalType.In));
+            public static readonly BlockDef SetBounciness = new BlockDef("Set Bounciness", 336, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Float, TerminalType.In, "Bounciness"), new Terminal(2, WireType.Obj, TerminalType.In, "Object"), new Terminal(3, WireType.Void, TerminalType.In));
+            public static readonly BlockDef SetGravity = new BlockDef("Set Gravity", 324, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Vec3, TerminalType.In, "Gravity"), new Terminal(2, WireType.Void, TerminalType.In));
+            public static readonly BlockDef AddConstraint = new BlockDef("Add Constraint", 340, BlockType.Active, new Vector2I(2, 3), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Con, TerminalType.In, "Constraint"), new Terminal(2, WireType.Vec3, TerminalType.In, "Pivot"), new Terminal(3, WireType.Obj, TerminalType.In, "Part"), new Terminal(4, WireType.Obj, TerminalType.In, "Base"), new Terminal(5, WireType.Void, TerminalType.In));
         }
 
         public static class Control
@@ -283,6 +286,8 @@ namespace FanScript.FCInfo
                         return Variable_Rot;
                     case WireType.Obj:
                         return Variable_Obj;
+                    case WireType.Con:
+                        return Variable_Con;
                     default:
                         throw new Exception($"Get_variable doesn't exist for WireType \"{Enum.GetName(typeof(WireType), type)}\"");
                 }
@@ -301,6 +306,8 @@ namespace FanScript.FCInfo
                         return Set_Variable_Rot;
                     case WireType.Obj:
                         return Set_Variable_Obj;
+                    case WireType.Con:
+                        return Set_Variable_Con;
                     default:
                         throw new Exception($"Set_Variable doesn't exist for WireType \"{Enum.GetName(typeof(WireType), type)}\"");
                 }
@@ -319,6 +326,8 @@ namespace FanScript.FCInfo
                         return List_Rot;
                     case WireType.Obj:
                         return List_Obj;
+                    case WireType.Con:
+                        return List_Con;
                     default:
                         throw new Exception($"List doesn't exist for WireType \"{Enum.GetName(typeof(WireType), type)}\"");
                 }
@@ -337,6 +346,8 @@ namespace FanScript.FCInfo
                         return Set_Ptr_Rot;
                     case WireType.Obj:
                         return Set_Ptr_Obj;
+                    case WireType.Con:
+                        return Set_Ptr_Rot;
                     default:
                         throw new Exception($"Set_Ptr doesn't exist for WireType \"{Enum.GetName(typeof(WireType), type)}\"");
                 }
@@ -348,6 +359,7 @@ namespace FanScript.FCInfo
             public static readonly BlockDef Variable_Rot = new BlockDef("Variable", 50, BlockType.Pasive, new Vector2I(2, 1), new Terminal(0, WireType.RotPtr, TerminalType.Out, "Rotation"));
             public static readonly BlockDef Variable_Tru = new BlockDef("Variable", 52, BlockType.Pasive, new Vector2I(2, 1), new Terminal(0, WireType.BoolPtr, TerminalType.Out, "Truth"));
             public static readonly BlockDef Variable_Obj = new BlockDef("Variable", 54, BlockType.Pasive, new Vector2I(2, 1), new Terminal(0, WireType.ObjPtr, TerminalType.Out, "Object"));
+            public static readonly BlockDef Variable_Con = new BlockDef("Variable", 56, BlockType.Pasive, new Vector2I(2, 1), new Terminal(0, WireType.ConPtr, TerminalType.Out, "Constraint"));
             #endregion
             #region set_variable
             public static readonly BlockDef Set_Variable_Num = new BlockDef("Set Variable", 428, BlockType.Active, new Vector2I(2, 1), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Float, TerminalType.In, "Value"), new Terminal(2, WireType.Void, TerminalType.In, "Before"));
@@ -355,6 +367,7 @@ namespace FanScript.FCInfo
             public static readonly BlockDef Set_Variable_Rot = new BlockDef("Set Variable", 432, BlockType.Active, new Vector2I(2, 1), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Rot, TerminalType.In, "Value"), new Terminal(2, WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef Set_Variable_Tru = new BlockDef("Set Variable", 434, BlockType.Active, new Vector2I(2, 1), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Bool, TerminalType.In, "Value"), new Terminal(2, WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef Set_Variable_Obj = new BlockDef("Set Variable", 436, BlockType.Active, new Vector2I(2, 1), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Obj, TerminalType.In, "Value"), new Terminal(2, WireType.Void, TerminalType.In, "Before"));
+            public static readonly BlockDef Set_Variable_Con = new BlockDef("Set Variable", 438, BlockType.Active, new Vector2I(2, 1), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Con, TerminalType.In, "Value"), new Terminal(2, WireType.Void, TerminalType.In, "Before"));
             #endregion
             #region set_ptr
             // the big setters that take in variable
@@ -363,6 +376,7 @@ namespace FanScript.FCInfo
             public static readonly BlockDef Set_Ptr_Rot = new BlockDef("Set Rotation", 66, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Rot, TerminalType.In, "Value"), new Terminal(2, WireType.RotPtr, TerminalType.In, "Variable"), new Terminal(3, WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef Set_Ptr_Tru = new BlockDef("Set Truth", 70, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Bool, TerminalType.In, "Value"), new Terminal(2, WireType.BoolPtr, TerminalType.In, "Variable"), new Terminal(3, WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef Set_Ptr_Obj = new BlockDef("Set Object", 74, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Obj, TerminalType.In, "Value"), new Terminal(2, WireType.ObjPtr, TerminalType.In, "Variable"), new Terminal(3, WireType.Void, TerminalType.In, "Before"));
+            public static readonly BlockDef Set_Ptr_Con = new BlockDef("Set Constraint", 78, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Obj, TerminalType.In, "Value"), new Terminal(2, WireType.ConPtr, TerminalType.In, "Variable"), new Terminal(3, WireType.Void, TerminalType.In, "Before"));
             #endregion
             #region list
             public static readonly BlockDef List_Num = new BlockDef("List Number", 82, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.FloatPtr, TerminalType.Out, "Element"), new Terminal(1, WireType.Float, TerminalType.In, "Index"), new Terminal(2, WireType.FloatPtr, TerminalType.In, "Variable"));
@@ -370,6 +384,7 @@ namespace FanScript.FCInfo
             public static readonly BlockDef List_Rot = new BlockDef("List Rotation", 465, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.RotPtr, TerminalType.Out, "Element"), new Terminal(1, WireType.Float, TerminalType.In, "Index"), new Terminal(2, WireType.RotPtr, TerminalType.In, "Variable"));
             public static readonly BlockDef List_Tru = new BlockDef("List Truth", 469, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.BoolPtr, TerminalType.Out, "Element"), new Terminal(1, WireType.Float, TerminalType.In, "Index"), new Terminal(2, WireType.BoolPtr, TerminalType.In, "Variable"));
             public static readonly BlockDef List_Obj = new BlockDef("List Object", 86, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.ObjPtr, TerminalType.Out, "Element"), new Terminal(1, WireType.Float, TerminalType.In, "Index"), new Terminal(2, WireType.ObjPtr, TerminalType.In, "Variable"));
+            public static readonly BlockDef List_Con = new BlockDef("List Constraint", 473, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.ConPtr, TerminalType.Out, "Element"), new Terminal(1, WireType.Float, TerminalType.In, "Index"), new Terminal(2, WireType.ConPtr, TerminalType.In, "Variable"));
             #endregion
             public static readonly BlockDef PlusPlusFloat = new BlockDef("Increase Number", 556, BlockType.Active, new Vector2I(2, 1), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Float, TerminalType.In, "Variable"), new Terminal(2, WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef MinusMinusFloat = new BlockDef("Decrease Number", 558, BlockType.Active, new Vector2I(2, 1), new Terminal(0, WireType.Void, TerminalType.Out, "After"), new Terminal(1, WireType.Float, TerminalType.In, "Variable"), new Terminal(2, WireType.Void, TerminalType.In, "Before"));

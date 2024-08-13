@@ -75,11 +75,12 @@ namespace FanScript.Compiler.Binding
         {
             int argumentCount = arguments.Count();
 
-            if (functions.TryGetValue(name, out var symbolList))
-                foreach (var symbol in symbolList)
-                    if (symbol is FunctionSymbol function && (!method || function.IsMethod) && function.Parameters
-                        .Select(param => param.Type)
-                        .SequenceEqual(arguments, new TypeSymbol.FuntionParamsComparer()))
+            if (functions.TryGetValue(name, out var list))
+                foreach (var function in list)
+                    if ((!method || function.IsMethod) &&
+                        function.Parameters
+                            .Select(param => param.Type)
+                            .SequenceEqual(arguments, new TypeSymbol.FuntionParamsComparer()))
                         return function;
 
             FunctionSymbol? result = Parent?.TryLookupFunction(name, arguments, method);

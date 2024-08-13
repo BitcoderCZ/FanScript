@@ -490,6 +490,31 @@ namespace FanScript.Compiler.Symbols
                 {
                     IsMethod = true,
                 };
+            public static readonly FunctionSymbol SetBounciness
+                = new BuiltinFunctionSymbol("setBounciness",
+                [
+                   new ParameterSymbol("object", TypeSymbol.Object),
+                   new ParameterSymbol("bounciness", TypeSymbol.Float),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.SetBounciness))
+                {
+                    IsMethod = true,
+                };
+            public static readonly FunctionSymbol SetGravity
+                = new BuiltinFunctionSymbol("setGravity",
+                [
+                   new ParameterSymbol("gravity", TypeSymbol.Vector3),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.SetGravity));
+            public static readonly FunctionSymbol AddConstraint
+                = new BuiltinFunctionSymbol("addConstraint",
+                [
+                   new ParameterSymbol("base", TypeSymbol.Object),
+                   new ParameterSymbol("part", TypeSymbol.Object),
+                   new ParameterSymbol("pivot", TypeSymbol.Vector3),
+                   new ParameterSymbol("constraint", Modifiers.Out, TypeSymbol.Constraint),
+                ], TypeSymbol.Void, (call, context) => emitAXX(call, context, 1, Blocks.Physics.AddConstraint))
+                {
+                    IsMethod = true,
+                };
         }
 
         private static class Control

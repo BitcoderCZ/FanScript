@@ -78,6 +78,8 @@
                     return SyntaxKind.KeywordRotation;
                 case "object":
                     return SyntaxKind.KeywordObject;
+                case "constr":
+                    return SyntaxKind.KeywordConstraint;
                 case "array":
                     return SyntaxKind.KeywordArray;
                 case "while":
@@ -218,6 +220,8 @@
                     "rot",
                 SyntaxKind.KeywordObject =>
                     "object",
+                SyntaxKind.KeywordConstraint =>
+                    "constr",
                 SyntaxKind.KeywordArray =>
                     "array",
                 SyntaxKind.KeywordWhile =>
