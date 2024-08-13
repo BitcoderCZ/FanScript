@@ -462,6 +462,34 @@ namespace FanScript.Compiler.Symbols
                 {
                     IsMethod = true,
                 };
+            public static readonly FunctionSymbol SetLocked
+                = new BuiltinFunctionSymbol("setLocked",
+                [
+                   new ParameterSymbol("object", TypeSymbol.Object),
+                   new ParameterSymbol("position", TypeSymbol.Vector3),
+                   new ParameterSymbol("rotation", TypeSymbol.Vector3),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.SetLocked))
+                {
+                    IsMethod = true,
+                };
+            public static readonly FunctionSymbol SetMass
+                = new BuiltinFunctionSymbol("setMass",
+                [
+                   new ParameterSymbol("object", TypeSymbol.Object),
+                   new ParameterSymbol("mass", TypeSymbol.Float),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.SetMass))
+                {
+                    IsMethod = true,
+                };
+            public static readonly FunctionSymbol SetFriction
+                = new BuiltinFunctionSymbol("setFriction",
+                [
+                   new ParameterSymbol("object", TypeSymbol.Object),
+                   new ParameterSymbol("friction", TypeSymbol.Float),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.SetFriction))
+                {
+                    IsMethod = true,
+                };
         }
 
         private static class Control

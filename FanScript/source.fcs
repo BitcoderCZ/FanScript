@@ -6,3 +6,9 @@ o.getVelocity(out vec3 velocity, out vec3 spin)
 inspect(velocity)
 
 o.setVelocity(vec3(0, 0, 0), null)
+
+o.setLocked(null, vec3(0, 1, 0))
+
+o.setMass(10)
+
+o.setFriction(0.7)
