@@ -86,6 +86,13 @@ namespace FanScript.FCInfo
             public static readonly BlockDef VolumePitch = new BlockDef("VolumePitch", 391, BlockType.Active, new Vector2I(2, 3), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Float, TerminalType.In, "Pitch"), new Terminal(2, WireType.Float, TerminalType.In, "Volume"), new Terminal(3, WireType.Float, TerminalType.In, "Channel"), new Terminal(4, WireType.Void, TerminalType.In));
         }
 
+        public static class Physics
+        {
+            public static readonly BlockDef AddForce = new BlockDef("Add Force", 298, BlockType.Active, new Vector2I(2, 4), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Vec3, TerminalType.In, "Torque"), new Terminal(2, WireType.Vec3, TerminalType.In, "Apply at"), new Terminal(3, WireType.Vec3, TerminalType.In, "Force"), new Terminal(4, WireType.Obj, TerminalType.In, "Object"), new Terminal(5, WireType.Void, TerminalType.In));
+            public static readonly BlockDef GetVelocity = new BlockDef("Get Velocity", 288, BlockType.Pasive, new Vector2I(2, 2), new Terminal(0, WireType.Vec3, TerminalType.Out, "Spin"), new Terminal(1, WireType.Vec3, TerminalType.Out, "Velocity"), new Terminal(2, WireType.Obj, TerminalType.In, "Object"));
+            public static readonly BlockDef SetVelocity = new BlockDef("Set Velocity", 292, BlockType.Active, new Vector2I(2, 3), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Vec3, TerminalType.In, "Spin"), new Terminal(2, WireType.Vec3, TerminalType.In, "Velocity"), new Terminal(3, WireType.Obj, TerminalType.In, "Object"), new Terminal(4, WireType.Void, TerminalType.In));
+        }
+
         public static class Control
         {
             public static readonly BlockDef If = new BlockDef("If", 234, BlockType.Active, new Vector2I(2, 2), new Terminal(0, WireType.Void, TerminalType.Out), new Terminal(1, WireType.Void, TerminalType.Out, "False"), new Terminal(2, WireType.Void, TerminalType.Out, "True"), new Terminal(3, WireType.Bool, TerminalType.In, "Condition"), new Terminal(4, WireType.Void, TerminalType.In));

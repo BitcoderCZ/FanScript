@@ -429,6 +429,41 @@ namespace FanScript.Compiler.Symbols
                  ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Sound.VolumePitch));
         }
 
+        private static class Physics
+        {
+            public static readonly FunctionSymbol AddForce
+                = new BuiltinFunctionSymbol("addForce",
+                [
+                   new ParameterSymbol("object", TypeSymbol.Object),
+                   new ParameterSymbol("force", TypeSymbol.Vector3),
+                   new ParameterSymbol("applyAt", TypeSymbol.Vector3),
+                   new ParameterSymbol("torque", TypeSymbol.Vector3),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.AddForce))
+                {
+                    IsMethod = true,
+                };
+            public static readonly FunctionSymbol GetVelocity
+                = new BuiltinFunctionSymbol("getVelocity",
+                [
+                   new ParameterSymbol("object", TypeSymbol.Object),
+                   new ParameterSymbol("velocity", Modifiers.Out, TypeSymbol.Vector3),
+                   new ParameterSymbol("spin", Modifiers.Out, TypeSymbol.Vector3),
+                ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Physics.GetVelocity))
+                {
+                    IsMethod = true,
+                };
+            public static readonly FunctionSymbol SetVelocity
+                = new BuiltinFunctionSymbol("setVelocity",
+                [
+                   new ParameterSymbol("object", TypeSymbol.Object),
+                   new ParameterSymbol("velocity", TypeSymbol.Vector3),
+                   new ParameterSymbol("spin", TypeSymbol.Vector3),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.SetVelocity))
+                {
+                    IsMethod = true,
+                };
+        }
+
         private static class Control
         {
             public static readonly FunctionSymbol Joystick

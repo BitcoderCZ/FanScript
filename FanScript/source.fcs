@@ -1,12 +1,8 @@
-on Swipe(out vec3 dir) {
-    inspect(dir)
-}
+object o
 
-object obj1
-on Collision(obj1, out object obj2, out float impulse, out vec3 normal) {
-    inspect(obj2)
-}
+o.addForce(vec3(0, 0, 10), null, vec3(20, 0, 0))
 
-on Loop(0, 10, out float index) {
-    inspect(index)
-}
+o.getVelocity(out vec3 velocity, out vec3 spin)
+inspect(velocity)
+
+o.setVelocity(vec3(0, 0, 0), null)
