@@ -21,6 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="FancadeLoaderLib">
+      <HintPath>..\FancadeLoaderLib.dll</HintPath>
+    </Reference>
     <Reference Include="MathUtils">
       <HintPath>..\MathUtils.dll</HintPath>
     </Reference>

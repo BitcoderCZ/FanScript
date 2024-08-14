@@ -32,12 +32,6 @@
     </Reference>
   </ItemGroup>
 
-  <ItemGroup>
-    <None Update="terminals.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-
     <ItemGroup>
 		<ProjectReference Include="..\FanScript.Generators\FanScript.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>

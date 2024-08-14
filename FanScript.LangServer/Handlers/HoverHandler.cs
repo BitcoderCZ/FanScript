@@ -58,7 +58,7 @@ namespace FanScript.LangServer.Handlers
                         else
                             return getHoverByVariableName(name.IdentifierToken.Text, name.Location);
                     }
-                    // TODO:
+                // TODO:
                 //case PropertyExpressionSyntax property:
                 //    {
                 //        if (node == property.IdentifierToken && property.BoundResult is BoundVariableExpression varEx && varEx.Variable is PropertySymbol prop)

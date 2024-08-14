@@ -1,9 +1,6 @@
 ﻿using FanScript.Compiler;
 using MathUtils.Vectors;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Collections.Immutable;
-using System.Reflection;
 
 namespace FanScript.FCInfo
 {
@@ -53,6 +50,7 @@ namespace FanScript.FCInfo
             public static readonly BlockDef SetBounciness = new BlockDef("Set Bounciness", 336, BlockType.Active, new Vector2I(2, 2), new Terminal(WireType.Void, TerminalType.Out), new Terminal(WireType.Float, TerminalType.In, "Bounciness"), new Terminal(WireType.Obj, TerminalType.In, "Object"), new Terminal(WireType.Void, TerminalType.In));
             public static readonly BlockDef SetGravity = new BlockDef("Set Gravity", 324, BlockType.Active, new Vector2I(2, 2), new Terminal(WireType.Void, TerminalType.Out), new Terminal(WireType.Vec3, TerminalType.In, "Gravity"), new Terminal(WireType.Void, TerminalType.In));
             public static readonly BlockDef AddConstraint = new BlockDef("Add Constraint", 340, BlockType.Active, new Vector2I(2, 3), new Terminal(WireType.Void, TerminalType.Out), new Terminal(WireType.Con, TerminalType.Out, "Constraint"), new Terminal(WireType.Vec3, TerminalType.In, "Pivot"), new Terminal(WireType.Obj, TerminalType.In, "Part"), new Terminal(WireType.Obj, TerminalType.In, "Base"), new Terminal(WireType.Void, TerminalType.In));
+            public static readonly BlockDef LinearLimits = new BlockDef("Linear Limits", 346, BlockType.Active, new Vector2I(2, 3), new Terminal(WireType.Void, TerminalType.Out), new Terminal(WireType.Vec3, TerminalType.In, "Upper"), new Terminal(WireType.Vec3, TerminalType.In, "Lower"), new Terminal(WireType.Con, TerminalType.In, "Constraint"), new Terminal(WireType.Void, TerminalType.In));
         }
 
         public static class Control

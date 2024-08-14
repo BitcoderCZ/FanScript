@@ -1,5 +1,4 @@
 ﻿using FancadeLoaderLib;
-using FanScript.FCInfo;
 using MathUtils.Vectors;
 
 /*

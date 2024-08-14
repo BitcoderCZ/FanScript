@@ -1,6 +1,8 @@
 ﻿using FanScript.FCInfo;
 using MathUtils.Vectors;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("FanScript.Tests")]
 namespace FanScript.Compiler.Emit
 {
     public interface ConnectTarget

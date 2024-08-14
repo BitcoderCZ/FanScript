@@ -1,7 +1,6 @@
 ﻿using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
-using MathUtils.Measures;
 using MathUtils.Vectors;
 using System.CodeDom.Compiler;
 
@@ -409,7 +408,7 @@ namespace FanScript.Compiler.Binding
                 writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
             }
             else if (node.Type == TypeSymbol.String)
-                writer.WriteString("\"" + 
+                writer.WriteString("\"" +
                     ((string)node.Value!)
                         .Replace("\\", "\\\\")
                         .Replace("\"", "\\\"")
