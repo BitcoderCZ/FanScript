@@ -6,14 +6,6 @@ namespace FanScript.Tests
 {
     public class FCBlocksTests
     {
-        [Theory]
-        [MemberData(nameof(GetBlockDefs))]
-        public void FCBlocks_InitializedConnectorPositions(BlockDef blockDef)
-        {
-            foreach (var terminal in blockDef.Terminals)
-                Assert.NotEqual(terminal.Pos, Vector3I.Zero);
-        }
-
         [Fact]
         public void FCBlocks_IDsDoNotRepeated()
         {
@@ -24,15 +16,9 @@ namespace FanScript.Tests
                     Assert.Fail($"Id {def.Id} has been encountered multiple times");
         }
 
-        public static IEnumerable<object[]> GetBlockDefs()
-            => getBlockDefs()
-            .Select(def => new object[] { def });
-
         #region Utils
         private static IEnumerable<BlockDef> getBlockDefs()
         {
-            loadBlocks();
-
             BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public;
 
             foreach (FieldInfo? field in
@@ -48,11 +34,6 @@ namespace FanScript.Tests
                 .Where(field => field.FieldType == typeof(BlockDef))
             )
                 yield return (BlockDef)field.GetValue(null)!;
-        }
-        private static void loadBlocks()
-        {
-            if (!Blocks.PositionsLoaded)
-                Blocks.LoadPositions();
         }
         #endregion
     }

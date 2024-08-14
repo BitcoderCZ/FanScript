@@ -40,9 +40,6 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 
             levelIndex = Math.Clamp(levelIndex, 0, game.Levels.Count - 1);
 
-            if (!Blocks.PositionsLoaded)
-                Blocks.LoadPositions();
-
             PreBuild(startPos);
 
             BlockList builtInBlocks;

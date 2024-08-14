@@ -121,7 +121,7 @@ namespace FanScript.Compiler.Emit.CodeBuilders
             PreBuild(startPos);
 
             if (blocks.Count > 0 && blocks[0].Pos != Vector3I.Zero)
-                blocks.Insert(0, new Block(Vector3I.Zero, new BlockDef(string.Empty, 1, default, Vector2I.One)));
+                blocks.Insert(0, new Block(Vector3I.Zero, new BlockDef(string.Empty, 1, BlockType.Pasive, Vector2I.One)));
 
             Compression compression = Compression.Base64;
 
