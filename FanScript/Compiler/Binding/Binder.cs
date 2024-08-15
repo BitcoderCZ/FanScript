@@ -649,7 +649,9 @@ namespace FanScript.Compiler.Binding
             if (variable is null)
                 return new BoundErrorExpression(syntax);
 
-            return new BoundVariableExpression(syntax, variable);
+            var res = new BoundVariableExpression(syntax, variable);
+            syntax.BoundResult = res;
+            return res;
         }
 
         private BoundExpression BindVariableDeclarationExpression(VariableDeclarationExpressionSyntax syntax)
@@ -662,7 +664,9 @@ namespace FanScript.Compiler.Binding
             if (variable.Modifiers.HasFlag(Modifiers.Constant))
                 _diagnostics.ReportConstantNotInitialized(syntax.IdentifierToken.Location);
 
-            return new BoundVariableExpression(syntax, variable);
+            var res = new BoundVariableExpression(syntax, variable);
+            syntax.BoundResult = res;
+            return res;
         }
 
         private BoundExpression BindUnaryExpression(UnaryExpressionSyntax syntax)
@@ -801,9 +805,14 @@ namespace FanScript.Compiler.Binding
                 "Function", function.Name, boundArguments);
 
             if (argumentClause is null)
+            {
+                syntax.BoundResult = new BoundCallExpression(syntax, function, null!, fixType(function.Type)!, genericType);
                 return new BoundErrorExpression(syntax);
+            }
 
-            return new BoundCallExpression(syntax, function, argumentClause, fixType(function.Type)!, genericType);
+            var res = new BoundCallExpression(syntax, function, argumentClause, fixType(function.Type)!, genericType);
+            syntax.BoundResult = res;
+            return res;
 
             TypeSymbol fixType(TypeSymbol type)
             {
@@ -851,7 +860,9 @@ namespace FanScript.Compiler.Binding
                             return new BoundErrorExpression(syntax);
                         }
 
-                        return new BoundVariableExpression(syntax, new PropertySymbol(property, baseEx));
+                        var res = new BoundVariableExpression(syntax, new PropertySymbol(property, baseEx));
+                        syntax.BoundResult = res;
+                        return res;
                     }
                 case SyntaxKind.CallExpression:
                     return BindCallExpression((CallExpressionSyntax)syntax.Expression, new Context()

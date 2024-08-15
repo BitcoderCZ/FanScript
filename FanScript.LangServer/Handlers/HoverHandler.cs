@@ -55,16 +55,14 @@ namespace FanScript.LangServer.Handlers
                     {
                         if (name.BoundResult is BoundVariableExpression varEx)
                             return getHoverForVariable(varEx.Variable, name.Location);
-                        else
-                            return getHoverByVariableName(name.IdentifierToken.Text, name.Location);
+                        else if (name.Parent is PropertyExpressionSyntax propEx && 
+                            (propEx.BoundResult as BoundVariableExpression)?.Variable is PropertySymbol prop)
+                        {
+                            if (name == propEx.Expression)
+                                return getHoverForProperty(prop, node.Location);
+                        }
                     }
-                // TODO:
-                //case PropertyExpressionSyntax property:
-                //    {
-                //        if (node == property.IdentifierToken && property.BoundResult is BoundVariableExpression varEx && varEx.Variable is PropertySymbol prop)
-                //            return getHoverForProperty(prop, node.Location);
-                //    }
-                //    break;
+                    break;
                 case VariableDeclarationStatementSyntax variableDeclarationStatement:
                     {
                         if (node == variableDeclarationStatement.IdentifierToken && variableDeclarationStatement.BoundResult is BoundVariableDeclarationStatement boundDeclaration)
@@ -74,44 +72,36 @@ namespace FanScript.LangServer.Handlers
                 case AssignableVariableClauseSyntax variableClause:
                     {
                         if (variableClause.BoundResult is VariableSymbol varSymbol)
-                            return getHoverForVariable(varSymbol, variableClause.Location);
-                        else
-                            return getHoverByVariableName(variableClause.IdentifierToken.Text, variableClause.Location);
+                            return getHoverForVariable(varSymbol, node.Location);
                     }
+                    break;
                 case AssignablePropertyClauseSyntax propertyClause:
                     {
                         if (node == propertyClause.VariableToken)
                         {
                             if (propertyClause.BoundResult is PropertySymbol propSymbol && propSymbol.Expression is BoundVariableExpression varEx)
-                                return getHoverForVariable(varEx.Variable, varEx.Syntax.Location);
-                            else
-                                return getHoverByVariableName(propertyClause.VariableToken.Text, propertyClause.VariableToken.Location);
+                                return getHoverForVariable(varEx.Variable, node.Location);
                         }
                         else if (node == propertyClause.IdentifierToken && propertyClause.BoundResult is PropertySymbol propSymbol)
-                            return getHoverForProperty(propSymbol, propertyClause.IdentifierToken.Location);
+                            return getHoverForProperty(propSymbol, node.Location);
                     }
                     break;
                 case CallExpressionSyntax call when node == call.Identifier:
                     {
-                        List<FunctionSymbol> functions = compilation.GetFunctions()
-                            .Where(func => func.Name == call.Identifier.Text && func.Parameters.Length == call.ArgumentClause.Arguments.Count)
-                            .ToList();
-
-                        if (functions.Count == 0)
+                        BoundCallExpression? boundCall;
+                        if (call.BoundResult is null || (boundCall = call.BoundResult as BoundCallExpression) is null)
                             break;
 
                         return new Hover()
                         {
-                            Contents = new MarkedStringsOrMarkupContent(functions
-                                .Select(func =>
-                                    new MarkedString("#### " + func.ToString() +
-                                        (string.IsNullOrEmpty(func.Description) ?
-                                            string.Empty :
-                                            "\n" + func.Description)
-                                    )
+                            Contents = new MarkedStringsOrMarkupContent(
+                                new MarkedString("#### " + boundCall.Function.ToString() +
+                                    (string.IsNullOrEmpty(boundCall.Function.Description) ?
+                                        string.Empty :
+                                        "\n" + boundCall.Function.Description)
                                 )
                             ),
-                            Range = call.Identifier.Location.ToRange(),
+                            Range = node.Location.ToRange(),
                         };
                     }
                 case SpecialBlockStatementSyntax sb when node == sb.Identifier:
@@ -131,22 +121,13 @@ namespace FanScript.LangServer.Handlers
                                         string.Empty :
                                         "\n" + info.Description)
                             }),
-                            Range = sb.Identifier.Location.ToRange(),
+                            Range = node.Location.ToRange(),
                         };
                     }
             }
 
             return null;
 
-            Hover? getHoverByVariableName(string name, TextLocation location)
-            {
-                IEnumerable<VariableSymbol> variables = compilation.GetVariables();
-                VariableSymbol? variable = variables.FirstOrDefault(var => var.Name == name);
-                if (variable is null)
-                    return null;
-                else
-                    return getHoverForVariable(variable, location);
-            }
             Hover? getHoverForVariable(VariableSymbol variable, TextLocation location)
             {
                 return new Hover()
