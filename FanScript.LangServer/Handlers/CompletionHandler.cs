@@ -1,4 +1,5 @@
 ﻿using FanScript.Compiler;
+using FanScript.Compiler.Binding;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.LangServer.Utils;
@@ -10,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -129,9 +131,10 @@ namespace FanScript.LangServer.Handlers
             Values = 1 << 4,
             Variables = 1 << 5,
             Functions = 1 << 6,
-            NewIdentifier = 1 << 7,
+            Methods = 1 << 7,
+            NewIdentifier = 1 << 8,
 
-            InExpression = Values | Variables | Functions,
+            InExpression = Values | Variables | Functions | Methods,
 
             All = ushort.MaxValue,
         }
@@ -147,11 +150,12 @@ namespace FanScript.LangServer.Handlers
             Document document = documentHandler.GetDocument(request.TextDocument.Uri);
             SyntaxTree? tree = document.Tree;
             Compilation? compilation = document.Compilation;
-            var _ = compilation?.GlobalScope; // make BoundReult(s) available to getRecomendations
+            _ = compilation?.GlobalScope; // make BoundReult(s) available to getRecomendations
 
             CurrentRecomendations recomendations;
 
             List<CompletionItem>? recomendationsList = null;
+            bool inProp = false;
 
             if (tree is null)
                 recomendations = CurrentRecomendations.All;
@@ -162,7 +166,7 @@ namespace FanScript.LangServer.Handlers
                 if (node is null)
                     recomendations = CurrentRecomendations.All;
                 else
-                    recomendations = getRecomendations(node, out recomendationsList);
+                    recomendations = getRecomendations(node, out recomendationsList, out inProp);
             }
 
             if (recomendations == 0 && recomendationsList is null)
@@ -185,12 +189,15 @@ namespace FanScript.LangServer.Handlers
 
             VariableSymbol[]? variables = null;
             FunctionSymbol[]? functions = null;
+            FunctionSymbol[]? methods = null;
             if (compilation is not null)
             {
                 if (recomendations.HasFlag(CurrentRecomendations.Variables))
                     length += (variables = compilation.GetVariables().ToArray()).Length;
                 if (recomendations.HasFlag(CurrentRecomendations.Functions))
-                    length += (functions = compilation.GetFunctions().ToArray()).Length;
+                    length += (functions = compilation.GetFunctions().Where(func => !func.IsMethod).ToArray()).Length;
+                if (recomendations.HasFlag(CurrentRecomendations.Methods))
+                    length += (methods = compilation.GetFunctions().Where(func => func.IsMethod).ToArray()).Length;
             }
 
             List<CompletionItem> result = new List<CompletionItem>(length);
@@ -244,7 +251,23 @@ namespace FanScript.LangServer.Handlers
                         Kind = CompletionItemKind.Function,
                         SortText = fun.Name,
                         FilterText = fun.Name,
-                        InsertText = getInsertText(fun),
+                        InsertText = getInsertText(fun, false),
+                    })
+                );
+            if (methods is not null)
+                result.AddRange(methods
+                    .Select(fun => new CompletionItem()
+                    {
+                        Label = fun.Type + " " + fun.Name,
+                        LabelDetails = new CompletionItemLabelDetails()
+                        {
+                            Detail = fun.ToString(onlyParams: true),
+                            Description = fun.Description
+                        },
+                        Kind = CompletionItemKind.Function,
+                        SortText = fun.Name,
+                        FilterText = fun.Name,
+                        InsertText = getInsertText(fun, inProp),
                     })
                 );
 
@@ -258,40 +281,14 @@ namespace FanScript.LangServer.Handlers
                 CompletionItem = new CompletionRegistrationCompletionItemOptions()
                 {
                     LabelDetailsSupport = true,
-                }
+                },
+                TriggerCharacters = new Container<string>("."),
             };
 
-        private string getInsertText(FunctionSymbol function)
-        {
-            StringBuilder builder = new StringBuilder()
-                .Append(function.Name)
-                .Append('(');
-
-            for (int i = 0; i < function.Parameters.Length; i++)
-            {
-                ParameterSymbol param = function.Parameters[i];
-
-                if (i != 0)
-                    builder.Append(", ");
-
-                if (param.Modifiers.HasFlag(Modifiers.Ref))
-                    builder.Append("ref ");
-                else if (param.Modifiers.HasFlag(Modifiers.Out))
-                {
-                    builder.Append("out ");
-                    builder.Append(param.Type);
-                    builder.Append(' ');
-                }
-            }
-
-            return builder
-                .Append(')')
-                .ToString();
-        }
-
-        private CurrentRecomendations getRecomendations(SyntaxNode node, out List<CompletionItem>? recomendationsList)
+        private CurrentRecomendations getRecomendations(SyntaxNode node, out List<CompletionItem>? recomendationsList, out bool inProp)
         {
             recomendationsList = null;
+            inProp = false;
 
             if (node is not SyntaxToken token)
             {
@@ -307,55 +304,64 @@ namespace FanScript.LangServer.Handlers
             if (parent is null)
                 return CurrentRecomendations.All;
 
-            CurrentRecomendations? recomendation = getRecomendationsWithParent(node, parent, out recomendationsList);
+            CurrentRecomendations? recomendation = getRecomendationsWithParent(node, parent, out recomendationsList, out inProp);
 
             return recomendation ?? CurrentRecomendations.All;
         }
 
-        private CurrentRecomendations? getRecomendationsWithParent(SyntaxNode node, SyntaxNode parent, out List<CompletionItem>? recomendationsList)
+        private CurrentRecomendations? getRecomendationsWithParent(SyntaxNode node, SyntaxNode parent, out List<CompletionItem>? recomendationsList, out bool inProp)
         {
             recomendationsList = null;
+            inProp = false;
 
             switch (parent)
             {
                 case NameExpressionSyntax:
                     {
                         if (parent.Parent is not null)
-                            return getRecomendationsWithParent(parent, parent.Parent, out recomendationsList);
+                            return getRecomendationsWithParent(parent, parent.Parent, out recomendationsList, out inProp);
                     }
                     break;
-                // TODO:
-                //case PropertyExpressionSyntax property:
-                //    {
-                //        if (node == property.IdentifierToken && property.BoundResult is BoundVariableExpression varEx && varEx.Variable is PropertySymbol propSymbol)
-                //        {
-                //            TypeSymbol baseType = propSymbol.Expression.Type;
+                case PropertyExpressionSyntax property:
+                    {
+                        inProp = true;
 
-                //            recomendationsList = baseType.Properties
-                //                .Select(item =>
-                //                {
-                //                    var (name, definition) = item;
+                        if (node == property.DotToken)
+                        {
+                            recomendationsList = TypeSymbol.AllTypes
+                                .Aggregate(new List<CompletionItem>(), (list, type) =>
+                                {
+                                    list.EnsureCapacity(list.Count + type.Properties.Count);
+                                    foreach (var (_, definition) in type.Properties)
+                                        list.Add(completionFor(definition, type));
 
-                //                    return new CompletionItem()
-                //                    {
-                //                        Label = definition.Type + " " + baseType + "." + name,
-                //                        Kind = CompletionItemKind.Property,
-                //                        SortText = name,
-                //                        FilterText = name,
-                //                        InsertText = name,
-                //                    };
-                //                })
-                //                .ToList();
-                //            return 0;
-                //        }
-                //    }
-                //    break;
+                                    return list;
+                                });
+
+                            return CurrentRecomendations.Methods;
+                        } else if ((parent.BoundResult as BoundVariableExpression)?.Variable is PropertySymbol prop)
+                        {
+                            if (node == property.Expression)
+                            {
+                                recomendationsList = prop.Expression.Type.Properties
+                                .Select(item =>
+                                {
+                                    var (_, definition) = item;
+
+                                    return completionFor(definition, prop.Expression.Type);
+                                })
+                                        .ToList();
+                                return 0;
+                            }
+                        }
+                    }
+                    break;
                 case AssignableVariableClauseSyntax:
                     return CurrentRecomendations.NewIdentifier;
                 case CallExpressionSyntax call:
                     {
                         if (node == call.Identifier)
-                            return CurrentRecomendations.Functions;
+                            return CurrentRecomendations.Functions | CurrentRecomendations.Methods;
                     }
                     break;
                 case ArgumentClauseSyntax argumentClause:
@@ -378,6 +384,45 @@ namespace FanScript.LangServer.Handlers
 
             return null;
         }
+
+        private string getInsertText(FunctionSymbol function, bool inProp)
+        {
+            StringBuilder builder = new StringBuilder()
+                .Append(function.Name)
+                .Append('(');
+
+            int start = inProp ? 1 : 0;
+            for (int i = start; i < function.Parameters.Length; i++)
+            {
+                ParameterSymbol param = function.Parameters[i];
+
+                if (i != start)
+                    builder.Append(", ");
+
+                if (param.Modifiers.HasFlag(Modifiers.Ref))
+                    builder.Append("ref ");
+                else if (param.Modifiers.HasFlag(Modifiers.Out))
+                {
+                    builder.Append("out ");
+                    builder.Append(param.Type);
+                    builder.Append(' ');
+                }
+            }
+
+            return builder
+                .Append(')')
+                .ToString();
+        }
+
+        private CompletionItem completionFor(PropertyDefinitionSymbol definition, TypeSymbol baseType)
+            => new CompletionItem()
+            {
+                Label = definition.Type + " " + baseType + "." + definition.Name,
+                Kind = CompletionItemKind.Property,
+                SortText = definition.Name,
+                FilterText = definition.Name,
+                InsertText = definition.Name,
+            };
 
         private SyntaxNode? fistMissing(SyntaxNode node)
         {
