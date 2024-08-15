@@ -515,6 +515,66 @@ namespace FanScript.Compiler.Symbols
                 {
                     IsMethod = true,
                 };
+            public static readonly FunctionSymbol LinearLimits
+                = new BuiltinFunctionSymbol("linearLimits",
+                [
+                   new ParameterSymbol("constraint", TypeSymbol.Constraint),
+                   new ParameterSymbol("lower", TypeSymbol.Vector3),
+                   new ParameterSymbol("upper", TypeSymbol.Vector3),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.LinearLimits))
+                {
+                    IsMethod = true,
+                };
+            public static readonly FunctionSymbol AngularLimits
+                = new BuiltinFunctionSymbol("angularLimits",
+                [
+                   new ParameterSymbol("constraint", TypeSymbol.Constraint),
+                   new ParameterSymbol("lower", TypeSymbol.Vector3),
+                   new ParameterSymbol("upper", TypeSymbol.Vector3),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.AngularLimits))
+                {
+                    IsMethod = true,
+                };
+            public static readonly FunctionSymbol LinearSpring
+                = new BuiltinFunctionSymbol("linearSpring",
+                [
+                   new ParameterSymbol("constraint", TypeSymbol.Constraint),
+                   new ParameterSymbol("stiffness", TypeSymbol.Vector3),
+                   new ParameterSymbol("damping", TypeSymbol.Vector3),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.LinearSpring))
+                {
+                    IsMethod = true,
+                };
+            public static readonly FunctionSymbol AngularSpring
+                = new BuiltinFunctionSymbol("angularSpring",
+                [
+                   new ParameterSymbol("constraint", TypeSymbol.Constraint),
+                   new ParameterSymbol("stiffness", TypeSymbol.Vector3),
+                   new ParameterSymbol("damping", TypeSymbol.Vector3),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.AngularSpring))
+                {
+                    IsMethod = true,
+                };
+            public static readonly FunctionSymbol LinearMotor
+                = new BuiltinFunctionSymbol("linearMotor",
+                [
+                   new ParameterSymbol("constraint", TypeSymbol.Constraint),
+                   new ParameterSymbol("speed", TypeSymbol.Vector3),
+                   new ParameterSymbol("force", TypeSymbol.Vector3),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.LinearMotor))
+                {
+                    IsMethod = true,
+                };
+            public static readonly FunctionSymbol AngularMotor
+                = new BuiltinFunctionSymbol("angularMotor",
+                [
+                   new ParameterSymbol("constraint", TypeSymbol.Constraint),
+                   new ParameterSymbol("speed", TypeSymbol.Vector3),
+                   new ParameterSymbol("force", TypeSymbol.Vector3),
+                ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.AngularMotor))
+                {
+                    IsMethod = true,
+                };
         }
 
         private static class Control

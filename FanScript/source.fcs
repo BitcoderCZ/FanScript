@@ -18,3 +18,13 @@ o.setBounciness(0.4)
 setGravity(vec3(0, -5, 0))
 
 o.addConstraint(null, vec3(10, 5, 0), out constr con)
+
+inline vec3 v1 = vec3(2, 2, 2)
+inline vec3 v2 = vec3(10, 10, 10)
+
+con.linearLimits(v1, v2)
+con.angularLimits(v1, v2)
+con.linearSpring(v1, v2)
+con.angularSpring(v1, v2)
+con.linearMotor(v1, v2)
+con.angularMotor(v1, v2)
