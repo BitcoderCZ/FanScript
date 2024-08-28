@@ -11,6 +11,7 @@ namespace FanScript.Compiler.Symbols
 {
     internal static class BuiltinFunctions
     {
+        #region Helper functions
         // (A) - active block (has before and after), num - numb inputs, num - number outputs
         private static EmitStore emitAX0(BoundCallExpression call, EmitContext context, BlockDef blockDef, int argumentOffset = 0, Type[]? constantTypes = null)
         {
@@ -22,11 +23,11 @@ namespace FanScript.Compiler.Symbols
             Debug.Assert(argLength >= 0);
 
             if (argLength != 0)
-                context.Builder.BlockPlacer.ExpressionBlock(() =>
+                using (context.Builder.BlockPlacer.ExpressionBlock())
                 {
                     for (int i = 0; i < argLength; i++)
                         context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[argLength - i + argumentOffset]));
-                });
+                }
 
             if (constantTypes.Length != 0)
             {
@@ -76,13 +77,13 @@ namespace FanScript.Compiler.Symbols
             EmitStore lastStore = BasicEmitStore.COut(block);
 
             if (retArgStart != 0)
-                context.Builder.BlockPlacer.ExpressionBlock(() =>
+                using (context.Builder.BlockPlacer.ExpressionBlock())
                 {
                     for (int i = 0; i < retArgStart; i++)
                         context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[retArgStart - i + numbReturnArgs]));
-                });
+                }
 
-            context.Builder.BlockPlacer.StatementBlock(() =>
+            using (context.Builder.BlockPlacer.StatementBlock())
             {
                 for (int i = retArgStart; i < call.Arguments.Length; i++)
                 {
@@ -95,7 +96,7 @@ namespace FanScript.Compiler.Symbols
                     if (varStore is not NopEmitStore)
                         lastStore = varStore;
                 }
-            });
+            }
 
             return new MultiEmitStore(BasicEmitStore.CIn(block), lastStore);
         }
@@ -124,17 +125,17 @@ namespace FanScript.Compiler.Symbols
                     block = null!;
                     varStore = context.EmitSetVariable(variable, () =>
                     {
-                        context.Builder.BlockPlacer.ExpressionBlock(() =>
+                        using (context.Builder.BlockPlacer.ExpressionBlock())
                         {
                             block = context.Builder.AddBlock(blockDef);
 
                             if (retArgStart != 0)
-                                context.Builder.BlockPlacer.ExpressionBlock(() =>
+                                using (context.Builder.BlockPlacer.ExpressionBlock())
                                 {
                                     for (int i = 0; i < retArgStart; i++)
                                         context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[(retArgStart - 1) - i + numbReturnArgs]));
-                                });
-                        });
+                                }
+                        }
 
                         return BasicEmitStore.COut(block, block.Type.Terminals[(call.Arguments.Length - 1) - i]);
                     });
@@ -162,14 +163,15 @@ namespace FanScript.Compiler.Symbols
             Block block = context.Builder.AddBlock(blockDef);
 
             if (call.Arguments.Length != 0)
-                context.Builder.BlockPlacer.ExpressionBlock(() =>
+                using (context.Builder.BlockPlacer.ExpressionBlock())
                 {
                     for (int i = 0; i < call.Arguments.Length; i++)
                         context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[call.Arguments.Length - i]));
-                });
+                }
 
             return BasicEmitStore.COut(block, block.Type.Terminals[0]);
         }
+        #endregion
 
         private static class Game
         {
@@ -209,13 +211,13 @@ namespace FanScript.Compiler.Symbols
                {
                    Block make = context.Builder.AddBlock(Blocks.Math.Make_Vector);
 
-                   context.Builder.BlockPlacer.ExpressionBlock(() =>
+                   using (context.Builder.BlockPlacer.ExpressionBlock())
                    {
                        Block ss = context.Builder.AddBlock(Blocks.Game.ScreenSize);
 
                        context.Connect(BasicEmitStore.COut(ss, ss.Type.Terminals[1]), BasicEmitStore.CIn(make, make.Type.Terminals[3]));
                        context.Connect(BasicEmitStore.COut(ss, ss.Type.Terminals[0]), BasicEmitStore.CIn(make, make.Type.Terminals[2]));
-                   });
+                   }
 
                    return BasicEmitStore.COut(make, make.Type.Terminals[0]);
                });
@@ -268,10 +270,10 @@ namespace FanScript.Compiler.Symbols
                 if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
                 {
                     context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
-                    context.Builder.BlockPlacer.ExpressionBlock(() =>
-                    {
+
+                    using (context.Builder.BlockPlacer.ExpressionBlock())
                         context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
-                    });
+
                     return new NopEmitStore();
                 }
 
@@ -294,10 +296,10 @@ namespace FanScript.Compiler.Symbols
                     if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
                     {
                         context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
-                        context.Builder.BlockPlacer.ExpressionBlock(() =>
-                        {
+
+                        using (context.Builder.BlockPlacer.ExpressionBlock())
                             context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
-                        });
+
                         return new NopEmitStore();
                     }
 
@@ -394,24 +396,24 @@ namespace FanScript.Compiler.Symbols
                   context.Builder.SetBlockValue(playSound, 0, (byte)(((bool?)values[0] ?? false) ? 1 : 0)); // loop
                   context.Builder.SetBlockValue(playSound, 1, (ushort)((float?)values[1] ?? 0f)); // sound
 
-                  context.Builder.BlockPlacer.ExpressionBlock(() =>
+                  using (context.Builder.BlockPlacer.ExpressionBlock())
                   {
                       EmitStore volume = context.EmitExpression(call.Arguments[0]);
                       EmitStore pitch = context.EmitExpression(call.Arguments[1]);
 
                       context.Connect(volume, BasicEmitStore.CIn(playSound, playSound.Type.Terminals[3]));
                       context.Connect(pitch, BasicEmitStore.CIn(playSound, playSound.Type.Terminals[2]));
-                  });
+                  }
 
-                  EmitStore varStore = null!;
-                  context.Builder.BlockPlacer.StatementBlock(() =>
+                  EmitStore varStore;
+                  using (context.Builder.BlockPlacer.StatementBlock())
                   {
                       VariableSymbol variable = ((BoundVariableExpression)call.Arguments[2]).Variable;
 
                       varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(playSound, playSound.Type.Terminals[1]));
 
                       context.Connect(BasicEmitStore.COut(playSound), varStore);
-                  });
+                  }
 
                   return new MultiEmitStore(BasicEmitStore.CIn(playSound), varStore is NopEmitStore ? BasicEmitStore.COut(playSound) : varStore);
               });
@@ -594,15 +596,15 @@ namespace FanScript.Compiler.Symbols
 
                     context.Builder.SetBlockValue(joystick, 0, (byte)((float?)values[0] ?? 0f)); // unbox, then cast
 
-                    EmitStore varStore = null!;
-                    context.Builder.BlockPlacer.StatementBlock(() =>
+                    EmitStore varStore;
+                    using (context.Builder.BlockPlacer.StatementBlock())
                     {
                         VariableSymbol variable = ((BoundVariableExpression)call.Arguments[0]).Variable;
 
                         varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(joystick, joystick.Type.Terminals[1]));
 
                         context.Connect(BasicEmitStore.COut(joystick), varStore);
-                    });
+                    }
 
                     return new MultiEmitStore(BasicEmitStore.CIn(joystick), varStore is NopEmitStore ? BasicEmitStore.COut(joystick) : varStore);
                 });
@@ -728,19 +730,19 @@ namespace FanScript.Compiler.Symbols
                 {
                     Block make = context.Builder.AddBlock(Blocks.Math.Make_Vector);
 
-                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    using (context.Builder.BlockPlacer.ExpressionBlock())
                     {
                         Block wts = context.Builder.AddBlock(Blocks.Math.WorldToScreen);
 
-                        context.Builder.BlockPlacer.ExpressionBlock(() =>
+                        using (context.Builder.BlockPlacer.ExpressionBlock())
                         {
                             EmitStore store = context.EmitExpression(call.Arguments[0]);
                             context.Connect(store, BasicEmitStore.CIn(wts, wts.Type.Terminals[2]));
-                        });
+                        }
 
                         context.Connect(BasicEmitStore.COut(wts, wts.Type.Terminals[1]), BasicEmitStore.CIn(make, make.Type.Terminals[3]));
                         context.Connect(BasicEmitStore.COut(wts, wts.Type.Terminals[0]), BasicEmitStore.CIn(make, make.Type.Terminals[2]));
-                    });
+                    }
 
                     return BasicEmitStore.COut(make, make.Type.Terminals[0]);
                 });
@@ -768,12 +770,12 @@ namespace FanScript.Compiler.Symbols
                 {
                     Block inspect = context.Builder.AddBlock(Blocks.Values.InspectByType(call.GenericType!.ToWireType()));
 
-                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    using (context.Builder.BlockPlacer.ExpressionBlock())
                     {
                         EmitStore store = context.EmitExpression(call.Arguments[0]);
 
                         context.Connect(store, BasicEmitStore.CIn(inspect, inspect.Type.Terminals[1]));
-                    });
+                    }
 
                     return new BasicEmitStore(inspect);
                 }
@@ -787,14 +789,14 @@ namespace FanScript.Compiler.Symbols
                 {
                     Block list = context.Builder.AddBlock(Blocks.Variables.ListByType(call.GenericType!.ToWireType()));
 
-                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    using (context.Builder.BlockPlacer.ExpressionBlock())
                     {
                         EmitStore array = context.EmitExpression(call.Arguments[0]);
                         EmitStore index = context.EmitExpression(call.Arguments[1]);
 
                         context.Connect(array, BasicEmitStore.CIn(list, list.Type.Terminals[2]));
                         context.Connect(index, BasicEmitStore.CIn(list, list.Type.Terminals[1]));
-                    });
+                    }
 
                     return BasicEmitStore.COut(list, list.Type.Terminals[0]);
                 }
@@ -812,24 +814,24 @@ namespace FanScript.Compiler.Symbols
                 {
                     Block setPtr = context.Builder.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));
 
-                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    using (context.Builder.BlockPlacer.ExpressionBlock())
                     {
                         Block list = context.Builder.AddBlock(Blocks.Variables.ListByType(call.GenericType!.ToWireType()));
 
-                        context.Builder.BlockPlacer.ExpressionBlock(() =>
+                        using (context.Builder.BlockPlacer.ExpressionBlock())
                         {
                             EmitStore array = context.EmitExpression(call.Arguments[0]);
                             EmitStore index = context.EmitExpression(call.Arguments[1]);
 
                             context.Connect(array, BasicEmitStore.CIn(list, list.Type.Terminals[2]));
                             context.Connect(index, BasicEmitStore.CIn(list, list.Type.Terminals[1]));
-                        });
+                        }
 
                         EmitStore value = context.EmitExpression(call.Arguments[2]);
 
                         context.Connect(BasicEmitStore.COut(list, list.Type.Terminals[0]), BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals[2]));
                         context.Connect(value, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals[1]));
-                    });
+                    }
 
                     return new BasicEmitStore(setPtr);
                 }
@@ -853,6 +855,8 @@ namespace FanScript.Compiler.Symbols
                 EmitStore lastStore = null!;
 
                 var segment = (BoundArraySegmentExpression)call.Arguments[2];
+
+                Debug.Assert(segment.Elements.Length > 0);
 
                 float offset = (float?)constants[0] ?? 0f;
 
@@ -893,14 +897,14 @@ namespace FanScript.Compiler.Symbols
                 {
                     Block setPtr = context.Builder.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));
 
-                    context.Builder.BlockPlacer.ExpressionBlock(() =>
+                    using (context.Builder.BlockPlacer.ExpressionBlock())
                     {
                         EmitStore ptr = context.EmitExpression(call.Arguments[0]);
                         EmitStore value = context.EmitExpression(call.Arguments[1]);
 
                         context.Connect(ptr, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals[2]));
                         context.Connect(value, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals[1]));
-                    });
+                    }
 
                     return new BasicEmitStore(setPtr);
 

@@ -1,4 +1,5 @@
 ﻿using FanScript.FCInfo;
+using FanScript.Utils;
 using System.Runtime.CompilerServices;
 
 namespace FanScript.Compiler.Emit
@@ -10,22 +11,18 @@ namespace FanScript.Compiler.Emit
         Block Place(BlockDef blockDef);
 
         void EnterStatementBlock();
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        virtual void StatementBlock(Action action)
+        virtual IDisposable StatementBlock()
         {
             EnterStatementBlock();
-            action();
-            ExitStatementBlock();
+            return new Disposable(ExitStatementBlock);
         }
         void ExitStatementBlock();
 
         void EnterExpressionBlock();
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        virtual void ExpressionBlock(Action action)
+        virtual IDisposable ExpressionBlock()
         {
             EnterExpressionBlock();
-            action();
-            ExitExpressionBlock();
+            return new Disposable(ExitExpressionBlock);
         }
         void ExitExpressionBlock();
     }
