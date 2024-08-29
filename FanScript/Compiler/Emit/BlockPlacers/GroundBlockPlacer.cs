@@ -32,6 +32,8 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         private readonly Dictionary<int, PositionStack> availableLayerInfo = new();
 
         protected int highestX = 0;
+        protected int highestXTotal = 0;
+        protected int localLowestX = int.MaxValue;
 
         public Block Place(BlockDef blockDef)
         {
@@ -43,6 +45,8 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             int x = block.Pos.X + blockDef.Size.X - 1;
             if (x > highestX)
                 highestX = x;
+            if (x < localLowestX)
+                localLowestX = x;
 
             return block;
         }
@@ -60,6 +64,20 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             if (statements.Count != 0)
                 statements.Peek().HandlePopChild(statement);
+            else
+            {
+                availableLayerInfo.Clear();
+
+                if (localLowestX < highestXTotal + functionXOffset)
+                {
+                    int move = (highestXTotal + functionXOffset) - localLowestX;
+                    highestX += move;
+                    statement.MoveX(move);
+                }
+
+                localLowestX = int.MaxValue;
+                highestXTotal = highestX;
+            }
         }
 
         public void EnterExpressionBlock()
@@ -79,11 +97,9 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
         protected StatementBlock createFunction()
         {
-            highestX += functionXOffset;
-            int x = highestX;
-            highestX += blockXOffset;
+            highestXTotal += functionXOffset;
 
-            return new StatementBlock(this, new Vector3I(x, 0, 0));
+            return new StatementBlock(this, new Vector3I(highestXTotal, 0, 0));
         }
 
         protected abstract class CodeBlock
@@ -198,6 +214,20 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                     }
 
                     current = current.Parent;
+                }
+            }
+
+            public void MoveX(int move)
+            {
+                for (int i = 0; i < Blocks.Count; i++)
+                    Blocks[i].Pos.X += move;
+
+                for (int blockIndex = 0; blockIndex < ChildBlocks.Count; blockIndex++)
+                {
+                    var (_, list) = ChildBlocks[blockIndex];
+
+                    for (int i = 0; i < list.Count; i++)
+                        list[i].Pos.X += move;
                 }
             }
         }

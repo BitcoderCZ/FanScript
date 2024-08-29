@@ -7,7 +7,7 @@
         {
         }
         internal ParameterSymbol(string name, Modifiers modifiers, TypeSymbol type)
-            : base(name, Modifiers.Readonly | modifiers, type)
+            : base(name, modifiers, type)
         {
             Initialize(null);
         }

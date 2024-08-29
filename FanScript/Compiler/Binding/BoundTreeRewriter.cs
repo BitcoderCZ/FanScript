@@ -328,7 +328,7 @@ namespace FanScript.Compiler.Binding
             if (builder is null)
                 return node;
 
-            return new BoundArraySegmentExpression(node.Syntax, node.Type, builder.ToImmutable());
+            return new BoundArraySegmentExpression(node.Syntax, node.ElementType, builder.ToImmutable());
         }
 
         protected virtual BoundArgumentClause RewriteArgumentClause(BoundArgumentClause node)

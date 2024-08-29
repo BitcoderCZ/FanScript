@@ -43,7 +43,10 @@ namespace FanScript.Compiler.Binding
         {
             if (variables.ContainsKey(variable.Name)) return true;
 
-            return Parent?.VariablelExists(variable) ?? false;
+            if (variable is GlobalVariableSymbol)
+                return Parent?.VariablelExists(variable) ?? false;
+            else
+                return false;
         }
 
         private bool FunctionExists(FunctionSymbol function)
@@ -62,12 +65,12 @@ namespace FanScript.Compiler.Binding
             return Parent?.FunctionExists(function) ?? false;
         }
 
-        public Symbol? TryLookupVariable(string name)
+        public Symbol? TryLookupVariable(string name, bool onlyGlobal = false)
         {
-            if (variables.TryGetValue(name, out var variable))
+            if (variables.TryGetValue(name, out var variable) && (!onlyGlobal || variable is GlobalVariableSymbol))
                 return variable;
 
-            return Parent?.TryLookupVariable(name);
+            return Parent?.TryLookupVariable(name, true);
         }
 
         public FunctionSymbol? TryLookupFunction(string name, IEnumerable<TypeSymbol> arguments, bool method)

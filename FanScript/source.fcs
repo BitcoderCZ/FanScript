@@ -1,30 +1,26 @@
-object o
+on Play
+{
+    global array<float> arr = [46, -4, 156]
 
-o.addForce(vec3(0, 0, 10), null, vec3(20, 0, 0))
+    avrg(3, out float avrg)
 
-o.getVelocity(out vec3 velocity, out vec3 spin)
-inspect(velocity)
+    inspect(avrg)
 
-o.setVelocity(vec3(0, 0, 0), null)
+    arr = [145, 12, 1654, -145, 144, 12, -785]
 
-o.setLocked(null, vec3(0, 1, 0))
+    avrg(7, out avrg)
 
-o.setMass(10)
+    inspect(avrg)
+}
 
-o.setFriction(0.7)
+func avrg(float arrLen, out float avrgRes)
+{
+    float total = 0
 
-o.setBounciness(0.4)
+    on Loop(0, arrLen, out inline float index)
+    {
+        total += arr.get(index)
+    }
 
-setGravity(vec3(0, -5, 0))
-
-o.addConstraint(null, vec3(10, 5, 0), out constr con)
-
-inline vec3 v1 = vec3(2, 2, 2)
-inline vec3 v2 = vec3(10, 10, 10)
-
-con.linearLimits(v1, v2)
-con.angularLimits(v1, v2)
-con.linearSpring(v1, v2)
-con.angularSpring(v1, v2)
-con.linearMotor(v1, v2)
-con.angularMotor(v1, v2)
+    avrgRes = total / arrLen
+}

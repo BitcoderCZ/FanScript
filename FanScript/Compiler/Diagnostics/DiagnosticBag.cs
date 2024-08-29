@@ -84,10 +84,10 @@ namespace FanScript.Compiler.Diagnostics
             => ReportError(location, $"{type} '{name}' requires {expectedCount} arguments but was given {actualCount}.");
 
         public void ReportExpressionMustHaveValue(TextLocation location)
-            => ReportError(location, "Expression must have a Value.");
+            => ReportError(location, "Expression must have a value.");
 
         public void ReportAllPathsMustReturn(TextLocation location)
-            => ReportError(location, "Not all code paths return a Value.");
+            => ReportError(location, "Not all code paths return a value.");
 
         public void ReportInvalidExpressionStatement(TextLocation location)
             => ReportError(location, $"Only void call expressions can be used as a statement.");
@@ -190,6 +190,9 @@ namespace FanScript.Compiler.Diagnostics
 
         public void ReportMissingReturnExpression(TextLocation location, TypeSymbol returnType)
             => ReportError(location, $"An expression of type '{returnType}' is expected.");
+
+        public void ReportFeatureNotImplemented(TextLocation location, string feature)
+            => ReportError(location, $"Feature '{feature}' has not been implemented yet.");
 
         public void ReportUnreachableCode(TextLocation location)
           => ReportWarning(location, $"Unreachable code detected.");

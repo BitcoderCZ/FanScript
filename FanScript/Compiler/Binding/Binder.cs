@@ -110,14 +110,29 @@ namespace FanScript.Compiler.Binding
             ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
             diagnostics.AddRange(scopeDiagnostics);
 
+            int varDistinguisher = 0;
+
             foreach (FunctionSymbol function in globalScope.Functions)
             {
                 Binder binder = new Binder(isScript, parentScope, function);
+
                 BoundStatement body = binder.BindStatement(function.Declaration!.Body);
+
                 BoundBlockStatement loweredBody = Lowerer.Lower(function, body);
 
                 if (function.Type != TypeSymbol.Void && !ControlFlowGraph.AllPathsReturn(loweredBody))
                     binder._diagnostics.ReportAllPathsMustReturn(function.Declaration.Identifier.Location);
+
+                if (function != globalScope.ScriptFunction)
+                {
+                    ImmutableArray<VariableSymbol> vars = binder._scope.GetDeclaredVariables();
+
+                    foreach (var @var in vars)
+                        @var.MakeUnique(varDistinguisher);
+
+                    if (vars.Length > 0)
+                        varDistinguisher++;
+                }
 
                 functionBodies.Add(function, loweredBody);
 
@@ -159,15 +174,20 @@ namespace FanScript.Compiler.Binding
 
             foreach (ParameterSyntax parameterSyntax in syntax.Parameters)
             {
+                Modifiers modifiers = BindModifiers(parameterSyntax.Modifiers, ModifierTarget.Argument);
+                TypeSymbol parameterType = BindTypeClause(parameterSyntax.TypeClause);
                 string parameterName = parameterSyntax.Identifier.Text;
-                TypeSymbol? parameterType = BindTypeClause(parameterSyntax.Type);
+
                 if (!seenParameterNames.Add(parameterName))
                     _diagnostics.ReportParameterAlreadyDeclared(parameterSyntax.Location, parameterName);
                 else
-                    parameters.Add(new ParameterSymbol(parameterName, parameterType));
+                    parameters.Add(new ParameterSymbol(parameterName, modifiers, parameterType));
             }
 
-            TypeSymbol type = BindTypeClause(syntax.TypeClause) ?? TypeSymbol.Void;
+            TypeSymbol type = syntax.TypeClause is null ? TypeSymbol.Void : BindTypeClause(syntax.TypeClause);
+
+            if (type != TypeSymbol.Void)
+                _diagnostics.ReportFeatureNotImplemented(syntax.TypeClause?.Location ?? TextLocation.None, "Non void functions");
 
             FunctionSymbol function = new FunctionSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
             if (syntax.Identifier.Text is not null &&
@@ -1065,7 +1085,7 @@ namespace FanScript.Compiler.Binding
                 BoundExpression argument = boundArguments[i];
                 ParameterSymbol parameter = parameters[i];
 
-                Modifiers modifiers = BindModifiers(syntax.Arguments[i].Modifiers, ModifierTarget.Parameter, item =>
+                Modifiers modifiers = BindModifiers(syntax.Arguments[i].Modifiers, ModifierTarget.Argument, item =>
                 {
                     var (modifier, token) = item;
 

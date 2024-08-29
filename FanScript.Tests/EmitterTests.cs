@@ -134,26 +134,26 @@ namespace FanScript.Tests
             AssertDiagnostics(text, diagnostics);
         }
 
-        //[Fact]
-        //public void Emitter_FunctionParameters_NoInfiniteLoop()
-        //{
-        //    var text = @"
-        //        function hi(name: string[[[=]]][)]
-        //        {
-        //            print(""Hi "" + name + ""!"" )
-        //        }[]
-        //    ";
+        [Fact]
+        public void Emitter_FunctionParameters_NoInfiniteLoop()
+        {
+            var text = @"
+                func foo(float numb$[$[$[=]$]$]$$[)]$
+                {
+                    inspect(numb)
+                }$[]$
+            ";
 
-        //    var diagnostics = @"
-        //        Unexpected token <EqualsToken>, expected <CloseParenthesisToken>.
-        //        Unexpected token <EqualsToken>, expected <OpenBraceToken>.
-        //        Unexpected token <EqualsToken>, expected <IdentifierToken>.
-        //        Unexpected token <CloseParenthesisToken>, expected <IdentifierToken>.
-        //        Unexpected token <EndOfFileToken>, expected <CloseBraceToken>.
-        //    ";
+            var diagnostics = @"
+                Unexpected token <EqualsToken>, expected <CloseParenthesisToken>.
+                Unexpected token <EqualsToken>, expected <OpenBraceToken>.
+                Unexpected token <EqualsToken>, expected <IdentifierToken>.
+                Unexpected token <CloseParenthesisToken>, expected <IdentifierToken>.
+                Unexpected token <EndOfFileToken>, expected <CloseBraceToken>.
+            ";
 
-        //    AssertDiagnostics(text, diagnostics);
-        //}
+            AssertDiagnostics(text, diagnostics);
+        }
 
         //[Fact]
         //public void Emitter_FunctionReturn_Missing()
@@ -433,22 +433,22 @@ namespace FanScript.Tests
             AssertDiagnostics(text, diagnostics);
         }
 
-        //[Fact]
-        //public void Emitter_Void_Function_Should_Not_Return_Value()
-        //{
-        //    var text = @"
-        //        function test()
-        //        {
-        //            return [1]
-        //        }
-        //    ";
+        [Fact]
+        public void Emitter_Void_Function_Should_Not_Return_Value()
+        {
+            var text = @"
+                func test()
+                {
+                    return $[1]$
+                }
+            ";
 
-        //    var diagnostics = @"
-        //        Since the function 'test' does not return a value the 'return' keyword cannot be followed by an expression.
-        //    ";
+            var diagnostics = @"
+                Since the function 'test' does not return a value the 'return' keyword cannot be followed by an expression.
+            ";
 
-        //    AssertDiagnostics(text, diagnostics);
-        //}
+            AssertDiagnostics(text, diagnostics);
+        }
 
         //[Fact]
         //public void Emitter_Function_With_ReturnValue_Should_Not_Return_Void()
@@ -485,39 +485,39 @@ namespace FanScript.Tests
         //    AssertDiagnostics(text, diagnostics);
         //}
 
-        //[Fact]
-        //public void Emitter_Expression_Must_Have_Value()
-        //{
-        //    var text = @"
-        //        function test(n: int)
-        //        {
-        //            return
-        //        }
+        [Fact]
+        public void Emitter_Expression_Must_Have_Value()
+        {
+            var text = @"
+                func test(float n)
+                {
+                    return
+                }
 
-        //        let value = [test(100)]
-        //    ";
+                float value = $[test(100)]$
+            ";
 
-        //    var diagnostics = @"
-        //        Expression must have a value.
-        //    ";
+            var diagnostics = @"
+                Expression must have a value.
+            ";
 
-        //    AssertDiagnostics(text, diagnostics);
-        //}
+            AssertDiagnostics(text, diagnostics);
+        }
 
         //[Fact]
         //public void Emitter_IfStatement_Reports_NotReachableCode_Warning()
         //{
         //    var text = @"
-        //        function test()
+        //        func test()
         //        {
-        //            let x = 4 * 3
+        //            const float x = 4 * 3
         //            if x > 12
         //            {
-        //                [print](""x"")
+        //                $[inspect]$(x)
         //            }
         //            else
         //            {
-        //                print(""x"")
+        //                inspect(x)
         //            }
         //        }
         //    ";
@@ -556,11 +556,11 @@ namespace FanScript.Tests
         //public void Emitter_WhileStatement_Reports_NotReachableCode_Warning()
         //{
         //    var text = @"
-        //        function test()
+        //        func test()
         //        {
         //            while false
         //            {
-        //                [continue]
+        //                $[continue]$
         //            }
         //        }
         //    ";

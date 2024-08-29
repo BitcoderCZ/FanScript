@@ -13,7 +13,7 @@ namespace FanScript.Compiler.Emit
 
         private Func<object?, EmitStore> emitLiteralExpression;
 
-        private Func<VariableSymbol, TextLocation, EmitStore> emitGetVariable;
+        private Func<VariableSymbol, EmitStore> emitGetVariable;
         private Func<BoundExpression, Func<EmitStore>, EmitStore> emitSetExpression;
         private Func<VariableSymbol, Func<EmitStore>, EmitStore> emitSetVariable;
         private Func<BoundExpression, (EmitStore, EmitStore, EmitStore)> breakVector;
@@ -55,8 +55,8 @@ namespace FanScript.Compiler.Emit
         public EmitStore EmitLiteralExpression(object? value)
             => emitLiteralExpression(value);
 
-        public EmitStore EmitGetVariable(VariableSymbol variable, TextLocation location)
-            => emitGetVariable(variable, location);
+        public EmitStore EmitGetVariable(VariableSymbol variable)
+            => emitGetVariable(variable);
         /// <summary>
         /// Emits setting <paramref name="expression"/> to <paramref name="getValueStore"/>
         /// </summary>

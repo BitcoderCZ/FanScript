@@ -12,6 +12,7 @@ using FanScript.Compiler.Emit.CodeBuilders;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
 using MathUtils.Vectors;
+using System;
 using System.Collections.Immutable;
 using TextCopy;
 
@@ -21,7 +22,7 @@ namespace FanScript
     {
         static void Main(string[] args)
         {
-            SyntaxTree source = SyntaxTree.Load(@"C:\dev\VSProjects\FanScript.Core\FanScript\source.fcs");
+            SyntaxTree source = SyntaxTree.Load(@"E:\dev\VSProjects\FanScript.Core\FanScript\source.fcs");
 
             if (source.Diagnostics.Any())
             {
@@ -51,7 +52,8 @@ namespace FanScript
 
             Console.WriteLine();
 
-            compilation.EmitTree(Console.Out);
+            foreach (var func in compilation.Functions)
+                compilation.EmitTree(func, Console.Out);
 
 #if EDITOR_SCRIPT
             CodeBuilder builder = new EditorScriptCodeBuilder(new GroundBlockPlacer()

@@ -31,6 +31,9 @@ namespace FanScript.Compiler.Emit
         private Dictionary<VariableSymbol, BreakBlockCache> vectorBreakCache = new();
         private Dictionary<VariableSymbol, BreakBlockCache> rotationBreakCache = new();
 
+        private Dictionary<FunctionSymbol, EmitStore> functions = new();
+        private Dictionary<FunctionSymbol, List<EmitStore>> calls = new();
+
         public static ImmutableArray<Diagnostic> Emit(BoundProgram program, CodeBuilder builder)
         {
             if (program.Diagnostics.HasErrors())
@@ -52,13 +55,17 @@ namespace FanScript.Compiler.Emit
             vectorBreakCache.Clear();
             rotationBreakCache.Clear();
 
-            if (program.Functions.Count != 0)
+            foreach (var (func, body) in program.Functions)
+            {
                 using (builder.BlockPlacer.StatementBlock())
                 {
-                    emitStatement(program.Functions.First().Value);
+                    functions.Add(func, emitStatement(body));
 
                     processLabelsAndGotos();
                 }
+            }
+
+            processCalls();
 
             return diagnostics.ToImmutableArray();
         }
@@ -96,6 +103,21 @@ namespace FanScript.Compiler.Emit
                     return false;
                 }
             }
+        }
+
+        private void processCalls()
+        {
+            foreach (var (func, callList) in calls)
+            {
+                if (!functions.TryGetValue(func, out var funcStore))
+                    throw new Exception($"Failed to get entry point for function '{func}'.");
+
+                for (var i = 0; i < callList.Count; i++)
+                    connect(callList[i], funcStore);
+            }
+
+            functions.Clear();
+            calls.Clear();
         }
 
         internal EmitStore emitStatement(BoundStatement statement)
@@ -304,7 +326,7 @@ namespace FanScript.Compiler.Emit
 
             using (builder.BlockPlacer.ExpressionBlock())
             {
-                EmitStore store = emitGetVariable(statement.Variable, ((PostfixStatementSyntax)statement.Syntax).IdentifierToken.Location);
+                EmitStore store = emitGetVariable(statement.Variable);
 
                 connect(store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
             }
@@ -717,21 +739,77 @@ namespace FanScript.Compiler.Emit
         }
 
         private EmitStore emitVariableExpression(BoundVariableExpression expression)
-            => emitGetVariable(expression.Variable, expression.Syntax.Location);
+            => emitGetVariable(expression.Variable);
 
         private EmitStore emitCallExpression(BoundCallExpression expression)
         {
-            if (expression.Function is BuiltinFunctionSymbol builtinFunction)
+            FunctionSymbol func = expression.Function;
+
+            if (func is BuiltinFunctionSymbol builtinFunction)
                 return builtinFunction.Emit(expression, emitContext);
 
-            switch (expression.Function.Name)
+            EmitStore? firstStore = null;
+            EmitStore? lastStore = null;
+
+            for (int i = 0; i < func.Parameters.Length; i++)
             {
-                default:
-                    {
-                        diagnostics.ReportUndefinedFunction(expression.Syntax.Location, expression.Function.Name);
-                        return new NopEmitStore();
-                    }
+                var mods = func.Parameters[i].Modifiers;
+
+                if (mods.HasFlag(Modifiers.Out))
+                    continue;
+
+                EmitStore setStore = emitSetVariable(func.Parameters[i], expression.ArgumentClause.Arguments[i]);
+
+                if (setStore is not NopEmitStore)
+                {
+                    if (lastStore is not null)
+                        connect(lastStore, setStore);
+
+                    firstStore ??= setStore;
+                    lastStore = setStore;
+                }
             }
+
+            Block callBlock = builder.AddBlock(Blocks.Control.If);
+
+            using (builder.BlockPlacer.ExpressionBlock())
+            {
+                Block trueBlock = builder.AddBlock(Blocks.Values.True);
+                connect(BasicEmitStore.COut(trueBlock, trueBlock.Type.Terminals[0]), BasicEmitStore.CIn(callBlock, callBlock.Type.Terminals[3]));
+            }
+
+            calls.AddMultiValue(func, BasicEmitStore.COut(callBlock, callBlock.Type.Terminals[2]));
+
+            if (lastStore is not null)
+                connect(lastStore, BasicEmitStore.CIn(callBlock));
+
+            firstStore ??= BasicEmitStore.CIn(callBlock);
+            lastStore = BasicEmitStore.COut(callBlock);
+
+            for (int i = 0; i < func.Parameters.Length; i++)
+            {
+                var mods = func.Parameters[i].Modifiers;
+
+                if (!mods.HasFlag(Modifiers.Out))
+                    continue;
+
+
+                EmitStore setStore = emitSetExpression(expression.ArgumentClause.Arguments[i], () =>
+                {
+                    using (builder.BlockPlacer.ExpressionBlock())
+                        return emitGetVariable(func.Parameters[i]);
+                });
+
+                if (setStore is not NopEmitStore)
+                {
+                    if (lastStore is not null)
+                        connect(lastStore, setStore);
+
+                    lastStore = setStore;
+                }
+            }
+
+            return new MultiEmitStore(firstStore, lastStore);
         }
 
         internal void connect(EmitStore from, EmitStore to)
@@ -761,16 +839,10 @@ namespace FanScript.Compiler.Emit
         }
         private void connectToLabel(string labelName, EmitStore store)
         {
-            if (!gotosToConnect.TryGetValue(labelName, out var stores))
-            {
-                stores = new List<EmitStore>();
-                gotosToConnect.Add(labelName, stores);
-            }
-
-            stores.Add(store);
+            gotosToConnect.AddMultiValue(labelName, store);
         }
 
-        internal EmitStore emitGetVariable(VariableSymbol variable, TextLocation location)
+        internal EmitStore emitGetVariable(VariableSymbol variable)
         {
             switch (variable)
             {
@@ -778,7 +850,6 @@ namespace FanScript.Compiler.Emit
                     return property.Definition.EmitGet.Invoke(emitContext, property.Expression);
                 case NullVariableSymbol:
                     {
-                        diagnostics.ReportDiscardCannotBeUsed(location);
                         return new NopEmitStore();
                     }
                 default:
