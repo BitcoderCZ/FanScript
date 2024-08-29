@@ -111,11 +111,12 @@ namespace FanScript.Compiler.Emit
                 BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundSpecialBlockCondition condition => emitSpecialBlockStatement(condition.SBType, condition.ArgumentClause?.Arguments, conditionalGoto.Label),
                 BoundConditionalGotoStatement => emitConditionalGotoStatement((BoundConditionalGotoStatement)statement),
                 BoundLabelStatement => emitLabelStatement((BoundLabelStatement)statement),
+                BoundReturnStatement => new RollbackEmitStore(), // TODO: add proper method when non void methods are supported
                 BoundEmitterHint => emitHint((BoundEmitterHint)statement),
                 BoundExpressionStatement => emitExpression(((BoundExpressionStatement)statement).Expression),
                 BoundNopStatement => new NopEmitStore(),
 
-                _ => throw new Exception($"Unsuported statement '{statement}'."),
+                _ => throw new Exception($"Unknown statement '{statement}'."),
             };
 
             return store;
@@ -370,7 +371,7 @@ namespace FanScript.Compiler.Emit
                 BoundVariableExpression => emitVariableExpression((BoundVariableExpression)expression),
                 BoundCallExpression => emitCallExpression((BoundCallExpression)expression),
 
-                _ => throw new Exception($"Unsuported expression: '{expression.GetType()}'."),
+                _ => throw new Exception($"Unknown expression: '{expression.GetType()}'."),
             };
 
             return store;

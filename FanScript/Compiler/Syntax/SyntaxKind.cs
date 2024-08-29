@@ -50,6 +50,7 @@
         VariableDeclarationStatement,
         AssignmentStatement,
         PostfixStatement,
+        ReturnStatement,
 
         UnaryExpression,
         BinaryExpression,
@@ -99,6 +100,7 @@
         FunctionDeclaration,
 
         KeywordFunction,
+        KeywordReturn,
 
         ReadOnlyModifier,
         ConstantModifier,

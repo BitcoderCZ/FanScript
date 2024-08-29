@@ -182,6 +182,15 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportDiscardCannotBeUsed(TextLocation location)
             => ReportError(location, "_ cannot be used as a variable.");
 
+        public void ReportInvalidReturnWithValueInGlobalStatements(TextLocation location)
+            => ReportError(location, "The 'return' keyword cannot be followed by an expression in global statements.");
+
+        public void ReportInvalidReturnExpression(TextLocation location, string functionName)
+            => ReportError(location, $"Since the function '{functionName}' does not return a value the 'return' keyword cannot be followed by an expression.");
+
+        public void ReportMissingReturnExpression(TextLocation location, TypeSymbol returnType)
+            => ReportError(location, $"An expression of type '{returnType}' is expected.");
+
         public void ReportUnreachableCode(TextLocation location)
           => ReportWarning(location, $"Unreachable code detected.");
         public void ReportUnreachableCode(SyntaxNode node)

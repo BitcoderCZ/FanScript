@@ -278,8 +278,8 @@ namespace FanScript.Compiler.Binding
                     return BindBreakStatement((BreakStatementSyntax)syntax);
                 case SyntaxKind.ContinueStatement:
                     return BindContinueStatement((ContinueStatementSyntax)syntax);
-                //case SyntaxKind.ReturnStatement:
-                //    return BindReturnStatement((ReturnStatementSyntax)syntax);
+                case SyntaxKind.ReturnStatement:
+                    return BindReturnStatement((ReturnStatementSyntax)syntax);
                 case SyntaxKind.ExpressionStatement:
                     return BindExpressionStatement((ExpressionStatementSyntax)syntax);
                 default:
@@ -527,6 +527,37 @@ namespace FanScript.Compiler.Binding
 
             BoundLabel continueLabel = _loopStack.Peek().ContinueLabel;
             return new BoundGotoStatement(syntax, continueLabel);
+        }
+
+        private BoundStatement BindReturnStatement(ReturnStatementSyntax syntax)
+        {
+            var expression = syntax.Expression is null ? null : BindExpression(syntax.Expression);
+
+            if (_function is null)
+            {
+                if (expression is not null)
+                {
+                    // Main does not support return values.
+                    _diagnostics.ReportInvalidReturnWithValueInGlobalStatements(syntax.Expression!.Location);
+                }
+            }
+            else
+            {
+                if (_function.Type == TypeSymbol.Void)
+                {
+                    if (expression is not null)
+                        _diagnostics.ReportInvalidReturnExpression(syntax.Expression!.Location, _function.Name);
+                }
+                else
+                {
+                    if (expression is null)
+                        _diagnostics.ReportMissingReturnExpression(syntax.ReturnKeyword.Location, _function.Type);
+                    else
+                        expression = BindConversion(syntax.Expression!.Location, expression, _function.Type);
+                }
+            }
+
+            return new BoundReturnStatement(syntax, expression);
         }
 
         private TypeSymbol BindTypeClause(TypeClauseSyntax? syntax)

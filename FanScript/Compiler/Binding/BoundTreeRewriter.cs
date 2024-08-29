@@ -40,7 +40,7 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.ConditionalGotoStatement:
                     return RewriteConditionalGotoStatement((BoundConditionalGotoStatement)node);
                 case BoundNodeKind.ReturnStatement:
-                //    return RewriteReturnStatement((BoundReturnStatement)node);
+                    return RewriteReturnStatement((BoundReturnStatement)node);
                 case BoundNodeKind.EmitterHint:
                     return RewriteEmitterHint((BoundEmitterHint)node);
                 case BoundNodeKind.ExpressionStatement:
@@ -167,6 +167,15 @@ namespace FanScript.Compiler.Binding
                 return node;
 
             return new BoundConditionalGotoStatement(node.Syntax, node.Label, condition, node.JumpIfTrue);
+        }
+
+        protected virtual BoundStatement RewriteReturnStatement(BoundReturnStatement node)
+        {
+            BoundExpression? expression = node.Expression is null ? null : RewriteExpression(node.Expression);
+            if (expression == node.Expression)
+                return node;
+
+            return new BoundReturnStatement(node.Syntax, expression);
         }
 
         protected virtual BoundStatement RewriteEmitterHint(BoundEmitterHint node)

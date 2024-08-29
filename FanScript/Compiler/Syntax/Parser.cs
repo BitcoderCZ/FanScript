@@ -2,6 +2,7 @@
 using FanScript.Compiler.Lexing;
 using FanScript.Compiler.Text;
 using System.Collections.Immutable;
+using System.Linq.Expressions;
 
 namespace FanScript.Compiler.Syntax
 {
@@ -225,8 +226,8 @@ namespace FanScript.Compiler.Syntax
                     return ParseBreakStatement();
                 case SyntaxKind.KeywordContinue:
                     return ParseContinueStatement();
-                //case SyntaxKind.ReturnKeyword:
-                //    return ParseReturnStatement();
+                case SyntaxKind.KeywordReturn:
+                    return ParseReturnStatement();
                 default:
                     {
                         if (IsTypeClauseNow(out _))
@@ -374,16 +375,16 @@ namespace FanScript.Compiler.Syntax
             return new ContinueStatementSyntax(_syntaxTree, keyword);
         }
 
-        //private StatementSyntax ParseReturnStatement()
-        //{
-        //    var keyword = MatchToken(SyntaxKind.ReturnKeyword);
-        //    var keywordLine = _text.GetLineIndex(keyword.Span.Start);
-        //    var currentLine = _text.GetLineIndex(Current.Span.Start);
-        //    var isEof = Current.Kind == SyntaxKind.EndOfFileToken;
-        //    var sameLine = !isEof && keywordLine == currentLine;
-        //    var expression = sameLine ? ParseExpression() : null;
-        //    return new ReturnStatementSyntax(_syntaxTree, keyword, expression);
-        //}
+        private StatementSyntax ParseReturnStatement()
+        {
+            var keyword = MatchToken(SyntaxKind.KeywordReturn);
+            var keywordLine = _text.GetLineIndex(keyword.Span.Start);
+            var currentLine = _text.GetLineIndex(Current.Span.Start);
+            var isEof = Current.Kind == SyntaxKind.EndOfFileToken;
+            var sameLine = !isEof && keywordLine == currentLine;
+            var expression = sameLine ? ParseExpression() : null;
+            return new ReturnStatementSyntax(_syntaxTree, keyword, expression);
+        }
 
         private StatementSyntax ParseModifiers()
         {
@@ -400,21 +401,6 @@ namespace FanScript.Compiler.Syntax
             => new ExpressionStatementSyntax(_syntaxTree, ParseExpression());
 
         private ExpressionSyntax ParseExpression()
-        {
-            ExpressionSyntax expression = ParseExpressionInternal();
-
-            while (Current.Kind == SyntaxKind.DotToken)
-            {
-                SyntaxToken dotToken = MatchToken(SyntaxKind.DotToken);
-                ExpressionSyntax nameOrCall = ParseNameOrCallExpressions();
-
-                expression = new PropertyExpressionSyntax(_syntaxTree, expression, dotToken, nameOrCall);
-            }
-
-            return expression;
-        }
-
-        private ExpressionSyntax ParseExpressionInternal()
         {
             return ParseBinaryExpression();
         }
@@ -447,6 +433,20 @@ namespace FanScript.Compiler.Syntax
         }
 
         private ExpressionSyntax ParsePrimaryExpression()
+        {
+            ExpressionSyntax expression = ParsePrimaryExpressionInternal();
+
+            while (Current.Kind == SyntaxKind.DotToken)
+            {
+                SyntaxToken dotToken = MatchToken(SyntaxKind.DotToken);
+                ExpressionSyntax nameOrCall = ParseNameOrCallExpressions();
+                expression = new PropertyExpressionSyntax(_syntaxTree, expression, dotToken, nameOrCall);
+            }
+
+            return expression;
+        }
+
+        private ExpressionSyntax ParsePrimaryExpressionInternal()
         {
             switch (Current.Kind)
             {

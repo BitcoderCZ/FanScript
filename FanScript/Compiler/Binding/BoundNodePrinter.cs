@@ -65,9 +65,9 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.ConditionalGotoStatement:
                     WriteConditionalGotoStatement((BoundConditionalGotoStatement)node, writer);
                     break;
-                //case BoundNodeKind.ReturnStatement:
-                //    WriteReturnStatement((BoundReturnStatement)node, writer);
-                //    break;
+                case BoundNodeKind.ReturnStatement:
+                    WriteReturnStatement((BoundReturnStatement)node, writer);
+                    break;
                 case BoundNodeKind.EmitterHint:
                     WriteEmitterHint((BoundEmitterHint)node, writer);
                     break;
@@ -331,16 +331,16 @@ namespace FanScript.Compiler.Binding
             writer.WriteLine();
         }
 
-        //private static void WriteReturnStatement(BoundReturnStatement node, IndentedTextWriter writer)
-        //{
-        //    writer.WriteKeyword(SyntaxKind.ReturnKeyword);
-        //    if (node.Expression is not null)
-        //    {
-        //        writer.WriteSpace();
-        //        node.Expression.WriteTo(writer);
-        //    }
-        //    writer.WriteLine();
-        //}
+        private static void WriteReturnStatement(BoundReturnStatement node, IndentedTextWriter writer)
+        {
+            writer.WriteKeyword(SyntaxKind.KeywordReturn);
+            if (node.Expression is not null)
+            {
+                writer.WriteSpace();
+                node.Expression.WriteTo(writer);
+            }
+            writer.WriteLine();
+        }
 
         private static void WriteEmitterHint(BoundEmitterHint node, IndentedTextWriter writer)
         {

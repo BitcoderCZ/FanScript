@@ -94,6 +94,8 @@
                     return SyntaxKind.KeywordNull;
                 case "func":
                     return SyntaxKind.KeywordFunction;
+                case "return":
+                    return SyntaxKind.KeywordReturn;
                 case "readonly":
                     return SyntaxKind.ReadOnlyModifier;
                 case "const":
@@ -236,6 +238,8 @@
                     "null",
                 SyntaxKind.KeywordFunction =>
                     "func",
+                SyntaxKind.KeywordReturn =>
+                    "return",
                 SyntaxKind.ReadOnlyModifier =>
                     "readonly",
                 SyntaxKind.ConstantModifier =>

@@ -61,8 +61,7 @@ namespace FanScript.Compiler.Lowering
             if (function.Type == TypeSymbol.Void)
             {
                 if (builder.Count == 0 || CanFallThrough(builder.Last()))
-                    Console.WriteLine("Implement return");
-                //builder.Add(new BoundReturnStatement(statement.Syntax, null));
+                    builder.Add(new BoundReturnStatement(statement.Syntax, null));
             }
 
             return new BoundBlockStatement(statement.Syntax, builder.ToImmutable());
