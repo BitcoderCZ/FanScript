@@ -1,4 +1,5 @@
 ﻿#define EDITOR_SCRIPT
+//#define GROUND_PLACER
 
 #if !EDITOR_SCRIPT
 using FancadeLoaderLib;
@@ -52,19 +53,26 @@ namespace FanScript
 
             Console.WriteLine();
 
-            foreach (var func in compilation.Functions)
-                compilation.EmitTree(func, Console.Out);
+            //compilation.EmitTree(Console.Out);
+            //foreach (var func in compilation.Functions)
+            //    compilation.EmitTree(func, Console.Out);
+
+#if GROUND_PLACER
+            IBlockPlacer placer = new GroundBlockPlacer()
+            {
+                BlockXOffset = 3,
+            };
+#else
+            IBlockPlacer placer = new TowerBlockPlacer()
+            {
+                MaxHeight = 25,
+            };
+#endif
 
 #if EDITOR_SCRIPT
-            CodeBuilder builder = new EditorScriptCodeBuilder(new GroundBlockPlacer()
-            {
-                BlockXOffset = 3,
-            });
+            CodeBuilder builder = new EditorScriptCodeBuilder(placer);
 #else
-            CodeBuilder builder = new GameFileCodeBuilder(new GroundBlockPlacer()
-            {
-                BlockXOffset = 3,
-            });
+            CodeBuilder builder = new GameFileCodeBuilder(placer);
 #endif
             ImmutableArray<Diagnostic> diagnostics = compilation.Emit(builder);
             if (diagnostics.Any())

@@ -128,11 +128,13 @@ namespace FanScript.LangServer.Handlers
             if (compilation is null)
                 return;
 
+            var program = compilation.GetProgram();
+
             facade.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams()
             {
                 Uri = uri,
                 Version = document.ContentVersion,
-                Diagnostics = new Container<Diagnostic>(convert(compilation.GlobalScope.Diagnostics))
+                Diagnostics = new Container<Diagnostic>(convert(program.Diagnostics))
             });
 
             List<Diagnostic> convert(ImmutableArray<Compiler.Diagnostics.Diagnostic> diagnostics)

@@ -94,7 +94,7 @@ namespace FanScript.Compiler
             }
         }
 
-        private BoundProgram GetProgram()
+        internal BoundProgram GetProgram()
         {
             BoundProgram? previous = Previous is null ? null : Previous.GetProgram();
             return Binder.BindProgram(IsScript, previous, GlobalScope);

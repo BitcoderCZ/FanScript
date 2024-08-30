@@ -29,7 +29,7 @@ namespace FanScript.Compiler.Symbols
 
                 Debug.Assert(uniqueId.Length <= FancadeConstants.MaxVariableNameLength - 2);
 
-                return "^^" + Name.Substring(0, Math.Min(Name.Length, FancadeConstants.MaxVariableNameLength - (uniqueId.Length + 2))) + uniqueId;
+                return "^" + Name.Substring(0, Math.Min(Name.Length, FancadeConstants.MaxVariableNameLength - (uniqueId.Length + 2))) + uniqueId;
             }
         }
 

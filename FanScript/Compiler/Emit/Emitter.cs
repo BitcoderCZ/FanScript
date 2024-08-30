@@ -55,7 +55,7 @@ namespace FanScript.Compiler.Emit
             vectorBreakCache.Clear();
             rotationBreakCache.Clear();
 
-            foreach (var (func, body) in program.Functions)
+            foreach (var (func, body) in program.Functions.ToImmutableSortedDictionary())
             {
                 using (builder.BlockPlacer.StatementBlock())
                 {
@@ -599,7 +599,7 @@ namespace FanScript.Compiler.Emit
                         defOp = Blocks.Math.Subtract_Vector;
                     break;
                 case BoundBinaryOperatorKind.Multiplication:
-                    if (expression.Left.Type == TypeSymbol.Vector3 && expression.Right.Type == TypeSymbol.Vector3)
+                    if (expression.Left.Type == TypeSymbol.Vector3 && expression.Right.Type == TypeSymbol.Float)
                         defOp = Blocks.Math.Multiply_Vector;
                     else if (expression.Left.Type == TypeSymbol.Rotation && expression.Right.Type == TypeSymbol.Rotation)
                         defOp = Blocks.Math.Multiply_Rotation;
@@ -916,31 +916,23 @@ namespace FanScript.Compiler.Emit
                     return new NopEmitStore();
                 default:
                     {
-                        bool inline = variable.Modifiers.HasFlag(Modifiers.Inline);
-
-                        Block block = builder.AddBlock(
-                            inline ?
-                                Blocks.None :
-                                Blocks.Variables.Set_VariableByType(variable.Type.ToWireType())
-                        );
-
-                        if (!inline)
-                            builder.SetBlockValue(block, 0, variable.ResultName);
-
-                        if (!variable.Modifiers.HasFlag(Modifiers.Constant))
+                        if (variable.Modifiers.HasFlag(Modifiers.Constant))
+                            return new NopEmitStore();
+                        else if (variable.Modifiers.HasFlag(Modifiers.Inline))
                         {
-                            EmitStore _store = getValueStore();
-
-                            if (inline)
-                                inlineVariableInits[variable] = _store;
-                            else
-                                connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
+                            inlineVariableInits[variable] = getValueStore();
+                            return new NopEmitStore();
                         }
 
-                        if (inline)
-                            return new NopEmitStore();
-                        else
-                            return new BasicEmitStore(block);
+                        Block block = builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
+
+                        builder.SetBlockValue(block, 0, variable.ResultName);
+
+                        EmitStore _store = getValueStore();
+
+                        connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
+
+                        return new BasicEmitStore(block);
                     }
             }
         }

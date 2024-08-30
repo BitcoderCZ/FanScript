@@ -75,11 +75,9 @@ namespace FanScript.Compiler.Symbols
 
         private static void WriteParameterTo(ParameterSymbol symbol, TextWriter writer)
         {
-            // always readonly, so no reason to print it
-            Modifiers modifiers = symbol.Modifiers ^ Modifiers.Readonly;
-            if (modifiers != 0)
+            if (symbol.Modifiers != 0)
             {
-                writer.WriteModifiers(modifiers);
+                writer.WriteModifiers(symbol.Modifiers);
                 writer.WriteSpace();
             }
             symbol.Type.WriteTo(writer);

@@ -347,7 +347,7 @@ namespace FanScript.Compiler.Binding
             switch (node.Hint)
             {
                 case BoundEmitterHint.HintKind.StatementBlockEnd:
-                    writer.Indent--;
+                    //writer.Indent--;
                     break;
             }
 
@@ -357,7 +357,7 @@ namespace FanScript.Compiler.Binding
             switch (node.Hint)
             {
                 case BoundEmitterHint.HintKind.StatementBlockStart:
-                    writer.Indent++;
+                    //writer.Indent++;
                     break;
             }
         }

@@ -74,7 +74,7 @@ namespace FanScript.Compiler.Binding
 
         public static BoundUnaryExpression Not(SyntaxNode syntax, BoundExpression condition)
         {
-            Debug.Assert(condition.Type == TypeSymbol.Bool);
+            Debug.Assert(condition.Type == TypeSymbol.Bool || condition.Type == TypeSymbol.Error);
 
             BoundUnaryOperator? op = BoundUnaryOperator.Bind(SyntaxKind.BangToken, TypeSymbol.Bool);
             Debug.Assert(op is not null);

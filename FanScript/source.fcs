@@ -1,26 +1,170 @@
 on Play
 {
-    global array<float> arr = [46, -4, 156]
+    const global float SEGMENTS_PER_LEG = 3
+    const global float POINTS_PER_LEG = SEGMENTS_PER_LEG + 1
+    const global float NUMB_LEGS = 4
+    const global float TOTAL_POINTS = POINTS_PER_LEG * NUMB_LEGS
 
-    avrg(3, out float avrg)
+    const global float RELOCATE_LIMB_DIST = 1
+    const global float MOVEMENT_STOP_DIST = 0.1
 
-    inspect(avrg)
+    const global float LIMB_INTERPOLATION_SPEED = 0.25
+    const global float LIMB_INTERPOLATION_SPEED_INV = 1 - LIMB_INTERPOLATION_SPEED
 
-    arr = [145, 12, 1654, -145, 144, 12, -785]
+    object segmentPrefab = null
+    global object body = null
+    
+    global vec3 bodyPos = vec3(0, 1.75, 0)
 
-    avrg(7, out avrg)
+    global array<vec3> legOffs =
+    [
+        vec3(0.5, 0, 0.5),
+        vec3(0.5, 0, -0.5),
+        vec3(-0.5, 0, 0.2),
+        vec3(-0.5, 0, -0.5)
+    ]
+    global array<vec3> legDirs =
+    [
+        normalize(vec3( 1, 0,  1)),
+        normalize(vec3( 1, 0, -1)),
+        normalize(vec3(-1, 0,  1)),
+        normalize(vec3(-1, 0, -1))
+    ]
+    global array<object> legs
+    global array<bool> legMoving
+    global array<float> lengths
+    global array<vec3> points
+    global array<vec3> targetPoints
+    global array<vec3> legTargets
 
-    inspect(avrg)
+    // create segment objects
+    on Loop(null, NUMB_LEGS, out inline float li)
+    {
+        inline float sOff = li * SEGMENTS_PER_LEG
+        inline float pOff = li * POINTS_PER_LEG
+
+        on Loop(null, SEGMENTS_PER_LEG, out inline float _i)
+        {
+            inline float i = sOff + _i
+
+            segmentPrefab.clone(out inline object segment)
+            legs.set(i, segment)
+            lengths.set(_i + pOff, 1)
+        }
+    }
 }
 
-func avrg(float arrLen, out float avrgRes)
-{
-    float total = 0
+bodyPos += vec3(0, 0, 0.075)
 
-    on Loop(0, arrLen, out inline float index)
+update()
+
+func update()
+{
+    on Loop(0, NUMB_LEGS, out inline float i)
     {
-        total += arr.get(index)
+        vec3 rayPos = bodyPos + legDirs.get(i) * 2
+        raycast(rayPos, rayPos - vec3(0, 10, 0), out _, out vec3 hitPos, out _)
+
+        inline vec3 currentTarget = legTargets.get(i)
+        inline float dist = dist(hitPos, currentTarget)
+
+        if (dist >= RELOCATE_LIMB_DIST)
+            setPtrValue(currentTarget, hitPos)
+        else if (legMoving.get(i) && dist < MOVEMENT_STOP_DIST)
+            legMoving.set(i, false)
+
+        fabric(i, currentTarget)
     }
 
-    avrgRes = total / arrLen
+    body.setPos(bodyPos)
+
+    if (getCurrentFrame() == 0)
+    {
+        // set points to targetPoints
+        on Loop(null, TOTAL_POINTS, out i)
+        {
+            points.set(i, targetPoints.get(i))
+        }
+    }
+    else
+    {
+        // interpolate points to targetPoints
+        on Loop(null, TOTAL_POINTS, out i)
+        {
+            points.set(i, targetPoints.get(i) * LIMB_INTERPOLATION_SPEED + points.get(i) * LIMB_INTERPOLATION_SPEED_INV)
+        }
+    }
+
+    on Loop(null, NUMB_LEGS, out inline float li)
+    {
+        inline float sOff = li * SEGMENTS_PER_LEG
+        inline float pOff = li * POINTS_PER_LEG
+
+        on Loop(null, SEGMENTS_PER_LEG, out inline float _i)
+        {
+            i = _i + pOff
+            inline float nextI = i + 1
+
+            inline vec3 point = points.get(i)
+            inline vec3 nextPoint = points.get(nextI)
+
+            legs.get(_i + sOff).setPos((point + nextPoint) / 2, lookRotation(nextPoint - point, vec3(0, 1, 0)))
+        }
+    }
+}
+
+// based on https://youtu.be/Hc9x1e85L0w?si=SR8pjkoIZcdPxRKN
+func fabric(float limb, vec3 target)
+{
+    inline float off = limb * POINTS_PER_LEG
+
+    // set first point
+    targetPoints.set(off, bodyPos + legOffs.get(limb))
+
+    // "lock" rotation to only 1 axis
+    on Loop(1, SEGMENTS_PER_LEG, out inline float _i)
+    {
+        inline float i = _i + off
+        inline float prevIndex = i - 1
+
+        targetPoints.set(i, targetPoints.get(prevIndex) + vec3(0, 1, 0) * lengths.get(prevIndex))        
+    }
+
+    // 10 iterations
+    on Loop(0, 10, out _)
+    {
+        // set last point to target
+        targetPoints.set(off + SEGMENTS_PER_LEG, target)
+
+        // loop backwards
+        on Loop(POINTS_PER_LEG - 2, -1, out _i)
+        {
+            i = _i + off
+            inline float nextIndex = i + 1
+
+            inline vec3 point = targetPoints.get(i)
+            inline vec3 nextPoint = targetPoints.get(nextIndex)
+
+            vec3 move = normalize(point - nextPoint) * lengths.get(i)
+
+            targetPoints.set(i, nextPoint + move)
+        }
+
+        // set first point
+        targetPoints.set(off, bodyPos + legOffs.get(limb))
+
+        // loop forwards
+        on Loop(0, SEGMENTS_PER_LEG, out _i)
+        {  
+            i = _i + off
+            nextIndex = i + 1
+
+            point = targetPoints.get(i)
+            nextPoint = targetPoints.get(nextIndex)
+
+            move = normalize(nextPoint - point) * lengths.get(i)
+
+            targetPoints.set(nextIndex, point + move)
+        }
+    }
 }

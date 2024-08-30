@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace FanScript.Compiler.Symbols
 {
-    public class FunctionSymbol : Symbol
+    public class FunctionSymbol : Symbol, IComparable<FunctionSymbol>
     {
         internal FunctionSymbol(string name, ImmutableArray<ParameterSymbol> parameters, TypeSymbol type, FunctionDeclarationSyntax? declaration = null)
             : base(name)
@@ -44,6 +44,21 @@ namespace FanScript.Compiler.Symbols
                 SymbolPrinter.WriteFunctionTo(this, writer, onlyParams);
                 return writer.ToString();
             }
+        }
+
+        public int CompareTo(FunctionSymbol? other)
+        {
+            if (other is null) return 1;
+
+            int nameComp = string.Compare(Name, other.Name, StringComparison.InvariantCulture);
+
+            if (nameComp != 0)
+                return nameComp;
+
+            if (Parameters.Length != other.Parameters.Length)
+                return Parameters.Length.CompareTo(other.Parameters.Length);
+
+            return 0;
         }
 
         private int? hashCode;

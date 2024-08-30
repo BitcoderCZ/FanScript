@@ -85,7 +85,7 @@ namespace FanScript.Compiler.Binding
             FunctionSymbol? scriptFunction;
 
             if (globalStatements.Any())
-                scriptFunction = new FunctionSymbol("^eval", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Void, null);
+                scriptFunction = new FunctionSymbol("^^eval", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Void, null);
             else
                 scriptFunction = null;
 
@@ -813,7 +813,7 @@ namespace FanScript.Compiler.Binding
                             else if (param.Type!.IsGenericDefinition && arg.Type!.IsGenericInstance)
                                 _genericType = arg.Type.InnerType;
 
-                            if (_genericType is not null)
+                            if (_genericType is not null && _genericType != TypeSymbol.Null)
                             {
                                 if (genericType is null)
                                     genericType = _genericType;
@@ -1007,7 +1007,7 @@ namespace FanScript.Compiler.Binding
 
             if (declare && !_scope.TryDeclareVariable(variable))
                 _diagnostics.ReportSymbolAlreadyDeclared(identifier.Location, name);
-            else if (name.Length > FancadeConstants.MaxVariableNameLength)
+            else if (name.Length > FancadeConstants.MaxVariableNameLength && !modifiers.HasFlag(Modifiers.Constant))
                 _diagnostics.ReportVariableNameTooLong(identifier.Location, name);
 
             return variable;
