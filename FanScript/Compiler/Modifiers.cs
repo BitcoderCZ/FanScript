@@ -38,12 +38,12 @@ namespace FanScript.Compiler
         private static readonly FrozenDictionary<Modifiers, ModifierInfo> lookup = new Dictionary<Modifiers, ModifierInfo>()
         {
             [Modifiers.Readonly] = new ModifierInfo(SyntaxKind.ReadOnlyModifier, [ModifierTarget.Variable, ModifierTarget.Parameter]) { Conflicts = [Modifiers.Constant] },
-            [Modifiers.Constant] = new ModifierInfo(SyntaxKind.ConstantModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Readonly, Modifiers.Saved] },
-            [Modifiers.Ref] = new ModifierInfo(SyntaxKind.RefModifier, [ModifierTarget.Argument]) { Conflicts = [Modifiers.Out], MakesTargetReference = true },
+            [Modifiers.Constant] = new ModifierInfo(SyntaxKind.ConstantModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Readonly, Modifiers.Saved, Modifiers.Inline] },
+            [Modifiers.Ref] = new ModifierInfo(SyntaxKind.RefModifier, [ModifierTarget.Argument, ModifierTarget.Parameter]) { Conflicts = [Modifiers.Out], MakesTargetReference = true },
             [Modifiers.Out] = new ModifierInfo(SyntaxKind.OutModifier, [ModifierTarget.Argument, ModifierTarget.Parameter]) { Conflicts = [Modifiers.Ref], MakesTargetReference = true },
             [Modifiers.Global] = new ModifierInfo(SyntaxKind.GlobalModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Saved] },
             [Modifiers.Saved] = new ModifierInfo(SyntaxKind.SavedModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Global, Modifiers.Constant, Modifiers.Inline] },
-            [Modifiers.Inline] = new ModifierInfo(SyntaxKind.InlineModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Saved]/*, RequiredOneOf = [Modifiers.Readonly, Modifiers.Constant]*/ },
+            [Modifiers.Inline] = new ModifierInfo(SyntaxKind.InlineModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Constant, Modifiers.Saved]/*, RequiredOneOf = [Modifiers.Readonly, Modifiers.Constant]*/ },
         }.ToFrozenDictionary();
 
         public static Modifiers FromKind(SyntaxKind kind)

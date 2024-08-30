@@ -174,7 +174,7 @@ namespace FanScript.Compiler.Binding
 
             foreach (ParameterSyntax parameterSyntax in syntax.Parameters)
             {
-                Modifiers modifiers = BindModifiers(parameterSyntax.Modifiers, ModifierTarget.Argument);
+                Modifiers modifiers = BindModifiers(parameterSyntax.Modifiers, ModifierTarget.Parameter);
                 TypeSymbol parameterType = BindTypeClause(parameterSyntax.TypeClause);
                 string parameterName = parameterSyntax.Identifier.Text;
 
@@ -232,7 +232,7 @@ namespace FanScript.Compiler.Binding
 
             foreach (Constant con in Constants.GetAll())
             {
-                VariableSymbol variable = new LocalVariableSymbol(con.Name, Modifiers.Constant, con.Type);
+                VariableSymbol variable = new GlobalVariableSymbol(con.Name, Modifiers.Constant | Modifiers.Global, con.Type);
                 variable.Initialize(new BoundConstant(con.Value));
                 if (!result.TryDeclareVariable(variable))
                     diagnostics.ReportFailedToDeclare(TextLocation.None, "Constant", variable.Name);

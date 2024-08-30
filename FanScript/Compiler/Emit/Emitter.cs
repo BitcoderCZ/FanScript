@@ -57,6 +57,8 @@ namespace FanScript.Compiler.Emit
             {
                 using (builder.BlockPlacer.StatementBlock())
                 {
+                    writeComment(func.Name);
+
                     functions.Add(func, emitStatement(body));
 
                     processLabelsAndGotos();
@@ -751,7 +753,7 @@ namespace FanScript.Compiler.Emit
 
             for (int i = 0; i < func.Parameters.Length; i++)
             {
-                var mods = func.Parameters[i].Modifiers;
+                Modifiers mods = func.Parameters[i].Modifiers;
 
                 if (mods.HasFlag(Modifiers.Out))
                     continue;
@@ -786,11 +788,10 @@ namespace FanScript.Compiler.Emit
 
             for (int i = 0; i < func.Parameters.Length; i++)
             {
-                var mods = func.Parameters[i].Modifiers;
+                Modifiers mods = func.Parameters[i].Modifiers;
 
-                if (!mods.HasFlag(Modifiers.Out))
+                if (!mods.HasFlag(Modifiers.Out) && !mods.HasFlag(Modifiers.Ref))
                     continue;
-
 
                 EmitStore setStore = emitSetExpression(expression.ArgumentClause.Arguments[i], () =>
                 {

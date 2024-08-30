@@ -52,9 +52,9 @@ namespace FanScript
 
             Console.WriteLine();
 
-            //compilation.EmitTree(Console.Out);
-            //foreach (var func in compilation.Functions)
-            //    compilation.EmitTree(func, Console.Out);
+            compilation.EmitTree(Console.Out);
+            foreach (var func in compilation.Functions)
+                compilation.EmitTree(func, Console.Out);
 
 #if GROUND_PLACER
             IBlockPlacer placer = new GroundBlockPlacer()
