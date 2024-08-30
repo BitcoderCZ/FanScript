@@ -43,9 +43,9 @@ namespace FanScript.Compiler.Symbols
         public static readonly ImmutableArray<TypeSymbol> BuiltInTypes = BuiltInGenericTypes.AddRange(BuiltInNonGenericTypes);
 
         private static ImmutableArray<TypeSymbol> allTypes;
-        public static ImmutableArray<TypeSymbol> AllTypes 
-            => allTypes.IsDefault ? 
-                (allTypes = typeof(TypeSymbol).GetFields(BindingFlags.Public | BindingFlags.Static).Where(field => field.FieldType == typeof(TypeSymbol)).Select(field => (TypeSymbol)field.GetValue(null)!).ToImmutableArray()) : 
+        public static ImmutableArray<TypeSymbol> AllTypes
+            => allTypes.IsDefault ?
+                (allTypes = typeof(TypeSymbol).GetFields(BindingFlags.Public | BindingFlags.Static).Where(field => field.FieldType == typeof(TypeSymbol)).Select(field => (TypeSymbol)field.GetValue(null)!).ToImmutableArray()) :
                 allTypes;
 
         private TypeSymbol(string name, bool isGenericDefinition = false)

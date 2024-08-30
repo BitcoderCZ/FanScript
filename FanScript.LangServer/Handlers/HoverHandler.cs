@@ -9,8 +9,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -55,7 +53,7 @@ namespace FanScript.LangServer.Handlers
                     {
                         if (name.BoundResult is BoundVariableExpression varEx)
                             return getHoverForVariable(varEx.Variable, name.Location);
-                        else if (name.Parent is PropertyExpressionSyntax propEx && 
+                        else if (name.Parent is PropertyExpressionSyntax propEx &&
                             (propEx.BoundResult as BoundVariableExpression)?.Variable is PropertySymbol prop)
                         {
                             if (name == propEx.Expression)

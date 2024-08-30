@@ -2,7 +2,6 @@
 using FanScript.Compiler.Lexing;
 using FanScript.Compiler.Text;
 using System.Collections.Immutable;
-using System.Linq.Expressions;
 
 namespace FanScript.Compiler.Syntax
 {

@@ -1,6 +1,5 @@
 ﻿using FanScript.FCInfo;
 using FanScript.Utils;
-using System.Runtime.CompilerServices;
 
 namespace FanScript.Compiler.Emit
 {

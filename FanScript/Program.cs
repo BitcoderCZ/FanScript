@@ -13,7 +13,6 @@ using FanScript.Compiler.Emit.CodeBuilders;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
 using MathUtils.Vectors;
-using System;
 using System.Collections.Immutable;
 using TextCopy;
 
