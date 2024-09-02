@@ -10,7 +10,7 @@ namespace FanScript.Compiler.Emit
         Vector3I Pos { get; }
 
         int TerminalIndex { get; }
-        Vector3I? SubPos { get; }
+        Vector3I? VoxelPos { get; }
     }
 
     internal sealed class NopConnectTarget : ConnectTarget
@@ -18,7 +18,7 @@ namespace FanScript.Compiler.Emit
         public Vector3I Pos => new Vector3I(-1, -1, -1);
 
         public int TerminalIndex => -1;
-        public Vector3I? SubPos => new Vector3I(-1, -1, -1);
+        public Vector3I? VoxelPos => new Vector3I(-1, -1, -1);
     }
 
     internal sealed class BlockConnectTarget : ConnectTarget
@@ -26,7 +26,7 @@ namespace FanScript.Compiler.Emit
         public Vector3I Pos => Block.Pos;
 
         public int TerminalIndex => Terminal.Index;
-        public Vector3I? SubPos => Terminal.Pos;
+        public Vector3I? VoxelPos => Terminal.Pos;
 
         public readonly Block Block;
         public readonly Terminal Terminal;
@@ -44,12 +44,12 @@ namespace FanScript.Compiler.Emit
 
         public int TerminalIndex { get; init; }
 
-        public Vector3I? SubPos { get; init; }
+        public Vector3I? VoxelPos { get; init; }
 
-        public AbsoluteConnectTarget(Vector3I _pos, Vector3I? _subPos = null)
+        public AbsoluteConnectTarget(Vector3I _pos, Vector3I? _voxelPos = null)
         {
             Pos = _pos;
-            SubPos = _subPos;
+            VoxelPos = _voxelPos;
         }
     }
 }

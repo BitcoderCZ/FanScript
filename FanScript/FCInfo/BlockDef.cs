@@ -14,6 +14,8 @@ namespace FanScript.FCInfo
         public readonly BlockType Type;
         public readonly Vector2I Size;
 
+        public bool IsGroup => Size != Vector2I.One;
+
         public Terminal Before => Type == BlockType.Active ? Terminals[Terminals.Length - 1] : throw new InvalidOperationException("Only active blocks have Before and After");
         public readonly ImmutableArray<Terminal> Terminals;
         public Terminal After => Type == BlockType.Active ? Terminals[0] : throw new InvalidOperationException("Only active blocks have Before and After");

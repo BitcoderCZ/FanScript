@@ -94,7 +94,7 @@ namespace FanScript
             Game game = (Game)builder.Build(new Vector3I(0, 0, 0));
 
             using (FileStream fs = File.OpenWrite("658B97B57E427478"))
-                game.Save(fs);
+                game.SaveCompressed(fs);
 #endif
 
             Console.WriteLine("Done");

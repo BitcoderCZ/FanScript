@@ -1,4 +1,5 @@
 ﻿using FancadeLoaderLib;
+using FancadeLoaderLib.Editing.Utils;
 using MathUtils.Vectors;
 
 /*
@@ -32,41 +33,54 @@ namespace FanScript.Compiler.Emit.CodeBuilders
         public override object Build(Vector3I startPos, params object[] args)
         {
             Game game = (args?.FirstOrDefault(arg => arg is Game) as Game) ?? new Game("My game");
-            int levelIndex = (args?.FirstOrDefault(arg => arg is int) as int?) ?? 0;
+            int prefabIndex = (args?.FirstOrDefault(arg => arg is int) as int?) ?? 0;
 
-            if (game.Levels.Count == 0)
-                game.Levels.Add(new Level("Level 1"));
+            if (!game.Prefabs.Any())
+                game.Prefabs.Add(Prefab.CreateLevel("Level 1"));
 
-            levelIndex = Math.Clamp(levelIndex, 0, game.Levels.Count - 1);
+            prefabIndex = Math.Clamp(prefabIndex, 0, game.Prefabs.Count - 1);
 
             PreBuild(startPos);
 
-            BlockList builtInBlocks;
-            using (SaveReader reader = new SaveReader("baseBlocks.fcbl")) // fcbl - Fancade block list
-                builtInBlocks = BlockList.Load(reader);
+            PrefabList builtInBlocks;
+            using (FcBinaryReader reader = new FcBinaryReader("baseBlocks.fcbl")) // fcbl - Fancade block list
+                builtInBlocks = PrefabList.Load(reader);
 
-            Level level = game.Levels[levelIndex];
+            Prefab prefab = game.Prefabs[prefabIndex];
 
+            Dictionary<ushort, PrefabGroup> groupCache = new Dictionary<ushort, PrefabGroup>();
+            
             for (int i = 0; i < blocks.Count; i++)
             {
                 FCInfo.Block block = blocks[i];
-                level.BlockIds.SetBlock(block.Pos, builtInBlocks.GetBlock(block.Type.Id));
+                if (block.Type.IsGroup)
+                {
+                    if (!groupCache.TryGetValue(block.Type.Id, out var group))
+                    {
+                        group = builtInBlocks.GetGroupAsGroup(block.Type.Id);
+                        groupCache.Add(block.Type.Id, group);
+                    }
+
+                    prefab.Blocks.SetGroup(block.Pos, group);
+                }
+                else
+                    prefab.Blocks.SetBlock(block.Pos, block.Type.Id);
             }
 
             for (int i = 0; i < values.Count; i++)
             {
                 ValueRecord set = values[i];
-                level.BlockValues.Add(new BlockValue()
+                prefab.Settings.Add(new PrefabSetting()
                 {
-                    ValueIndex = (byte)set.ValueIndex,
-                    Type = (byte)(set.Value switch
+                    Index = (byte)set.ValueIndex,
+                    Type = (set.Value switch
                     {
-                        byte => 1,
-                        ushort => 2,
-                        float => 4,
-                        Vector3F => 5,
-                        Rotation => 5,
-                        string => 6,
+                        byte => SettingType.Byte,
+                        ushort => SettingType.Ushort,
+                        float => SettingType.Float,
+                        Vector3F => SettingType.Vec3,
+                        Rotation => SettingType.Vec3,
+                        string => SettingType.String,
                         _ => throw new InvalidDataException($"Unsupported type of value: '{set.Value.GetType()}'."),
                     }),
                     Position = (Vector3US)set.Block.Pos,
@@ -77,12 +91,12 @@ namespace FanScript.Compiler.Emit.CodeBuilders
             for (int i = 0; i < connections.Count; i++)
             {
                 ConnectionRecord con = connections[i];
-                level.Connections.Add(new Connection()
+                prefab.Connections.Add(new Connection()
                 {
                     From = (Vector3US)con.From.Pos,
-                    FromConnector = (Vector3US)(con.From.SubPos ?? ChooseSubPos(con.From.Pos)),
+                    FromVoxel = (Vector3US)(con.From.VoxelPos ?? ChooseSubPos(con.From.Pos)),
                     To = (Vector3US)con.To.Pos,
-                    ToConnector = (Vector3US)(con.To.SubPos ?? ChooseSubPos(con.To.Pos)),
+                    ToVoxel = (Vector3US)(con.To.VoxelPos ?? ChooseSubPos(con.To.Pos)),
                 });
             }
 
