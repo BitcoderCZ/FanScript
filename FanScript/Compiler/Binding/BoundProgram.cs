@@ -9,17 +9,20 @@ namespace FanScript.Compiler.Binding
         public BoundProgram(BoundProgram? previous,
                             ImmutableArray<Diagnostic> diagnostics,
                             FunctionSymbol? scriptFunction,
-                            ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions)
+                            ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions,
+                            ImmutableDictionary<FunctionSymbol, ImmutableArray<VariableSymbol>> functionVariables)
         {
             Previous = previous;
             Diagnostics = diagnostics;
             ScriptFunction = scriptFunction;
             Functions = functions;
+            FunctionVariables = functionVariables;
         }
 
         public BoundProgram? Previous { get; }
         public ImmutableArray<Diagnostic> Diagnostics { get; }
         public FunctionSymbol? ScriptFunction { get; }
         public ImmutableDictionary<FunctionSymbol, BoundBlockStatement> Functions { get; }
+        public ImmutableDictionary<FunctionSymbol, ImmutableArray<VariableSymbol>> FunctionVariables { get; }
     }
 }

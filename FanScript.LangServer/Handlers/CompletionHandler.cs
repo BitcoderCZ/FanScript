@@ -2,6 +2,7 @@
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
+using FanScript.Compiler.Text;
 using FanScript.LangServer.Utils;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
@@ -156,11 +157,14 @@ namespace FanScript.LangServer.Handlers
             List<CompletionItem>? recomendationsList = null;
             bool inProp = false;
 
+            TextSpan? requestSpan = null;
+
             if (tree is null)
                 recomendations = CurrentRecomendations.All;
             else
             {
-                var node = tree.FindNode(request.Position.ToSpan(tree.Text) - 1);
+                requestSpan = request.Position.ToSpan(tree.Text) - 1;
+                var node = tree.FindNode(requestSpan.Value);
 
                 if (node is null)
                     recomendations = CurrentRecomendations.All;
@@ -191,8 +195,34 @@ namespace FanScript.LangServer.Handlers
             FunctionSymbol[]? methods = null;
             if (compilation is not null)
             {
+                FunctionSymbol? currentFunc = null;
+
+                if (requestSpan is not null)
+                {
+                    for (int i = 0; i < compilation.Functions.Length; i++)
+                    {
+                        var func = compilation.Functions[i];
+                        if (func.Declaration is not null && func.Declaration.Span.OverlapsWith(requestSpan.Value))
+                        {
+                            currentFunc = func;
+                            break;
+                        }
+                    }
+                }
+
+                var program = compilation.GetProgram();
+
                 if (recomendations.HasFlag(CurrentRecomendations.Variables))
-                    length += (variables = compilation.GetVariables().ToArray()).Length;
+                {
+                    if (currentFunc is null)
+                        length += (variables = compilation.GetVariables().ToArray()).Length;
+                    else
+                    {
+                        variables = program.FunctionVariables[currentFunc]
+                            .Concat(compilation.GetVariables().Where(var => var is GlobalVariableSymbol))
+                            .ToArray();
+                    }
+                }
                 if (recomendations.HasFlag(CurrentRecomendations.Functions))
                     length += (functions = compilation.GetFunctions().Where(func => !func.IsMethod).ToArray()).Length;
                 if (recomendations.HasFlag(CurrentRecomendations.Methods))

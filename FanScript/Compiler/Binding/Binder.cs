@@ -104,9 +104,10 @@ namespace FanScript.Compiler.Binding
             BoundScope parentScope = CreateParentScope(globalScope, scopeDiagnostics);
 
             if (globalScope.Diagnostics.HasErrors())
-                return new BoundProgram(previous, globalScope.Diagnostics, null, ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Empty);
+                return new BoundProgram(previous, globalScope.Diagnostics, null, ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Empty, ImmutableDictionary<FunctionSymbol, ImmutableArray<VariableSymbol>>.Empty);
 
             ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Builder functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
+            ImmutableDictionary<FunctionSymbol, ImmutableArray<VariableSymbol>>.Builder functionVariables = ImmutableDictionary.CreateBuilder<FunctionSymbol, ImmutableArray<VariableSymbol>>();
             ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
             diagnostics.AddRange(scopeDiagnostics);
 
@@ -135,6 +136,7 @@ namespace FanScript.Compiler.Binding
                 }
 
                 functionBodies.Add(function, loweredBody);
+                functionVariables.Add(function, binder._scope.GetDeclaredVariables());
 
                 diagnostics.AddRange(binder.Diagnostics);
             }
@@ -163,7 +165,8 @@ namespace FanScript.Compiler.Binding
             return new BoundProgram(previous,
                                     diagnostics.ToImmutable(),
                                     globalScope.ScriptFunction,
-                                    functionBodies.ToImmutable());
+                                    functionBodies.ToImmutable(),
+                                    functionVariables.ToImmutable());
         }
 
         private void BindFunctionDeclaration(FunctionDeclarationSyntax syntax)
