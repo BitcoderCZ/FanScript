@@ -51,7 +51,7 @@ namespace FanScript.Tests
             FancadeLoaderLib.Game game = (FancadeLoaderLib.Game)builder.Build(Vector3I.Zero);
 
             using (var stream = new FileStream("correct_terminals_output_check_manually", FileMode.Create, FileAccess.Write))
-                game.Save(stream);
+                game.SaveCompressed(stream);
 
             Block placeAndConnectAllTerminals(BlockDef def)
             {
