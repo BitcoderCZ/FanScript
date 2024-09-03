@@ -11,4 +11,17 @@
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FanScript\FanScript.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="FancadeLoaderLib">
+      <HintPath>..\FancadeLoaderLib.dll</HintPath>
+    </Reference>
+    <Reference Include="MathUtils">
+      <HintPath>..\MathUtils.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
 </Project>

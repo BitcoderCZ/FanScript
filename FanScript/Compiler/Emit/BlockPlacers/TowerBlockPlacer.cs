@@ -9,7 +9,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
     {
         public int CurrentCodeBlockBlocks => blocks.Count;
 
-        private int maxHeight = 20;
+        private int maxHeight = 25;
         public int MaxHeight
         {
             get => maxHeight;
