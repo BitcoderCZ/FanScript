@@ -204,6 +204,8 @@ namespace FanScript.Compiler.Syntax
                     return ParseContinueStatement();
                 case SyntaxKind.KeywordReturn:
                     return ParseReturnStatement();
+                case SyntaxKind.HashtagToken:
+                    return ParseBuildCommandStatement();
                 default:
                     {
                         if (IsTypeClauseNow(out _))
@@ -353,13 +355,20 @@ namespace FanScript.Compiler.Syntax
 
         private StatementSyntax ParseReturnStatement()
         {
-            var keyword = MatchToken(SyntaxKind.KeywordReturn);
-            var keywordLine = _text.GetLineIndex(keyword.Span.Start);
-            var currentLine = _text.GetLineIndex(Current.Span.Start);
-            var isEof = Current.Kind == SyntaxKind.EndOfFileToken;
-            var sameLine = !isEof && keywordLine == currentLine;
-            var expression = sameLine ? ParseExpression() : null;
+            SyntaxToken keyword = MatchToken(SyntaxKind.KeywordReturn);
+            int keywordLine = _text.GetLineIndex(keyword.Span.Start);
+            int currentLine = _text.GetLineIndex(Current.Span.Start);
+            bool isEof = Current.Kind == SyntaxKind.EndOfFileToken;
+            bool sameLine = !isEof && keywordLine == currentLine;
+            ExpressionSyntax? expression = sameLine ? ParseExpression() : null;
             return new ReturnStatementSyntax(_syntaxTree, keyword, expression);
+        }
+
+        private StatementSyntax ParseBuildCommandStatement()
+        {
+            SyntaxToken hashtagToken = MatchToken(SyntaxKind.HashtagToken);
+            SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
+            return new BuildCommandStatementSyntax(_syntaxTree, hashtagToken, identifierToken);
         }
 
         private StatementSyntax ParseVariableDeclarationStatementWithModifiers()

@@ -105,6 +105,14 @@ namespace FanScript.LangServer.Handlers
                 Kind = CompletionItemKind.Value,
             })
             .ToImmutableArray();
+        private static readonly ImmutableArray<CompletionItem> buildCommands =
+            Enum.GetNames<BuildCommand>()
+            .Select(name => new CompletionItem()
+            {
+                Label = name.ToLowerInvariant(),
+                Kind = CompletionItemKind.Keyword, // TODO: figure out what to use for this
+            })
+            .ToImmutableArray();
         #endregion
 
         private readonly ILanguageServerFacade facade;
@@ -133,6 +141,7 @@ namespace FanScript.LangServer.Handlers
             Functions = 1 << 6,
             Methods = 1 << 7,
             NewIdentifier = 1 << 8,
+            BuildCommand = 1 << 9,
 
             InExpression = Values | Variables | Functions | Methods,
 
@@ -189,6 +198,8 @@ namespace FanScript.LangServer.Handlers
                 length += specialBlockTypes.Length;
             if (recomendations.HasFlag(CurrentRecomendations.Values))
                 length += values.Length;
+            if (recomendations.HasFlag(CurrentRecomendations.BuildCommand))
+                length += buildCommands.Length;
 
             VariableSymbol[]? variables = null;
             FunctionSymbol[]? functions = null;
@@ -244,6 +255,8 @@ namespace FanScript.LangServer.Handlers
                 result.AddRange(specialBlockTypes);
             if (recomendations.HasFlag(CurrentRecomendations.Values))
                 result.AddRange(values);
+            if (recomendations.HasFlag(CurrentRecomendations.BuildCommand))
+                result.AddRange(buildCommands);
 
             if (variables is not null)
                 result.AddRange(variables
@@ -402,6 +415,8 @@ namespace FanScript.LangServer.Handlers
                             return CurrentRecomendations.SpecialBlockTypes;
                     }
                     break;
+                case BuildCommandStatementSyntax buildCommand:
+                    return CurrentRecomendations.BuildCommand;
                 case AssignmentStatementSyntax assignmentStatement when node == assignmentStatement.Expression:
                 case IfStatementSyntax ifStatement when node == ifStatement.Condition:
                 case WhileStatementSyntax whileStatement when node == whileStatement.Condition:

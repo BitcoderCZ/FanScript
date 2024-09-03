@@ -128,7 +128,7 @@ namespace FanScript.Cli
             {
                 case CodeBuilderEnum.EditorScript:
                     {
-                        string code = (string)builder.Build(new Vector3I(4, 0, 4));
+                        string code = (string)builder.Build(pos);
 
                         Console.WriteLine("Compiled EditorScrip:");
                         Console.WriteLine(code);
@@ -140,7 +140,7 @@ namespace FanScript.Cli
                     break;
                 case CodeBuilderEnum.GameFile:
                     {
-                        Game game = (Game)builder.Build(new Vector3I(0, 0, 0));
+                        Game game = (Game)builder.Build(pos);
 
                         game.TrimPrefabs();
 

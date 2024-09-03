@@ -316,6 +316,10 @@ namespace FanScript.Compiler.Lexing
                     _kind = SyntaxKind.CommaToken;
                     _position++;
                     break;
+                case '#':
+                    _kind = SyntaxKind.HashtagToken;
+                    _position++;
+                    break;
                 case '&':
                     _position++;
                     if (Current != '&')

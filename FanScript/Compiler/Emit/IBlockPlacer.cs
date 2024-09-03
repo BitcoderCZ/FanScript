@@ -24,5 +24,8 @@ namespace FanScript.Compiler.Emit
             return new Disposable(ExitExpressionBlock);
         }
         void ExitExpressionBlock();
+
+        void EnterHighlight();
+        void ExitHightlight();
     }
 }

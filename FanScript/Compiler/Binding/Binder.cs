@@ -303,6 +303,8 @@ namespace FanScript.Compiler.Binding
                     return BindContinueStatement((ContinueStatementSyntax)syntax);
                 case SyntaxKind.ReturnStatement:
                     return BindReturnStatement((ReturnStatementSyntax)syntax);
+                case SyntaxKind.BuildCommandStatement:
+                    return BindBuildCommandStatement((BuildCommandStatementSyntax)syntax);
                 case SyntaxKind.ExpressionStatement:
                     return BindExpressionStatement((ExpressionStatementSyntax)syntax);
                 default:
@@ -581,6 +583,33 @@ namespace FanScript.Compiler.Binding
             }
 
             return new BoundReturnStatement(syntax, expression);
+        }
+
+        private BoundStatement BindBuildCommandStatement(BuildCommandStatementSyntax syntax)
+        {
+            BuildCommand? command = BuildCommandE.Parse(syntax.Identifier.Text);
+
+            if (command is null)
+            {
+                _diagnostics.ReportUnknownBuildCommand(syntax.Identifier.Location, syntax.Identifier.Text);
+                return BindErrorStatement(syntax);
+            }
+
+            BoundEmitterHint.HintKind kind;
+
+            switch (command)
+            {
+                case BuildCommand.Highlight:
+                    kind = BoundEmitterHint.HintKind.HighlightStart;
+                    break;
+                case BuildCommand.EndHighlight:
+                    kind = BoundEmitterHint.HintKind.HighlightEnd;
+                    break;
+                default:
+                    throw new Exception($"Unknown {nameof(BuildCommand)} '{command}'.");
+            }
+
+            return new BoundEmitterHint(syntax, kind);
         }
 
         private TypeSymbol BindTypeClause(TypeClauseSyntax? syntax)

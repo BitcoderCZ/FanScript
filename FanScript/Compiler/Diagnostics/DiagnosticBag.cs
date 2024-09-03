@@ -194,6 +194,9 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportFeatureNotImplemented(TextLocation location, string feature)
             => ReportError(location, $"Feature '{feature}' has not been implemented yet.");
 
+        public void ReportUnknownBuildCommand(TextLocation location, string text)
+            => ReportError(location, $"Unknown build command '{text}'.");
+
         public void ReportUnreachableCode(TextLocation location)
           => ReportWarning(location, $"Unreachable code detected.");
         public void ReportUnreachableCode(SyntaxNode node)

@@ -22,16 +22,29 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         public Move NextTowerMove { get; set; } = Move.X;
         public bool SquarePlacement { get; set; } = true;
 
+        private int highlightX = 0;
         private Vector3I pos = Vector3I.Zero;
 
-        private int statementDepth;
+        private bool inHighlight = false;
+        private int statementDepth = 0;
 
         private List<Block> blocks = new List<Block>(256);
 
         public Block Place(BlockDef blockDef)
         {
-            Block block = new Block(pos, blockDef);
-            blocks.Add(block);
+            Block block;
+
+            if (inHighlight)
+            {
+                block = new Block(new Vector3I(highlightX, 0, -4), blockDef);
+                highlightX += blockDef.Size.X + 1;
+            }
+            else
+            {
+                block = new Block(pos, blockDef);
+                blocks.Add(block);
+            }
+
             return block;
         }
 
@@ -99,6 +112,19 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         }
         public void ExitExpressionBlock()
         {
+        }
+
+        public void EnterHighlight()
+        {
+            inHighlight = true;
+        }
+
+        public void ExitHightlight()
+        {
+            if (inHighlight)
+                highlightX += 2;
+
+            inHighlight = false;
         }
 
         public enum Move

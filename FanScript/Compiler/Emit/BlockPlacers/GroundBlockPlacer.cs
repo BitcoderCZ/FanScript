@@ -26,11 +26,13 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             }
         }
 
+        protected bool inHighlight = false;
         protected readonly Stack<StatementBlock> statements = new();
         protected readonly Stack<ExpressionBlock> expressions = new();
 
         private readonly Dictionary<int, PositionStack> availableLayerInfo = new();
 
+        protected int highlightX = 0;
         protected int highestX = 0;
         protected int highestXTotal = 0;
         protected int localLowestX = int.MaxValue;
@@ -39,14 +41,23 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         {
             Block block;
 
-            if (expressions.Count != 0) block = expressions.Peek().PlaceBlock(blockDef);
-            else block = statements.Peek().PlaceBlock(blockDef);
+            if (inHighlight)
+            {
+                block = new Block(new Vector3I(highlightX, 0, -4), blockDef);
 
-            int x = block.Pos.X + blockDef.Size.X - 1;
-            if (x > highestX)
-                highestX = x;
-            if (x < localLowestX)
-                localLowestX = x;
+                highlightX += blockDef.Size.X + 1;
+            }
+            else
+            {
+                if (expressions.Count != 0) block = expressions.Peek().PlaceBlock(blockDef);
+                else block = statements.Peek().PlaceBlock(blockDef);
+
+                int x = block.Pos.X + blockDef.Size.X - 1;
+                if (x > highestX)
+                    highestX = x;
+                if (x < localLowestX)
+                    localLowestX = x;
+            }
 
             return block;
         }
@@ -100,6 +111,19 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             highestXTotal += functionXOffset;
 
             return new StatementBlock(this, new Vector3I(highestXTotal, 0, 0));
+        }
+
+        public void EnterHighlight()
+        {
+            inHighlight = true;
+        }
+
+        public void ExitHightlight()
+        {
+            if (inHighlight)
+                highlightX += 2;
+
+            inHighlight = false;
         }
 
         protected abstract class CodeBlock

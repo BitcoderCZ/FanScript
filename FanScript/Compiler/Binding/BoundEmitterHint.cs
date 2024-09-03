@@ -17,6 +17,8 @@ namespace FanScript.Compiler.Binding
         {
             StatementBlockStart,
             StatementBlockEnd,
+            HighlightStart,
+            HighlightEnd,
         }
     }
 }

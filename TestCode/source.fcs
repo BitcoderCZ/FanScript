@@ -71,7 +71,9 @@ on Play
 
 // move
 joystick(out vec3 joyDir, JOYSTICK_TYPE_XZ)
+#highlight
 joyDir *= MOVE_SPEED
+#endhighlight
 bodyPos += joyDir
 
 currentSpeed = dist(null, joyDir)

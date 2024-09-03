@@ -25,6 +25,7 @@
         ColonToken,
         SemicolonToken,
         CommaToken,
+        HashtagToken,
         DotToken,
         AmpersandAmpersandToken,
         PipePipeToken,
@@ -51,6 +52,7 @@
         AssignmentStatement,
         PostfixStatement,
         ReturnStatement,
+        BuildCommandStatement,
 
         UnaryExpression,
         BinaryExpression,

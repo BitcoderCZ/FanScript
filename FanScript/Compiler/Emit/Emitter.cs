@@ -375,6 +375,12 @@ namespace FanScript.Compiler.Emit
                 case BoundEmitterHint.HintKind.StatementBlockEnd:
                     builder.BlockPlacer.ExitStatementBlock();
                     break;
+                case BoundEmitterHint.HintKind.HighlightStart:
+                    builder.BlockPlacer.EnterHighlight();
+                    break;
+                case BoundEmitterHint.HintKind.HighlightEnd:
+                    builder.BlockPlacer.ExitHightlight();
+                    break;
                 default:
                     throw new InvalidDataException($"Unknown emitter hint: '{statement.Hint}'");
             }
