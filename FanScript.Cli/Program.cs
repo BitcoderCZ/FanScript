@@ -26,6 +26,12 @@ namespace FanScript.Cli
 
             [Option("placer", Default = BlockPlacerEnum.Tower, Required = false, HelpText = "Determines how blocks are placed, values: Tower (Places blocks in towers), Ground (Places blocks on ground, attempts to replicate how normal people place blocks)")]
             public BlockPlacerEnum Placer { get; set; }
+
+            [Option("showTree", Default = false, Required = false, HelpText = "If the syntax tree should be displayed")]
+            public bool ShowSyntaxTree { get; set; }
+
+            [Option("showCompiled", Default = false, Required = false, HelpText = "If the compiled code should be displayed")]
+            public bool ShowCompiledCode { get; set; }
         }
 #pragma warning restore CS8618 
 
@@ -44,7 +50,22 @@ namespace FanScript.Cli
 
             SyntaxTree tree = SyntaxTree.Load(opts.Src);
 
+            if (opts.ShowSyntaxTree)
+            {
+                Console.WriteLine(tree.Root);
+                Console.WriteLine();
+            }
+
             Compilation compilation = Compilation.CreateScript(null, tree);
+
+            if (opts.ShowCompiledCode)
+            {
+                compilation.EmitTree(Console.Out);
+                foreach (var func in compilation.Functions)
+                    compilation.EmitTree(func, Console.Out);
+
+                Console.WriteLine();
+            }
 
             IBlockPlacer blockPlacer;
             switch (opts.Placer)
@@ -88,6 +109,8 @@ namespace FanScript.Cli
                 case CodeBuilderEnum.EditorScript:
                     {
                         string code = (string)builder.Build(new Vector3I(4, 0, 4));
+
+                        Console.WriteLine("Compiled EditorScrip:");
                         Console.WriteLine(code);
 
                         ClipboardService.SetText(code);
