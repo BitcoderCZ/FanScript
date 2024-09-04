@@ -229,7 +229,7 @@ namespace FanScript.LangServer.Handlers
                         length += (variables = compilation.GetVariables().ToArray()).Length;
                     else
                     {
-                        variables = program.FunctionVariables[currentFunc]
+                        variables = program.FunctionVariables.GetValueOrDefault(currentFunc, ImmutableArray<VariableSymbol>.Empty)
                             .Concat(compilation.GetVariables().Where(var => var is GlobalVariableSymbol))
                             .ToArray();
                     }
