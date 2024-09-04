@@ -4,7 +4,6 @@ using FanScript.Compiler.Symbols;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
-using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -58,7 +57,7 @@ namespace FanScript.Compiler.Emit
 
             foreach (var (func, body) in this.program.Functions.ToImmutableSortedDictionary())
             {
-                if (func.Modifiers.HasFlag(Modifiers.Inline))
+                if (func.Modifiers.HasFlag(Modifiers.Inline) || (func != program.ScriptFunction && program.FunctionInfos.GetValueOrDefault(func, new FunctionInfo()).CallCount <= 1))
                     continue;
 
                 using (this.builder.BlockPlacer.StatementBlock())
@@ -749,7 +748,7 @@ namespace FanScript.Compiler.Emit
             if (expression.Function is BuiltinFunctionSymbol builtinFunction)
                 return builtinFunction.Emit(expression, emitContext);
 
-            if (expression.Function.Modifiers.HasFlag(Modifiers.Inline))
+            if (expression.Function.Modifiers.HasFlag(Modifiers.Inline) || program.FunctionInfos.GetValueOrDefault(expression.Function, new FunctionInfo()).CallCount <= 1)
                 return emitInlineCall(expression);
             else
                 return emitNormalCall(expression);
@@ -843,7 +842,7 @@ namespace FanScript.Compiler.Emit
             EmitStore bodyStore = emitStatement(program.Functions[func]);
             List<EmitStore> beforeReturn = beforeReturnStack.Pop();
 
-            connector.Add(new MultiEmitStore(bodyStore, new BasicEmitStore(new NopConnectTarget(), 
+            connector.Add(new MultiEmitStore(bodyStore, new BasicEmitStore(new NopConnectTarget(),
                 beforeReturn.Aggregate(new List<ConnectTarget>(), (list, store) =>
                 {
                     list.AddRange(store.Out);

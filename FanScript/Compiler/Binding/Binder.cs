@@ -21,6 +21,7 @@ namespace FanScript.Compiler.Binding
 
         private Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)> loopStack = new Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)>();
         private int onStatementDepth = 0;
+        private Dictionary<FunctionSymbol, int> functionCallCount = new();
         private int labelCounter;
         private BoundScope scope;
 
@@ -104,10 +105,11 @@ namespace FanScript.Compiler.Binding
             BoundScope parentScope = CreateParentScope(globalScope, scopeDiagnostics);
 
             if (globalScope.Diagnostics.HasErrors())
-                return new BoundProgram(previous, globalScope.Diagnostics, null, ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Empty, ImmutableDictionary<FunctionSymbol, ImmutableArray<VariableSymbol>>.Empty);
+                return new BoundProgram(previous, globalScope.Diagnostics, null, ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Empty, ImmutableDictionary<FunctionSymbol, FunctionInfo>.Empty);
 
             ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Builder functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
-            ImmutableDictionary<FunctionSymbol, ImmutableArray<VariableSymbol>>.Builder functionVariables = ImmutableDictionary.CreateBuilder<FunctionSymbol, ImmutableArray<VariableSymbol>>();
+            Dictionary<FunctionSymbol, ImmutableArray<VariableSymbol>> functionLocals = new();
+            Dictionary<FunctionSymbol, int> functionCallCounts = new();
             ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
             diagnostics.AddRange(scopeDiagnostics);
 
@@ -136,7 +138,9 @@ namespace FanScript.Compiler.Binding
                 }
 
                 functionBodies.Add(function, loweredBody);
-                functionVariables.Add(function, binder.scope.GetDeclaredVariables());
+                functionLocals.Add(function, binder.scope.GetDeclaredVariables());
+                foreach (var (func, count) in binder.functionCallCount)
+                    functionCallCounts[func] = functionCallCounts.GetValueOrDefault(func, 0) + count;
 
                 diagnostics.AddRange(binder.Diagnostics);
             }
@@ -163,10 +167,13 @@ namespace FanScript.Compiler.Binding
             }
 
             return new BoundProgram(previous,
-                                    diagnostics.ToImmutable(),
-                                    globalScope.ScriptFunction,
-                                    functionBodies.ToImmutable(),
-                                    functionVariables.ToImmutable());
+                diagnostics.ToImmutable(),
+                globalScope.ScriptFunction,
+                functionBodies.ToImmutable(),
+                functionLocals.Select(item =>
+                {
+                    return new KeyValuePair<FunctionSymbol, FunctionInfo>(item.Key, new FunctionInfo(item.Value, functionCallCounts.GetValueOrDefault(item.Key, 0)));
+                }).ToImmutableDictionary());
         }
 
         private void BindFunctionDeclaration(FunctionDeclarationSyntax syntax)
@@ -893,6 +900,8 @@ namespace FanScript.Compiler.Binding
                 syntax.BoundResult = new BoundCallExpression(syntax, function, null!, fixType(function.Type)!, genericType);
                 return new BoundErrorExpression(syntax);
             }
+
+            functionCallCount[function] = functionCallCount.GetValueOrDefault(function, 0) + 1;
 
             var res = new BoundCallExpression(syntax, function, argumentClause, fixType(function.Type)!, genericType);
             syntax.BoundResult = res;

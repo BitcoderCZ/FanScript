@@ -10,18 +10,22 @@ namespace FanScript.Compiler.Lowering
         private int labelCount;
         private Dictionary<string, int> customLabelCount = new();
 
-        private Lowerer()
+        private string funcName;
+        private Lowerer(string funcName)
         {
+            this.funcName = funcName + "_";
         }
 
         private BoundLabel GenerateLabel()
         {
-            string name = $"Label{++labelCount}";
+            string name = funcName + $"Label{++labelCount}";
             return new BoundLabel(name);
         }
 
         private BoundLabel GenerateLabel(string name)
         {
+            name = funcName + name;
+
             int count;
             if (!customLabelCount.TryGetValue(name, out count))
                 count = 1;
@@ -34,7 +38,7 @@ namespace FanScript.Compiler.Lowering
 
         public static BoundBlockStatement Lower(FunctionSymbol function, BoundStatement statement)
         {
-            Lowerer lowerer = new Lowerer();
+            Lowerer lowerer = new Lowerer(function.Name);
             BoundStatement result = lowerer.RewriteStatement(statement);
             return RemoveDeadCode(Flatten(function, result));
         }

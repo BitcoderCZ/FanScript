@@ -1,7 +1,6 @@
 ﻿using CommandLine;
 using FancadeLoaderLib;
 using FanScript.Compiler;
-using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Emit;
 using FanScript.Compiler.Emit.BlockPlacers;
 using FanScript.Compiler.Emit.CodeBuilders;
