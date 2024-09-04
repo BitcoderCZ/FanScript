@@ -6,8 +6,6 @@ namespace FanScript.FCInfo
 {
     public static class Blocks
     {
-        public static readonly BlockDef None = new BlockDef("None", 0, BlockType.Pasive, new Vector2I(2, 2));
-
         public static class Game
         {
             public static readonly BlockDef Win = new BlockDef("Win", 252, BlockType.Active, new Vector2I(2, 2), new Terminal(WireType.Void, TerminalType.Out), new Terminal(WireType.Void, TerminalType.In));

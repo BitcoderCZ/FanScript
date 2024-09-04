@@ -182,6 +182,8 @@
                     ".",
                 SyntaxKind.CommaToken =>
                     ",",
+                SyntaxKind.HashtagToken =>
+                    "#",
                 SyntaxKind.BangToken =>
                     "!",
                 SyntaxKind.EqualsToken =>

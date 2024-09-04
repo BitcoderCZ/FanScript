@@ -49,7 +49,7 @@ namespace FanScript.Compiler.Emit.CodeBuilders
             Prefab prefab = game.Prefabs[prefabIndex];
 
             Dictionary<ushort, PrefabGroup> groupCache = new Dictionary<ushort, PrefabGroup>();
-            
+
             for (int i = 0; i < blocks.Count; i++)
             {
                 FCInfo.Block block = blocks[i];
