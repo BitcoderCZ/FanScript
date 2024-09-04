@@ -8,7 +8,7 @@
         }
 
         public abstract SymbolKind Kind { get; }
-        public string Name { get; }
+        public string Name { get; protected set; }
 
         public void WriteTo(TextWriter writer)
             => SymbolPrinter.WriteTo(this, writer);

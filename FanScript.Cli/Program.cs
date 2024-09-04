@@ -114,7 +114,7 @@ namespace FanScript.Cli
             {
                 Console.WriteLine("Warning(s)/error(s):");
                 Console.Out.WriteDiagnostics(diagnostics);
-                Console.ReadKey(true);
+
                 if (diagnostics.HasErrors())
                     return (int)ErrorCode.CompilationErrors;
             }

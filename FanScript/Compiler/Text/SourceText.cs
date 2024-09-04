@@ -8,6 +8,9 @@ namespace FanScript.Compiler.Text
 
         private SourceText(string text, string fileName)
         {
+            if (!string.IsNullOrEmpty(fileName))
+                fileName = Path.GetFullPath(fileName);
+
             this.text = text;
             FileName = fileName;
             Lines = ParseLines(this, text);

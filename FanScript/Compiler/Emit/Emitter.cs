@@ -4,7 +4,9 @@ using FanScript.Compiler.Symbols;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
+using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 namespace FanScript.Compiler.Emit
@@ -29,6 +31,7 @@ namespace FanScript.Compiler.Emit
         private Dictionary<VariableSymbol, BreakBlockCache> vectorBreakCache = new();
         private Dictionary<VariableSymbol, BreakBlockCache> rotationBreakCache = new();
 
+        private Stack<List<EmitStore>> beforeReturnStack = new();
         private Dictionary<FunctionSymbol, EmitStore> functions = new();
         private Dictionary<FunctionSymbol, List<EmitStore>> calls = new();
 
@@ -55,11 +58,16 @@ namespace FanScript.Compiler.Emit
 
             foreach (var (func, body) in this.program.Functions.ToImmutableSortedDictionary())
             {
+                if (func.Modifiers.HasFlag(Modifiers.Inline))
+                    continue;
+
                 using (this.builder.BlockPlacer.StatementBlock())
                 {
                     writeComment(func.Name);
 
+                    beforeReturnStack.Push(new List<EmitStore>());
                     functions.Add(func, emitStatement(body));
+                    beforeReturnStack.Pop();
 
                     processLabelsAndGotos();
                 }
@@ -133,7 +141,7 @@ namespace FanScript.Compiler.Emit
                 BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundSpecialBlockCondition condition => emitSpecialBlockStatement(condition.SBType, condition.ArgumentClause?.Arguments, conditionalGoto.Label),
                 BoundConditionalGotoStatement => emitConditionalGotoStatement((BoundConditionalGotoStatement)statement),
                 BoundLabelStatement => emitLabelStatement((BoundLabelStatement)statement),
-                BoundReturnStatement => new RollbackEmitStore(), // TODO: add proper method when non void methods are supported
+                BoundReturnStatement => new ReturnEmitStore(), // TODO: add proper method when non void methods are supported
                 BoundEmitterHint => emitHint((BoundEmitterHint)statement),
                 BoundExpressionStatement => emitExpression(((BoundExpressionStatement)statement).Expression),
                 BoundNopStatement => new NopEmitStore(),
@@ -151,8 +159,7 @@ namespace FanScript.Compiler.Emit
             else if (statement.Statements.Length == 1 && statement.Statements[0] is BoundBlockStatement inBlock)
                 return emitBlockStatement(inBlock);
 
-            MultiEmitStore resultStore = MultiEmitStore.Empty;
-            EmitStore? lastStore = new NopEmitStore();
+            EmitConnector connector = new EmitConnector(connect);
 
             bool newCodeBlock = builder.BlockPlacer.CurrentCodeBlockBlocks > 0;
             if (newCodeBlock)
@@ -161,24 +168,14 @@ namespace FanScript.Compiler.Emit
             for (int i = 0; i < statement.Statements.Length; i++)
             {
                 EmitStore statementStore = emitStatement(statement.Statements[i]);
-                if (resultStore.InStore is NopEmitStore && statementStore is not NopEmitStore)
-                    resultStore.InStore = statementStore;
-                else if (statementStore is not NopEmitStore)
-                    connect(lastStore, statementStore);
 
-                if (statementStore is not NopEmitStore)
-                    lastStore = statementStore;
+                connector.Add(statementStore);
             }
-
-            if (lastStore is NopEmitStore)
-                return new NopEmitStore();
-
-            resultStore.OutStore = lastStore;
 
             if (newCodeBlock)
                 builder.BlockPlacer.ExitStatementBlock();
 
-            return resultStore;
+            return connector.Store;
         }
 
         private EmitStore emitSpecialBlockStatement(SpecialBlockType type, ImmutableArray<BoundExpression>? arguments, BoundLabel onTrueLabel)
@@ -749,13 +746,19 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitCallExpression(BoundCallExpression expression)
         {
-            FunctionSymbol func = expression.Function;
-
-            if (func is BuiltinFunctionSymbol builtinFunction)
+            if (expression.Function is BuiltinFunctionSymbol builtinFunction)
                 return builtinFunction.Emit(expression, emitContext);
 
-            EmitStore? firstStore = null;
-            EmitStore? lastStore = null;
+            if (expression.Function.Modifiers.HasFlag(Modifiers.Inline))
+                return emitInlineCall(expression);
+            else
+                return emitNormalCall(expression);
+        }
+        private EmitStore emitNormalCall(BoundCallExpression expression)
+        {
+            FunctionSymbol func = expression.Function;
+
+            EmitConnector connector = new EmitConnector(connect);
 
             for (int i = 0; i < func.Parameters.Length; i++)
             {
@@ -766,14 +769,7 @@ namespace FanScript.Compiler.Emit
 
                 EmitStore setStore = emitSetVariable(func.Parameters[i], expression.ArgumentClause.Arguments[i]);
 
-                if (setStore is not NopEmitStore)
-                {
-                    if (lastStore is not null)
-                        connect(lastStore, setStore);
-
-                    firstStore ??= setStore;
-                    lastStore = setStore;
-                }
+                connector.Add(setStore);
             }
 
             Block callBlock = builder.AddBlock(Blocks.Control.If);
@@ -786,11 +782,7 @@ namespace FanScript.Compiler.Emit
 
             calls.AddMultiValue(func, BasicEmitStore.COut(callBlock, callBlock.Type.Terminals[2]));
 
-            if (lastStore is not null)
-                connect(lastStore, BasicEmitStore.CIn(callBlock));
-
-            firstStore ??= BasicEmitStore.CIn(callBlock);
-            lastStore = BasicEmitStore.COut(callBlock);
+            connector.Add(new BasicEmitStore(callBlock));
 
             for (int i = 0; i < func.Parameters.Length; i++)
             {
@@ -805,16 +797,63 @@ namespace FanScript.Compiler.Emit
                         return emitGetVariable(func.Parameters[i]);
                 });
 
-                if (setStore is not NopEmitStore)
-                {
-                    if (lastStore is not null)
-                        connect(lastStore, setStore);
-
-                    lastStore = setStore;
-                }
+                connector.Add(setStore);
             }
 
-            return new MultiEmitStore(firstStore, lastStore);
+            return connector.Store;
+        }
+        private EmitStore emitInlineCall(BoundCallExpression expression)
+        {
+            FunctionSymbol func = expression.Function;
+
+            Debug.Assert(func.Declaration is not null);
+
+            EmitConnector connector = new EmitConnector(connect);
+
+            VariableSymbol[] ogParams = new VariableSymbol[func.Parameters.Length];
+
+            for (int i = 0; i < func.Parameters.Length; i++)
+            {
+                ParameterSymbol param = func.Parameters[i];
+                BoundExpression argEx = expression.Arguments[i];
+
+                ogParams[i] = param.Clone();
+
+                if (argEx is BoundVariableExpression varEx && param.Modifiers.HasOneOfFlags(Modifiers.Readonly, Modifiers.Ref, Modifiers.Out))
+                {
+                    VariableSymbol arg = varEx.Variable;
+
+                    if (!param.Modifiers.HasFlag(Modifiers.Out) || arg.Name != "_")
+                    {
+                        param.Replicate(arg);
+
+                        continue;
+                    }
+                }
+
+                if (param.Modifiers.HasFlag(Modifiers.Out))
+                    continue;
+
+                EmitStore setStore = emitSetVariable(param, argEx);
+
+                connector.Add(setStore);
+            }
+
+            beforeReturnStack.Push(new List<EmitStore>());
+            EmitStore bodyStore = emitStatement(program.Functions[func]);
+            List<EmitStore> beforeReturn = beforeReturnStack.Pop();
+
+            connector.Add(new MultiEmitStore(bodyStore, new BasicEmitStore(new NopConnectTarget(), 
+                beforeReturn.Aggregate(new List<ConnectTarget>(), (list, store) =>
+                {
+                    list.AddRange(store.Out);
+                    return list;
+                }))));
+
+            for (int i = 0; i < func.Parameters.Length; i++)
+                func.Parameters[i].Replicate(ogParams[i]);
+
+            return connector.Store;
         }
 
         internal void connect(EmitStore from, EmitStore to)
@@ -825,7 +864,12 @@ namespace FanScript.Compiler.Emit
                 to = multi.InStore;
 
             if (from is RollbackEmitStore || to is RollbackEmitStore)
+            {
+                if (to is ReturnEmitStore && from is not RollbackEmitStore)
+                    beforeReturnStack.Peek().Add(from);
+
                 return;
+            }
 
             if (from is LabelEmitStore sameFrom && to is LabelEmitStore sameTo)
                 sameTargetLabels.Add(sameFrom.Name, sameTo.Name);

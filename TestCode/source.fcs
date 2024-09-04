@@ -1,17 +1,15 @@
-func foo(readonly float a, const float b)
+inline func foo(readonly float a, float b, out float res)
 {
-    inspect(a + b)
+    res = a + b
+    inspect(res)
 }
 
-float a = 3
-const float b = 5
+foo(7, 12, out _)
 
-foo(a, b)
+float aArg = 3
+float bArg = 5
 
-// f
+foo(aArg, bArg, out float resArg)
 
-/*
-   f
-*/
-
-shopSection("f")
+inspect(resArg)
+inspect(bArg)

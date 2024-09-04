@@ -85,7 +85,7 @@ namespace FanScript.Compiler.Binding
             FunctionSymbol? scriptFunction;
 
             if (globalStatements.Any())
-                scriptFunction = new FunctionSymbol("^^eval", ImmutableArray<ParameterSymbol>.Empty, TypeSymbol.Void, null);
+                scriptFunction = new FunctionSymbol(0, TypeSymbol.Void, "^^eval", ImmutableArray<ParameterSymbol>.Empty, null);
             else
                 scriptFunction = null;
 
@@ -177,27 +177,28 @@ namespace FanScript.Compiler.Binding
 
             foreach (ParameterSyntax parameterSyntax in syntax.Parameters)
             {
-                Modifiers modifiers = BindModifiers(parameterSyntax.Modifiers, ModifierTarget.Parameter);
-                TypeSymbol parameterType = BindTypeClause(parameterSyntax.TypeClause);
-                string parameterName = parameterSyntax.Identifier.Text;
+                Modifiers paramMods = BindModifiers(parameterSyntax.Modifiers, ModifierTarget.Parameter);
+                TypeSymbol paramType = BindTypeClause(parameterSyntax.TypeClause);
+                string paramName = parameterSyntax.Identifier.Text;
 
-                if (!seenParameterNames.Add(parameterName))
-                    diagnostics.ReportParameterAlreadyDeclared(parameterSyntax.Location, parameterName);
+                if (!seenParameterNames.Add(paramName))
+                    diagnostics.ReportParameterAlreadyDeclared(parameterSyntax.Location, paramName);
                 else
-                    parameters.Add(new ParameterSymbol(parameterName, modifiers, parameterType));
+                    parameters.Add(new ParameterSymbol(paramName, paramMods, paramType));
             }
+
+            Modifiers modifiers = BindModifiers(syntax.Modifiers, ModifierTarget.Function);
 
             TypeSymbol type = syntax.TypeClause is null ? TypeSymbol.Void : BindTypeClause(syntax.TypeClause);
 
             if (type != TypeSymbol.Void)
                 diagnostics.ReportFeatureNotImplemented(syntax.TypeClause?.Location ?? TextLocation.None, "Non void functions");
 
-            FunctionSymbol function = new FunctionSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
+            FunctionSymbol function = new FunctionSymbol(modifiers, type, syntax.Identifier.Text, parameters.ToImmutable(), syntax);
             if (syntax.Identifier.Text is not null &&
                 !scope.TryDeclareFunction(function))
                 diagnostics.ReportSymbolAlreadyDeclared(syntax.Identifier.Location, function.Name);
         }
-
 
         private static BoundScope CreateParentScope(BoundGlobalScope? previous, DiagnosticBag diagnostics)
         {

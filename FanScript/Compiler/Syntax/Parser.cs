@@ -131,7 +131,8 @@ namespace FanScript.Compiler.Syntax
 
         private MemberSyntax ParseMember()
         {
-            if (Current.Kind == SyntaxKind.KeywordFunction)
+            if (Current.Kind == SyntaxKind.KeywordFunction ||
+                (AreModifiersNow(out int nextToken) && Peek(nextToken).Kind == SyntaxKind.KeywordFunction))
                 return ParseFunctionDeclaration();
 
             return ParseGlobalStatement();
@@ -139,6 +140,7 @@ namespace FanScript.Compiler.Syntax
 
         private MemberSyntax ParseFunctionDeclaration()
         {
+            ImmutableArray<SyntaxToken> modifiers = ParseModifiers();
             SyntaxToken funcKeyword = MatchToken(SyntaxKind.KeywordFunction);
             TypeClauseSyntax? funcType = null;
             if (IsTypeClauseNow(out _))
@@ -148,7 +150,7 @@ namespace FanScript.Compiler.Syntax
             ImmutableArray<SyntaxNode> parameters = ParseSeparatedList(SyntaxKind.CloseParenthesisToken, parameters: true);
             SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
             BlockStatementSyntax body = ParseBlockStatement();
-            return new FunctionDeclarationSyntax(syntaxTree, funcKeyword, funcType, identifier, openParenthesisToken, new SeparatedSyntaxList<ParameterSyntax>(parameters), closeParenthesisToken, body);
+            return new FunctionDeclarationSyntax(syntaxTree, modifiers, funcKeyword, funcType, identifier, openParenthesisToken, new SeparatedSyntaxList<ParameterSyntax>(parameters), closeParenthesisToken, body);
         }
 
         private ParameterSyntax ParseParameter()
@@ -179,7 +181,7 @@ namespace FanScript.Compiler.Syntax
                     _ => false,
                 }:
                     return ParsePostfixStatement();
-                case SyntaxKind.IdentifierToken when IsAssignableClauseNext(out int nextTokenIndex) && Peek(nextTokenIndex).Kind switch
+                case SyntaxKind.IdentifierToken when IsAssignableClauseNow(out int nextTokenIndex) && Peek(nextTokenIndex).Kind switch
                 {
                     SyntaxKind.EqualsToken => true,
                     SyntaxKind.PlusEqualsToken => true,
@@ -520,7 +522,7 @@ namespace FanScript.Compiler.Syntax
             int offset = 0;
             if (Peek(offset++).Kind == SyntaxKind.IdentifierToken &&
                 (Peek(offset).Kind == SyntaxKind.OpenParenthesisToken ||
-                (Peek(offset++).Kind == SyntaxKind.LessToken && IsTypeClauseNext(ref offset)))) // not sure of a better way to do this, neccesary because of less than operator, make some tryParseType method that doesn't consume tokens?
+                (Peek(offset++).Kind == SyntaxKind.LessToken && IsTypeClauseNext(ref offset)))) // not sure of a better way to do this, neccesary because of less than operator
                 return ParseCallExpression();
 
             return ParseNameExpression();
@@ -668,7 +670,7 @@ namespace FanScript.Compiler.Syntax
                 return new TypeClauseSyntax(syntaxTree, typeToken);
         }
 
-        private bool IsAssignableClauseNext(out int nextTokenIndex)
+        private bool IsAssignableClauseNow(out int nextTokenIndex)
         {
             nextTokenIndex = -1;
 
@@ -701,6 +703,20 @@ namespace FanScript.Compiler.Syntax
             return new AssignableVariableClauseSyntax(syntaxTree, identifier0);
         }
 
+        private bool AreModifiersNow(out int nextTokenIndex)
+        {
+            nextTokenIndex = -1;
+
+            if (!Current.Kind.IsModifier())
+                return false;
+
+            nextTokenIndex = 1;
+
+            while (Peek(nextTokenIndex).Kind.IsModifier())
+                nextTokenIndex++;
+
+            return true;
+        }
         private ImmutableArray<SyntaxToken> ParseModifiers()
         {
             ImmutableArray<SyntaxToken>.Builder builder = ImmutableArray.CreateBuilder<SyntaxToken>();

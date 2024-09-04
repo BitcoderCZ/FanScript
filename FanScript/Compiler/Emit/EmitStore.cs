@@ -39,6 +39,11 @@ namespace FanScript.Compiler.Emit
         public ConnectTarget In { get; init; }
         public IEnumerable<ConnectTarget> Out { get; init; }
 
+        public BasicEmitStore(ConnectTarget @in, IEnumerable<ConnectTarget> @out)
+        {
+            In = @in;
+            Out = @out;
+        }
         public BasicEmitStore(Block block)
             : this(block, block.Type.Before, block, block.Type.After)
         {
@@ -133,10 +138,14 @@ namespace FanScript.Compiler.Emit
     /// <summary>
     /// Used by goto rollback, neccesary because special block blocks (play sensor, late update) execute after even if they execute the body, so the after would get executed twice
     /// </summary>
-    internal sealed class RollbackEmitStore : EmitStore
+    internal class RollbackEmitStore : EmitStore
     {
         public ConnectTarget In => new NopConnectTarget();
         public IEnumerable<ConnectTarget> Out => Enumerable.Empty<ConnectTarget>();
+    }
+
+    internal sealed class ReturnEmitStore : RollbackEmitStore
+    {
     }
 
     internal sealed class AbsoluteEmitStore : EmitStore

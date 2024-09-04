@@ -6,12 +6,12 @@ namespace FanScript.Compiler.Symbols
 {
     internal sealed class BuiltinFunctionSymbol : FunctionSymbol
     {
-        internal BuiltinFunctionSymbol(string name, ImmutableArray<ParameterSymbol> parameters, TypeSymbol type, Func<BoundCallExpression, EmitContext, EmitStore> emit) : base(name, parameters, type)
+        internal BuiltinFunctionSymbol(string name, ImmutableArray<ParameterSymbol> parameters, TypeSymbol type, Func<BoundCallExpression, EmitContext, EmitStore> emit) : base(0, type, name, parameters)
         {
             Emit = emit;
         }
 
-        internal BuiltinFunctionSymbol(string name, ImmutableArray<ParameterSymbol> parameters, TypeSymbol type, ImmutableArray<TypeSymbol>? allowedGenericTypes, Func<BoundCallExpression, EmitContext, EmitStore> emit) : base(name, parameters, type, allowedGenericTypes)
+        internal BuiltinFunctionSymbol(string name, ImmutableArray<ParameterSymbol> parameters, TypeSymbol type, ImmutableArray<TypeSymbol>? allowedGenericTypes, Func<BoundCallExpression, EmitContext, EmitStore> emit) : base(0, type, name, parameters, allowedGenericTypes)
         {
             Emit = emit;
         }

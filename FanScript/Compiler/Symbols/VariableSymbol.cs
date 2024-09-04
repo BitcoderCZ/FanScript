@@ -6,7 +6,7 @@ namespace FanScript.Compiler.Symbols
 {
     public abstract class VariableSymbol : Symbol
     {
-        private string? uniqueId;
+        internal string? UniqueId;
 
         internal VariableSymbol(string name, Modifiers modifiers, TypeSymbol type)
             : base(name)
@@ -15,21 +15,27 @@ namespace FanScript.Compiler.Symbols
             Type = type;
         }
 
-        public Modifiers Modifiers { get; }
+        public Modifiers Modifiers { get; private set; }
         public bool IsReadOnly => Modifiers.HasFlag(Modifiers.Readonly) || Modifiers.HasFlag(Modifiers.Constant);
-        public TypeSymbol Type { get; }
+        public TypeSymbol Type { get; private set; }
         internal BoundConstant? Constant { get; private set; }
 
         public virtual string ResultName
         {
             get
             {
-                if (uniqueId is null)
-                    return Name;
+                string preChar = string.Empty;
+                if (Modifiers.HasFlag(Modifiers.Saved))
+                    preChar = "!";
+                else if (Modifiers.HasFlag(Modifiers.Global))
+                    preChar = "$";
 
-                Debug.Assert(uniqueId.Length <= FancadeConstants.MaxVariableNameLength - 2);
+                if (UniqueId is null)
+                    return string.Concat(preChar, Name.AsSpan(0, Math.Min(Name.Length, FancadeConstants.MaxVariableNameLength - preChar.Length)));
 
-                return "^" + Name.Substring(0, Math.Min(Name.Length, FancadeConstants.MaxVariableNameLength - (uniqueId.Length + 2))) + uniqueId;
+                Debug.Assert(UniqueId.Length <= FancadeConstants.MaxVariableNameLength - 2 - preChar.Length);
+
+                return string.Concat(preChar, "^", Name.AsSpan(0, Math.Min(Name.Length, FancadeConstants.MaxVariableNameLength - (UniqueId.Length + 2 + preChar.Length))), UniqueId);
             }
         }
 
@@ -47,7 +53,20 @@ namespace FanScript.Compiler.Symbols
         }
 
         internal void MakeUnique(int id)
-            => uniqueId = id.ToString();
+            => UniqueId = id.ToString();
+        internal void Replicate(VariableSymbol other)
+        {
+            Name = other.Name;
+            UniqueId = other.UniqueId;
+            Modifiers = other.Modifiers;
+            Type = other.Type;
+        }
+
+        public VariableSymbol Clone()
+            => new LocalVariableSymbol(Name, Modifiers, Type)
+            {
+                UniqueId = UniqueId,
+            };
 
         public override int GetHashCode()
             => HashCode.Combine(ResultName, Modifiers, Type);

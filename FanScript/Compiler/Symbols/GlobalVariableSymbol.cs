@@ -11,7 +11,5 @@ namespace FanScript.Compiler.Symbols
         }
 
         public override SymbolKind Kind => SymbolKind.GlobalVariable;
-
-        public override string ResultName => (Modifiers.HasFlag(Modifiers.Saved) ? "!" : "$") + base.ResultName;
     }
 }

@@ -74,7 +74,8 @@ namespace FanScript.Compiler.Symbols
 
             Block? block = context.Builder.AddBlock(blockDef);
 
-            EmitStore lastStore = BasicEmitStore.COut(block);
+            EmitConnector connector = new EmitConnector(context.Connect);
+            connector.Add(new BasicEmitStore(block));
 
             if (retArgStart != 0)
                 using (context.Builder.BlockPlacer.ExpressionBlock())
@@ -91,14 +92,11 @@ namespace FanScript.Compiler.Symbols
 
                     EmitStore varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.Terminals[call.Arguments.Length - i]));
 
-                    context.Connect(lastStore, varStore);
-
-                    if (varStore is not NopEmitStore)
-                        lastStore = varStore;
+                    connector.Add(varStore);
                 }
             }
 
-            return new MultiEmitStore(BasicEmitStore.CIn(block), lastStore);
+            return connector.Store;
         }
         private static EmitStore emitXX(BoundCallExpression call, EmitContext context, int numbReturnArgs, BlockDef blockDef)
         {
@@ -109,8 +107,7 @@ namespace FanScript.Compiler.Symbols
 
             int retArgStart = call.Arguments.Length - numbReturnArgs;
 
-            EmitStore inStore = null!;
-            EmitStore lastStore = null!;
+            EmitConnector connector = new EmitConnector(context.Connect);
 
             Block? block = null;
 
@@ -122,7 +119,6 @@ namespace FanScript.Compiler.Symbols
 
                 if (block is null)
                 {
-                    block = null!;
                     varStore = context.EmitSetVariable(variable, () =>
                     {
                         using (context.Builder.BlockPlacer.ExpressionBlock())
@@ -141,22 +137,12 @@ namespace FanScript.Compiler.Symbols
                     });
                 }
                 else
-                {
                     varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.Terminals[(call.Arguments.Length - 1) - i]));
 
-                    context.Connect(lastStore, varStore);
-                }
-
-                if (varStore is not NopEmitStore)
-                {
-                    if (inStore is null)
-                        inStore = varStore;
-
-                    lastStore = varStore;
-                }
+                connector.Add(varStore);
             }
 
-            return new MultiEmitStore(inStore, lastStore);
+            return connector.Store;
         }
         private static EmitStore emitX1(BoundCallExpression call, EmitContext context, BlockDef blockDef)
         {

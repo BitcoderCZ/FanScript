@@ -6,28 +6,33 @@ namespace FanScript.Compiler.Symbols
 {
     public class FunctionSymbol : Symbol, IComparable<FunctionSymbol>
     {
-        internal FunctionSymbol(string name, ImmutableArray<ParameterSymbol> parameters, TypeSymbol type, FunctionDeclarationSyntax? declaration = null)
+        internal FunctionSymbol(Modifiers modifiers, TypeSymbol type, string name, ImmutableArray<ParameterSymbol> parameters, FunctionDeclarationSyntax? declaration = null)
             : base(name)
         {
-            Parameters = parameters;
+            Modifiers = modifiers;
             Type = type;
+            Parameters = parameters;
             Declaration = declaration;
         }
-        internal FunctionSymbol(string name, ImmutableArray<ParameterSymbol> parameters, TypeSymbol type, ImmutableArray<TypeSymbol>? allowedGenericTypes, FunctionDeclarationSyntax? declaration = null)
+        internal FunctionSymbol(Modifiers modifiers, TypeSymbol type, string name, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<TypeSymbol>? allowedGenericTypes, FunctionDeclarationSyntax? declaration = null)
             : base(name)
         {
-            Parameters = parameters;
+            Modifiers = modifiers;
             Type = type;
+            Parameters = parameters;
             Declaration = declaration;
+
             IsGeneric = true;
             AllowedGenericTypes = allowedGenericTypes;
         }
 
         public override SymbolKind Kind => SymbolKind.Function;
-        public FunctionDeclarationSyntax? Declaration { get; }
-        public bool IsMethod { get; init; }
-        public ImmutableArray<ParameterSymbol> Parameters { get; }
+        public Modifiers Modifiers { get; }
         public TypeSymbol Type { get; }
+        public ImmutableArray<ParameterSymbol> Parameters { get; }
+        public FunctionDeclarationSyntax? Declaration { get; }
+
+        public bool IsMethod { get; init; }
         [MemberNotNullWhen(true, nameof(AllowedGenericTypes))]
         public bool IsGeneric { get; }
         public ImmutableArray<TypeSymbol>? AllowedGenericTypes { get; }
