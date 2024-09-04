@@ -173,12 +173,25 @@ namespace FanScript.LangServer.Handlers
             else
             {
                 requestSpan = request.Position.ToSpan(tree.Text) - 1;
-                var node = tree.FindNode(requestSpan.Value);
+                var syntax = tree.FindSyntax(requestSpan.Value);
 
-                if (node is null)
-                    recomendations = CurrentRecomendations.All;
-                else
+                if (syntax is SyntaxNode node)
                     recomendations = getRecomendations(node, out recomendationsList, out inProp);
+                else if (syntax is SyntaxTrivia trivia)
+                {
+                    switch (trivia.Kind)
+                    {
+                        case SyntaxKind.SingleLineCommentTrivia:
+                        case SyntaxKind.MultiLineCommentTrivia:
+                            recomendations = 0;
+                            break;
+                        default:
+                            recomendations = CurrentRecomendations.All;
+                            break;
+                    }
+                }
+                else
+                    recomendations = CurrentRecomendations.All;
             }
 
             if (recomendations == 0 && recomendationsList is null)
@@ -358,6 +371,8 @@ namespace FanScript.LangServer.Handlers
 
             switch (parent)
             {
+                case LiteralExpressionSyntax:
+                    return 0;
                 case NameExpressionSyntax:
                     {
                         if (parent.Parent is not null)

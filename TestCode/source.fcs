@@ -7,3 +7,11 @@ float a = 3
 const float b = 5
 
 foo(a, b)
+
+// f
+
+/*
+   f
+*/
+
+shopSection("f")

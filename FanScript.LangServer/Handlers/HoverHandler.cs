@@ -42,9 +42,9 @@ namespace FanScript.LangServer.Handlers
             if (tree is null || compilation is null)
                 return null;
 
-            var node = tree.FindNode(request.Position.ToSpan(tree.Text));
+            var syntax = tree.FindSyntax(request.Position.ToSpan(tree.Text));
 
-            if (node is null)
+            if (syntax is not SyntaxNode node)
                 return null;
 
             switch (node.Parent)
