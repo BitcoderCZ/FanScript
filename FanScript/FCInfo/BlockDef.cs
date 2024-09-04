@@ -20,14 +20,14 @@ namespace FanScript.FCInfo
         public readonly ImmutableArray<Terminal> Terminals;
         public Terminal After => Type == BlockType.Active ? Terminals[0] : throw new InvalidOperationException("Only active blocks have Before and After");
 
-        public BlockDef(string _name, ushort _id, BlockType _type, Vector2I _size, params Terminal[] _terminals)
+        public BlockDef(string name, ushort id, BlockType type, Vector2I size, params Terminal[] terminals)
         {
-            Name = _name;
-            Id = _id;
-            Type = _type;
-            Size = _size;
+            Name = name;
+            Id = id;
+            Type = type;
+            Size = size;
 
-            Terminals = _terminals is null ? ImmutableArray<Terminal>.Empty : _terminals.ToImmutableArray();
+            Terminals = terminals is null ? ImmutableArray<Terminal>.Empty : terminals.ToImmutableArray();
 
             initTerminals();
         }

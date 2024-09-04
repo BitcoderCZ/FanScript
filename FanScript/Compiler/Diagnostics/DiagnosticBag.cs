@@ -9,20 +9,20 @@ namespace FanScript.Compiler.Diagnostics
 {
     public sealed class DiagnosticBag : IEnumerable<Diagnostic>
     {
-        private readonly List<Diagnostic> _diagnostics = new List<Diagnostic>();
+        private readonly List<Diagnostic> diagnostics = new List<Diagnostic>();
 
-        public IEnumerator<Diagnostic> GetEnumerator() => _diagnostics.GetEnumerator();
+        public IEnumerator<Diagnostic> GetEnumerator() => diagnostics.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         public void AddRange(IEnumerable<Diagnostic> diagnostics)
-            => _diagnostics.AddRange(diagnostics);
+            => this.diagnostics.AddRange(diagnostics);
 
         private void ReportError(TextLocation location, string message)
-            => _diagnostics.Add(Diagnostic.Error(location, message));
+            => diagnostics.Add(Diagnostic.Error(location, message));
 
         private void ReportWarning(TextLocation location, string message)
-            => _diagnostics.Add(Diagnostic.Warning(location, message));
+            => diagnostics.Add(Diagnostic.Warning(location, message));
 
         public void ReportInvalidNumber(TextLocation location, string text, TypeSymbol type)
             => ReportError(location, $"The number {text} isn't valid {type}.");

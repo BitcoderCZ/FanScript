@@ -10,28 +10,25 @@ namespace FanScript.Utils
 
         public long Length => stream.Length;
 
-        public SaveWriter(byte[] _bytes)
+        public SaveWriter(byte[] bytes)
         {
-            stream = new MemoryStream(_bytes);
+            stream = new MemoryStream(bytes);
             if (!stream.CanWrite)
                 throw new Exception("Can't write to stream");
             Position = 0;
         }
 
-        public SaveWriter(Stream _stream)
+        public SaveWriter(Stream stream)
         {
-            stream = _stream;
-            if (!stream.CanWrite)
+            this.stream = stream;
+            if (!this.stream.CanWrite)
                 throw new Exception("Can't write to stream");
             Position = 0;
         }
 
-        public SaveWriter(string _path, bool clear)
+        public SaveWriter(string path)
         {
-            if (!File.Exists(_path) || clear)
-                File.WriteAllBytes(_path, Array.Empty<byte>());
-
-            stream = new FileStream(_path, FileMode.OpenOrCreate, FileAccess.Write);
+            stream = new FileStream(path, FileMode.Create, FileAccess.Write);
             if (!stream.CanWrite)
                 throw new Exception("Can't write to stream");
             Position = 0;

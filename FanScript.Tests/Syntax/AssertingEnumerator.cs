@@ -4,26 +4,26 @@ namespace FanScript.Tests.Syntax
 {
     internal sealed class AssertingEnumerator : IDisposable
     {
-        private readonly IEnumerator<SyntaxNode> _enumerator;
-        private bool _hasErrors;
+        private readonly IEnumerator<SyntaxNode> enumerator;
+        private bool hasErrors;
 
         public AssertingEnumerator(SyntaxNode node)
         {
-            _enumerator = Flatten(node).GetEnumerator();
+            enumerator = Flatten(node).GetEnumerator();
         }
 
         private bool MarkFailed()
         {
-            _hasErrors = true;
+            hasErrors = true;
             return false;
         }
 
         public void Dispose()
         {
-            if (!_hasErrors)
-                Assert.False(_enumerator.MoveNext());
+            if (!hasErrors)
+                Assert.False(enumerator.MoveNext());
 
-            _enumerator.Dispose();
+            enumerator.Dispose();
         }
 
         private static IEnumerable<SyntaxNode> Flatten(SyntaxNode node)
@@ -45,9 +45,9 @@ namespace FanScript.Tests.Syntax
         {
             try
             {
-                Assert.True(_enumerator.MoveNext());
-                Assert.Equal(kind, _enumerator.Current.Kind);
-                Assert.IsNotType<SyntaxToken>(_enumerator.Current);
+                Assert.True(enumerator.MoveNext());
+                Assert.Equal(kind, enumerator.Current.Kind);
+                Assert.IsNotType<SyntaxToken>(enumerator.Current);
             }
             catch when (MarkFailed())
             {
@@ -59,9 +59,9 @@ namespace FanScript.Tests.Syntax
         {
             try
             {
-                Assert.True(_enumerator.MoveNext());
-                Assert.Equal(kind, _enumerator.Current.Kind);
-                SyntaxToken token = Assert.IsType<SyntaxToken>(_enumerator.Current);
+                Assert.True(enumerator.MoveNext());
+                Assert.Equal(kind, enumerator.Current.Kind);
+                SyntaxToken token = Assert.IsType<SyntaxToken>(enumerator.Current);
                 Assert.Equal(text, token.Text);
             }
             catch when (MarkFailed())

@@ -7,7 +7,7 @@ namespace FanScript.Compiler.Lowering
 {
     internal sealed class Lowerer : BoundTreeRewriter
     {
-        private int _labelCount;
+        private int labelCount;
         private Dictionary<string, int> customLabelCount = new();
 
         private Lowerer()
@@ -16,7 +16,7 @@ namespace FanScript.Compiler.Lowering
 
         private BoundLabel GenerateLabel()
         {
-            string name = $"Label{++_labelCount}";
+            string name = $"Label{++labelCount}";
             return new BoundLabel(name);
         }
 

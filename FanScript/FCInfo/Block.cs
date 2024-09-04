@@ -7,10 +7,10 @@ namespace FanScript.FCInfo
         public Vector3I Pos;
         public readonly BlockDef Type;
 
-        public Block(Vector3I _pos, BlockDef _type)
+        public Block(Vector3I pos, BlockDef type)
         {
-            Pos = _pos;
-            Type = _type;
+            Pos = pos;
+            Type = type;
         }
 
         public override string ToString()

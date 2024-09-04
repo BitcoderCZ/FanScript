@@ -1,4 +1,8 @@
-﻿using System.Text;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace FanScript.Cli
 {
@@ -36,7 +40,7 @@ namespace FanScript.Cli
             if (msg.Exception is not null)
                 builder.Append(", Exception: " + msg.Exception);
 
-            Console.WriteLine($"[{msg.CreatedAt:dd.MM.yy HH:mm:ss}] [{msg.LogLevel,-5}] {builder}");
+            Console.WriteLine($"[{msg.CreatedAt:dd.MM.yy HH:mm:ss}] [{msg.LogLevel, -5}] {builder}");
         }
 
         public enum Level

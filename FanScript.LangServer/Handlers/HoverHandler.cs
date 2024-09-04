@@ -21,9 +21,9 @@ namespace FanScript.LangServer.Handlers
 
         private TextDocumentHandler? documentHandler;
 
-        public HoverHandler(ILanguageServerFacade _facade)
+        public HoverHandler(ILanguageServerFacade facade)
         {
-            facade = _facade;
+            this.facade = facade;
         }
 
         public override async Task<Hover?> Handle(HoverParams request, CancellationToken cancellationToken)

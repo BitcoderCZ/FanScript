@@ -4,11 +4,11 @@ namespace FanScript.Compiler.Text
 {
     public sealed class SourceText
     {
-        private readonly string _text;
+        private readonly string text;
 
         private SourceText(string text, string fileName)
         {
-            _text = text;
+            this.text = text;
             FileName = fileName;
             Lines = ParseLines(this, text);
         }
@@ -68,9 +68,9 @@ namespace FanScript.Compiler.Text
 
         public ImmutableArray<TextLine> Lines { get; }
 
-        public char this[int index] => _text[index];
+        public char this[int index] => text[index];
 
-        public int Length => _text.Length;
+        public int Length => text.Length;
 
         public string FileName { get; }
 
@@ -96,9 +96,9 @@ namespace FanScript.Compiler.Text
             return lower - 1;
         }
 
-        public override string ToString() => _text;
+        public override string ToString() => text;
 
-        public string ToString(int start, int length) => _text.Substring(start, length);
+        public string ToString(int start, int length) => text.Substring(start, length);
 
         public string ToString(TextSpan span) => ToString(span.Start, span.Length);
     }

@@ -79,8 +79,8 @@ namespace FanScript.Compiler.Binding
 
         public sealed class BasicBlockBuilder
         {
-            private List<BoundStatement> _statements = new List<BoundStatement>();
-            private List<BasicBlock> _blocks = new List<BasicBlock>();
+            private List<BoundStatement> statements = new List<BoundStatement>();
+            private List<BasicBlock> blocks = new List<BasicBlock>();
 
             public List<BasicBlock> Build(BoundBlockStatement block)
             {
@@ -90,13 +90,13 @@ namespace FanScript.Compiler.Binding
                     {
                         case BoundNodeKind.LabelStatement:
                             startBlock();
-                            _statements.Add(statement);
+                            statements.Add(statement);
                             break;
                         case BoundNodeKind.GotoStatement:
                         case BoundNodeKind.RollbackGotoStatement:
                         case BoundNodeKind.ConditionalGotoStatement:
                         case BoundNodeKind.ReturnStatement:
-                            _statements.Add(statement);
+                            statements.Add(statement);
                             startBlock();
                             break;
                         case BoundNodeKind.NopStatement:
@@ -105,7 +105,7 @@ namespace FanScript.Compiler.Binding
                         case BoundNodeKind.AssignmentStatement:
                         case BoundNodeKind.PostfixStatement:
                         case BoundNodeKind.ExpressionStatement:
-                            _statements.Add(statement);
+                            statements.Add(statement);
                             break;
                         default:
                             throw new Exception($"Unexpected statement: {statement.Kind}");
@@ -114,7 +114,7 @@ namespace FanScript.Compiler.Binding
 
                 endBlock();
 
-                return _blocks.ToList();
+                return blocks.ToList();
             }
 
             private void startBlock()
@@ -124,45 +124,45 @@ namespace FanScript.Compiler.Binding
 
             private void endBlock()
             {
-                if (_statements.Count > 0)
+                if (statements.Count > 0)
                 {
                     BasicBlock block = new BasicBlock();
-                    block.Statements.AddRange(_statements);
-                    _blocks.Add(block);
-                    _statements.Clear();
+                    block.Statements.AddRange(statements);
+                    blocks.Add(block);
+                    statements.Clear();
                 }
             }
         }
 
         public sealed class GraphBuilder
         {
-            private Dictionary<BoundStatement, BasicBlock> _blockFromStatement = new Dictionary<BoundStatement, BasicBlock>();
-            private Dictionary<BoundLabel, BasicBlock> _blockFromLabel = new Dictionary<BoundLabel, BasicBlock>();
-            private List<BasicBlockBranch> _branches = new List<BasicBlockBranch>();
-            private BasicBlock _start = new BasicBlock(isStart: true);
-            private BasicBlock _end = new BasicBlock(isStart: false);
+            private Dictionary<BoundStatement, BasicBlock> blockFromStatement = new Dictionary<BoundStatement, BasicBlock>();
+            private Dictionary<BoundLabel, BasicBlock> blockFromLabel = new Dictionary<BoundLabel, BasicBlock>();
+            private List<BasicBlockBranch> branches = new List<BasicBlockBranch>();
+            private BasicBlock start = new BasicBlock(isStart: true);
+            private BasicBlock end = new BasicBlock(isStart: false);
 
             public ControlFlowGraph Build(List<BasicBlock> blocks)
             {
                 if (!blocks.Any())
-                    connect(_start, _end);
+                    connect(start, end);
                 else
-                    connect(_start, blocks.First());
+                    connect(start, blocks.First());
 
                 foreach (BasicBlock block in blocks)
                 {
                     foreach (BoundStatement statement in block.Statements)
                     {
-                        _blockFromStatement.Add(statement, block);
+                        blockFromStatement.Add(statement, block);
                         if (statement is BoundLabelStatement labelStatement)
-                            _blockFromLabel.Add(labelStatement.Label, block);
+                            blockFromLabel.Add(labelStatement.Label, block);
                     }
                 }
 
                 for (int i = 0; i < blocks.Count; i++)
                 {
                     BasicBlock current = blocks[i];
-                    BasicBlock next = i == blocks.Count - 1 ? _end : blocks[i + 1];
+                    BasicBlock next = i == blocks.Count - 1 ? end : blocks[i + 1];
 
                     foreach (BoundStatement statement in current.Statements)
                     {
@@ -172,12 +172,12 @@ namespace FanScript.Compiler.Binding
                             case BoundNodeKind.GotoStatement:
                             case BoundNodeKind.RollbackGotoStatement:
                                 BoundGotoStatement gs = (BoundGotoStatement)statement;
-                                BasicBlock toBlock = _blockFromLabel[gs.Label];
+                                BasicBlock toBlock = blockFromLabel[gs.Label];
                                 connect(current, toBlock);
                                 break;
                             case BoundNodeKind.ConditionalGotoStatement:
                                 BoundConditionalGotoStatement cgs = (BoundConditionalGotoStatement)statement;
-                                BasicBlock thenBlock = _blockFromLabel[cgs.Label];
+                                BasicBlock thenBlock = blockFromLabel[cgs.Label];
                                 BasicBlock elseBlock = next;
 
                                 if (cgs.Condition is BoundSpecialBlockCondition)
@@ -194,7 +194,7 @@ namespace FanScript.Compiler.Binding
                                 connect(current, elseBlock, elseCondition);
                                 break;
                             case BoundNodeKind.ReturnStatement:
-                                connect(current, _end);
+                                connect(current, end);
                                 break;
                             case BoundNodeKind.NopStatement:
                             case BoundNodeKind.EmitterHint:
@@ -222,10 +222,10 @@ namespace FanScript.Compiler.Binding
                     }
                 }
 
-                blocks.Insert(0, _start);
-                blocks.Add(_end);
+                blocks.Insert(0, start);
+                blocks.Add(end);
 
-                return new ControlFlowGraph(_start, _end, blocks, _branches);
+                return new ControlFlowGraph(start, end, blocks, branches);
             }
 
             private void connect(BasicBlock from, BasicBlock to, BoundExpression? condition = null)
@@ -242,7 +242,7 @@ namespace FanScript.Compiler.Binding
                 BasicBlockBranch branch = new BasicBlockBranch(from, to, condition);
                 from.Outgoing.Add(branch);
                 to.Incoming.Add(branch);
-                _branches.Add(branch);
+                branches.Add(branch);
             }
 
             private void removeBlock(List<BasicBlock> blocks, BasicBlock block)
@@ -250,13 +250,13 @@ namespace FanScript.Compiler.Binding
                 foreach (BasicBlockBranch branch in block.Incoming)
                 {
                     branch.From.Outgoing.Remove(branch);
-                    _branches.Remove(branch);
+                    branches.Remove(branch);
                 }
 
                 foreach (BasicBlockBranch branch in block.Outgoing)
                 {
                     branch.To.Incoming.Remove(branch);
-                    _branches.Remove(branch);
+                    branches.Remove(branch);
                 }
 
                 blocks.Remove(block);

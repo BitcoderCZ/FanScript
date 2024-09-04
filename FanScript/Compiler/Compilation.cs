@@ -11,7 +11,7 @@ namespace FanScript.Compiler
 {
     public sealed class Compilation
     {
-        private BoundGlobalScope? _globalScope;
+        private BoundGlobalScope? globalScope;
 
         private Compilation(bool isScript, Compilation? previous, params SyntaxTree[] syntaxTrees)
         {
@@ -40,13 +40,13 @@ namespace FanScript.Compiler
         {
             get
             {
-                if (_globalScope is null)
+                if (globalScope is null)
                 {
-                    BoundGlobalScope globalScope = Binder.BindGlobalScope(IsScript, Previous?.GlobalScope, SyntaxTrees);
-                    Interlocked.CompareExchange(ref _globalScope, globalScope, null);
+                    BoundGlobalScope newGlobalScope = Binder.BindGlobalScope(IsScript, Previous?.GlobalScope, SyntaxTrees);
+                    Interlocked.CompareExchange(ref globalScope, newGlobalScope, null);
                 }
 
-                return _globalScope;
+                return globalScope;
             }
         }
 

@@ -155,10 +155,10 @@ namespace FanScript.Compiler
 
             public bool MakesTargetReference { get; init; } = false;
 
-            public ModifierInfo(SyntaxKind _kind, IReadOnlyCollection<ModifierTarget> _targets)
+            public ModifierInfo(SyntaxKind kind, IReadOnlyCollection<ModifierTarget> targets)
             {
-                Kind = _kind;
-                Targets = _targets;
+                Kind = kind;
+                Targets = targets;
                 Conflicts = ReadOnlyCollection<Modifiers>.Empty;
                 RequiredOneOf = ReadOnlyCollection<Modifiers>.Empty;
             }

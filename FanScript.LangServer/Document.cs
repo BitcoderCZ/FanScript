@@ -70,9 +70,9 @@ namespace FanScript.LangServer
             }
         }
 
-        public Document(DocumentUri _uri)
+        public Document(DocumentUri uri)
         {
-            Uri = _uri;
+            Uri = uri;
         }
 
         public void SetContent(string content, int? version)
@@ -90,20 +90,20 @@ namespace FanScript.LangServer
                 if (!string.IsNullOrEmpty(content))
                     return content;
 
-            string? _content = null;
+            string? fileContent = null;
             try
             {
                 string? path = DocumentUri.GetFileSystemPath(Uri);
                 if (!string.IsNullOrEmpty(path))
-                    _content = await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false);
+                    fileContent = await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false);
             }
             catch { }
 
             lock (lockObj)
             {
-                if (!string.IsNullOrEmpty(_content))
+                if (!string.IsNullOrEmpty(fileContent))
                 {
-                    content = _content;
+                    content = fileContent;
                     ContentVersion++;
                 }
 

@@ -29,12 +29,12 @@ namespace FanScript.LangServer.Utils
 
         private object lockObj = new object();
 
-        public DelayedRunner(Action _action, TimeSpan _runAfter, TimeSpan _forceRunAfter)
+        public DelayedRunner(Action action, TimeSpan runAfter, TimeSpan forceRunAfter)
         {
-            ArgumentNullException.ThrowIfNull(_action);
-            action = _action;
-            RunAfter = _runAfter;
-            ForceRunAfter = _forceRunAfter;
+            ArgumentNullException.ThrowIfNull(action);
+            this.action = action;
+            RunAfter = runAfter;
+            ForceRunAfter = forceRunAfter;
         }
 
         private static Thread? thread;

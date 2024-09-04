@@ -24,10 +24,10 @@ namespace FanScript.LangServer.Handlers
 
         private TextDocumentHandler? documentHandler;
 
-        public SemanticTokensHandler(ILanguageServerFacade _facade, ILogger<SemanticTokensHandler> _logger)
+        public SemanticTokensHandler(ILanguageServerFacade facade, ILogger<SemanticTokensHandler> logger)
         {
-            facade = _facade;
-            logger = _logger;
+            this.facade = facade;
+            this.logger = logger;
         }
 
         public override async Task<SemanticTokens?> Handle(

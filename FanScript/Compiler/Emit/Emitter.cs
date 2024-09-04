@@ -43,19 +43,19 @@ namespace FanScript.Compiler.Emit
             }
         }
 
-        internal ImmutableArray<Diagnostic> emit(BoundProgram _program, CodeBuilder _builder)
+        internal ImmutableArray<Diagnostic> emit(BoundProgram program, CodeBuilder builder)
         {
-            builder = _builder;
-            program = _program;
+            this.builder = builder;
+            this.program = program;
 
             emitContext = new EmitContext(this);
 
             vectorBreakCache.Clear();
             rotationBreakCache.Clear();
 
-            foreach (var (func, body) in program.Functions.ToImmutableSortedDictionary())
+            foreach (var (func, body) in this.program.Functions.ToImmutableSortedDictionary())
             {
-                using (builder.BlockPlacer.StatementBlock())
+                using (this.builder.BlockPlacer.StatementBlock())
                 {
                     writeComment(func.Name);
 
@@ -151,7 +151,7 @@ namespace FanScript.Compiler.Emit
             else if (statement.Statements.Length == 1 && statement.Statements[0] is BoundBlockStatement inBlock)
                 return emitBlockStatement(inBlock);
 
-            MultiEmitStore store = MultiEmitStore.Empty;
+            MultiEmitStore resultStore = MultiEmitStore.Empty;
             EmitStore? lastStore = new NopEmitStore();
 
             bool newCodeBlock = builder.BlockPlacer.CurrentCodeBlockBlocks > 0;
@@ -160,25 +160,25 @@ namespace FanScript.Compiler.Emit
 
             for (int i = 0; i < statement.Statements.Length; i++)
             {
-                EmitStore __store = emitStatement(statement.Statements[i]);
-                if (store.InStore is NopEmitStore && __store is not NopEmitStore)
-                    store.InStore = __store;
-                else if (__store is not NopEmitStore)
-                    connect(lastStore, __store);
+                EmitStore statementStore = emitStatement(statement.Statements[i]);
+                if (resultStore.InStore is NopEmitStore && statementStore is not NopEmitStore)
+                    resultStore.InStore = statementStore;
+                else if (statementStore is not NopEmitStore)
+                    connect(lastStore, statementStore);
 
-                if (__store is not NopEmitStore)
-                    lastStore = __store;
+                if (statementStore is not NopEmitStore)
+                    lastStore = statementStore;
             }
 
             if (lastStore is NopEmitStore)
                 return new NopEmitStore();
 
-            store.OutStore = lastStore;
+            resultStore.OutStore = lastStore;
 
             if (newCodeBlock)
                 builder.BlockPlacer.ExitStatementBlock();
 
-            return store;
+            return resultStore;
         }
 
         private EmitStore emitSpecialBlockStatement(SpecialBlockType type, ImmutableArray<BoundExpression>? arguments, BoundLabel onTrueLabel)
@@ -263,23 +263,23 @@ namespace FanScript.Compiler.Emit
 
             return new BasicEmitStore(block);
 
-            EmitStore placeAndConnectRefArgs(ReadOnlySpan<BoundExpression> outArguments, ReadOnlyMemory<BoundExpression>? _arguments = null)
+            EmitStore placeAndConnectRefArgs(ReadOnlySpan<BoundExpression> outArguments, ReadOnlyMemory<BoundExpression>? arguments = null)
             {
-                _arguments ??= ReadOnlyMemory<BoundExpression>.Empty;
+                arguments ??= ReadOnlyMemory<BoundExpression>.Empty;
 
-                EmitStore lastStore = BasicEmitStore.COut(block, block.Type.Terminals[Index.FromEnd(2 + _arguments.Value.Length)]);
+                EmitStore lastStore = BasicEmitStore.COut(block, block.Type.Terminals[Index.FromEnd(2 + arguments.Value.Length)]);
 
-                if (_arguments.Value.Length != 0)
+                if (arguments.Value.Length != 0)
                 {
                     builder.BlockPlacer.ExitStatementBlock();
 
                     using (builder.BlockPlacer.ExpressionBlock())
                     {
-                        var arguments = _arguments.Value.Span;
+                        var argumentsSpan = arguments.Value.Span;
 
-                        for (int i = 0; i < arguments.Length; i++)
+                        for (int i = 0; i < argumentsSpan.Length; i++)
                         {
-                            EmitStore store = emitExpression(arguments[i]);
+                            EmitStore store = emitExpression(argumentsSpan[i]);
 
                             connect(store, BasicEmitStore.CIn(block, block.Type.Terminals[Index.FromEnd(i + 2)]));
                         }
@@ -292,7 +292,7 @@ namespace FanScript.Compiler.Emit
                 {
                     VariableSymbol variable = ((BoundVariableExpression)outArguments[i]).Variable;
 
-                    EmitStore varStore = emitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.Terminals[Index.FromEnd(i + _arguments.Value.Length + 3)]));
+                    EmitStore varStore = emitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.Terminals[Index.FromEnd(i + arguments.Value.Length + 3)]));
 
                     connect(lastStore, varStore);
 
@@ -456,12 +456,12 @@ namespace FanScript.Compiler.Emit
 
                             using (builder.BlockPlacer.ExpressionBlock())
                             {
-                                EmitStore _store = emitExpression(expression.Operand);
+                                EmitStore opStore = emitExpression(expression.Operand);
 
                                 Block numb = builder.AddBlock(Blocks.Values.Number);
                                 builder.SetBlockValue(numb, 0, -1f);
 
-                                connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[2]));
+                                connect(opStore, BasicEmitStore.CIn(block, block.Type.Terminals[2]));
                                 connect(BasicEmitStore.COut(numb, numb.Type.Terminals[0]), BasicEmitStore.CIn(block, block.Type.Terminals[1]));
                             }
 
@@ -474,9 +474,9 @@ namespace FanScript.Compiler.Emit
 
                             using (builder.BlockPlacer.ExpressionBlock())
                             {
-                                EmitStore _store = emitExpression(expression.Operand);
+                                EmitStore opStore = emitExpression(expression.Operand);
 
-                                connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
+                                connect(opStore, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
                             }
 
                             return BasicEmitStore.COut(block, block.Type.Terminals[0]);
@@ -488,9 +488,9 @@ namespace FanScript.Compiler.Emit
 
                         using (builder.BlockPlacer.ExpressionBlock())
                         {
-                            EmitStore _store = emitExpression(expression.Operand);
+                            EmitStore opStore = emitExpression(expression.Operand);
 
-                            connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
+                            connect(opStore, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
                         }
 
                         return BasicEmitStore.COut(block, block.Type.Terminals[0]);
@@ -933,9 +933,9 @@ namespace FanScript.Compiler.Emit
 
                         builder.SetBlockValue(block, 0, variable.ResultName);
 
-                        EmitStore _store = getValueStore();
+                        EmitStore valueStore = getValueStore();
 
-                        connect(_store, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
+                        connect(valueStore, BasicEmitStore.CIn(block, block.Type.Terminals[1]));
 
                         return new BasicEmitStore(block);
                     }
@@ -1032,20 +1032,20 @@ namespace FanScript.Compiler.Emit
             }
         }
 
-        internal object?[]? validateConstants(ReadOnlyMemory<BoundExpression> _expressions, bool mustBeConstant)
+        internal object?[]? validateConstants(ReadOnlyMemory<BoundExpression> expressions, bool mustBeConstant)
         {
-            ReadOnlySpan<BoundExpression> expressions = _expressions.Span;
+            ReadOnlySpan<BoundExpression> expressionsMem = expressions.Span;
 
-            object?[] values = new object?[expressions.Length];
+            object?[] values = new object?[expressionsMem.Length];
             bool invalid = false;
 
-            for (int i = 0; i < expressions.Length; i++)
+            for (int i = 0; i < expressionsMem.Length; i++)
             {
-                BoundConstant? constant = expressions[i].ConstantValue;
+                BoundConstant? constant = expressionsMem[i].ConstantValue;
                 if (constant is null)
                 {
                     if (mustBeConstant)
-                        diagnostics.ReportValueMustBeConstant(expressions[i].Syntax.Location);
+                        diagnostics.ReportValueMustBeConstant(expressionsMem[i].Syntax.Location);
                     invalid = true;
                 }
                 else

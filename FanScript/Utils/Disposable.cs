@@ -4,9 +4,9 @@
     {
         private Action? onDispose;
 
-        public Disposable(Action? _onDispose)
+        public Disposable(Action? onDispose)
         {
-            onDispose = _onDispose;
+            this.onDispose = onDispose;
         }
 
         public void Dispose()

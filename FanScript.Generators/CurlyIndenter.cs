@@ -8,7 +8,7 @@ namespace FanScript.Generators
     /// </summary>
     internal class CurlyIndenter : IDisposable
     {
-        private IndentedTextWriter _indentedTextWriter;
+        private IndentedTextWriter indentedTextWriter;
 
         /// <summary>
         /// Default constructor that maked a tidies creation of the line before the opening curly
@@ -17,7 +17,7 @@ namespace FanScript.Generators
         /// <param name="openingLine">any line to write before the curly</param>
         public CurlyIndenter(IndentedTextWriter indentedTextWriter, string openingLine = "")
         {
-            _indentedTextWriter = indentedTextWriter;
+            this.indentedTextWriter = indentedTextWriter;
             if (!string.IsNullOrWhiteSpace(openingLine))
                 indentedTextWriter.WriteLine(openingLine);
             indentedTextWriter.WriteLine("{");
@@ -29,8 +29,8 @@ namespace FanScript.Generators
         /// </summary>
         public void Dispose()
         {
-            _indentedTextWriter.Indent--;
-            _indentedTextWriter.WriteLine("}");
+            indentedTextWriter.Indent--;
+            indentedTextWriter.WriteLine("}");
         }
     }
 }

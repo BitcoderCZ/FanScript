@@ -6,9 +6,9 @@
         public T Value { get; set; }
         private readonly Dictionary<int, TreeNode<T>> children = new();
 
-        public TreeNode(T _value)
+        public TreeNode(T value)
         {
-            Value = _value;
+            Value = value;
         }
 
         public TreeNode<T> this[int i]
@@ -56,9 +56,9 @@
     {
         private readonly int[] indexes;
 
-        public TreeIndex(int[] _indexes)
+        public TreeIndex(int[] indexes)
         {
-            indexes = _indexes;
+            this.indexes = indexes;
         }
 
         public T GetValue<T>(TreeNode<T> tree)

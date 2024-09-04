@@ -30,7 +30,7 @@ namespace FanScript.Compiler.Binding
         public TypeSymbol RightType { get; }
         public TypeSymbol Type { get; }
 
-        private static BoundBinaryOperator[] _operators =
+        private static BoundBinaryOperator[] operators =
         {
             new BoundBinaryOperator(SyntaxKind.PlusToken, BoundBinaryOperatorKind.Addition, TypeSymbol.Float),
             new BoundBinaryOperator(SyntaxKind.MinusToken, BoundBinaryOperatorKind.Subtraction, TypeSymbol.Float),
@@ -76,7 +76,7 @@ namespace FanScript.Compiler.Binding
         {
             bool is1Null = (leftType == TypeSymbol.Null) != (rightType == TypeSymbol.Null);
 
-            foreach (BoundBinaryOperator op in _operators)
+            foreach (BoundBinaryOperator op in operators)
             {
                 if (op.SyntaxKind == syntaxKind && typeEquals(op.LeftType, leftType) && typeEquals(op.RightType, rightType))
                     return op;

@@ -35,18 +35,18 @@ namespace FanScript.LangServer.Handlers
 
         private ConcurrentDictionary<DocumentUri, DelayedRunner> findErrorsDict = new();
 
-        private readonly TextDocumentSelector _textDocumentSelector = new TextDocumentSelector(
+        private readonly TextDocumentSelector textDocumentSelector = new TextDocumentSelector(
             new TextDocumentFilter
             {
                 Pattern = "**/*.fcs"
             }
         );
 
-        public TextDocumentHandler(ILanguageServerFacade _facade, ILogger<TextDocumentHandler> _logger, CustomLogger customLogger, ILanguageServerConfiguration _configuration)
+        public TextDocumentHandler(ILanguageServerFacade facade, ILogger<TextDocumentHandler> logger, CustomLogger customLogger, ILanguageServerConfiguration configuration)
         {
-            facade = _facade;
-            logger = _logger;
-            configuration = _configuration;
+            this.facade = facade;
+            this.logger = logger;
+            this.configuration = configuration;
         }
 
         // TODO: use Incremental, and make textCache use StringBuilder or wrapper over List<char/byte> (implement ToString()!!!)
@@ -102,7 +102,7 @@ namespace FanScript.LangServer.Handlers
 
         protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities) => new TextDocumentSyncRegistrationOptions()
         {
-            DocumentSelector = _textDocumentSelector,
+            DocumentSelector = textDocumentSelector,
             Change = Change,
             Save = new SaveOptions() { IncludeText = true }
         };
@@ -216,15 +216,15 @@ namespace FanScript.LangServer.Handlers
 
     internal class MyWorkspaceSymbolsHandler : IWorkspaceSymbolsHandler
     {
-        private readonly IServerWorkDoneManager _serverWorkDoneManager;
-        private readonly IProgressManager _progressManager;
-        private readonly ILogger<MyWorkspaceSymbolsHandler> _logger;
+        private readonly IServerWorkDoneManager serverWorkDoneManager;
+        private readonly IProgressManager progressManager;
+        private readonly ILogger<MyWorkspaceSymbolsHandler> logger;
 
         public MyWorkspaceSymbolsHandler(IServerWorkDoneManager serverWorkDoneManager, IProgressManager progressManager, ILogger<MyWorkspaceSymbolsHandler> logger)
         {
-            _serverWorkDoneManager = serverWorkDoneManager;
-            _progressManager = progressManager;
-            _logger = logger;
+            this.serverWorkDoneManager = serverWorkDoneManager;
+            this.progressManager = progressManager;
+            this.logger = logger;
         }
 
         public async Task<Container<WorkspaceSymbol>?> Handle(
@@ -232,7 +232,7 @@ namespace FanScript.LangServer.Handlers
             CancellationToken cancellationToken
         )
         {
-            //using var reporter = _serverWorkDoneManager.For(
+            //using var reporter = serverWorkDoneManager.For(
             //    request, new WorkDoneProgressBegin
             //    {
             //        Cancellable = true,
@@ -241,7 +241,7 @@ namespace FanScript.LangServer.Handlers
             //        Percentage = 0
             //    }
             //);
-            //using var partialResults = _progressManager.For(request, cancellationToken);
+            //using var partialResults = progressManager.For(request, cancellationToken);
             //if (partialResults != null)
             //{
             //    await Task.Delay(2000, cancellationToken).ConfigureAwait(false);

@@ -7,11 +7,11 @@ namespace FanScript.Compiler.Syntax
 {
     internal sealed class Parser
     {
-        private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
-        private readonly SyntaxTree _syntaxTree;
-        private readonly SourceText _text;
-        private readonly ImmutableArray<SyntaxToken> _tokens;
-        private int _position;
+        private readonly DiagnosticBag diagnostics = new DiagnosticBag();
+        private readonly SyntaxTree syntaxTree;
+        private readonly SourceText text;
+        private readonly ImmutableArray<SyntaxToken> tokens;
+        private int position;
 
         public Parser(SyntaxTree syntaxTree)
         {
@@ -53,21 +53,21 @@ namespace FanScript.Compiler.Syntax
                 }
             } while (token.Kind != SyntaxKind.EndOfFileToken);
 
-            _syntaxTree = syntaxTree;
-            _text = syntaxTree.Text;
-            _tokens = tokens.ToImmutableArray();
-            _diagnostics.AddRange(lexer.Diagnostics);
+            this.syntaxTree = syntaxTree;
+            text = syntaxTree.Text;
+            this.tokens = tokens.ToImmutableArray();
+            diagnostics.AddRange(lexer.Diagnostics);
         }
 
-        public DiagnosticBag Diagnostics => _diagnostics;
+        public DiagnosticBag Diagnostics => diagnostics;
 
         private SyntaxToken Peek(int offset)
         {
-            int index = _position + offset;
-            if (index >= _tokens.Length)
-                return _tokens[_tokens.Length - 1];
+            int index = position + offset;
+            if (index >= tokens.Length)
+                return tokens[tokens.Length - 1];
 
-            return _tokens[index];
+            return tokens[index];
         }
 
         private SyntaxToken Current => Peek(0);
@@ -75,7 +75,7 @@ namespace FanScript.Compiler.Syntax
         private SyntaxToken NextToken()
         {
             SyntaxToken current = Current;
-            _position++;
+            position++;
             return current;
         }
 
@@ -84,8 +84,8 @@ namespace FanScript.Compiler.Syntax
             if (Current.Kind == kind)
                 return NextToken();
 
-            _diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, kind);
-            return new SyntaxToken(_syntaxTree, kind, Current.Position, null, null, ImmutableArray<SyntaxTrivia>.Empty, ImmutableArray<SyntaxTrivia>.Empty);
+            diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, kind);
+            return new SyntaxToken(syntaxTree, kind, Current.Position, null, null, ImmutableArray<SyntaxTrivia>.Empty, ImmutableArray<SyntaxTrivia>.Empty);
         }
         private SyntaxToken MatchToken(params SyntaxKind[] kinds)
         {
@@ -93,15 +93,15 @@ namespace FanScript.Compiler.Syntax
                 if (Current.Kind == kind)
                     return NextToken();
 
-            _diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, kinds);
-            return new SyntaxToken(_syntaxTree, kinds[0], Current.Position, null, null, ImmutableArray<SyntaxTrivia>.Empty, ImmutableArray<SyntaxTrivia>.Empty);
+            diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, kinds);
+            return new SyntaxToken(syntaxTree, kinds[0], Current.Position, null, null, ImmutableArray<SyntaxTrivia>.Empty, ImmutableArray<SyntaxTrivia>.Empty);
         }
 
         public CompilationUnitSyntax ParseCompilationUnit()
         {
             ImmutableArray<MemberSyntax> members = ParseMembers();
             SyntaxToken endOfFileToken = MatchToken(SyntaxKind.EndOfFileToken);
-            return new CompilationUnitSyntax(_syntaxTree, members, endOfFileToken);
+            return new CompilationUnitSyntax(syntaxTree, members, endOfFileToken);
         }
 
         private ImmutableArray<MemberSyntax> ParseMembers()
@@ -148,7 +148,7 @@ namespace FanScript.Compiler.Syntax
             ImmutableArray<SyntaxNode> parameters = ParseSeparatedList(SyntaxKind.CloseParenthesisToken, parameters: true);
             SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
             BlockStatementSyntax body = ParseBlockStatement();
-            return new FunctionDeclarationSyntax(_syntaxTree, funcKeyword, funcType, identifier, openParenthesisToken, new SeparatedSyntaxList<ParameterSyntax>(parameters), closeParenthesisToken, body);
+            return new FunctionDeclarationSyntax(syntaxTree, funcKeyword, funcType, identifier, openParenthesisToken, new SeparatedSyntaxList<ParameterSyntax>(parameters), closeParenthesisToken, body);
         }
 
         private ParameterSyntax ParseParameter()
@@ -156,12 +156,12 @@ namespace FanScript.Compiler.Syntax
             ImmutableArray<SyntaxToken> modifiers = ParseModifiers();
             TypeClauseSyntax typeClause = ParseTypeClause(false);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
-            return new ParameterSyntax(_syntaxTree, modifiers, typeClause, identifier);
+            return new ParameterSyntax(syntaxTree, modifiers, typeClause, identifier);
         }
 
         private MemberSyntax ParseGlobalStatement()
         {
-            return new GlobalStatementSyntax(_syntaxTree, ParseStatement());
+            return new GlobalStatementSyntax(syntaxTree, ParseStatement());
         }
 
         private StatementSyntax ParseStatement()
@@ -245,7 +245,7 @@ namespace FanScript.Compiler.Syntax
 
             SyntaxToken closeBraceToken = MatchToken(SyntaxKind.CloseBraceToken);
 
-            return new BlockStatementSyntax(_syntaxTree, openBraceToken, statements.ToImmutable(), closeBraceToken);
+            return new BlockStatementSyntax(syntaxTree, openBraceToken, statements.ToImmutable(), closeBraceToken);
         }
 
         private StatementSyntax ParseSpecialBlockStatement()
@@ -257,7 +257,7 @@ namespace FanScript.Compiler.Syntax
                 argumentClause = ParseArgumentClause();
             BlockStatementSyntax block = ParseBlockStatement();
 
-            return new SpecialBlockStatementSyntax(_syntaxTree, onKeyword, identifier, argumentClause, block);
+            return new SpecialBlockStatementSyntax(syntaxTree, onKeyword, identifier, argumentClause, block);
         }
 
         private StatementSyntax ParsePostfixStatement()
@@ -265,7 +265,7 @@ namespace FanScript.Compiler.Syntax
             SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
             SyntaxToken operatorToken = MatchToken(SyntaxKind.PlusPlusToken, SyntaxKind.MinusMinusToken);
 
-            return new PostfixStatementSyntax(_syntaxTree, identifierToken, operatorToken);
+            return new PostfixStatementSyntax(syntaxTree, identifierToken, operatorToken);
         }
 
         private StatementSyntax ParseVariableDeclarationStatement(ImmutableArray<SyntaxToken>? modifiers = null)
@@ -279,10 +279,10 @@ namespace FanScript.Compiler.Syntax
                 SyntaxToken equals = MatchToken(SyntaxKind.EqualsToken);
                 ExpressionSyntax initializer = ParseExpression();
 
-                assignment = new AssignmentStatementSyntax(_syntaxTree, new AssignableVariableClauseSyntax(_syntaxTree, identifier), equals, initializer);
+                assignment = new AssignmentStatementSyntax(syntaxTree, new AssignableVariableClauseSyntax(syntaxTree, identifier), equals, initializer);
             }
 
-            return new VariableDeclarationStatementSyntax(_syntaxTree, modifiers ?? ImmutableArray<SyntaxToken>.Empty, typeClause, identifier, assignment);
+            return new VariableDeclarationStatementSyntax(syntaxTree, modifiers ?? ImmutableArray<SyntaxToken>.Empty, typeClause, identifier, assignment);
         }
 
         private StatementSyntax ParseAssignmentStatement()
@@ -290,7 +290,7 @@ namespace FanScript.Compiler.Syntax
             AssignableClauseSyntax assignableClause = ParseAssignableClause();
             SyntaxToken operatorToken = NextToken();
             ExpressionSyntax right = ParseExpression();
-            return new AssignmentStatementSyntax(_syntaxTree, assignableClause, operatorToken, right);
+            return new AssignmentStatementSyntax(syntaxTree, assignableClause, operatorToken, right);
         }
 
         private StatementSyntax ParseIfStatement()
@@ -299,7 +299,7 @@ namespace FanScript.Compiler.Syntax
             ExpressionSyntax condition = ParseExpression();
             StatementSyntax statement = ParseStatement();
             ElseClauseSyntax? elseClause = ParseOptionalElseClause();
-            return new IfStatementSyntax(_syntaxTree, keyword, condition, statement, elseClause);
+            return new IfStatementSyntax(syntaxTree, keyword, condition, statement, elseClause);
         }
 
         private ElseClauseSyntax? ParseOptionalElseClause()
@@ -309,7 +309,7 @@ namespace FanScript.Compiler.Syntax
 
             SyntaxToken keyword = NextToken();
             StatementSyntax statement = ParseStatement();
-            return new ElseClauseSyntax(_syntaxTree, keyword, statement);
+            return new ElseClauseSyntax(syntaxTree, keyword, statement);
         }
 
         private StatementSyntax ParseWhileStatement()
@@ -317,7 +317,7 @@ namespace FanScript.Compiler.Syntax
             SyntaxToken keyword = MatchToken(SyntaxKind.KeywordWhile);
             ExpressionSyntax condition = ParseExpression();
             StatementSyntax body = ParseStatement();
-            return new WhileStatementSyntax(_syntaxTree, keyword, condition, body);
+            return new WhileStatementSyntax(syntaxTree, keyword, condition, body);
         }
 
         //private StatementSyntax ParseDoWhileStatement()
@@ -326,7 +326,7 @@ namespace FanScript.Compiler.Syntax
         //    var body = ParseStatement();
         //    var whileKeyword = MatchToken(SyntaxKind.WhileKeyword);
         //    var condition = ParseExpression();
-        //    return new DoWhileStatementSyntax(_syntaxTree, doKeyword, body, whileKeyword, condition);
+        //    return new DoWhileStatementSyntax(syntaxTree, doKeyword, body, whileKeyword, condition);
         //}
 
         //private StatementSyntax ParseForStatement()
@@ -338,37 +338,37 @@ namespace FanScript.Compiler.Syntax
         //    var toKeyword = MatchToken(SyntaxKind.ToKeyword);
         //    var upperBound = ParseExpression();
         //    var body = ParseStatement();
-        //    return new ForStatementSyntax(_syntaxTree, keyword, identifier, equalsToken, lowerBound, toKeyword, upperBound, body);
+        //    return new ForStatementSyntax(syntaxTree, keyword, identifier, equalsToken, lowerBound, toKeyword, upperBound, body);
         //}
 
         private StatementSyntax ParseBreakStatement()
         {
             SyntaxToken keyword = MatchToken(SyntaxKind.KeywordBreak);
-            return new BreakStatementSyntax(_syntaxTree, keyword);
+            return new BreakStatementSyntax(syntaxTree, keyword);
         }
 
         private StatementSyntax ParseContinueStatement()
         {
             SyntaxToken keyword = MatchToken(SyntaxKind.KeywordContinue);
-            return new ContinueStatementSyntax(_syntaxTree, keyword);
+            return new ContinueStatementSyntax(syntaxTree, keyword);
         }
 
         private StatementSyntax ParseReturnStatement()
         {
             SyntaxToken keyword = MatchToken(SyntaxKind.KeywordReturn);
-            int keywordLine = _text.GetLineIndex(keyword.Span.Start);
-            int currentLine = _text.GetLineIndex(Current.Span.Start);
+            int keywordLine = text.GetLineIndex(keyword.Span.Start);
+            int currentLine = text.GetLineIndex(Current.Span.Start);
             bool isEof = Current.Kind == SyntaxKind.EndOfFileToken;
             bool sameLine = !isEof && keywordLine == currentLine;
             ExpressionSyntax? expression = sameLine ? ParseExpression() : null;
-            return new ReturnStatementSyntax(_syntaxTree, keyword, expression);
+            return new ReturnStatementSyntax(syntaxTree, keyword, expression);
         }
 
         private StatementSyntax ParseBuildCommandStatement()
         {
             SyntaxToken hashtagToken = MatchToken(SyntaxKind.HashtagToken);
             SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
-            return new BuildCommandStatementSyntax(_syntaxTree, hashtagToken, identifierToken);
+            return new BuildCommandStatementSyntax(syntaxTree, hashtagToken, identifierToken);
         }
 
         private StatementSyntax ParseVariableDeclarationStatementWithModifiers()
@@ -378,7 +378,7 @@ namespace FanScript.Compiler.Syntax
 
         // TODO: handle assignment here (something like properties are parsed)
         private ExpressionStatementSyntax ParseExpressionStatement()
-            => new ExpressionStatementSyntax(_syntaxTree, ParseExpression());
+            => new ExpressionStatementSyntax(syntaxTree, ParseExpression());
 
         private ExpressionSyntax ParseExpression()
         {
@@ -393,7 +393,7 @@ namespace FanScript.Compiler.Syntax
             {
                 SyntaxToken operatorToken = NextToken();
                 ExpressionSyntax operand = ParseBinaryExpression(unaryOperatorPrecedence);
-                left = new UnaryExpressionSyntax(_syntaxTree, operatorToken, operand);
+                left = new UnaryExpressionSyntax(syntaxTree, operatorToken, operand);
             }
             else
                 left = ParsePrimaryExpression();
@@ -406,7 +406,7 @@ namespace FanScript.Compiler.Syntax
 
                 SyntaxToken operatorToken = NextToken();
                 ExpressionSyntax right = ParseBinaryExpression(precedence);
-                left = new BinaryExpressionSyntax(_syntaxTree, left, operatorToken, right);
+                left = new BinaryExpressionSyntax(syntaxTree, left, operatorToken, right);
             }
 
             return left;
@@ -420,7 +420,7 @@ namespace FanScript.Compiler.Syntax
             {
                 SyntaxToken dotToken = MatchToken(SyntaxKind.DotToken);
                 ExpressionSyntax nameOrCall = ParseNameOrCallExpressions();
-                expression = new PropertyExpressionSyntax(_syntaxTree, expression, dotToken, nameOrCall);
+                expression = new PropertyExpressionSyntax(syntaxTree, expression, dotToken, nameOrCall);
             }
 
             return expression;
@@ -464,21 +464,21 @@ namespace FanScript.Compiler.Syntax
             SyntaxToken left = MatchToken(SyntaxKind.OpenParenthesisToken);
             ExpressionSyntax expression = ParseExpression();
             SyntaxToken right = MatchToken(SyntaxKind.CloseParenthesisToken);
-            return new ParenthesizedExpressionSyntax(_syntaxTree, left, expression, right);
+            return new ParenthesizedExpressionSyntax(syntaxTree, left, expression, right);
         }
 
         private ExpressionSyntax ParseNullLiteral()
-            => new LiteralExpressionSyntax(_syntaxTree, MatchToken(SyntaxKind.KeywordNull));
+            => new LiteralExpressionSyntax(syntaxTree, MatchToken(SyntaxKind.KeywordNull));
 
         private ExpressionSyntax ParseBooleanLiteral()
         {
             SyntaxToken keywordToken = MatchToken(SyntaxKind.KeywordTrue, SyntaxKind.KeywordFalse);
             bool isTrue = keywordToken.Kind == SyntaxKind.KeywordTrue;
-            return new LiteralExpressionSyntax(_syntaxTree, keywordToken, isTrue);
+            return new LiteralExpressionSyntax(syntaxTree, keywordToken, isTrue);
         }
 
         private ExpressionSyntax ParseNumberLiteral()
-            => new LiteralExpressionSyntax(_syntaxTree, MatchToken(SyntaxKind.FloatToken));
+            => new LiteralExpressionSyntax(syntaxTree, MatchToken(SyntaxKind.FloatToken));
 
         private ExpressionSyntax ParseVectorConstructorExpresion()
         {
@@ -492,7 +492,7 @@ namespace FanScript.Compiler.Syntax
             ExpressionSyntax expressionZ = ParseExpression();
             SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
 
-            return new ConstructorExpressionSyntax(_syntaxTree, keywordToken, openParenthesisToken, expressionX, comma0Token, expressionY, comma1Token, expressionZ, closeParenthesisToken);
+            return new ConstructorExpressionSyntax(syntaxTree, keywordToken, openParenthesisToken, expressionX, comma0Token, expressionY, comma1Token, expressionZ, closeParenthesisToken);
         }
 
         private ExpressionSyntax ParseArraySegmentExpression()
@@ -501,7 +501,7 @@ namespace FanScript.Compiler.Syntax
             var elements = ParseSeparatedList(SyntaxKind.CloseSquareToken);
             SyntaxToken closeSquareToken = MatchToken(SyntaxKind.CloseSquareToken);
 
-            return new ArraySegmentExpressionSyntax(_syntaxTree, openSquareToken, new SeparatedSyntaxList<ExpressionSyntax>(elements
+            return new ArraySegmentExpressionSyntax(syntaxTree, openSquareToken, new SeparatedSyntaxList<ExpressionSyntax>(elements
                 .Select(node =>
                 {
                     if (node is ModifierClauseSyntax modifierClause)
@@ -513,7 +513,7 @@ namespace FanScript.Compiler.Syntax
         }
 
         private ExpressionSyntax ParseStringLiteral()
-            => new LiteralExpressionSyntax(_syntaxTree, MatchToken(SyntaxKind.StringToken));
+            => new LiteralExpressionSyntax(syntaxTree, MatchToken(SyntaxKind.StringToken));
 
         private ExpressionSyntax ParseNameOrCallExpressions()
         {
@@ -544,15 +544,15 @@ namespace FanScript.Compiler.Syntax
             ArgumentClauseSyntax argumentClause = ParseArgumentClause();
 
             if (hasGegenericParam)
-                return new CallExpressionSyntax(_syntaxTree, identifier, lessThanToken, genericType, greaterThanToken, argumentClause);
+                return new CallExpressionSyntax(syntaxTree, identifier, lessThanToken, genericType, greaterThanToken, argumentClause);
             else
-                return new CallExpressionSyntax(_syntaxTree, identifier, argumentClause);
+                return new CallExpressionSyntax(syntaxTree, identifier, argumentClause);
         }
 
         private ExpressionSyntax ParseNameExpression()
         {
             SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
-            return new NameExpressionSyntax(_syntaxTree, identifierToken);
+            return new NameExpressionSyntax(syntaxTree, identifierToken);
         }
 
         private ArgumentClauseSyntax ParseArgumentClause()
@@ -560,7 +560,7 @@ namespace FanScript.Compiler.Syntax
             SyntaxToken openParenthesisToken = MatchToken(SyntaxKind.OpenParenthesisToken);
             var arguments = ParseSeparatedList(SyntaxKind.CloseParenthesisToken, true);
             SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
-            return new ArgumentClauseSyntax(_syntaxTree, openParenthesisToken, new SeparatedSyntaxList<ModifierClauseSyntax>(arguments), closeParenthesisToken);
+            return new ArgumentClauseSyntax(syntaxTree, openParenthesisToken, new SeparatedSyntaxList<ModifierClauseSyntax>(arguments), closeParenthesisToken);
         }
         private ImmutableArray<SyntaxNode> ParseSeparatedList(SyntaxKind listEnd, bool allowModifiers = false, bool parameters = false)
         {
@@ -590,12 +590,12 @@ namespace FanScript.Compiler.Syntax
                         SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
 
                         nodesAndSeparators.Add(new ModifierClauseSyntax(
-                            _syntaxTree,
+                            syntaxTree,
                             modifiers
                                 .Where(token => !ModifiersE.FromKind(token.Kind).GetTargets().Contains(ModifierTarget.Variable))
                                 .ToImmutableArray(),
                             new VariableDeclarationExpressionSyntax(
-                                _syntaxTree,
+                                syntaxTree,
                                 modifiers
                                     .Where(token => ModifiersE.FromKind(token.Kind).GetTargets().Contains(ModifierTarget.Variable))
                                     .ToImmutableArray(),
@@ -605,7 +605,7 @@ namespace FanScript.Compiler.Syntax
                         ));
                     }
                     else
-                        nodesAndSeparators.Add(new ModifierClauseSyntax(_syntaxTree, modifiers, ParseExpression()));
+                        nodesAndSeparators.Add(new ModifierClauseSyntax(syntaxTree, modifiers, ParseExpression()));
                 }
 
                 if (Current.Kind == SyntaxKind.CommaToken)
@@ -658,14 +658,14 @@ namespace FanScript.Compiler.Syntax
                 SyntaxToken greaterToken = MatchToken(SyntaxKind.GreaterToken);
 
                 if (!allowGeneric)
-                    _diagnostics.ReportGenericTypeNotAllowed(typeToken.Location);
+                    diagnostics.ReportGenericTypeNotAllowed(typeToken.Location);
                 else if (gettingGenericParam)
-                    _diagnostics.ReportGenericTypeRecursion(new TextLocation(_syntaxTree.Text, TextSpan.FromBounds(lessToken.Span.Start, greaterToken.Span.End)));
+                    diagnostics.ReportGenericTypeRecursion(new TextLocation(syntaxTree.Text, TextSpan.FromBounds(lessToken.Span.Start, greaterToken.Span.End)));
 
-                return new TypeClauseSyntax(_syntaxTree, typeToken, lessToken, innerType, greaterToken);
+                return new TypeClauseSyntax(syntaxTree, typeToken, lessToken, innerType, greaterToken);
             }
             else
-                return new TypeClauseSyntax(_syntaxTree, typeToken);
+                return new TypeClauseSyntax(syntaxTree, typeToken);
         }
 
         private bool IsAssignableClauseNext(out int nextTokenIndex)
@@ -695,10 +695,10 @@ namespace FanScript.Compiler.Syntax
             {
                 SyntaxToken dotToken = MatchToken(SyntaxKind.DotToken);
                 SyntaxToken identifier1 = MatchToken(SyntaxKind.IdentifierToken);
-                return new AssignablePropertyClauseSyntax(_syntaxTree, identifier0, dotToken, identifier1);
+                return new AssignablePropertyClauseSyntax(syntaxTree, identifier0, dotToken, identifier1);
             }
 
-            return new AssignableVariableClauseSyntax(_syntaxTree, identifier0);
+            return new AssignableVariableClauseSyntax(syntaxTree, identifier0);
         }
 
         private ImmutableArray<SyntaxToken> ParseModifiers()

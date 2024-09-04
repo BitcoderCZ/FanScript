@@ -119,9 +119,9 @@ namespace FanScript.LangServer.Handlers
 
         private TextDocumentHandler? documentHandler;
 
-        public CompletionHandler(ILanguageServerFacade _facade)
+        public CompletionHandler(ILanguageServerFacade facade)
         {
-            facade = _facade;
+            this.facade = facade;
         }
 
         public override Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)

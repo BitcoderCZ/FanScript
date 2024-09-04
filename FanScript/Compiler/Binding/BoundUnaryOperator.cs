@@ -23,7 +23,7 @@ namespace FanScript.Compiler.Binding
         public TypeSymbol OperandType { get; }
         public TypeSymbol Type { get; }
 
-        private static BoundUnaryOperator[] _operators =
+        private static BoundUnaryOperator[] operators =
         {
             new BoundUnaryOperator(SyntaxKind.BangToken, BoundUnaryOperatorKind.LogicalNegation, TypeSymbol.Bool),
 
@@ -39,7 +39,7 @@ namespace FanScript.Compiler.Binding
 
         public static BoundUnaryOperator? Bind(SyntaxKind syntaxKind, TypeSymbol? operandType)
         {
-            foreach (BoundUnaryOperator op in _operators)
+            foreach (BoundUnaryOperator op in operators)
                 if (op.SyntaxKind == syntaxKind && op.OperandType == operandType)
                     return op;
 

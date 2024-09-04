@@ -160,12 +160,12 @@ namespace FanScript.LangServer
 
     internal class CustomLogger
     {
-        private readonly ILogger<CustomLogger> _logger;
+        private readonly ILogger<CustomLogger> logger;
 
         public CustomLogger(ILogger<CustomLogger> logger)
         {
             logger.LogInformation("inside ctor");
-            _logger = logger;
+            this.logger = logger;
         }
     }
 }

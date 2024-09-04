@@ -155,24 +155,24 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             protected PositionStack.Request? YPosRequest;
 
-            public CodeBlock(GroundBlockPlacer _placer, Vector3I _pos, CodeBlock _parent, int _offset)
+            public CodeBlock(GroundBlockPlacer placer, Vector3I pos, CodeBlock parent, int offset)
             {
-                ArgumentNullException.ThrowIfNull(_parent);
-                Debug.Assert(_offset == 1 || _offset == -1, $"_offset == 1 || _offset == -1, Value: '{_offset}'");
+                ArgumentNullException.ThrowIfNull(parent);
+                Debug.Assert(offset == 1 || offset == -1, $"{nameof(offset)} == 1 || {nameof(offset)} == -1, Value: '{offset}'");
 
-                Placer = _placer;
-                StartPos = _pos;
+                Placer = placer;
+                StartPos = pos;
                 blockPos = StartPos;
                 HasParent = true;
-                Parent = _parent;
-                offset = _offset;
+                Parent = parent;
+                this.offset = offset;
 
                 MinX = StartPos.X;
             }
-            public CodeBlock(GroundBlockPlacer _placer, Vector3I _pos)
+            public CodeBlock(GroundBlockPlacer placer, Vector3I pos)
             {
-                Placer = _placer;
-                StartPos = _pos;
+                Placer = placer;
+                StartPos = pos;
                 blockPos = StartPos;
                 HasParent = false;
 
@@ -260,12 +260,12 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         {
             protected override int blockZOffset => 2;
 
-            public StatementBlock(GroundBlockPlacer _placer, Vector3I _pos)
-                : base(_placer, _pos)
+            public StatementBlock(GroundBlockPlacer placer, Vector3I pos)
+                : base(placer, pos)
             {
             }
-            public StatementBlock(GroundBlockPlacer _placer, Vector3I _pos, CodeBlock _parent, int _offset)
-                : base(_placer, _pos, _parent, _offset)
+            public StatementBlock(GroundBlockPlacer placer, Vector3I pos, CodeBlock parent, int offset)
+                : base(placer, pos, parent, offset)
             {
             }
 
@@ -327,8 +327,8 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             public static readonly int BlockZOffset = 0;
             protected override int blockZOffset => BlockZOffset;
 
-            public ExpressionBlock(GroundBlockPlacer _placer, Vector3I _pos, CodeBlock _parent, int _offset)
-                : base(_placer, _pos, _parent, _offset)
+            public ExpressionBlock(GroundBlockPlacer placer, Vector3I pos, CodeBlock parent, int offset)
+                : base(placer, pos, parent, offset)
             {
             }
 

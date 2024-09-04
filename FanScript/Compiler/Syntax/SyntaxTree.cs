@@ -7,7 +7,7 @@ namespace FanScript.Compiler.Syntax
 {
     public sealed class SyntaxTree
     {
-        private Dictionary<SyntaxNode, SyntaxNode?>? _parents;
+        private Dictionary<SyntaxNode, SyntaxNode?>? parents;
 
         private delegate void ParseHandler(SyntaxTree syntaxTree,
                                            out CompilationUnitSyntax root,
@@ -83,13 +83,13 @@ namespace FanScript.Compiler.Syntax
 
         internal SyntaxNode? GetParent(SyntaxNode syntaxNode)
         {
-            if (_parents is null)
+            if (parents is null)
             {
-                Dictionary<SyntaxNode, SyntaxNode?> parents = CreateParentsDictionary(Root);
-                Interlocked.CompareExchange(ref _parents, parents, null);
+                Dictionary<SyntaxNode, SyntaxNode?> newParents = CreateParentsDictionary(Root);
+                Interlocked.CompareExchange(ref parents, newParents, null);
             }
 
-            return _parents[syntaxNode];
+            return parents[syntaxNode];
         }
 
         private Dictionary<SyntaxNode, SyntaxNode?> CreateParentsDictionary(CompilationUnitSyntax root)

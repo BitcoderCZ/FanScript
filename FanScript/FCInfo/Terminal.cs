@@ -12,14 +12,14 @@ namespace FanScript.FCInfo
         public int Index { get; private set; }
         public Vector3I Pos { get; private set; }
 
-        public Terminal(WireType _wireType, TerminalType _type, string _name)
+        public Terminal(WireType wireType, TerminalType type, string _name)
         {
-            WireType = _wireType;
-            Type = _type;
+            WireType = wireType;
+            Type = type;
             Name = _name;
         }
-        public Terminal(WireType _wireType, TerminalType _type)
-            : this(_wireType, _type, string.Empty)
+        public Terminal(WireType wireType, TerminalType type)
+            : this(wireType, type, string.Empty)
         {
         }
 

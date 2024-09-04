@@ -8,10 +8,10 @@ namespace FanScript.LangServer.Classification
         public readonly TextSpan Span;
         public readonly SemanticTokenType Classification;
 
-        public ClassifiedSpan(TextSpan _span, SemanticTokenType _classification)
+        public ClassifiedSpan(TextSpan span, SemanticTokenType classification)
         {
-            Span = _span;
-            Classification = _classification;
+            Span = span;
+            Classification = classification;
         }
     }
 }

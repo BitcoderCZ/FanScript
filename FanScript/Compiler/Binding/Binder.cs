@@ -15,25 +15,25 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class Binder
     {
-        private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
-        private readonly bool _isScript;
-        private readonly FunctionSymbol? _function;
+        private readonly DiagnosticBag diagnostics = new DiagnosticBag();
+        private readonly bool isScript;
+        private readonly FunctionSymbol? function;
 
-        private Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)> _loopStack = new Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)>();
+        private Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)> loopStack = new Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)>();
         private int onStatementDepth = 0;
-        private int _labelCounter;
-        private BoundScope _scope;
+        private int labelCounter;
+        private BoundScope scope;
 
         private Binder(bool isScript, BoundScope? parent, FunctionSymbol? function)
         {
-            _scope = new BoundScope(parent);
-            _isScript = isScript;
-            _function = function;
+            scope = new BoundScope(parent);
+            this.isScript = isScript;
+            this.function = function;
 
             if (function is not null)
             {
                 foreach (ParameterSymbol p in function.Parameters)
-                    _scope.TryDeclareVariable(p);
+                    scope.TryDeclareVariable(p);
             }
         }
 
@@ -80,7 +80,7 @@ namespace FanScript.Compiler.Binding
 
             // Check for main/script with global statements
 
-            ImmutableArray<FunctionSymbol> functions = binder._scope.GetDeclaredFunctions();
+            ImmutableArray<FunctionSymbol> functions = binder.scope.GetDeclaredFunctions();
 
             FunctionSymbol? scriptFunction;
 
@@ -90,7 +90,7 @@ namespace FanScript.Compiler.Binding
                 scriptFunction = null;
 
             ImmutableArray<Diagnostic> diagnostics = binder.Diagnostics.Concat(scopeDiagnostics).ToImmutableArray();
-            ImmutableArray<VariableSymbol> variables = binder._scope.GetDeclaredVariables();
+            ImmutableArray<VariableSymbol> variables = binder.scope.GetDeclaredVariables();
 
             if (previous is not null)
                 diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
@@ -122,11 +122,11 @@ namespace FanScript.Compiler.Binding
                 BoundBlockStatement loweredBody = Lowerer.Lower(function, body);
 
                 if (function.Type != TypeSymbol.Void && !ControlFlowGraph.AllPathsReturn(loweredBody))
-                    binder._diagnostics.ReportAllPathsMustReturn(function.Declaration.Identifier.Location);
+                    binder.diagnostics.ReportAllPathsMustReturn(function.Declaration.Identifier.Location);
 
                 if (function != globalScope.ScriptFunction)
                 {
-                    ImmutableArray<VariableSymbol> vars = binder._scope.GetDeclaredVariables();
+                    ImmutableArray<VariableSymbol> vars = binder.scope.GetDeclaredVariables();
 
                     foreach (var @var in vars)
                         @var.MakeUnique(varDistinguisher);
@@ -136,7 +136,7 @@ namespace FanScript.Compiler.Binding
                 }
 
                 functionBodies.Add(function, loweredBody);
-                functionVariables.Add(function, binder._scope.GetDeclaredVariables());
+                functionVariables.Add(function, binder.scope.GetDeclaredVariables());
 
                 diagnostics.AddRange(binder.Diagnostics);
             }
@@ -182,7 +182,7 @@ namespace FanScript.Compiler.Binding
                 string parameterName = parameterSyntax.Identifier.Text;
 
                 if (!seenParameterNames.Add(parameterName))
-                    _diagnostics.ReportParameterAlreadyDeclared(parameterSyntax.Location, parameterName);
+                    diagnostics.ReportParameterAlreadyDeclared(parameterSyntax.Location, parameterName);
                 else
                     parameters.Add(new ParameterSymbol(parameterName, modifiers, parameterType));
             }
@@ -190,12 +190,12 @@ namespace FanScript.Compiler.Binding
             TypeSymbol type = syntax.TypeClause is null ? TypeSymbol.Void : BindTypeClause(syntax.TypeClause);
 
             if (type != TypeSymbol.Void)
-                _diagnostics.ReportFeatureNotImplemented(syntax.TypeClause?.Location ?? TextLocation.None, "Non void functions");
+                diagnostics.ReportFeatureNotImplemented(syntax.TypeClause?.Location ?? TextLocation.None, "Non void functions");
 
             FunctionSymbol function = new FunctionSymbol(syntax.Identifier.Text, parameters.ToImmutable(), type, syntax);
             if (syntax.Identifier.Text is not null &&
-                !_scope.TryDeclareFunction(function))
-                _diagnostics.ReportSymbolAlreadyDeclared(syntax.Identifier.Location, function.Name);
+                !scope.TryDeclareFunction(function))
+                diagnostics.ReportSymbolAlreadyDeclared(syntax.Identifier.Location, function.Name);
         }
 
 
@@ -248,7 +248,7 @@ namespace FanScript.Compiler.Binding
             return result;
         }
 
-        public DiagnosticBag Diagnostics => _diagnostics;
+        public DiagnosticBag Diagnostics => diagnostics;
 
         private BoundStatement BindErrorStatement(SyntaxNode syntax)
             => new BoundExpressionStatement(syntax, new BoundErrorExpression(syntax));
@@ -261,14 +261,14 @@ namespace FanScript.Compiler.Binding
             BoundStatement result = BindStatementInternal(syntax);
             syntax.BoundResult = result;
 
-            //if (!_isScript || !isGlobal)
+            //if (!isScript || !isGlobal)
             //{
             if (result is BoundExpressionStatement es)
             {
                 bool isAllowedExpression = es.Expression.Kind == BoundNodeKind.ErrorExpression ||
                                           es.Expression.Type == TypeSymbol.Void;
                 if (!isAllowedExpression)
-                    _diagnostics.ReportInvalidExpressionStatement(syntax.Location);
+                    diagnostics.ReportInvalidExpressionStatement(syntax.Location);
             }
             //}
 
@@ -315,7 +315,7 @@ namespace FanScript.Compiler.Binding
         private BoundStatement BindBlockStatement(BlockStatementSyntax syntax)
         {
             ImmutableArray<BoundStatement>.Builder statements = ImmutableArray.CreateBuilder<BoundStatement>();
-            //_scope = new BoundScope(_scope);
+            //scope = new BoundScope(scope);
 
             foreach (StatementSyntax statementSyntax in syntax.Statements)
             {
@@ -323,7 +323,7 @@ namespace FanScript.Compiler.Binding
                 statements.Add(statement);
             }
 
-            //_scope = _scope.Parent!;
+            //scope = scope.Parent!;
 
             return new BoundBlockStatement(syntax, statements.ToImmutable());
         }
@@ -332,7 +332,7 @@ namespace FanScript.Compiler.Binding
         {
             if (!Enum.TryParse(syntax.Identifier.Text, out SpecialBlockType type))
             {
-                _diagnostics.ReportUnknownSpecialBlock(syntax.Identifier.Location, syntax.Identifier.Text);
+                diagnostics.ReportUnknownSpecialBlock(syntax.Identifier.Location, syntax.Identifier.Text);
                 return BindErrorStatement(syntax);
             }
 
@@ -347,7 +347,7 @@ namespace FanScript.Compiler.Binding
             if (argumentClause is null && parameters.Length != 0)
             {
                 if (syntax.ArgumentClause is null)
-                    _diagnostics.ReportSBMustHaveArguments(syntax.Identifier.Location, syntax.Identifier.Text);
+                    diagnostics.ReportSBMustHaveArguments(syntax.Identifier.Location, syntax.Identifier.Text);
                 return BindErrorStatement(syntax);
             }
 
@@ -365,7 +365,7 @@ namespace FanScript.Compiler.Binding
                 return BindErrorStatement(syntax);
 
             if (variable.IsReadOnly)
-                _diagnostics.ReportCannotAssignReadOnlyVariable(syntax.OperatorToken.Location, variable.Name);
+                diagnostics.ReportCannotAssignReadOnlyVariable(syntax.OperatorToken.Location, variable.Name);
 
             BoundPostfixKind kind;
             switch (syntax.OperatorToken.Kind)
@@ -377,7 +377,7 @@ namespace FanScript.Compiler.Binding
                     kind = BoundPostfixKind.Decrement;
                     break;
                 default:
-                    _diagnostics.ReportUndefinedPostfixOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, variable.Type);
+                    diagnostics.ReportUndefinedPostfixOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, variable.Type);
                     return BindErrorStatement(syntax);
             }
 
@@ -392,7 +392,7 @@ namespace FanScript.Compiler.Binding
             VariableSymbol variable = BindVariableDeclaration(syntax.IdentifierToken, syntax.Modifiers, variableType);
 
             if (variable.IsReadOnly && syntax.OptionalAssignment is null)
-                _diagnostics.ReportConstantNotInitialized(syntax.IdentifierToken.Location);
+                diagnostics.ReportConstantNotInitialized(syntax.IdentifierToken.Location);
 
             BoundStatement? optionalAssignment = syntax.OptionalAssignment is null ? null : BindStatement(syntax.OptionalAssignment);
 
@@ -413,9 +413,9 @@ namespace FanScript.Compiler.Binding
                             return BindErrorStatement(syntax);
 
                         if (variable.IsReadOnly && variable.Initialized)
-                            _diagnostics.ReportCannotAssignReadOnlyVariable(syntax.AssignmentToken.Location, variable.Name);
+                            diagnostics.ReportCannotAssignReadOnlyVariable(syntax.AssignmentToken.Location, variable.Name);
                         else if (variable.Modifiers.HasFlag(Modifiers.Constant) && boundExpression.ConstantValue is null)
-                            _diagnostics.ReportValueMustBeConstant(syntax.Expression.Location);
+                            diagnostics.ReportValueMustBeConstant(syntax.Expression.Location);
 
                         variable.Initialize(boundExpression.ConstantValue);
 
@@ -432,12 +432,12 @@ namespace FanScript.Compiler.Binding
 
                         if (property is null)
                         {
-                            _diagnostics.ReportUndefinedProperty(propertyClause.IdentifierToken.Location, baseVariable.Type, propertyClause.IdentifierToken.Text);
+                            diagnostics.ReportUndefinedProperty(propertyClause.IdentifierToken.Location, baseVariable.Type, propertyClause.IdentifierToken.Text);
                             return BindErrorStatement(syntax);
                         }
 
                         if (property.IsReadOnly)
-                            _diagnostics.ReportCannotAssignReadOnlyProperty(syntax.AssignmentToken.Location, property.Name);
+                            diagnostics.ReportCannotAssignReadOnlyProperty(syntax.AssignmentToken.Location, property.Name);
 
                         variable = new PropertySymbol(property, new BoundVariableExpression(propertyClause.VariableToken, baseVariable));
 
@@ -455,7 +455,7 @@ namespace FanScript.Compiler.Binding
 
                 if (boundOperator is null)
                 {
-                    _diagnostics.ReportUndefinedBinaryOperator(syntax.AssignmentToken.Location, syntax.AssignmentToken.Text, variable.Type, boundExpression.Type);
+                    diagnostics.ReportUndefinedBinaryOperator(syntax.AssignmentToken.Location, syntax.AssignmentToken.Text, variable.Type, boundExpression.Type);
                     return BindErrorStatement(syntax);
                 }
 
@@ -485,9 +485,9 @@ namespace FanScript.Compiler.Binding
             if (condition.ConstantValue is not null)
             {
                 if ((bool)condition.ConstantValue.GetValueOrDefault(TypeSymbol.Bool) == false)
-                    _diagnostics.ReportUnreachableCode(syntax.ThenStatement);
+                    diagnostics.ReportUnreachableCode(syntax.ThenStatement);
                 else if (syntax.ElseClause is not null)
-                    _diagnostics.ReportUnreachableCode(syntax.ElseClause.ElseStatement);
+                    diagnostics.ReportUnreachableCode(syntax.ElseClause.ElseStatement);
             }
 
             BoundStatement thenStatement = BindStatement(syntax.ThenStatement);
@@ -501,7 +501,7 @@ namespace FanScript.Compiler.Binding
 
             if (condition.ConstantValue != null)
                 if (!(bool)condition.ConstantValue.GetValueOrDefault(TypeSymbol.Bool))
-                    _diagnostics.ReportUnreachableCode(syntax.Body);
+                    diagnostics.ReportUnreachableCode(syntax.Body);
 
             BoundStatement body = BindLoopBody(syntax.Body, out var breakLabel, out var continueLabel);
             return new BoundWhileStatement(syntax, condition, body, breakLabel, continueLabel);
@@ -509,48 +509,48 @@ namespace FanScript.Compiler.Binding
 
         private BoundStatement BindLoopBody(StatementSyntax body, out BoundLabel breakLabel, out BoundLabel continueLabel)
         {
-            _labelCounter++;
-            breakLabel = new BoundLabel($"break{_labelCounter}");
-            continueLabel = new BoundLabel($"continue{_labelCounter}");
+            labelCounter++;
+            breakLabel = new BoundLabel($"break{labelCounter}");
+            continueLabel = new BoundLabel($"continue{labelCounter}");
 
-            _loopStack.Push((breakLabel, continueLabel));
+            loopStack.Push((breakLabel, continueLabel));
             BoundStatement boundBody = BindStatement(body);
-            _ = _loopStack.Pop();
+            _ = loopStack.Pop();
 
             return boundBody;
         }
 
         private BoundStatement BindBreakStatement(BreakStatementSyntax syntax)
         {
-            if (_loopStack.Count == 0)
+            if (loopStack.Count == 0)
             {
-                _diagnostics.ReportInvalidBreakOrContinue(syntax.Keyword.Location, syntax.Keyword.Text);
+                diagnostics.ReportInvalidBreakOrContinue(syntax.Keyword.Location, syntax.Keyword.Text);
                 return BindErrorStatement(syntax);
             }
             else if (onStatementDepth != 0)
             {
-                _diagnostics.ReportBreakOrContinueInSB(syntax.Keyword.Location, syntax.Keyword.Text);
+                diagnostics.ReportBreakOrContinueInSB(syntax.Keyword.Location, syntax.Keyword.Text);
                 return BindErrorStatement(syntax);
             }
 
-            BoundLabel breakLabel = _loopStack.Peek().BreakLabel;
+            BoundLabel breakLabel = loopStack.Peek().BreakLabel;
             return new BoundGotoStatement(syntax, breakLabel);
         }
 
         private BoundStatement BindContinueStatement(ContinueStatementSyntax syntax)
         {
-            if (_loopStack.Count == 0)
+            if (loopStack.Count == 0)
             {
-                _diagnostics.ReportInvalidBreakOrContinue(syntax.Keyword.Location, syntax.Keyword.Text);
+                diagnostics.ReportInvalidBreakOrContinue(syntax.Keyword.Location, syntax.Keyword.Text);
                 return BindErrorStatement(syntax);
             }
             else if (onStatementDepth != 0)
             {
-                _diagnostics.ReportBreakOrContinueInSB(syntax.Keyword.Location, syntax.Keyword.Text);
+                diagnostics.ReportBreakOrContinueInSB(syntax.Keyword.Location, syntax.Keyword.Text);
                 return BindErrorStatement(syntax);
             }
 
-            BoundLabel continueLabel = _loopStack.Peek().ContinueLabel;
+            BoundLabel continueLabel = loopStack.Peek().ContinueLabel;
             return new BoundGotoStatement(syntax, continueLabel);
         }
 
@@ -558,27 +558,27 @@ namespace FanScript.Compiler.Binding
         {
             var expression = syntax.Expression is null ? null : BindExpression(syntax.Expression);
 
-            if (_function is null)
+            if (function is null)
             {
                 if (expression is not null)
                 {
                     // Main does not support return values.
-                    _diagnostics.ReportInvalidReturnWithValueInGlobalStatements(syntax.Expression!.Location);
+                    diagnostics.ReportInvalidReturnWithValueInGlobalStatements(syntax.Expression!.Location);
                 }
             }
             else
             {
-                if (_function.Type == TypeSymbol.Void)
+                if (function.Type == TypeSymbol.Void)
                 {
                     if (expression is not null)
-                        _diagnostics.ReportInvalidReturnExpression(syntax.Expression!.Location, _function.Name);
+                        diagnostics.ReportInvalidReturnExpression(syntax.Expression!.Location, function.Name);
                 }
                 else
                 {
                     if (expression is null)
-                        _diagnostics.ReportMissingReturnExpression(syntax.ReturnKeyword.Location, _function.Type);
+                        diagnostics.ReportMissingReturnExpression(syntax.ReturnKeyword.Location, function.Type);
                     else
-                        expression = BindConversion(syntax.Expression!.Location, expression, _function.Type);
+                        expression = BindConversion(syntax.Expression!.Location, expression, function.Type);
                 }
             }
 
@@ -591,7 +591,7 @@ namespace FanScript.Compiler.Binding
 
             if (command is null)
             {
-                _diagnostics.ReportUnknownBuildCommand(syntax.Identifier.Location, syntax.Identifier.Text);
+                diagnostics.ReportUnknownBuildCommand(syntax.Identifier.Location, syntax.Identifier.Text);
                 return BindErrorStatement(syntax);
             }
 
@@ -620,7 +620,7 @@ namespace FanScript.Compiler.Binding
             TypeSymbol? type = LookupType(syntax.TypeToken.Text);
             if (type is null)
             {
-                _diagnostics.ReportUndefinedType(syntax.Location, syntax.TypeToken.Text);
+                diagnostics.ReportUndefinedType(syntax.Location, syntax.TypeToken.Text);
                 type = TypeSymbol.Error;
             }
 
@@ -640,13 +640,13 @@ namespace FanScript.Compiler.Binding
                 }
                 else
                 {
-                    _diagnostics.ReportNotAGenericType(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.LessToken.Span.Start, syntax.GreaterToken.Span.End)));
+                    diagnostics.ReportNotAGenericType(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.LessToken.Span.Start, syntax.GreaterToken.Span.End)));
                     return TypeSymbol.Error;
                 }
             }
             else if (type.IsGenericDefinition)
             {
-                _diagnostics.ReportTypeMustHaveGenericParameter(syntax.Location);
+                diagnostics.ReportTypeMustHaveGenericParameter(syntax.Location);
                 return TypeSymbol.Error;
             }
 
@@ -670,7 +670,7 @@ namespace FanScript.Compiler.Binding
             BoundExpression result = BindExpressionInternal(syntax, context);
             if (!canBeVoid && result.Type == TypeSymbol.Void)
             {
-                _diagnostics.ReportExpressionMustHaveValue(syntax.Location);
+                diagnostics.ReportExpressionMustHaveValue(syntax.Location);
                 return new BoundErrorExpression(syntax);
             }
 
@@ -745,7 +745,7 @@ namespace FanScript.Compiler.Binding
             VariableSymbol variable = BindVariableDeclaration(syntax.IdentifierToken, syntax.Modifiers, variableType);
 
             if (variable.Modifiers.HasFlag(Modifiers.Constant))
-                _diagnostics.ReportConstantNotInitialized(syntax.IdentifierToken.Location);
+                diagnostics.ReportConstantNotInitialized(syntax.IdentifierToken.Location);
 
             var res = new BoundVariableExpression(syntax, variable);
             syntax.BoundResult = res;
@@ -763,7 +763,7 @@ namespace FanScript.Compiler.Binding
 
             if (boundOperator is null)
             {
-                _diagnostics.ReportUndefinedUnaryOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, boundOperand.Type);
+                diagnostics.ReportUndefinedUnaryOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, boundOperand.Type);
                 return new BoundErrorExpression(syntax);
             }
 
@@ -782,7 +782,7 @@ namespace FanScript.Compiler.Binding
 
             if (boundOperator is null)
             {
-                _diagnostics.ReportUndefinedBinaryOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, boundLeft.Type, boundRight.Type);
+                diagnostics.ReportUndefinedBinaryOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, boundLeft.Type, boundRight.Type);
                 return new BoundErrorExpression(syntax);
             }
 
@@ -816,11 +816,11 @@ namespace FanScript.Compiler.Binding
                     OutArgument = argument.Modifiers.Any(token => token.Kind == SyntaxKind.OutModifier)
                 }));
 
-            FunctionSymbol? function = _scope.TryLookupFunction(syntax.Identifier.Text, boundArguments.Select(arg => arg.Type!).ToList(), context.MethodObject is not null);
+            FunctionSymbol? function = scope.TryLookupFunction(syntax.Identifier.Text, boundArguments.Select(arg => arg.Type!).ToList(), context.MethodObject is not null);
 
             if (function is null)
             {
-                _diagnostics.ReportUndefinedFunction(syntax.Identifier.Location, syntax.Identifier.Text);
+                diagnostics.ReportUndefinedFunction(syntax.Identifier.Location, syntax.Identifier.Text);
                 return new BoundErrorExpression(syntax);
             }
 
@@ -839,17 +839,17 @@ namespace FanScript.Compiler.Binding
                             ParameterSymbol param = function.Parameters[i];
                             BoundExpression arg = boundArguments[i];
 
-                            TypeSymbol? _genericType = null;
+                            TypeSymbol? paramGenericType = null;
                             if (param.Type == TypeSymbol.Generic)
-                                _genericType = arg.Type;
+                                paramGenericType = arg.Type;
                             else if (param.Type!.IsGenericDefinition && arg.Type!.IsGenericInstance)
-                                _genericType = arg.Type.InnerType;
+                                paramGenericType = arg.Type.InnerType;
 
-                            if (_genericType is not null && _genericType != TypeSymbol.Null)
+                            if (paramGenericType is not null && paramGenericType != TypeSymbol.Null)
                             {
                                 if (genericType is null)
-                                    genericType = _genericType;
-                                else if (!genericType.GenericEquals(_genericType))
+                                    genericType = paramGenericType;
+                                else if (!genericType.GenericEquals(paramGenericType))
                                 {
                                     genericType = null;
                                     break;
@@ -860,23 +860,23 @@ namespace FanScript.Compiler.Binding
 
                     if (genericType is null)
                     {
-                        _diagnostics.ReportCannotInferGenericType(syntax.Location);
+                        diagnostics.ReportCannotInferGenericType(syntax.Location);
                         return new BoundErrorExpression(syntax);
                     }
                     else if (genericType.IsGenericInstance)
                     {
-                        _diagnostics.ReportGenericTypeRecursion(syntax.HasGenericParameter ? syntax.GenericTypeClause.Location : syntax.Location);
+                        diagnostics.ReportGenericTypeRecursion(syntax.HasGenericParameter ? syntax.GenericTypeClause.Location : syntax.Location);
                         return new BoundErrorExpression(syntax);
                     }
                     else if (!function.AllowedGenericTypes.Value.Contains(genericType))
                     {
-                        _diagnostics.ReportSpecificGenericTypeNotAllowed(syntax.HasGenericParameter ? syntax.GenericTypeClause.Location : syntax.Location, genericType, function.AllowedGenericTypes.Value);
+                        diagnostics.ReportSpecificGenericTypeNotAllowed(syntax.HasGenericParameter ? syntax.GenericTypeClause.Location : syntax.Location, genericType, function.AllowedGenericTypes.Value);
                         return new BoundErrorExpression(syntax);
                     }
                 }
                 else if (syntax.HasGenericParameter)
                 {
-                    _diagnostics.ReportNonGenericMethodTypeArguments(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.LessThanToken.Span.Start, syntax.GreaterThanToken.Span.End)));
+                    diagnostics.ReportNonGenericMethodTypeArguments(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.LessThanToken.Span.Start, syntax.GreaterThanToken.Span.End)));
                     return new BoundErrorExpression(syntax);
                 }
             }
@@ -938,7 +938,7 @@ namespace FanScript.Compiler.Binding
                         PropertyDefinitionSymbol? property = baseEx.Type.GetProperty(nameEx.IdentifierToken.Text);
                         if (property is null)
                         {
-                            _diagnostics.ReportUndefinedProperty(nameEx.IdentifierToken.Location, baseEx.Type, nameEx.IdentifierToken.Text);
+                            diagnostics.ReportUndefinedProperty(nameEx.IdentifierToken.Location, baseEx.Type, nameEx.IdentifierToken.Text);
                             syntax.BoundResult = new BoundVariableExpression(syntax, new PropertySymbol(new PropertyDefinitionSymbol("?", TypeSymbol.Error, null!), baseEx));
                             return new BoundErrorExpression(syntax);
                         }
@@ -963,7 +963,7 @@ namespace FanScript.Compiler.Binding
         {
             if (syntax.Elements.Count == 0)
             {
-                _diagnostics.ReportEmptyArrayInitializer(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.OpenSquareToken.Span.Start, syntax.CloseSquareToken.Span.End)));
+                diagnostics.ReportEmptyArrayInitializer(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.OpenSquareToken.Span.Start, syntax.CloseSquareToken.Span.End)));
                 return new BoundErrorExpression(syntax);
             }
 
@@ -998,13 +998,13 @@ namespace FanScript.Compiler.Binding
             if (!conversion.Exists)
             {
                 if (expression.Type != TypeSymbol.Error && type != TypeSymbol.Error)
-                    _diagnostics.ReportCannotConvert(diagnosticLocation, expression.Type, type);
+                    diagnostics.ReportCannotConvert(diagnosticLocation, expression.Type, type);
 
                 return new BoundErrorExpression(expression.Syntax);
             }
 
             if (!allowExplicit && conversion.Type == Conversion.TypeEnum.Explicit)
-                _diagnostics.ReportCannotConvertImplicitly(diagnosticLocation, expression.Type, type);
+                diagnostics.ReportCannotConvertImplicitly(diagnosticLocation, expression.Type, type);
 
             if (conversion.IsIdentity || conversion.Type == Conversion.TypeEnum.Direct)
                 return expression;
@@ -1018,7 +1018,7 @@ namespace FanScript.Compiler.Binding
             bool declare = !identifier.IsMissing;
 
             if (name == "_")
-                _diagnostics.ReportInvalidName(identifier.Location, name);
+                diagnostics.ReportInvalidName(identifier.Location, name);
 
             Modifiers validModifiers = ModifiersE.GetValidModifiersFor(ModifierTarget.Variable, type);
 
@@ -1028,7 +1028,7 @@ namespace FanScript.Compiler.Binding
 
                 bool valid = validModifiers.HasFlag(modifier);
                 if (!valid)
-                    _diagnostics.ReportInvalidModifierOnType(token.Location, modifier, type);
+                    diagnostics.ReportInvalidModifierOnType(token.Location, modifier, type);
 
                 return valid;
             });
@@ -1037,10 +1037,10 @@ namespace FanScript.Compiler.Binding
                 ? new GlobalVariableSymbol(name, modifiers, type)
                 : new LocalVariableSymbol(name, modifiers, type);
 
-            if (declare && !_scope.TryDeclareVariable(variable))
-                _diagnostics.ReportSymbolAlreadyDeclared(identifier.Location, name);
+            if (declare && !scope.TryDeclareVariable(variable))
+                diagnostics.ReportSymbolAlreadyDeclared(identifier.Location, name);
             else if (name.Length > FancadeConstants.MaxVariableNameLength && !modifiers.HasFlag(Modifiers.Constant))
-                _diagnostics.ReportVariableNameTooLong(identifier.Location, name);
+                diagnostics.ReportVariableNameTooLong(identifier.Location, name);
 
             return variable;
         }
@@ -1054,13 +1054,13 @@ namespace FanScript.Compiler.Binding
             if (context.OutArgument && name == "_")
                 return new NullVariableSymbol();
 
-            switch (_scope.TryLookupVariable(name))
+            switch (scope.TryLookupVariable(name))
             {
                 case VariableSymbol variable:
                     return variable;
 
                 default:
-                    _diagnostics.ReportUndefinedVariable(identifierToken.Location, name);
+                    diagnostics.ReportUndefinedVariable(identifierToken.Location, name);
                     return null;
             }
         }
@@ -1105,7 +1105,7 @@ namespace FanScript.Compiler.Binding
                     span = syntax.CloseParenthesisToken.Span;
 
                 TextLocation location = new TextLocation(syntax.SyntaxTree.Text, span);
-                _diagnostics.ReportWrongArgumentCount(location, type, name, parameters.Length, syntax.Arguments.Count);
+                diagnostics.ReportWrongArgumentCount(location, type, name, parameters.Length, syntax.Arguments.Count);
                 return null;
             }
 
@@ -1125,7 +1125,7 @@ namespace FanScript.Compiler.Binding
                         modifier == Modifiers.Out ? parameter.Modifiers.HasFlag(Modifiers.Out) : true;
 
                     if (!valid)
-                        _diagnostics.ReportArgumentCannotHaveModifier(token.Location, parameter.Name, modifier);
+                        diagnostics.ReportArgumentCannotHaveModifier(token.Location, parameter.Name, modifier);
 
                     return valid;
                 });
@@ -1133,12 +1133,12 @@ namespace FanScript.Compiler.Binding
                 argModifiersBuilder.Add(modifiers);
 
                 if (parameter.Modifiers.HasFlag(Modifiers.Ref) && !modifiers.HasFlag(Modifiers.Ref))
-                    _diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Ref);
+                    diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Ref);
                 else if (parameter.Modifiers.HasFlag(Modifiers.Out) && !modifiers.HasFlag(Modifiers.Out))
-                    _diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Out);
+                    diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Out);
                 else if (modifiers.MakesTargetReference(out Modifiers? makesRefMod) && (argument is not BoundVariableExpression variable ||
                     (variable.Variable.IsReadOnly && argument.Syntax.Kind != SyntaxKind.VariableDeclarationExpression && variable.Variable is not NullVariableSymbol)))
-                    _diagnostics.ReportByRefArgMustBeVariable(argumentLocation, makesRefMod.Value);
+                    diagnostics.ReportByRefArgMustBeVariable(argumentLocation, makesRefMod.Value);
 
                 boundArguments[i] = BindConversion(argumentLocation, argument, parameter.Type);
             }
@@ -1164,7 +1164,7 @@ namespace FanScript.Compiler.Binding
                     bool isModifier = token.Kind.IsModifier();
 
                     if (!isModifier)
-                        _diagnostics.ReportNotAModifier(token.Location, token.Text);
+                        diagnostics.ReportNotAModifier(token.Location, token.Text);
 
                     return isModifier;
                 })
@@ -1176,29 +1176,29 @@ namespace FanScript.Compiler.Binding
                     bool valid = modifier.GetTargets().Contains(target);
 
                     if (!valid)
-                        _diagnostics.ReportInvalidModifier(token.Location, modifier, target, modifier.GetTargets());
+                        diagnostics.ReportInvalidModifier(token.Location, modifier, target, modifier.GetTargets());
 
                     return valid;
                 })
                 .Where(checkModifier)
                 .ToList();
 
-            IEnumerable<Modifiers> _modifiers = modifiersAndTokens.Select(item => item.Modifier);
+            IEnumerable<Modifiers> modsEnumerable = modifiersAndTokens.Select(item => item.Modifier);
 
             // remove conflicting modifiers
             for (int i = 0; i < modifiersAndTokens.Count; i++)
             {
                 Modifiers? conflict = null;
-                foreach (var _conflict in modifiersAndTokens[i].Modifier.GetConflictingModifiers())
-                    if (_modifiers.Contains(_conflict))
+                foreach (var possibleConflict in modifiersAndTokens[i].Modifier.GetConflictingModifiers())
+                    if (modsEnumerable.Contains(possibleConflict))
                     {
-                        conflict = _conflict;
+                        conflict = possibleConflict;
                         break;
                     }
 
                 if (conflict is not null)
                 {
-                    _diagnostics.ReportConflictingModifiers(modifiersAndTokens[i].Token.Location, conflict.Value, modifiersAndTokens[i].Modifier);
+                    diagnostics.ReportConflictingModifiers(modifiersAndTokens[i].Token.Location, conflict.Value, modifiersAndTokens[i].Modifier);
 
                     modifiersAndTokens.RemoveAt(i);
                     i--;
@@ -1222,7 +1222,7 @@ namespace FanScript.Compiler.Binding
                     }
 
                 if (!found)
-                    _diagnostics.ReportMissignRequiredModifiers(token.Location, mod, required);
+                    diagnostics.ReportMissignRequiredModifiers(token.Location, mod, required);
             }
 
             // construct the enum
@@ -1231,7 +1231,7 @@ namespace FanScript.Compiler.Binding
             foreach (var (modifier, token) in modifiersAndTokens)
             {
                 if (modifiers.HasFlag(modifier))
-                    _diagnostics.ReportDuplicateModifier(token.Location, modifier);
+                    diagnostics.ReportDuplicateModifier(token.Location, modifier);
                 else
                     modifiers |= modifier;
             }

@@ -27,9 +27,9 @@ namespace FanScript.Compiler.Emit
         public ConnectTarget In => InStore.In;
         public IEnumerable<ConnectTarget> Out => OutStore.Out;
 
-        public MultiEmitStore(EmitStore _inStore, EmitStore outStore)
+        public MultiEmitStore(EmitStore inStore, EmitStore outStore)
         {
-            InStore = _inStore;
+            InStore = inStore;
             OutStore = outStore;
         }
     }
@@ -44,10 +44,10 @@ namespace FanScript.Compiler.Emit
         {
             Debug.Assert(block.Type.Type == BlockType.Active, "block.Type.Type must be BlockType.Active");
         }
-        public BasicEmitStore(Block _in, Terminal _inTerminal, Block _out, Terminal _outTerminal)
+        public BasicEmitStore(Block @in, Terminal inTerminal, Block @out, Terminal outTerminal)
         {
-            In = new BlockConnectTarget(_in, _inTerminal);
-            Out = [new BlockConnectTarget(_out, _outTerminal)];
+            In = new BlockConnectTarget(@in, inTerminal);
+            Out = [new BlockConnectTarget(@out, outTerminal)];
         }
 
         /// <summary>
@@ -97,9 +97,9 @@ namespace FanScript.Compiler.Emit
 
         public readonly string LabelName;
 
-        public GotoEmitStore(string _name)
+        public GotoEmitStore(string name)
         {
-            LabelName = _name;
+            LabelName = name;
         }
     }
 
@@ -108,12 +108,12 @@ namespace FanScript.Compiler.Emit
         public Block OnCondition;
         public Terminal OnConditionTerminal;
 
-        public ConditionalGotoEmitStore(Block _in, Terminal _inConnector, Block _onCondition,
-            Terminal _onConditionConnector, Block _out, Terminal _outConnector)
-            : base(_in, _inConnector, _out, _outConnector)
+        public ConditionalGotoEmitStore(Block @in, Terminal inConnector, Block onCondition,
+            Terminal onConditionConnector, Block @out, Terminal outConnector)
+            : base(@in, inConnector, @out, outConnector)
         {
-            OnCondition = _onCondition;
-            OnConditionTerminal = _onConditionConnector;
+            OnCondition = onCondition;
+            OnConditionTerminal = onConditionConnector;
         }
     }
 
@@ -124,9 +124,9 @@ namespace FanScript.Compiler.Emit
 
         public readonly string Name;
 
-        public LabelEmitStore(string _name)
+        public LabelEmitStore(string name)
         {
-            Name = _name;
+            Name = name;
         }
     }
 
@@ -144,9 +144,9 @@ namespace FanScript.Compiler.Emit
         public ConnectTarget In => new NopConnectTarget();
         public IEnumerable<ConnectTarget> Out { get; }
 
-        public AbsoluteEmitStore(Vector3I _blockPos, Vector3I? _subPos = null)
+        public AbsoluteEmitStore(Vector3I blockPos, Vector3I? voxelPos = null)
         {
-            Out = [new AbsoluteConnectTarget(_blockPos, _subPos)];
+            Out = [new AbsoluteConnectTarget(blockPos, voxelPos)];
         }
     }
 }

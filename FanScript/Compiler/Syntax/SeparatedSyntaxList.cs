@@ -15,26 +15,26 @@ namespace FanScript.Compiler.Syntax
     public sealed class SeparatedSyntaxList<T> : SeparatedSyntaxList, IEnumerable<T>
         where T : SyntaxNode
     {
-        private readonly ImmutableArray<SyntaxNode> _nodesAndSeparators;
+        private readonly ImmutableArray<SyntaxNode> nodesAndSeparators;
 
         internal SeparatedSyntaxList(ImmutableArray<SyntaxNode> nodesAndSeparators)
         {
-            _nodesAndSeparators = nodesAndSeparators;
+            this.nodesAndSeparators = nodesAndSeparators;
         }
 
-        public int Count => (_nodesAndSeparators.Length + 1) / 2;
+        public int Count => (nodesAndSeparators.Length + 1) / 2;
 
-        public T this[int index] => (T)_nodesAndSeparators[index * 2];
+        public T this[int index] => (T)nodesAndSeparators[index * 2];
 
         public SyntaxToken GetSeparator(int index)
         {
             if (index < 0 || index >= Count - 1)
                 throw new ArgumentOutOfRangeException(nameof(index));
 
-            return (SyntaxToken)_nodesAndSeparators[index * 2 + 1];
+            return (SyntaxToken)nodesAndSeparators[index * 2 + 1];
         }
 
-        public override ImmutableArray<SyntaxNode> GetWithSeparators() => _nodesAndSeparators;
+        public override ImmutableArray<SyntaxNode> GetWithSeparators() => nodesAndSeparators;
 
         public IEnumerator<T> GetEnumerator()
         {

@@ -31,10 +31,10 @@ namespace FanScript.Compiler.Emit
         public readonly Block Block;
         public readonly Terminal Terminal;
 
-        public BlockConnectTarget(Block _block, Terminal _terminal)
+        public BlockConnectTarget(Block block, Terminal terminal)
         {
-            Block = _block;
-            Terminal = _terminal;
+            Block = block;
+            Terminal = terminal;
         }
     }
 
@@ -46,10 +46,10 @@ namespace FanScript.Compiler.Emit
 
         public Vector3I? VoxelPos { get; init; }
 
-        public AbsoluteConnectTarget(Vector3I _pos, Vector3I? _voxelPos = null)
+        public AbsoluteConnectTarget(Vector3I pos, Vector3I? voxelPos = null)
         {
-            Pos = _pos;
-            VoxelPos = _voxelPos;
+            Pos = pos;
+            VoxelPos = voxelPos;
         }
     }
 }
