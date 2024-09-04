@@ -1117,7 +1117,7 @@ namespace FanScript.Compiler.Binding
                 BoundExpression argument = boundArguments[i];
                 ParameterSymbol parameter = parameters[i];
 
-                Modifiers modifiers = BindModifiers(syntax.Arguments[i].Modifiers, ModifierTarget.Argument, item =>
+                Modifiers argMods = BindModifiers(syntax.Arguments[i].Modifiers, ModifierTarget.Argument, item =>
                 {
                     var (modifier, token) = item;
 
@@ -1130,15 +1130,17 @@ namespace FanScript.Compiler.Binding
                     return valid;
                 });
 
-                argModifiersBuilder.Add(modifiers);
+                argModifiersBuilder.Add(argMods);
 
-                if (parameter.Modifiers.HasFlag(Modifiers.Ref) && !modifiers.HasFlag(Modifiers.Ref))
+                if (parameter.Modifiers.HasFlag(Modifiers.Ref) && !argMods.HasFlag(Modifiers.Ref))
                     diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Ref);
-                else if (parameter.Modifiers.HasFlag(Modifiers.Out) && !modifiers.HasFlag(Modifiers.Out))
+                else if (parameter.Modifiers.HasFlag(Modifiers.Out) && !argMods.HasFlag(Modifiers.Out))
                     diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Out);
-                else if (modifiers.MakesTargetReference(out Modifiers? makesRefMod) && (argument is not BoundVariableExpression variable ||
+                else if (argMods.MakesTargetReference(out Modifiers? makesRefMod) && (argument is not BoundVariableExpression variable ||
                     (variable.Variable.IsReadOnly && argument.Syntax.Kind != SyntaxKind.VariableDeclarationExpression && variable.Variable is not NullVariableSymbol)))
                     diagnostics.ReportByRefArgMustBeVariable(argumentLocation, makesRefMod.Value);
+                else if (parameter.Modifiers.HasFlag(Modifiers.Constant) && argument.ConstantValue is null)
+                    diagnostics.ReportValueMustBeConstant(argument.Syntax.Location);
 
                 boundArguments[i] = BindConversion(argumentLocation, argument, parameter.Type);
             }

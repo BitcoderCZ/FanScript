@@ -2,3 +2,8 @@ func foo(readonly float a, const float b)
 {
     inspect(a + b)
 }
+
+float a = 3
+const float b = 5
+
+foo(a, b)
