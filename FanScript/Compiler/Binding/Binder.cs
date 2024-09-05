@@ -63,11 +63,13 @@ namespace FanScript.Compiler.Binding
 
             ImmutableArray<BoundStatement>.Builder statements = ImmutableArray.CreateBuilder<BoundStatement>();
 
+            binder.scope = new BoundScope(binder.scope);
             foreach (GlobalStatementSyntax globalStatement in globalStatements)
             {
                 BoundStatement statement = binder.BindGlobalStatement(globalStatement.Statement);
                 statements.Add(statement);
             }
+            binder.scope = binder.scope.Parent!;
 
             // Check global statements
             GlobalStatementSyntax[] firstGlobalStatementPerSyntaxTree = syntaxTrees
@@ -91,7 +93,7 @@ namespace FanScript.Compiler.Binding
                 scriptFunction = null;
 
             ImmutableArray<Diagnostic> diagnostics = binder.Diagnostics.Concat(scopeDiagnostics).ToImmutableArray();
-            ImmutableArray<VariableSymbol> variables = binder.scope.GetDeclaredVariables();
+            ImmutableArray<VariableSymbol> variables = binder.scope.GetAllDeclaredVariables();
 
             if (previous is not null)
                 diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
@@ -323,7 +325,7 @@ namespace FanScript.Compiler.Binding
         private BoundStatement BindBlockStatement(BlockStatementSyntax syntax)
         {
             ImmutableArray<BoundStatement>.Builder statements = ImmutableArray.CreateBuilder<BoundStatement>();
-            //scope = new BoundScope(scope);
+            scope = new BoundScope(scope);
 
             foreach (StatementSyntax statementSyntax in syntax.Statements)
             {
@@ -331,7 +333,7 @@ namespace FanScript.Compiler.Binding
                 statements.Add(statement);
             }
 
-            //scope = scope.Parent!;
+            scope = scope.Parent!;
 
             return new BoundBlockStatement(syntax, statements.ToImmutable());
         }

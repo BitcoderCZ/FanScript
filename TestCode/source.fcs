@@ -1,16 +1,16 @@
 on Play
 {
-    const global float SEGMENTS_PER_LEG = 3
+    const global float SEGMENTS_PER_LEG = 4
     const global float POINTS_PER_LEG = SEGMENTS_PER_LEG + 1
     const global float NUMB_LEGS = 4
     const global float TOTAL_POINTS = POINTS_PER_LEG * NUMB_LEGS
 
-    const global float BODY_HEIGHT = 1.6
+    const global float BODY_HEIGHT = 1.8
 
     // dist when not moving
-    const global float RELOCATE_LIMB_DIST_BASE = .3
+    const global float RELOCATE_LIMB_DIST_BASE = .35
     // dist when moving at max speed + RELOCATE_LIMB_DIST_BASE
-    const global float RELOCATE_LIMB_DIST = .7
+    const global float RELOCATE_LIMB_DIST = .9
 
     const global float MOVE_SPEED = 0.075
 
@@ -27,7 +27,7 @@ on Play
     
     global vec3 bodyPos = vec3(0, BODY_HEIGHT, 0)
 
-    const float legOff = 0.32
+    const float legOff = 0.35
     global array<vec3> legOffs =
     [
         vec3(legOff, 0, legOff),
@@ -82,7 +82,7 @@ updateLegs()
 // body y pos
 float bodyY = 0
 
-on Loop(null, NUMB_LEGS, out i)
+on Loop(null, NUMB_LEGS, out inline float i)
 {
     bodyY += legCastHits.get(i).y
 }
@@ -99,7 +99,7 @@ func updateLegs()
 
     on Loop(0, NUMB_LEGS, out inline float i)
     {
-        vec3 rayPos = bodyPos + legDirs.get(i) * 1.5
+        vec3 rayPos = bodyPos + legDirs.get(i) * 2.2
         raycast(rayPos + vec3(0, 2, 0), rayPos - vec3(0, 10, 0), out _, out vec3 hitPos, out _)
 
         legCastHits.set(i, hitPos)
@@ -184,7 +184,7 @@ func fabric(float limb, vec3 target)
         // loop backwards
         on Loop(POINTS_PER_LEG - 2, -1, out _i)
         {
-            i = _i + off
+            inline float i = _i + off
             inline float nextIndex = i + 1
 
             inline vec3 point = targetPoints.get(i)
@@ -201,13 +201,13 @@ func fabric(float limb, vec3 target)
         // loop forwards
         on Loop(0, SEGMENTS_PER_LEG, out _i)
         {  
-            i = _i + off
-            nextIndex = i + 1
+            inline float i = _i + off
+            inline float nextIndex = i + 1
 
-            point = targetPoints.get(i)
-            nextPoint = targetPoints.get(nextIndex)
+            inline vec3 point = targetPoints.get(i)
+            inline vec3 nextPoint = targetPoints.get(nextIndex)
 
-            move = normalize(nextPoint - point) * lengths.get(i)
+            vec3 move = normalize(nextPoint - point) * lengths.get(i)
 
             targetPoints.set(nextIndex, point + move)
         }

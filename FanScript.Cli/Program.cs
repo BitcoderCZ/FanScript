@@ -7,6 +7,7 @@ using FanScript.Compiler.Emit.CodeBuilders;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
 using MathUtils.Vectors;
+using System.Diagnostics;
 using TextCopy;
 
 namespace FanScript.Cli
@@ -61,6 +62,8 @@ namespace FanScript.Cli
         {
             if (!File.Exists(opts.Src))
                 return Log.Error($"Source file '{opts.Src}' wasn't found.", ErrorCode.FileNotFound);
+
+            Debugger.Launch();
 
             SyntaxTree tree = SyntaxTree.Load(opts.Src);
 

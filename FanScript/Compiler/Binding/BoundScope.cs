@@ -20,7 +20,11 @@ namespace FanScript.Compiler.Binding
             if (VariablelExists(variable))
                 return false;
 
-            variables.Add(variable.Name, variable);
+            if (variable is GlobalVariableSymbol)
+                getTopScope().variables.Add(variable.Name, variable);
+            else
+                variables.Add(variable.Name, variable);
+
             return true;
         }
 
@@ -43,10 +47,7 @@ namespace FanScript.Compiler.Binding
         {
             if (variables.ContainsKey(variable.Name)) return true;
 
-            if (variable is GlobalVariableSymbol)
-                return Parent?.VariablelExists(variable) ?? false;
-            else
-                return false;
+            return Parent?.VariablelExists(variable) ?? false;
         }
 
         private bool FunctionExists(FunctionSymbol function)
@@ -65,12 +66,12 @@ namespace FanScript.Compiler.Binding
             return Parent?.FunctionExists(function) ?? false;
         }
 
-        public Symbol? TryLookupVariable(string name, bool onlyGlobal = false)
+        public Symbol? TryLookupVariable(string name)
         {
-            if (variables.TryGetValue(name, out var variable) && (!onlyGlobal || variable is GlobalVariableSymbol))
+            if (variables.TryGetValue(name, out var variable))
                 return variable;
 
-            return Parent?.TryLookupVariable(name, true);
+            return Parent?.TryLookupVariable(name);
         }
 
         public FunctionSymbol? TryLookupFunction(string name, IEnumerable<TypeSymbol> arguments, bool method)
@@ -108,7 +109,34 @@ namespace FanScript.Compiler.Binding
         public ImmutableArray<VariableSymbol> GetDeclaredVariables()
             => variables.Values.ToImmutableArray();
 
+        public ImmutableArray<VariableSymbol> GetAllDeclaredVariables()
+        {
+            ImmutableArray<VariableSymbol>.Builder builder = ImmutableArray.CreateBuilder<VariableSymbol>(variables.Count);
+
+            builder.AddRange(variables.Values);
+
+            BoundScope? current = Parent;
+
+            while (current is not null)
+            {
+                builder.AddRange(current.variables.Values);
+                current = current.Parent;
+            }
+
+            return builder.ToImmutable();
+        }
+
         public ImmutableArray<FunctionSymbol> GetDeclaredFunctions()
             => functions.Values.SelectMany(list => list).ToImmutableArray();
+
+        private BoundScope getTopScope()
+        {
+            BoundScope current = this;
+
+            while (current.Parent is not null)
+                current = current.Parent;
+
+            return current;
+        }
     }
 }
