@@ -22,8 +22,8 @@ on Play
     const global float CAN_MOVE_AFTER = 15
     const global float CAN_MOVE_AFTER_ADJACENT = 10 // !!! MUST BE SMALLER THAN CAN_MOVE_AFTER !!!
 
-    object segmentPrefab = null // rod on the z axis, without collision
-    global object body = null // any 1x1x1 block
+    obj segmentPrefab = null // rod on the z axis, without collision
+    global obj body = null // any 1x1x1 block
     
     global vec3 bodyPos = vec3(0, BODY_HEIGHT, 0)
 
@@ -42,7 +42,7 @@ on Play
         normalize(vec3(-1, 0, -1)),
         normalize(vec3(-1, 0,  1))
     ]
-    global array<object> legSegments
+    global array<obj> legSegments
     global array<float> legMoveStart
     global array<float> lengths
     global array<vec3> points
@@ -62,7 +62,7 @@ on Play
         {
             inline float i = sOff + _i
 
-            segmentPrefab.clone(out inline object segment)
+            segmentPrefab.clone(out inline obj segment)
             legSegments.set(i, segment)
             lengths.set(_i + pOff, 1)
         }

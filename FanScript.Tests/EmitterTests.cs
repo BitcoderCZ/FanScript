@@ -43,7 +43,7 @@ namespace FanScript.Tests
             v.z = 3
             """)]
         [InlineData("""
-            raycast(null, vec3(0, 0, 10), out bool didHit, out vec3 pos, out object hitObj)
+            raycast(null, vec3(0, 0, 10), out bool didHit, out vec3 pos, out obj hitObj)
             """)]
         [InlineData("""
             raycast(null, vec3(0, 0, 10), out _, out _, out _)
@@ -626,7 +626,7 @@ namespace FanScript.Tests
         {
             var text = """
                 float x
-                object o = getObject($[x]$, 0, 0)
+                obj o = getObject($[x]$, 0, 0)
                 """;
 
             var diagnostics = """

@@ -76,7 +76,7 @@
                     return SyntaxKind.KeywordVector3;
                 case "rot":
                     return SyntaxKind.KeywordRotation;
-                case "object":
+                case "obj":
                     return SyntaxKind.KeywordObject;
                 case "constr":
                     return SyntaxKind.KeywordConstraint;
@@ -223,7 +223,7 @@
                 SyntaxKind.KeywordRotation =>
                     "rot",
                 SyntaxKind.KeywordObject =>
-                    "object",
+                    "obj",
                 SyntaxKind.KeywordConstraint =>
                     "constr",
                 SyntaxKind.KeywordArray =>
