@@ -1,6 +1,8 @@
 ﻿using FanScript.Compiler.Symbols;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("FanScript.DocumentationGenerator")]
 namespace FanScript.Compiler
 {
     internal record Constant(TypeSymbol Type, string Name, object Value)
@@ -60,12 +62,38 @@ namespace FanScript.Compiler
         public static readonly Constant PRICE_INCREASE_DOUBLE_100 = new Constant(TypeSymbol.Float, "PRICE_INCREASE_DOUBLE_100", 6f);
         public static readonly Constant PRICE_INCREASE_DOUBLE_1000 = new Constant(TypeSymbol.Float, "PRICE_INCREASE_DOUBLE_1000", 9f);
 
-        private static IEnumerable<Constant>? cache;
+        private static Constant[]? cache;
         public static IEnumerable<Constant> GetAll()
             => cache ??= typeof(Constants)
             .GetFields(BindingFlags.Public | BindingFlags.Static)
             .Select(field => field.GetValue(null) as Constant)
             .Where(val => val is Constant)
-            .Select(constant => constant!);
+            .Select(constant => constant!)
+            .ToArray();
+
+        public static IEnumerable<(string Name, IEnumerable<Constant> Values)> GetGroups()
+        {
+            Constant[] all = GetAll().ToArray();
+
+            // TODO: better way to do this
+            return
+            [
+                get("TOUCH_STATE"),
+                get("TOUCH_FINGER"),
+                get("BUTTON_TYPE"),
+                get("TOUCH_STATE"),
+                get("JOYSTICK_TYPE"),
+                get("SOUND"),
+                get("RANKING"),
+                get("MAX_ITEMS"),
+                get("PRICE_INCREASE"),
+            ];
+
+            (string, IEnumerable<Constant>) get(string name)
+            {
+                return (name, all
+                    .Where(con => con.Name.StartsWith(name)));
+            }
+        }
     }
 }

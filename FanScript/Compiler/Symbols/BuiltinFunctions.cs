@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("FanScript.DocumentationGenerator")]
 namespace FanScript.Compiler.Symbols
 {
     internal static class BuiltinFunctions
@@ -916,6 +917,20 @@ namespace FanScript.Compiler.Symbols
             .Concat(typeof(BuiltinFunctions).GetFields(BindingFlags.Public | BindingFlags.Static)
                 .Where(f => f.FieldType == typeof(FunctionSymbol))
                 .Select(f => (FunctionSymbol)f.GetValue(null)!)
+            );
+
+        private static IEnumerable<(FunctionSymbol, string?)>? functionsWithCategoryCache;
+        internal static IEnumerable<(FunctionSymbol, string?)> GetAllWithCategory()
+            => functionsWithCategoryCache ??= typeof(BuiltinFunctions)
+            .GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Static)
+            .SelectMany(type => type
+                .GetFields(BindingFlags.Public | BindingFlags.Static)
+                .Where(f => f.FieldType == typeof(FunctionSymbol))
+                .Select(f => ((FunctionSymbol)f.GetValue(null)!, (string?)type.Name))
+            )
+            .Concat(typeof(BuiltinFunctions).GetFields(BindingFlags.Public | BindingFlags.Static)
+                .Where(f => f.FieldType == typeof(FunctionSymbol))
+                .Select(f => ((FunctionSymbol)f.GetValue(null)!, (string?)null))
             );
     }
 }

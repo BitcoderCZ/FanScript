@@ -125,7 +125,7 @@ func updateLegs()
     if (currentFrame == 0)
     {
         // set points to targetPoints
-        on Loop(null, TOTAL_POINTS, out i)
+        on Loop(null, TOTAL_POINTS, out inline float i)
         {
             points.set(i, targetPoints.get(i))
         }
@@ -133,7 +133,7 @@ func updateLegs()
     else
     {
         // interpolate points to targetPoints
-        on Loop(null, TOTAL_POINTS, out i)
+        on Loop(null, TOTAL_POINTS, out inline float i)
         {
             points.set(i, targetPoints.get(i) * LIMB_INTERPOLATION_SPEED + points.get(i) * LIMB_INTERPOLATION_SPEED_INV)
         }
@@ -147,7 +147,7 @@ func updateLegs()
 
         on Loop(null, SEGMENTS_PER_LEG, out inline float _i)
         {
-            i = _i + pOff
+            inline float i = _i + pOff
             inline float nextI = i + 1
 
             inline vec3 point = points.get(i)
@@ -182,7 +182,7 @@ func fabric(float limb, vec3 target)
         targetPoints.set(off + SEGMENTS_PER_LEG, target)
 
         // loop backwards
-        on Loop(POINTS_PER_LEG - 2, -1, out _i)
+        on Loop(POINTS_PER_LEG - 2, -1, out inline float _i)
         {
             inline float i = _i + off
             inline float nextIndex = i + 1
@@ -199,7 +199,7 @@ func fabric(float limb, vec3 target)
         targetPoints.set(off, bodyPos + legOffs.get(limb))
 
         // loop forwards
-        on Loop(0, SEGMENTS_PER_LEG, out _i)
+        on Loop(0, SEGMENTS_PER_LEG, out inline float _i)
         {  
             inline float i = _i + off
             inline float nextIndex = i + 1

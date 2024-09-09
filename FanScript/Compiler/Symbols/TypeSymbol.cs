@@ -149,6 +149,18 @@ namespace FanScript.Compiler.Symbols
             return Error;
         }
 
+        public static TypeSymbol GetTypeInternal(string? name)
+        {
+            if (string.IsNullOrEmpty(name))
+                return Error;
+
+            for (int i = 0; i < AllTypes.Length; i++)
+                if (AllTypes[i].Name == name)
+                    return AllTypes[i];
+
+            return Error;
+        }
+
         public bool IsGenericDefinitionOf(TypeSymbol type)
             => IsGenericDefinition && type.IsGenericInstance && NonGenericEquals(type);
         public bool IsGenericInstanceOf(TypeSymbol type)

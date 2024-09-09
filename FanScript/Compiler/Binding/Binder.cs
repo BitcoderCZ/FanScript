@@ -352,6 +352,8 @@ namespace FanScript.Compiler.Binding
                 .Select(param => param.ToParameter())
                 .ToImmutableArray();
 
+            scope = new BoundScope(scope);
+
             BoundArgumentClause? argumentClause = syntax.ArgumentClause is null ? null : BindArgumentClause(syntax.ArgumentClause, parameters, "SpecialBlock", syntax.Identifier.Text);
 
             if (argumentClause is null && parameters.Length != 0)
@@ -364,6 +366,8 @@ namespace FanScript.Compiler.Binding
             onStatementDepth++;
             BoundBlockStatement block = (BoundBlockStatement)BindBlockStatement(syntax.Block);
             onStatementDepth--;
+
+            scope = scope.Parent!;
 
             return new BoundSpecialBlockStatement(syntax, type, argumentClause, block);
         }
