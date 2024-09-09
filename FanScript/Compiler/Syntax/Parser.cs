@@ -173,7 +173,7 @@ namespace FanScript.Compiler.Syntax
                 case SyntaxKind.OpenBraceToken:
                     return ParseBlockStatement();
                 case SyntaxKind.KeywordOn:
-                    return ParseSpecialBlockStatement();
+                    return ParseEventStatement();
                 case SyntaxKind.IdentifierToken when Peek(1).Kind switch
                 {
                     SyntaxKind.PlusPlusToken => true,
@@ -250,7 +250,7 @@ namespace FanScript.Compiler.Syntax
             return new BlockStatementSyntax(syntaxTree, openBraceToken, statements.ToImmutable(), closeBraceToken);
         }
 
-        private StatementSyntax ParseSpecialBlockStatement()
+        private StatementSyntax ParseEventStatement()
         {
             SyntaxToken onKeyword = MatchToken(SyntaxKind.KeywordOn);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
@@ -259,7 +259,7 @@ namespace FanScript.Compiler.Syntax
                 argumentClause = ParseArgumentClause();
             BlockStatementSyntax block = ParseBlockStatement();
 
-            return new SpecialBlockStatementSyntax(syntaxTree, onKeyword, identifier, argumentClause, block);
+            return new EventStatementSyntax(syntaxTree, onKeyword, identifier, argumentClause, block);
         }
 
         private StatementSyntax ParsePostfixStatement()

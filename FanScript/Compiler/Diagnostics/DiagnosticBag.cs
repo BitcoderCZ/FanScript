@@ -99,7 +99,7 @@ namespace FanScript.Compiler.Diagnostics
           => ReportError(location, $"The keyword '{text}' can only be used inside of loops.");
 
         public void ReportBreakOrContinueInSB(TextLocation location, string text)
-          => ReportError(location, $"The keyword '{text}' cannot be used inside of an on block.");
+          => ReportError(location, $"The keyword '{text}' cannot be used inside of a event block.");
 
         public void ReportValueMustBeConstant(TextLocation location)
             => ReportError(location, "Value must be constant.");
@@ -149,8 +149,8 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportConflictingModifiers(TextLocation location, Modifiers modifier, Modifiers conflictingModifier)
             => ReportError(location, $"Modifier '{conflictingModifier.ToKind().GetText()}' conflicts with modifier '{modifier.ToKind().GetText()}'.");
 
-        public void ReportUnknownSpecialBlock(TextLocation location, string text)
-            => ReportError(location, $"Unknown on block '{text}'.");
+        public void ReportUnknownEvent(TextLocation location, string text)
+            => ReportError(location, $"Unknown event '{text}'.");
 
         public void ReportArgumentMustHaveModifier(TextLocation location, string name, Modifiers modifier)
             => ReportError(location, $"Argument for paramater '{name}' must be passed with the '{modifier.ToKind().GetText()}' modifier.");
@@ -171,7 +171,7 @@ namespace FanScript.Compiler.Diagnostics
             => ReportError(location, $"Property '{name}' is read-only and cannot be assigned to.");
 
         public void ReportSBMustHaveArguments(TextLocation location, string sbType)
-            => ReportError(location, $"On block '{sbType}' must have arguments.");
+            => ReportError(location, $"Event '{sbType}' must have arguments.");
 
         public void ReportMissignRequiredModifiers(TextLocation location, Modifiers mod, IEnumerable<Modifiers> required)
             => ReportError(location, $"Modifier '{mod.ToKind().GetText()}' requires that one of <{string.Join(", ", required.Select(reqMod => reqMod.ToKind().GetText()))}> is present.");

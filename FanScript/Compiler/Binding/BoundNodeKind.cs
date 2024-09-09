@@ -4,7 +4,7 @@
     {
         // Statements
         BlockStatement,
-        SpecialBlockStatement,
+        EventStatement,
         NopStatement,
         VariableDeclarationStatement,
         AssignmentStatement,
@@ -31,7 +31,7 @@
         ArgumentClause,
         ArraySegmentExpression,
 
-        SpecialBlockCondition,
+        EventCondition,
 
         EmitterHint,
     }

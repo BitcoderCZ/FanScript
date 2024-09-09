@@ -137,7 +137,7 @@ namespace FanScript.Compiler.Emit
                 BoundAssignmentStatement => emitAssigmentStatement((BoundAssignmentStatement)statement),
                 BoundPostfixStatement => emitPostfixStatement((BoundPostfixStatement)statement),
                 BoundGotoStatement => emitGotoStatement((BoundGotoStatement)statement),
-                BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundSpecialBlockCondition condition => emitSpecialBlockStatement(condition.SBType, condition.ArgumentClause?.Arguments, conditionalGoto.Label),
+                BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundEventCondition condition => emitEventStatement(condition.EventType, condition.ArgumentClause?.Arguments, conditionalGoto.Label),
                 BoundConditionalGotoStatement => emitConditionalGotoStatement((BoundConditionalGotoStatement)statement),
                 BoundLabelStatement => emitLabelStatement((BoundLabelStatement)statement),
                 BoundReturnStatement => new ReturnEmitStore(), // TODO: add proper method when non void methods are supported
@@ -177,37 +177,37 @@ namespace FanScript.Compiler.Emit
             return connector.Store;
         }
 
-        private EmitStore emitSpecialBlockStatement(SpecialBlockType type, ImmutableArray<BoundExpression>? arguments, BoundLabel onTrueLabel)
+        private EmitStore emitEventStatement(EventType type, ImmutableArray<BoundExpression>? arguments, BoundLabel onTrueLabel)
         {
             BlockDef def;
             switch (type)
             {
-                case SpecialBlockType.Play:
+                case EventType.Play:
                     def = Blocks.Control.PlaySensor;
                     break;
-                case SpecialBlockType.LateUpdate:
+                case EventType.LateUpdate:
                     def = Blocks.Control.LateUpdate;
                     break;
-                case SpecialBlockType.BoxArt:
+                case EventType.BoxArt:
                     def = Blocks.Control.BoxArtSensor;
                     break;
-                case SpecialBlockType.Touch:
+                case EventType.Touch:
                     def = Blocks.Control.TouchSensor;
                     break;
-                case SpecialBlockType.Swipe:
+                case EventType.Swipe:
                     def = Blocks.Control.SwipeSensor;
                     break;
-                case SpecialBlockType.Button:
+                case EventType.Button:
                     def = Blocks.Control.Button;
                     break;
-                case SpecialBlockType.Collision:
+                case EventType.Collision:
                     def = Blocks.Control.Collision;
                     break;
-                case SpecialBlockType.Loop:
+                case EventType.Loop:
                     def = Blocks.Control.Loop;
                     break;
                 default:
-                    throw new Exception($"Unknown {typeof(SpecialBlockType)}: {type}");
+                    throw new Exception($"Unknown {typeof(EventType)}: {type}");
             }
 
             Block block = builder.AddBlock(def);
@@ -216,7 +216,7 @@ namespace FanScript.Compiler.Emit
 
             switch (type)
             {
-                case SpecialBlockType.Touch:
+                case EventType.Touch:
                     {
                         object?[]? values = emitContext.ValidateConstants(arguments!.Value.AsMemory(2..), true);
                         if (values is null)
@@ -228,12 +228,12 @@ namespace FanScript.Compiler.Emit
                         connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(..2)));
                         return new BasicEmitStore(block);
                     }
-                case SpecialBlockType.Swipe:
+                case EventType.Swipe:
                     {
                         connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan()));
                         return new BasicEmitStore(block);
                     }
-                case SpecialBlockType.Button:
+                case EventType.Button:
                     {
                         object?[]? values = emitContext.ValidateConstants(arguments!.Value.AsMemory(), true);
                         if (values is null)
@@ -243,12 +243,12 @@ namespace FanScript.Compiler.Emit
                             builder.SetBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
                     }
                     break;
-                case SpecialBlockType.Collision:
+                case EventType.Collision:
                     {
                         connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(1..), arguments!.Value.AsMemory(..1)));
                         return new BasicEmitStore(block);
                     }
-                case SpecialBlockType.Loop:
+                case EventType.Loop:
                     {
                         connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(2..), arguments!.Value.AsMemory(..2)));
                         return new BasicEmitStore(block);

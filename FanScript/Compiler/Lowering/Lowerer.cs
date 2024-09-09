@@ -195,9 +195,9 @@ namespace FanScript.Compiler.Lowering
             }
         }
 
-        protected override BoundStatement RewriteSpecialBlockStatement(BoundSpecialBlockStatement node)
+        protected override BoundStatement RewriteEventStatement(BoundEventStatement node)
         {
-            BoundSpecialBlockStatement newNode = (BoundSpecialBlockStatement)base.RewriteSpecialBlockStatement(node);
+            BoundEventStatement newNode = (BoundEventStatement)base.RewriteEventStatement(node);
 
             // onPlay
             //      <body>
@@ -215,7 +215,7 @@ namespace FanScript.Compiler.Lowering
             BoundLabel endLabel = GenerateLabel("end");
             BoundBlockStatement result = Block(
                 newNode.Syntax,
-                GotoTrue(newNode.Syntax, onTrueLabel, new BoundSpecialBlockCondition(newNode.Syntax, newNode.Type, newNode.ArgumentClause)),
+                GotoTrue(newNode.Syntax, onTrueLabel, new BoundEventCondition(newNode.Syntax, newNode.Type, newNode.ArgumentClause)),
                 Goto(newNode.Syntax, endLabel),
                 Label(newNode.Syntax, onTrueLabel),
                 // Hint(newNode.Syntax, BoundEmitterHint.HintKind.StatementBlockStart), might need to be sooner if there are ref variables, so let emitter handle it

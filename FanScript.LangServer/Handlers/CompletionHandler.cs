@@ -46,7 +46,7 @@ namespace FanScript.LangServer.Handlers
                 Kind = CompletionItemKind.Class, // use Struct instead?
             })
             .ToImmutableArray();
-        private static readonly ImmutableArray<CompletionItem> specialBlockTypes = Enum.GetValues<SpecialBlockType>()
+        private static readonly ImmutableArray<CompletionItem> eventTypes = Enum.GetValues<EventType>()
             .Select(sbt =>
             {
                 var info = sbt.GetInfo();
@@ -135,7 +135,7 @@ namespace FanScript.LangServer.Handlers
             Keywords = 1 << 0,
             Modifiers = 1 << 1,
             Types = 1 << 2,
-            SpecialBlockTypes = 1 << 3,
+            EventTypes = 1 << 3,
             Values = 1 << 4,
             Variables = 1 << 5,
             Functions = 1 << 6,
@@ -207,8 +207,8 @@ namespace FanScript.LangServer.Handlers
                 length += modifiers.Length;
             if (recomendations.HasFlag(CurrentRecomendations.Types))
                 length += types.Length;
-            if (recomendations.HasFlag(CurrentRecomendations.SpecialBlockTypes))
-                length += specialBlockTypes.Length;
+            if (recomendations.HasFlag(CurrentRecomendations.EventTypes))
+                length += eventTypes.Length;
             if (recomendations.HasFlag(CurrentRecomendations.Values))
                 length += values.Length;
             if (recomendations.HasFlag(CurrentRecomendations.BuildCommand))
@@ -265,8 +265,8 @@ namespace FanScript.LangServer.Handlers
                 result.AddRange(modifiers);
             if (recomendations.HasFlag(CurrentRecomendations.Types))
                 result.AddRange(types);
-            if (recomendations.HasFlag(CurrentRecomendations.SpecialBlockTypes))
-                result.AddRange(specialBlockTypes);
+            if (recomendations.HasFlag(CurrentRecomendations.EventTypes))
+                result.AddRange(eventTypes);
             if (recomendations.HasFlag(CurrentRecomendations.Values))
                 result.AddRange(values);
             if (recomendations.HasFlag(CurrentRecomendations.BuildCommand))
@@ -425,10 +425,10 @@ namespace FanScript.LangServer.Handlers
                     break;
                 case ArgumentClauseSyntax argumentClause:
                     return CurrentRecomendations.InExpression | CurrentRecomendations.Modifiers | CurrentRecomendations.Types;
-                case SpecialBlockStatementSyntax specialBlock:
+                case EventStatementSyntax @event:
                     {
-                        if (node == specialBlock.Identifier)
-                            return CurrentRecomendations.SpecialBlockTypes;
+                        if (node == @event.Identifier)
+                            return CurrentRecomendations.EventTypes;
                     }
                     break;
                 case BuildCommandStatementSyntax buildCommand:

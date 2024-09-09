@@ -1,8 +1,8 @@
 ﻿namespace FanScript.Compiler.Syntax
 {
-    public sealed partial class SpecialBlockStatementSyntax : StatementSyntax
+    public sealed partial class EventStatementSyntax : StatementSyntax
     {
-        internal SpecialBlockStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keywordToken, SyntaxToken identifier, ArgumentClauseSyntax? argumentClause, BlockStatementSyntax block)
+        internal EventStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keywordToken, SyntaxToken identifier, ArgumentClauseSyntax? argumentClause, BlockStatementSyntax block)
             : base(syntaxTree)
         {
             KeywordToken = keywordToken;
@@ -11,7 +11,7 @@
             Block = block;
         }
 
-        public override SyntaxKind Kind => SyntaxKind.SpecialBlockStatement;
+        public override SyntaxKind Kind => SyntaxKind.EventStatement;
         public SyntaxToken KeywordToken { get; }
         public SyntaxToken Identifier { get; }
         public ArgumentClauseSyntax? ArgumentClause { get; }

@@ -291,8 +291,8 @@ namespace FanScript.Compiler.Binding
             {
                 case SyntaxKind.BlockStatement:
                     return BindBlockStatement((BlockStatementSyntax)syntax);
-                case SyntaxKind.SpecialBlockStatement:
-                    return BindSpecialBlockStatement((SpecialBlockStatementSyntax)syntax);
+                case SyntaxKind.EventStatement:
+                    return BindEventStatement((EventStatementSyntax)syntax);
                 case SyntaxKind.PostfixStatement:
                     return BindPostfixStatement((PostfixStatementSyntax)syntax);
                 case SyntaxKind.VariableDeclarationStatement:
@@ -338,11 +338,11 @@ namespace FanScript.Compiler.Binding
             return new BoundBlockStatement(syntax, statements.ToImmutable());
         }
 
-        private BoundStatement BindSpecialBlockStatement(SpecialBlockStatementSyntax syntax)
+        private BoundStatement BindEventStatement(EventStatementSyntax syntax)
         {
-            if (!Enum.TryParse(syntax.Identifier.Text, out SpecialBlockType type))
+            if (!Enum.TryParse(syntax.Identifier.Text, out EventType type))
             {
-                diagnostics.ReportUnknownSpecialBlock(syntax.Identifier.Location, syntax.Identifier.Text);
+                diagnostics.ReportUnknownEvent(syntax.Identifier.Location, syntax.Identifier.Text);
                 return BindErrorStatement(syntax);
             }
 
@@ -354,7 +354,7 @@ namespace FanScript.Compiler.Binding
 
             scope = new BoundScope(scope);
 
-            BoundArgumentClause? argumentClause = syntax.ArgumentClause is null ? null : BindArgumentClause(syntax.ArgumentClause, parameters, "SpecialBlock", syntax.Identifier.Text);
+            BoundArgumentClause? argumentClause = syntax.ArgumentClause is null ? null : BindArgumentClause(syntax.ArgumentClause, parameters, "Event", syntax.Identifier.Text);
 
             if (argumentClause is null && parameters.Length != 0)
             {
@@ -369,7 +369,7 @@ namespace FanScript.Compiler.Binding
 
             scope = scope.Parent!;
 
-            return new BoundSpecialBlockStatement(syntax, type, argumentClause, block);
+            return new BoundEventStatement(syntax, type, argumentClause, block);
         }
 
         private BoundStatement BindPostfixStatement(PostfixStatementSyntax syntax)

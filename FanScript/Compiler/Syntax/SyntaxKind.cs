@@ -42,7 +42,7 @@
         CompilationUnit,
         GlobalStatement,
         BlockStatement,
-        SpecialBlockStatement,
+        EventStatement,
         ExpressionStatement,
         IfStatement,
         WhileStatement,

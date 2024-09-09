@@ -615,7 +615,7 @@ namespace FanScript.Tests
                 """;
 
             var diagnostics = $"""
-                The keyword '{keyword}' cannot be used inside of an on block.
+                The keyword '{keyword}' cannot be used inside of a event block.
                 """;
 
             AssertDiagnostics(text, diagnostics);
@@ -806,7 +806,7 @@ namespace FanScript.Tests
                 """;
 
             var diagnostics = $"""
-                Unknown on block 'Foo'.
+                Unknown event 'Foo'.
                 """;
 
             AssertDiagnostics(text, diagnostics);
@@ -889,7 +889,7 @@ namespace FanScript.Tests
                 """;
 
             var diagnostics = $"""
-                On block 'Touch' must have arguments.
+                Event 'Touch' must have arguments.
                 """;
 
             AssertDiagnostics(text, diagnostics);

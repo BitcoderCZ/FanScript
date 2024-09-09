@@ -23,8 +23,8 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.BlockStatement:
                     WriteBlockStatement((BoundBlockStatement)node, writer);
                     break;
-                case BoundNodeKind.SpecialBlockStatement:
-                    WriteSpecialBlockStatement((BoundSpecialBlockStatement)node, writer);
+                case BoundNodeKind.EventStatement:
+                    WriteEventStatement((BoundEventStatement)node, writer);
                     break;
                 case BoundNodeKind.NopStatement:
                     WriteNopStatement((BoundNopStatement)node, writer);
@@ -101,8 +101,8 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.ArraySegmentExpression:
                     WriteArraySegmentExpression((BoundArraySegmentExpression)node, writer);
                     break;
-                case BoundNodeKind.SpecialBlockCondition:
-                    WriteSpecialBlockCondition((BoundSpecialBlockCondition)node, writer);
+                case BoundNodeKind.EventCondition:
+                    WriteEventCondition((BoundEventCondition)node, writer);
                     break;
                 default:
                     throw new Exception($"Unexpected node {node.Kind}");
@@ -159,7 +159,7 @@ namespace FanScript.Compiler.Binding
             writer.WriteLine();
         }
 
-        private static void WriteSpecialBlockStatement(BoundSpecialBlockStatement node, IndentedTextWriter writer)
+        private static void WriteEventStatement(BoundEventStatement node, IndentedTextWriter writer)
         {
             writer.WriteKeyword(SyntaxKind.KeywordOn);
             writer.WriteSpace();
@@ -501,9 +501,9 @@ namespace FanScript.Compiler.Binding
             writer.WritePunctuation(SyntaxKind.CloseSquareToken);
         }
 
-        private static void WriteSpecialBlockCondition(BoundSpecialBlockCondition node, IndentedTextWriter writer)
+        private static void WriteEventCondition(BoundEventCondition node, IndentedTextWriter writer)
         {
-            writer.WriteIdentifier(node.SBType.ToString());
+            writer.WriteIdentifier(node.EventType.ToString());
             if (node.ArgumentClause is not null)
                 WriteArgumentClause(node.ArgumentClause, writer);
         }

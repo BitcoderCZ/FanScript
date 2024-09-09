@@ -102,9 +102,9 @@ namespace FanScript.LangServer.Handlers
                             Range = node.Location.ToRange(),
                         };
                     }
-                case SpecialBlockStatementSyntax sb when node == sb.Identifier:
+                case EventStatementSyntax sb when node == sb.Identifier:
                     {
-                        if (!Enum.TryParse(sb.Identifier.Text, out SpecialBlockType type))
+                        if (!Enum.TryParse(sb.Identifier.Text, out EventType type))
                             break;
 
                         var info = type.GetInfo();

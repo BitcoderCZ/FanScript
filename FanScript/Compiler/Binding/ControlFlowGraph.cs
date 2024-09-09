@@ -180,7 +180,7 @@ namespace FanScript.Compiler.Binding
                                 BasicBlock thenBlock = blockFromLabel[cgs.Label];
                                 BasicBlock elseBlock = next;
 
-                                if (cgs.Condition is BoundSpecialBlockCondition)
+                                if (cgs.Condition is BoundEventCondition)
                                 {
                                     connect(current, thenBlock, null);
                                     connect(current, elseBlock, null);

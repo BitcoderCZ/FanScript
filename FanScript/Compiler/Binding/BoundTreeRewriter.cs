@@ -11,8 +11,8 @@ namespace FanScript.Compiler.Binding
             {
                 case BoundNodeKind.BlockStatement:
                     return RewriteBlockStatement((BoundBlockStatement)node);
-                case BoundNodeKind.SpecialBlockStatement:
-                    return RewriteSpecialBlockStatement((BoundSpecialBlockStatement)node);
+                case BoundNodeKind.EventStatement:
+                    return RewriteEventStatement((BoundEventStatement)node);
                 case BoundNodeKind.NopStatement:
                     return RewriteNopStatement((BoundNopStatement)node);
                 case BoundNodeKind.PostfixStatement:
@@ -79,7 +79,7 @@ namespace FanScript.Compiler.Binding
             return new BoundBlockStatement(node.Syntax, builder.MoveToImmutable());
         }
 
-        protected virtual BoundStatement RewriteSpecialBlockStatement(BoundSpecialBlockStatement node)
+        protected virtual BoundStatement RewriteEventStatement(BoundEventStatement node)
         {
             BoundArgumentClause? argumentClause = node.ArgumentClause is null ? null : RewriteArgumentClause(node.ArgumentClause);
 
@@ -88,7 +88,7 @@ namespace FanScript.Compiler.Binding
             if (argumentClause == node.ArgumentClause && block == node.Block)
                 return node;
 
-            return new BoundSpecialBlockStatement(node.Syntax, node.Type, argumentClause, block);
+            return new BoundEventStatement(node.Syntax, node.Type, argumentClause, block);
         }
 
         protected virtual BoundStatement RewriteNopStatement(BoundNopStatement node)
@@ -159,7 +159,7 @@ namespace FanScript.Compiler.Binding
 
         protected virtual BoundStatement RewriteConditionalGotoStatement(BoundConditionalGotoStatement node)
         {
-            if (node.Condition is BoundSpecialBlockCondition)
+            if (node.Condition is BoundEventCondition)
                 return node;
 
             BoundExpression condition = RewriteExpression(node.Condition);
