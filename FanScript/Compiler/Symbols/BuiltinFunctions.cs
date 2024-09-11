@@ -1,9 +1,14 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Emit;
+using FanScript.Compiler.Syntax;
+using FanScript.Compiler.Text;
 using FanScript.FCInfo;
+using FanScript.Midi;
 using FanScript.Utils;
 using MathUtils.Vectors;
+using Melanchall.DryWetMidi.Core;
 using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -599,6 +604,12 @@ namespace FanScript.Compiler.Symbols
 
         private static class Math
         {
+            public static readonly FunctionSymbol Pow
+                = new BuiltinFunctionSymbol("pow",
+                [
+                    new ParameterSymbol("base", TypeSymbol.Float),
+                    new ParameterSymbol("exponent", TypeSymbol.Float),
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Power));
             public static readonly FunctionSymbol Random
                 = new BuiltinFunctionSymbol("random",
                 [
@@ -897,6 +908,106 @@ namespace FanScript.Compiler.Symbols
 
                 }
             );
+
+        public static readonly FunctionSymbol PlayMidi
+            = new BuiltinFunctionSymbol("playMidi",
+                [
+                    new ParameterSymbol("fileName", TypeSymbol.String),
+                ], TypeSymbol.Void, (call, context) =>
+                {
+                    object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), true);
+
+                    if (constants is null)
+                        return new NopEmitStore();
+
+                    string? path = constants[0] as string;
+
+                    if (string.IsNullOrWhiteSpace(path))
+                        throw new Exception();
+
+                    MidiFile file;
+                    using (FileStream stream = File.OpenRead(path))
+                        file = MidiFile.Read(stream, new ReadingSettings());
+
+                    ConvertSettings settings = ConvertSettings.Default;
+                    settings.MaxChannels = 99;
+
+                    MidiConverter converter = new MidiConverter(file, settings);
+
+                    FcSong song = converter.Convert();
+                    song.Channels.RemoveAt(0);
+                    while (song.Channels.Count > 1)
+                        song.Channels.RemoveAt(1);
+                    var (blocksSize, blocks) = song.ToBlocks();
+
+                    EmitConnector connector = new EmitConnector(context.Connect);
+
+                    float noteRange = (song.MaxNote - song.MinNote) + 0.6f;
+                    SyntaxTree tree = SyntaxTree.Parse(SourceText.From($$"""
+                        global float midi_counter
+                        global vec3 midi_pos
+                        global array<float> channels
+
+                        on Play
+                        {
+                            obj originObj
+                            originObj.getPos(out global vec3 origin, out _)
+                            midi_pos = origin
+                        }
+
+                        midi_counter--
+                        if (midi_counter <= 0)
+                        {
+                            on Loop(0, {{song.Channels.Count}}, out inline float _channelIndex)
+                            {
+                                inline float channelIndex = _channelIndex * 3
+
+                                raycast(midi_pos + vec3(0, 0.6, channelIndex), midi_pos + vec3(0, 0, channelIndex), out bool didHit, out vec3 hitPos, out _)
+
+                                if (didHit)
+                                {
+                                    stopSound(channels.get(channelIndex))
+                                }
+
+                                raycast(midi_pos + vec3(0, {{noteRange.ToString(CultureInfo.InvariantCulture)}}, channelIndex + 1), midi_pos + vec3(0, 0, channelIndex + 1), out didHit, out hitPos, out _)
+
+                                inspect(midi_pos + vec3(0, 0, channelIndex + 1))
+
+                                if (didHit)
+                                {
+                                    // https://discord.com/channels/409219533618806786/464440459410800644/1224463893058031778
+                                    playSound(1, pow(2, (hitPos.y - midi_pos.y + {{(song.MinNote - 0.5f).ToString(CultureInfo.InvariantCulture)}}) / 12), out float channel, false, SOUND_PIANO)
+                                    channels.set(channelIndex, channel)
+                                }
+                            }
+
+                            midi_counter = {{settings.FrameStep}}
+
+                            midi_pos.x += 1
+
+                            if (midi_pos.x - origin.x >= {{blocksSize.X}})
+                            {
+                                midi_pos = vec3(origin.x, origin.y, midi_pos.z + {{song.Channels.Count * 3}})
+                            }
+                        }
+                        """));
+
+                    Compilation compilation = Compilation.CreateScript(null, tree);
+
+                    // TODO: Replace with Debug.Assert lenght == 0
+                    var diagnostics = compilation.Emit(context.Builder);
+                    if (diagnostics.Length != 0)
+                        throw new Exception(diagnostics[0].ToString());
+
+                    Block originBlock = context.Builder.AddBlock(Blocks.Stone);
+
+                    foreach (Vector3I pos in blocks)
+                    {
+                        context.Builder.AddBlockRelativeTo(Blocks.Stone, originBlock, pos);
+                    }
+
+                    return connector.Store;
+                });
 
         public static void Init()
         {

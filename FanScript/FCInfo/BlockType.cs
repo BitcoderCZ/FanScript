@@ -2,6 +2,7 @@
 {
     public enum BlockType
     {
+        NonScript,
         Active,
         Pasive,
         Value

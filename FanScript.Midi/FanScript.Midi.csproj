@@ -8,18 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="CommandLineParser" Version="2.9.1" />
     <PackageReference Include="Melanchall.DryWetMidi" Version="7.2.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FanScript\FanScript.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="FancadeLoaderLib">
-      <HintPath>..\FancadeLoaderLib.dll</HintPath>
-    </Reference>
     <Reference Include="MathUtils">
       <HintPath>..\MathUtils.dll</HintPath>
     </Reference>

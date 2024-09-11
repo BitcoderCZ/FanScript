@@ -11,7 +11,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FanScript.Tests", "FanScrip
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FanScript.Generators", "FanScript.Generators\FanScript.Generators.csproj", "{622CC0FB-2253-41EC-AF08-F00EEFE12035}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FanScript.Cli", "FanScript.Cli\FanScript.Cli.csproj", "{F6FD8705-1271-4792-AA60-E20546980D6F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FanScript.Cli", "FanScript.Cli\FanScript.Cli.csproj", "{F6FD8705-1271-4792-AA60-E20546980D6F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FanScript.Midi", "FanScript.Midi\FanScript.Midi.csproj", "{9121436C-B9D9-4993-BB56-256B05C51BAA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{F6FD8705-1271-4792-AA60-E20546980D6F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6FD8705-1271-4792-AA60-E20546980D6F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F6FD8705-1271-4792-AA60-E20546980D6F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9121436C-B9D9-4993-BB56-256B05C51BAA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9121436C-B9D9-4993-BB56-256B05C51BAA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9121436C-B9D9-4993-BB56-256B05C51BAA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9121436C-B9D9-4993-BB56-256B05C51BAA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

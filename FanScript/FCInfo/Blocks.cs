@@ -6,6 +6,8 @@ namespace FanScript.FCInfo
 {
     public static class Blocks
     {
+        public static BlockDef Stone = new BlockDef("Stone Block", 1, BlockType.NonScript, new Vector2I(1, 1));
+
         public static class Game
         {
             public static readonly BlockDef Win = new BlockDef("Win", 252, BlockType.Active, new Vector2I(2, 2), new Terminal(WireType.Void, TerminalType.Out), new Terminal(WireType.Void, TerminalType.In));
@@ -127,6 +129,7 @@ namespace FanScript.FCInfo
             public static readonly BlockDef Multiply_Rotation = new BlockDef("Combine", 120, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.Rot, TerminalType.Out, "Rot1 * Rot2"), new Terminal(WireType.Rot, TerminalType.In, "Rot2"), new Terminal(WireType.Rot, TerminalType.In, "Rot1"));
             public static readonly BlockDef Divide_Number = new BlockDef("Divide", 124, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.Float, TerminalType.Out, "Num1 + Num2"), new Terminal(WireType.Float, TerminalType.In, "Num2"), new Terminal(WireType.Float, TerminalType.In, "Num1"));
             public static readonly BlockDef Modulo_Number = new BlockDef("Modulo", 172, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.Float, TerminalType.Out, "mod(a,b)"), new Terminal(WireType.Float, TerminalType.In, "b"), new Terminal(WireType.Float, TerminalType.In, "a"));
+            public static readonly BlockDef Power = new BlockDef("Power", 457, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.Float, TerminalType.Out, "Base ^ Exponent"), new Terminal(WireType.Float, TerminalType.In, "Exponent"), new Terminal(WireType.Float, TerminalType.In, "Base"));
 
             public static readonly BlockDef Equals_Number = new BlockDef("Equals Numbers", 132, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.Bool, TerminalType.Out, "Num1 = Num2"), new Terminal(WireType.Float, TerminalType.In, "Num2"), new Terminal(WireType.Float, TerminalType.In, "Num1"));
             public static readonly BlockDef Equals_Vector = new BlockDef("Equals Vectors", 136, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.Bool, TerminalType.Out, "Vec1 = Vec2"), new Terminal(WireType.Vec3, TerminalType.In, "Vec2"), new Terminal(WireType.Vec3, TerminalType.In, "Vec1"));

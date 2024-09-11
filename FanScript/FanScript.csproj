@@ -16,6 +16,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Melanchall.DryWetMidi" Version="7.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="TextCopy" Version="6.2.1" />
   </ItemGroup>
@@ -37,6 +38,7 @@
 
     <ItemGroup>
 		<ProjectReference Include="..\FanScript.Generators\FanScript.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+		<ProjectReference Include="..\FanScript.Midi\FanScript.Midi.csproj" />
     </ItemGroup>
 
 </Project>
