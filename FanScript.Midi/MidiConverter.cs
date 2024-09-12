@@ -129,9 +129,7 @@ namespace FanScript.Midi
             Note note = Note.Get(@event.NoteNumber);
             TimeSpan deltaTime = getDeltaTimeTime(@event.DeltaTime);
 
-            builder.PlayNote(@event.Channel, note, deltaTime);
-
-            //Console.WriteLine("Velocity: " + @event.Velocity);
+            builder.PlayNote(@event.Channel, deltaTime, note, @event.Velocity);
         }
 
         private void handleNoteOff(NoteOffEvent @event)
@@ -139,12 +137,14 @@ namespace FanScript.Midi
             Note note = Note.Get(@event.NoteNumber);
             TimeSpan deltaTime = getDeltaTimeTime(@event.DeltaTime);
 
-            builder.EndPlayNote(@event.Channel, note, deltaTime);
+            builder.EndPlayNote(@event.Channel, deltaTime, note);
         }
 
         private void handleProgramChange(ProgramChangeEvent @event)
         {
-            builder.SetInstrument(@event.Channel, @event.ProgramNumber);
+            TimeSpan deltaTime = getDeltaTimeTime(@event.DeltaTime);
+
+            builder.SetInstrument(@event.Channel, deltaTime, @event.ProgramNumber);
         }
 
         #region Utils

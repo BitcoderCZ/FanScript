@@ -88,7 +88,10 @@ namespace FanScript.Cli
             switch (opts.Placer)
             {
                 case BlockPlacerEnum.Tower:
-                    blockPlacer = new TowerBlockPlacer();
+                    blockPlacer = new TowerBlockPlacer()
+                    {
+                        MaxHeight = 10
+                    };
                     break;
                 case BlockPlacerEnum.Ground:
                     blockPlacer = new GroundBlockPlacer();

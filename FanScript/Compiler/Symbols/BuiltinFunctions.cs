@@ -930,7 +930,7 @@ namespace FanScript.Compiler.Symbols
                         file = MidiFile.Read(stream, new ReadingSettings());
 
                     MidiConvertSettings convertSettings = MidiConvertSettings.Default;
-                    convertSettings.MaxFrames = 90 * 60;
+                    convertSettings.MaxFrames = 60 * 30;
 
                     MidiConverter converter = new MidiConverter(file, convertSettings);
 
@@ -939,13 +939,14 @@ namespace FanScript.Compiler.Symbols
 
                     EmitConnector connector = new EmitConnector(context.Connect);
 
-                    // channel frame structure:
-                    // n - note
-                    // s - stop current note
-                    // v - volume
-                    // i - instrument/sound
-                    // nnnn_nnns - z_pos: 0
-                    // vvvv_viii - z_pos: 1
+                    // channel event structure:
+                    // t - type
+                    // d - delta time since last event (in frames)
+                    // a - data0 (optional - depends on type)
+                    // b - data1 (optional - depends on type)
+                    // tttd_dddd - z_pos: 0
+                    // aaaa_aaaa - z_pos: 1
+                    // bbbb_bbbb - z_pos: 2
 
                     SyntaxTree tree = SyntaxTree.Parse(SourceText.From($$"""
                         global float midi_counter
@@ -986,7 +987,7 @@ namespace FanScript.Compiler.Symbols
                                 }
                             }
 
-                            midi_counter = {{convertSettings.FrameStep}}
+                            midi_counter = {{1}}
 
                             midi_pos.x += 1
                         }

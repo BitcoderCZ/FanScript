@@ -6,31 +6,28 @@ using System.Threading.Tasks;
 
 namespace FanScript.Midi
 {
-    internal sealed class ChannelTimeInfo
+    internal struct ChannelTimeInfo
     {
-        private readonly TimeSpan frameLength;
+        public static readonly TimeSpan FrameLength = TimeSpan.FromSeconds(1d / 60d);
 
         public TimeSpan CurrentTime;
-        public TimeSpan FrameTime;
-        public int CurrentFrame;
+        public long CurrentFrame;
 
-        public ChannelTimeInfo(int frameStep)
-        {
-            frameLength = TimeSpan.FromSeconds(1d / 60d) * frameStep; // 60 FPS
-        }
+        private TimeSpan deltaLeftOver;
 
-        public void AddDeltaTime(TimeSpan deltaTime)
+        public long AddDelta(TimeSpan deltaTime)
         {
             CurrentTime += deltaTime;
-        }
 
-        public void StepFrame()
-        {
-            do
-            {
-                FrameTime = FrameTime.Add(frameLength);
-                CurrentFrame++;
-            } while (FrameTime < CurrentTime);
+            double frameDelta = ((double)deltaTime.Ticks + (double)deltaLeftOver.Ticks) / (double)FrameLength.Ticks;
+
+            deltaLeftOver = new TimeSpan((long)((frameDelta % 1d) * FrameLength.Ticks));
+
+            long wholeFrameDelta = (long)frameDelta;
+
+            CurrentFrame += wholeFrameDelta;
+
+            return wholeFrameDelta;
         }
     }
 }

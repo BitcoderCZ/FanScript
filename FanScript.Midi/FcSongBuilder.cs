@@ -18,14 +18,10 @@ namespace FanScript.Midi
         private readonly Dictionary<int, Note> playingNotes = new(); // also array, Note?
         private readonly SongStats stats = new();
         private readonly FcSong.Channel[] channels = new FcSong.Channel[MidiConverter.MaxNumbChannels];
-        private readonly HashSet<byte> usedSounds = [6]; // piano - default
 
         public FcSongBuilder(MidiConvertSettings settings)
         {
             this.settings = settings;
-
-            for (int i = 0; i < channelTime.Length; i++)
-                channelTime[i] = new ChannelTimeInfo(this.settings.FrameStep);
 
             for (int i = 0; i < channels.Length; i++)
                 channels[i] = new FcSong.Channel();
@@ -44,106 +40,55 @@ namespace FanScript.Midi
                         return true;
 
                     return false;
-                }), usedSounds);
+                }));
         }
 
         public void Clear()
         {
-            for (int i = 0; i < channelTime.Length; i++)
-                channelTime[i] = new ChannelTimeInfo(settings.FrameStep);
-
+            Array.Clear(channelTime);
             playingNotes.Clear();
             stats.Clear();
             for (int i = 0; i < channels.Length; i++)
                 channels[i] = new FcSong.Channel();
-
-            usedSounds.Clear();
-            usedSounds.Add(6); // piano - default
         }
 
-        public void PlayNote(int channel, Note note, TimeSpan deltaTime)
+        public void PlayNote(byte channel, TimeSpan deltaTime, Note note, float velocity)
         {
-            ChannelTimeInfo time = getTime(channel);
-
-            time.AddDeltaTime(deltaTime);
-
-            if (time.CurrentTime >= time.FrameTime)
-            {
-                playNote(note, channel);
-
-                time.StepFrame();
-            }
-        }
-        public void EndPlayNote(int channel, Note note, TimeSpan deltaTime)
-        {
-            ChannelTimeInfo time = getTime(channel);
-
-            endPlayNote(note, channel);
-
-            time.AddDeltaTime(deltaTime);
-        }
-
-        public void SetInstrument(FourBitNumber channel, SevenBitNumber instrument)
-        {
-            ChannelTimeInfo time = getTime(channel);
-
-            if (time.CurrentFrame * settings.FrameStep > settings.MaxFrames)
+            if (getLongDelta(channel, deltaTime, out long longDelta))
                 return;
 
-            byte sound = (byte)Utils.InstrumentToFcSound(instrument);
-
-            ref ChannelFrame frame = ref getChannelFrame(channel, time.CurrentFrame);
-            frame.NewSound = sound;
-
-            usedSounds.Add(sound);
-
-            Console.WriteLine($"[{channel}] Set instrument to '{instrument}' (sound: {sound}");
-        }
-
-        private void playNote(Note note, int channel)
-        {
             if (channel < 0 || channel >= MidiConverter.MaxNumbChannels)
             {
                 Console.WriteLine($"[{channel}] Out of bounds channel");
                 return;
             }
 
-            ChannelTimeInfo time = getTime(channel);
-
-            if (time.CurrentFrame * settings.FrameStep > settings.MaxFrames)
-                return;
-
             if (playingNotes.TryGetValue(channel, out Note? currentlyPlaying))
-            {
                 Console.WriteLine($"[{channel}] Tried to start note, but one is aready playing ({currentlyPlaying})");
-            }
 
             playingNotes[channel] = note;
 
-            byte noteNumb = toNumb(note);
+            byte noteNumb = noteToNumb(note);
+            byte delta = addLongDelta(channel, longDelta);
+            byte bVelocity = (byte)Math.Min(velocity * 255f, 255f);
 
             stats.ChannelUsed(channel);
-            stats.NotePlayed(noteNumb);
-            stats.NotePlaced(time.CurrentFrame);
 
-            Console.WriteLine($"[{channel}] Started playing note '{note}' ({note.NoteNumber}) - {time.CurrentTime.Minutes}:{time.CurrentTime.Seconds}.{time.CurrentTime.Milliseconds}.{time.CurrentTime.Microseconds} {time.FrameTime.Minutes}:{time.FrameTime.Seconds}.{time.FrameTime.Milliseconds}.{time.FrameTime.Microseconds} ({time.CurrentFrame})");
+            ChannelTimeInfo time = channelTime[channel];
+            Console.WriteLine($"[{channel}] Started playing note '{note}' ({note.NoteNumber}) - {time.CurrentTime.Minutes}:{time.CurrentTime.Seconds}.{time.CurrentTime.Milliseconds}.{time.CurrentTime.Microseconds} Frame: {time.CurrentFrame}");
 
-            ref ChannelFrame frame = ref getChannelFrame(channel, time.CurrentFrame);
-            frame.NewNote = noteNumb;
+            channels[channel].Events.Add(new ChannelEvent(ChannelEventType.PlayNote, delta, noteNumb, bVelocity));
         }
-
-        private void endPlayNote(Note note, int channel)
+        public void EndPlayNote(byte channel, TimeSpan deltaTime, Note note)
         {
+            if (getLongDelta(channel, deltaTime, out long longDelta))
+                return;
+
             if (channel < 0 || channel >= MidiConverter.MaxNumbChannels)
             {
                 Console.WriteLine($"Out of bounds channel ({channel})");
                 return;
             }
-
-            ChannelTimeInfo time = getTime(channel);
-
-            if (time.CurrentFrame * settings.FrameStep > settings.MaxFrames)
-                return;
 
             if (!playingNotes.TryGetValue(channel, out Note? currentlyPlaying))
             {
@@ -158,43 +103,71 @@ namespace FanScript.Midi
 
             playingNotes.Remove(channel);
 
+            byte delta = addLongDelta(channel, longDelta);
+
             stats.ChannelUsed(channel);
-            stats.NotePlayed(toNumb(note));
-            stats.NotePlaced(time.CurrentFrame);
 
-            Console.WriteLine($"[{channel}] Stopped playing note '{note}' ({note.NoteNumber}) - {time.CurrentTime.Minutes}:{time.CurrentTime.Seconds}.{time.CurrentTime.Milliseconds}.{time.CurrentTime.Microseconds} {time.FrameTime.Minutes}:{time.FrameTime.Seconds}.{time.FrameTime.Milliseconds}.{time.FrameTime.Microseconds} ({time.CurrentFrame})");
+            ChannelTimeInfo time = channelTime[channel];
+            Console.WriteLine($"[{channel}] Stopped playing note '{note}' ({note.NoteNumber}) - {time.CurrentTime.Minutes}:{time.CurrentTime.Seconds}.{time.CurrentTime.Milliseconds}.{time.CurrentTime.Microseconds} Frame: {time.CurrentFrame}");
 
-            //stepFrame();
-
-            ref ChannelFrame frame = ref getChannelFrame(channel, time.CurrentFrame);
-            frame.StopCurrentNote = true;
+            channels[channel].Events.Add(new ChannelEvent(ChannelEventType.StopCurrentNote, delta));
         }
 
-        private ChannelTimeInfo getTime(int channel)
-            => channelTime[channel];
+        public void SetInstrument(byte channel, TimeSpan deltaTime, SevenBitNumber instrument)
+        {
+            if (getLongDelta(channel, deltaTime, out long longDelta))
+                return;
 
-        private byte toNumb(Note note)
+            byte sound = (byte)Utils.InstrumentToFcSound(instrument);
+
+            byte delta = addLongDelta(channel, longDelta);
+
+            Console.WriteLine($"[{channel}] Set instrument to '{instrument}' (sound: {sound}");
+
+            channels[channel].Events.Add(new ChannelEvent(ChannelEventType.SetInstrument, delta, sound));
+        }
+
+        private byte noteToNumb(Note note)
         {
             return (byte)note.NoteName;
         }
 
-        private ref ChannelFrame getChannelFrame(int channelIndex, int frame)
+        private bool getLongDelta(byte channel, TimeSpan deltaTime, out long longDelta)
         {
-            var channel = channels[channelIndex];
+            ref ChannelTimeInfo time = ref channelTime[channel];
 
-            if (frame >= channel.Frames.Count)
-                CollectionsMarshal.SetCount(channel.Frames, frame + 1);
+            longDelta = time.AddDelta(deltaTime);
 
-            Span<ChannelFrame> span = CollectionsMarshal.AsSpan(channel.Frames);
-            return ref span[frame];
+            return time.CurrentFrame > settings.MaxFrames;
+        }
+
+        private byte addLongDelta(byte channel, long wholeDelta)
+        {
+            uint maxWait = (uint)((1 << (ChannelEvent.MaxDeltaTimeBits + 8)) - 1);
+
+            while (wholeDelta > ChannelEvent.MaxDeltaTime)
+            {
+                uint wait;
+                if (wholeDelta > maxWait)
+                {
+                    wait = maxWait;
+                    wholeDelta -= maxWait;
+                }
+                else
+                {
+                    wait = (uint)wholeDelta;
+                    wholeDelta = 0;
+                }
+
+                channels[channel].Events.Add(new ChannelEvent(ChannelEventType.Wait,(byte)(wait & ChannelEvent.MaxDeltaTime), (byte)(wait >> ChannelEvent.MaxDeltaTimeBits)));
+            }
+
+            return (byte)wholeDelta;
         }
 
         private class SongStats
         {
             public readonly bool[] UsedChannels = new bool[MidiConverter.MaxNumbChannels];
-            public int MaxPos = -1;
-            public int MinNote = int.MaxValue;
-            public int MaxNote = int.MinValue;
 
             public void ChannelUsed(int channel)
             {
@@ -202,26 +175,9 @@ namespace FanScript.Midi
                 UsedChannels[channel] = true;
             }
 
-            public void NotePlayed(int noteNumb)
-            {
-                if (noteNumb < MinNote)
-                    MinNote = noteNumb;
-                if (noteNumb > MaxNote)
-                    MaxNote = noteNumb;
-            }
-
-            public void NotePlaced(int pos)
-            {
-                if (pos > MaxPos)
-                    MaxPos = pos;
-            }
-
             public void Clear()
             {
                 Array.Clear(UsedChannels);
-                MaxPos = -1;
-                MinNote = int.MaxValue;
-                MaxNote = int.MinValue;
             }
         }
     }

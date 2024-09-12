@@ -1,1 +1,64 @@
 playMidi("test.mid")
+
+global float midi_counter
+global vec3 midi_pos
+global array<float> channels
+
+on Play
+{
+    obj originObj
+    originObj.getPos(out global vec3 origin, out _)
+    origin.y -= .5
+    midi_pos = origin
+}
+
+midi_counter--
+if (midi_counter <= 0)
+{
+    on Loop(0, 0/*{{song.Channels.Count}}*/, out inline float _channelIndex)
+    {
+        inline float channelIndex = _channelIndex * 0/*{{FcSong.ChannelSize.X}}*/
+
+        readBinary(midi_pos + vec3(0, 7, channelIndex), 1, out float stopCurrent)
+
+        if (stopCurrent > 0)
+        {
+            stopSound(channels.get(channelIndex))
+        }
+
+        readBinary(midi_pos + vec3(0, 0, channelIndex), 7, out float newNote)
+
+        inspect(newNote)
+
+        if (newNote > 0)
+        {
+            // https://discord.com/channels/409219533618806786/464440459410800644/1224463893058031778
+            playSound(1, pow(2, (newNote - 1) / 12), out float channel, false, SOUND_PIANO)
+            channels.set(channelIndex, channel)
+        }
+    }
+
+    midi_counter = 0/*{{convertSettings.FrameStep}}*/
+
+    midi_pos.x += 1
+}
+
+func readBinary(vec3 pos, float len, out float value)
+{
+    // + 1 - .0625 ((1 / 8) / 2)
+    float y = pos.y + 0.9375
+
+    value = 0
+    float bitVal = 1
+
+    on Loop(0, len, out inline float i)
+    {
+        raycast(vec3(pos.x, y + 0.125 /* 1/8 */, pos.z), vec3(pos.x, y, pos.z), out bool didHit, out _, out _)
+
+        if (didHit)
+            value += bitVal
+
+        y++
+        bitVal *= 2
+    }
+}

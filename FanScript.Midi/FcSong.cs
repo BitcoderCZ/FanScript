@@ -14,22 +14,18 @@ namespace FanScript.Midi
 
         public readonly List<Channel> Channels;
 
-        public readonly HashSet<byte> UsedSounds;
-
         public FcSong()
         {
             Channels = new List<Channel>();
-            UsedSounds = new HashSet<byte>();
         }
-        public FcSong(IEnumerable<Channel> channels, IEnumerable<byte> usedSounds)
+        public FcSong(IEnumerable<Channel> channels)
         {
             Channels = new List<Channel>(channels);
-            UsedSounds = new HashSet<byte>(usedSounds);
         }
 
         public (Vector3I Size, List<Vector3US> Blocks) ToBlocks()
         {
-            int length = Channels.Max(channel => channel.Frames.Count);
+            int length = Channels.Max(channel => channel.Events.Count);
 
             //double sqrt2 = Math.Sqrt(length);
 
@@ -55,30 +51,46 @@ namespace FanScript.Midi
 
             List<Vector3US> blocks = new List<Vector3US>(length);
 
-            for (ushort fIndex = 0; fIndex < length; fIndex++)
+            for (int channelIndex = 0; channelIndex < Channels.Count; channelIndex++)
             {
-                for (int cIndex = 0; cIndex < Channels.Count; cIndex++)
+                Channel channel = Channels[channelIndex];
+
+                Vector3US pos = new Vector3US(0, 0, (ushort)channelIndex * ChannelSize.X);
+
+                for (ushort i = 0; i < channel.Events.Count; i++)
                 {
-                    Channel channel = Channels[cIndex];
-                    if (fIndex >= channel.Frames.Count)
-                        continue;
+                    ChannelEvent cEvent = channel.Events[i];
 
-                    Vector3US pos = new Vector3US(fIndex, 0, (ushort)cIndex * ChannelSize.X);
+                    // channel event structure:
+                    // t - type
+                    // d - delta time since last event (in frames)
+                    // a - data0 (optional - depends on type)
+                    // b - data1 (optional - depends on type)
+                    // tttd_dddd - z_pos: 0
+                    // aaaa_aaaa - z_pos: 1
+                    // bbbb_bbbb - z_pos: 2
 
-                    ChannelFrame frame = channel.Frames[fIndex];
+                    setBinary((byte)((byte)cEvent.Type | (cEvent.DeltaTime << 3)), pos);
 
-                    byte noteValue = 0;
+                    pos.X++;
 
-                    if (frame.StopCurrentNote)
-                        noteValue |= 0b_1000_0000;
-
-                    if (frame.StartNewNote)
-                        noteValue |= Math.Min((byte)(frame.NewNote + 1), (byte)0b_0111_1111);
-
-                    setBinary(noteValue, pos);
-
-                    if (frame.SetNewSound)
-                        setBinary(frame.NewSound, pos + new Vector3US(0, 0, 1));
+                    switch (cEvent.Type)
+                    {
+                        case ChannelEventType.PlayNote:
+                            setBinary(cEvent.Data0, pos); // note
+                            pos.X++;
+                            setBinary(cEvent.Data1, pos); // velocity
+                            pos.X++;
+                            break;
+                        case ChannelEventType.SetInstrument:
+                            setBinary(cEvent.Data0, pos); // the "instrument" - fc sound
+                            pos.X++;
+                            break;
+                        case ChannelEventType.Nop:
+                        case ChannelEventType.StopCurrentNote:
+                        default:
+                            break;
+                    }
                 }
             }
 
@@ -101,15 +113,15 @@ namespace FanScript.Midi
 
         public sealed class Channel
         {
-            public readonly List<ChannelFrame> Frames;
+            public readonly List<ChannelEvent> Events;
 
             public Channel()
             {
-                Frames = new List<ChannelFrame>();
+                Events = new List<ChannelEvent>();
             }
-            public Channel(List<ChannelFrame> frames)
+            public Channel(List<ChannelEvent> events)
             {
-                Frames = frames;
+                Events = events;
             }
         }
     }

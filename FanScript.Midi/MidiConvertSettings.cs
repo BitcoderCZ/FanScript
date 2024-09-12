@@ -12,35 +12,21 @@ namespace FanScript.Midi
 
         public int MaxFrames { get; set; }
 
-        private int frameStep;
-        public int FrameStep
-        {
-            get => frameStep;
-            set
-            {
-                ArgumentOutOfRangeException.ThrowIfLessThan(value, 1);
-
-                frameStep = value;
-            }
-        }
-
         public int MaxChannels { get; set; }
 
         public MidiConvertSettings()
         {
             MaxFrames = 60 * 60; // 60s
-            FrameStep = 4;
             MaxChannels = 10;
         }
         public MidiConvertSettings(MidiConvertSettings other)
-            : this(other.MaxFrames, other.FrameStep, other.MaxChannels)
+            : this(other.MaxFrames, other.MaxChannels)
         {
 
         }
-        public MidiConvertSettings(int maxFrames, int frameStep, int maxChannels)
+        public MidiConvertSettings(int maxFrames, int maxChannels)
         {
             MaxFrames = maxFrames;
-            FrameStep = frameStep;
             MaxChannels = maxChannels;
         }
     }
