@@ -50,7 +50,7 @@ namespace FanScript.Compiler.Binding
 
             binder.Diagnostics.AddRange(syntaxTrees.SelectMany(st => st.Diagnostics));
             if (binder.Diagnostics.HasErrors())
-                return new BoundGlobalScope(previous, binder.Diagnostics.ToImmutableArray(), null, ImmutableArray<FunctionSymbol>.Empty, ImmutableArray<VariableSymbol>.Empty, ImmutableArray<BoundStatement>.Empty);
+                return new BoundGlobalScope(previous, binder.Diagnostics.ToImmutableArray(), null, ImmutableArray<FunctionSymbol>.Empty, ImmutableArray<VariableSymbol>.Empty, ImmutableArray<BoundStatement>.Empty, new Dictionary<FunctionSymbol, int>().AsReadOnly());
 
             IEnumerable<FunctionDeclarationSyntax> functionDeclarations = syntaxTrees.SelectMany(st => st.Root.Members)
                                                   .OfType<FunctionDeclarationSyntax>();
@@ -70,6 +70,10 @@ namespace FanScript.Compiler.Binding
                 statements.Add(statement);
             }
             binder.scope = binder.scope.Parent!;
+
+            Dictionary<FunctionSymbol, int> functionCallCounts = new();
+            foreach (var (func, count) in binder.functionCallCount)
+                functionCallCounts[func] = functionCallCounts.GetValueOrDefault(func, 0) + count;
 
             // Check global statements
             GlobalStatementSyntax[] firstGlobalStatementPerSyntaxTree = syntaxTrees
@@ -98,7 +102,7 @@ namespace FanScript.Compiler.Binding
             if (previous is not null)
                 diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
 
-            return new BoundGlobalScope(previous, diagnostics, scriptFunction, functions, variables, statements.ToImmutable());
+            return new BoundGlobalScope(previous, diagnostics, scriptFunction, functions, variables, statements.ToImmutable(), functionCallCounts.AsReadOnly());
         }
 
         public static BoundProgram BindProgram(bool isScript, BoundProgram? previous, BoundGlobalScope globalScope)
@@ -174,7 +178,7 @@ namespace FanScript.Compiler.Binding
                 functionBodies.ToImmutable(),
                 functionLocals.Select(item =>
                 {
-                    return new KeyValuePair<FunctionSymbol, FunctionInfo>(item.Key, new FunctionInfo(item.Value, functionCallCounts.GetValueOrDefault(item.Key, 0)));
+                    return new KeyValuePair<FunctionSymbol, FunctionInfo>(item.Key, new FunctionInfo(item.Value, functionCallCounts.GetValueOrDefault(item.Key, 0) + globalScope.FunctionCallCounts.GetValueOrDefault(item.Key, 0)));
                 }).ToImmutableDictionary());
         }
 

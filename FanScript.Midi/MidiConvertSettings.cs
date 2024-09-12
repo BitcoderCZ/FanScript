@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace FanScript.Midi
 {
-    public sealed class ConvertSettings
+    public sealed class MidiConvertSettings
     {
-        public static ConvertSettings Default => new ConvertSettings();
+        public static MidiConvertSettings Default => new MidiConvertSettings();
 
         public int MaxFrames { get; set; }
 
@@ -26,18 +26,18 @@ namespace FanScript.Midi
 
         public int MaxChannels { get; set; }
 
-        public ConvertSettings()
+        public MidiConvertSettings()
         {
             MaxFrames = 60 * 60; // 60s
             FrameStep = 4;
             MaxChannels = 10;
         }
-        public ConvertSettings(ConvertSettings other)
+        public MidiConvertSettings(MidiConvertSettings other)
             : this(other.MaxFrames, other.FrameStep, other.MaxChannels)
         {
 
         }
-        public ConvertSettings(int maxFrames, int frameStep, int maxChannels)
+        public MidiConvertSettings(int maxFrames, int frameStep, int maxChannels)
         {
             MaxFrames = maxFrames;
             FrameStep = frameStep;

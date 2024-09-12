@@ -929,20 +929,24 @@ namespace FanScript.Compiler.Symbols
                     using (FileStream stream = File.OpenRead(path))
                         file = MidiFile.Read(stream, new ReadingSettings());
 
-                    ConvertSettings settings = ConvertSettings.Default;
-                    settings.MaxChannels = 99;
+                    MidiConvertSettings convertSettings = MidiConvertSettings.Default;
+                    convertSettings.MaxFrames = 90 * 60;
 
-                    MidiConverter converter = new MidiConverter(file, settings);
+                    MidiConverter converter = new MidiConverter(file, convertSettings);
 
                     FcSong song = converter.Convert();
-                    song.Channels.RemoveAt(0);
-                    while (song.Channels.Count > 1)
-                        song.Channels.RemoveAt(1);
                     var (blocksSize, blocks) = song.ToBlocks();
 
                     EmitConnector connector = new EmitConnector(context.Connect);
 
-                    float noteRange = (song.MaxNote - song.MinNote) + 0.6f;
+                    // channel frame structure:
+                    // n - note
+                    // s - stop current note
+                    // v - volume
+                    // i - instrument/sound
+                    // nnnn_nnns - z_pos: 0
+                    // vvvv_viii - z_pos: 1
+
                     SyntaxTree tree = SyntaxTree.Parse(SourceText.From($$"""
                         global float midi_counter
                         global vec3 midi_pos
@@ -952,6 +956,7 @@ namespace FanScript.Compiler.Symbols
                         {
                             obj originObj
                             originObj.getPos(out global vec3 origin, out _)
+                            origin.y -= .5
                             midi_pos = origin
                         }
 
@@ -960,34 +965,49 @@ namespace FanScript.Compiler.Symbols
                         {
                             on Loop(0, {{song.Channels.Count}}, out inline float _channelIndex)
                             {
-                                inline float channelIndex = _channelIndex * 3
+                                inline float channelIndex = _channelIndex * {{FcSong.ChannelSize.X}}
 
-                                raycast(midi_pos + vec3(0, 0.6, channelIndex), midi_pos + vec3(0, 0, channelIndex), out bool didHit, out vec3 hitPos, out _)
+                                readBinary(midi_pos + vec3(0, 7, channelIndex), 1, out float stopCurrent)
 
-                                if (didHit)
+                                if (stopCurrent > 0)
                                 {
                                     stopSound(channels.get(channelIndex))
                                 }
 
-                                raycast(midi_pos + vec3(0, {{noteRange.ToString(CultureInfo.InvariantCulture)}}, channelIndex + 1), midi_pos + vec3(0, 0, channelIndex + 1), out didHit, out hitPos, out _)
+                                readBinary(midi_pos + vec3(0, 0, channelIndex), 7, out float newNote)
 
-                                inspect(midi_pos + vec3(0, 0, channelIndex + 1))
+                                inspect(newNote)
 
-                                if (didHit)
+                                if (newNote > 0)
                                 {
                                     // https://discord.com/channels/409219533618806786/464440459410800644/1224463893058031778
-                                    playSound(1, pow(2, (hitPos.y - midi_pos.y + {{(song.MinNote - 0.5f).ToString(CultureInfo.InvariantCulture)}}) / 12), out float channel, false, SOUND_PIANO)
+                                    playSound(1, pow(2, (newNote - 1) / 12), out float channel, false, SOUND_PIANO)
                                     channels.set(channelIndex, channel)
                                 }
                             }
 
-                            midi_counter = {{settings.FrameStep}}
+                            midi_counter = {{convertSettings.FrameStep}}
 
                             midi_pos.x += 1
+                        }
 
-                            if (midi_pos.x - origin.x >= {{blocksSize.X}})
+                        func readBinary(vec3 pos, float len, out float value)
+                        {
+                            // + 1 - .0625 ((1 / 8) / 2)
+                            float y = pos.y + 0.9375
+
+                            value = 0
+                            float bitVal = 1
+
+                            on Loop(0, len, out inline float i)
                             {
-                                midi_pos = vec3(origin.x, origin.y, midi_pos.z + {{song.Channels.Count * 3}})
+                                raycast(vec3(pos.x, y + 0.125 /* 1/8 */, pos.z), vec3(pos.x, y, pos.z), out bool didHit, out _, out _)
+
+                                if (didHit)
+                                    value += bitVal
+
+                                y++
+                                bitVal *= 2
                             }
                         }
                         """));

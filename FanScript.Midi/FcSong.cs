@@ -10,14 +10,11 @@ namespace FanScript.Midi
 {
     public sealed class FcSong
     {
+        public static readonly Vector2I ChannelSize = new Vector2I(2, 8);
+
         public readonly List<Channel> Channels;
 
         public readonly HashSet<byte> UsedSounds;
-
-        public int MinNote { get; set; }
-        public int MaxNote { get; set; }
-
-        public int MaxPos { get; set; }
 
         public FcSong()
         {
@@ -30,79 +27,76 @@ namespace FanScript.Midi
             UsedSounds = new HashSet<byte>(usedSounds);
         }
 
-        public (Vector3I Size, List<Vector3I> Blocks) ToBlocks()
+        public (Vector3I Size, List<Vector3US> Blocks) ToBlocks()
         {
-            int length = MaxPos + 1;
+            int length = Channels.Max(channel => channel.Frames.Count);
 
-            double sqrt2 = Math.Sqrt(length);
+            //double sqrt2 = Math.Sqrt(length);
 
-            int noteRange = (MaxNote - MinNote) + 1;
+            //int noteRange = (MaxNote - MinNote) + 1;
 
-            int ySize = Math.Max((int)(sqrt2 / noteRange), 1);
+            //int ySize = Math.Max((int)(sqrt2 / noteRange), 1);
 
-            int xzSize = length / ySize;
+            //int xzSize = length / ySize;
 
-            int xSize = (int)Math.Sqrt(xzSize);
-            int zSize = xzSize / xSize;
+            //int xSize = (int)Math.Sqrt(xzSize);
+            //int zSize = xzSize / xSize;
 
-            while ((xSize * ySize * zSize) < length)
-                xSize++;
+            //while ((xSize * ySize * zSize) < length)
+            //    xSize++;
 
-            const int xStep = 1;
-            int yStep = noteRange;
-            int zStep = Channels.Count * 3;
+            //const int xStep = 1;
+            //int yStep = noteRange;
+            //int zStep = Channels.Count * 3;
 
-            xSize *= xStep;
-            ySize *= yStep;
-            zSize *= zStep;
+            //xSize *= xStep;
+            //ySize *= yStep;
+            //zSize *= zStep;
 
-            List<Vector3I> blocks = new List<Vector3I>(length);
+            List<Vector3US> blocks = new List<Vector3US>(length);
 
-            int x = 0;
-            int y = 0;
-            int z = 0;
-            for (int fIndex = 0; fIndex < length; fIndex++)
+            for (ushort fIndex = 0; fIndex < length; fIndex++)
             {
-                Vector3I pos = new Vector3I(x, y, z);
-
                 for (int cIndex = 0; cIndex < Channels.Count; cIndex++)
                 {
                     Channel channel = Channels[cIndex];
                     if (fIndex >= channel.Frames.Count)
                         continue;
 
+                    Vector3US pos = new Vector3US(fIndex, 0, (ushort)cIndex * ChannelSize.X);
+
                     ChannelFrame frame = channel.Frames[fIndex];
 
+                    byte noteValue = 0;
+
                     if (frame.StopCurrentNote)
-                        blocks.Add(pos + new Vector3I(0, 0, cIndex * 3 + 0));
+                        noteValue |= 0b_1000_0000;
 
                     if (frame.StartNewNote)
-                    {
-                        Debug.Assert(frame.NewNote >= MinNote);
-                        Debug.Assert(frame.NewNote <= MaxNote);
-                        blocks.Add(pos + new Vector3I(0, frame.NewNote - MinNote, cIndex * 3 + 1));
-                    }
+                        noteValue |= Math.Min((byte)(frame.NewNote + 1), (byte)0b_0111_1111);
+
+                    setBinary(noteValue, pos);
 
                     if (frame.SetNewSound)
-                        blocks.Add(pos + new Vector3I(0, frame.NewSound, cIndex * 3 + 2));
-                }
-
-                x += xStep;
-
-                if (x >= xSize)
-                {
-                    x = 0;
-                    z += zStep;
-
-                    if (z >= zSize)
-                    {
-                        z = 0;
-                        y += yStep;
-                    }
+                        setBinary(frame.NewSound, pos + new Vector3US(0, 0, 1));
                 }
             }
 
-            return (new Vector3I(xSize, ySize, zSize), blocks);
+            return (new Vector3I(length, 1, 1), blocks);
+
+            void setBinary(byte value, Vector3US pos)
+            {
+                byte mask = 1;
+
+                for (int i = 0; i < 8; i++)
+                {
+                    if ((value & mask) == mask)
+                        blocks.Add(pos);
+
+                    pos.Y++;
+                    mask <<= 1;
+                }
+            }
         }
 
         public sealed class Channel

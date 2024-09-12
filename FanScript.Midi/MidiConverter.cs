@@ -11,24 +11,26 @@ namespace FanScript.Midi
 {
     public sealed class MidiConverter
     {
+        // TODO: per note and per channel volume, combine, rescale to 0-1, in builder rescale to note range
+
         public const int MaxNumbChannels = 10;
 
         private MidiFile file;
-        private ConvertSettings settings;
+        private MidiConvertSettings settings;
 
         private long microsecondsPerQuaterNote;
         private readonly short ticksPerQuaterNote;
 
         private FcSongBuilder builder;
 
-        public MidiConverter(MidiFile file, ConvertSettings? settings = null)
+        public MidiConverter(MidiFile file, MidiConvertSettings? settings = null)
         {
             this.file = file;
 
             if (settings is null)
-                this.settings = ConvertSettings.Default;
+                this.settings = MidiConvertSettings.Default;
             else
-                this.settings = new ConvertSettings(settings); // clone
+                this.settings = new MidiConvertSettings(settings); // clone
 
             switch (file.TimeDivision)
             {
@@ -128,6 +130,8 @@ namespace FanScript.Midi
             TimeSpan deltaTime = getDeltaTimeTime(@event.DeltaTime);
 
             builder.PlayNote(@event.Channel, note, deltaTime);
+
+            //Console.WriteLine("Velocity: " + @event.Velocity);
         }
 
         private void handleNoteOff(NoteOffEvent @event)
@@ -140,8 +144,6 @@ namespace FanScript.Midi
 
         private void handleProgramChange(ProgramChangeEvent @event)
         {
-            Console.WriteLine($"Changed instrument to: {@event.ProgramNumber}, for channel: {@event.Channel}");
-
             builder.SetInstrument(@event.Channel, @event.ProgramNumber);
         }
 

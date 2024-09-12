@@ -12,7 +12,7 @@ namespace FanScript.Midi
 {
     internal sealed class FcSongBuilder
     {
-        private readonly ConvertSettings settings;
+        private readonly MidiConvertSettings settings;
 
         private readonly ChannelTimeInfo[] channelTime = new ChannelTimeInfo[MidiConverter.MaxNumbChannels];
         private readonly Dictionary<int, Note> playingNotes = new(); // also array, Note?
@@ -20,7 +20,7 @@ namespace FanScript.Midi
         private readonly FcSong.Channel[] channels = new FcSong.Channel[MidiConverter.MaxNumbChannels];
         private readonly HashSet<byte> usedSounds = [6]; // piano - default
 
-        public FcSongBuilder(ConvertSettings settings)
+        public FcSongBuilder(MidiConvertSettings settings)
         {
             this.settings = settings;
 
@@ -44,12 +44,7 @@ namespace FanScript.Midi
                         return true;
 
                     return false;
-                }), usedSounds)
-            {
-                MinNote = stats.MinNote,
-                MaxNote = stats.MaxNote,
-                MaxPos = stats.MaxPos,
-            };
+                }), usedSounds);
         }
 
         public void Clear()
@@ -70,8 +65,7 @@ namespace FanScript.Midi
         {
             ChannelTimeInfo time = getTime(channel);
 
-            if (time.CurrentFrame != 0)
-                time.AddDeltaTime(deltaTime);
+            time.AddDeltaTime(deltaTime);
 
             if (time.CurrentTime >= time.FrameTime)
             {
@@ -102,13 +96,15 @@ namespace FanScript.Midi
             frame.NewSound = sound;
 
             usedSounds.Add(sound);
+
+            Console.WriteLine($"[{channel}] Set instrument to '{instrument}' (sound: {sound}");
         }
 
         private void playNote(Note note, int channel)
         {
             if (channel < 0 || channel >= MidiConverter.MaxNumbChannels)
             {
-                Console.WriteLine($"Out of bounds channel ({channel})");
+                Console.WriteLine($"[{channel}] Out of bounds channel");
                 return;
             }
 
@@ -119,7 +115,7 @@ namespace FanScript.Midi
 
             if (playingNotes.TryGetValue(channel, out Note? currentlyPlaying))
             {
-                Console.WriteLine($"Tried to start the note playing on channel {channel}, but one is aready playing ({currentlyPlaying})");
+                Console.WriteLine($"[{channel}] Tried to start note, but one is aready playing ({currentlyPlaying})");
             }
 
             playingNotes[channel] = note;
@@ -130,7 +126,7 @@ namespace FanScript.Midi
             stats.NotePlayed(noteNumb);
             stats.NotePlaced(time.CurrentFrame);
 
-            Console.WriteLine($"Started playing note '{note}' ({note.NoteNumber}) - {time.CurrentTime.Minutes}:{time.CurrentTime.Seconds}.{time.CurrentTime.Milliseconds}.{time.CurrentTime.Microseconds} {time.FrameTime.Minutes}:{time.FrameTime.Seconds}.{time.FrameTime.Milliseconds}.{time.FrameTime.Microseconds} ({time.CurrentFrame})");
+            Console.WriteLine($"[{channel}] Started playing note '{note}' ({note.NoteNumber}) - {time.CurrentTime.Minutes}:{time.CurrentTime.Seconds}.{time.CurrentTime.Milliseconds}.{time.CurrentTime.Microseconds} {time.FrameTime.Minutes}:{time.FrameTime.Seconds}.{time.FrameTime.Milliseconds}.{time.FrameTime.Microseconds} ({time.CurrentFrame})");
 
             ref ChannelFrame frame = ref getChannelFrame(channel, time.CurrentFrame);
             frame.NewNote = noteNumb;
@@ -166,7 +162,7 @@ namespace FanScript.Midi
             stats.NotePlayed(toNumb(note));
             stats.NotePlaced(time.CurrentFrame);
 
-            Console.WriteLine($"Stopped playing note '{note}' ({note.NoteNumber}) - {time.CurrentTime.Minutes}:{time.CurrentTime.Seconds}.{time.CurrentTime.Milliseconds}.{time.CurrentTime.Microseconds} {time.FrameTime.Minutes}:{time.FrameTime.Seconds}.{time.FrameTime.Milliseconds}.{time.FrameTime.Microseconds} ({time.CurrentFrame})");
+            Console.WriteLine($"[{channel}] Stopped playing note '{note}' ({note.NoteNumber}) - {time.CurrentTime.Minutes}:{time.CurrentTime.Seconds}.{time.CurrentTime.Milliseconds}.{time.CurrentTime.Microseconds} {time.FrameTime.Minutes}:{time.FrameTime.Seconds}.{time.FrameTime.Milliseconds}.{time.FrameTime.Microseconds} ({time.CurrentFrame})");
 
             //stepFrame();
 
