@@ -13,15 +13,11 @@ for (var i = 0; i < 10; i++) {
 
 namespace FanScript.Compiler.Emit.CodeBuilders
 {
-    public class GameFileCodeBuilder : CodeBuilder
+    public class GameFileBlockBuilder : BlockBuilder
     {
         public override BuildPlatformInfo PlatformInfo =>
             BuildPlatformInfo.CanGetBlocks |
             BuildPlatformInfo.CanCreateCustomBlocks;
-
-        public GameFileCodeBuilder(IBlockPlacer blockPlacer) : base(blockPlacer)
-        {
-        }
 
         /// <summary>
         /// 
@@ -40,24 +36,24 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 
             prefabIndex = Math.Clamp(prefabIndex, 0, game.Prefabs.Count - 1);
 
-            PreBuild(startPos);
+            FCInfo.Block[] blocks = PreBuild(startPos, false);
 
-            PrefabList builtInBlocks;
+            PrefabList stockPrefabs;
             using (FcBinaryReader reader = new FcBinaryReader("baseBlocks.fcbl")) // fcbl - Fancade block list
-                builtInBlocks = PrefabList.Load(reader);
+                stockPrefabs = PrefabList.Load(reader);
 
             Prefab prefab = game.Prefabs[prefabIndex];
 
             Dictionary<ushort, PrefabGroup> groupCache = new Dictionary<ushort, PrefabGroup>();
 
-            for (int i = 0; i < blocks.Count; i++)
+            for (int i = 0; i < blocks.Length; i++)
             {
                 FCInfo.Block block = blocks[i];
                 if (block.Type.IsGroup)
                 {
                     if (!groupCache.TryGetValue(block.Type.Id, out var group))
                     {
-                        group = builtInBlocks.GetGroupAsGroup(block.Type.Id);
+                        group = stockPrefabs.GetGroupAsGroup(block.Type.Id);
                         groupCache.Add(block.Type.Id, group);
                     }
 

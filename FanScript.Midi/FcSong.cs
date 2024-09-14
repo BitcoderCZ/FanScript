@@ -10,7 +10,7 @@ namespace FanScript.Midi
 {
     public sealed class FcSong
     {
-        public static readonly Vector2I ChannelSize = new Vector2I(2, 8);
+        public static readonly Vector2I ChannelSize = new Vector2I(1, 8);
 
         public readonly List<Channel> Channels;
 
@@ -86,7 +86,6 @@ namespace FanScript.Midi
                             setBinary(cEvent.Data0, pos); // the "instrument" - fc sound
                             pos.X++;
                             break;
-                        case ChannelEventType.Nop:
                         case ChannelEventType.StopCurrentNote:
                         default:
                             break;

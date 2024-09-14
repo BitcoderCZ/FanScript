@@ -101,13 +101,9 @@ updateChanges();
 
 namespace FanScript.Compiler.Emit.CodeBuilders
 {
-    public class EditorScriptCodeBuilder : CodeBuilder
+    public class EditorScriptBlockBuilder : BlockBuilder
     {
         public override BuildPlatformInfo PlatformInfo => 0;
-
-        public EditorScriptCodeBuilder(IBlockPlacer blockPlacer) : base(blockPlacer)
-        {
-        }
 
         /// <summary>
         /// 
@@ -118,10 +114,9 @@ namespace FanScript.Compiler.Emit.CodeBuilders
         /// <exception cref="Exception"></exception>
         public override object Build(Vector3I startPos, params object[] args)
         {
-            PreBuild(startPos);
+            Block[] blocks = PreBuild(startPos, sortByPos: true); // sortByPos is requred because of a bug that sometimes deletes objects if they are placed from +Z to -Z, even if they aren't overlaping
 
-            if (blocks.Count > 0 && blocks[0].Pos != Vector3I.Zero)
-                blocks.Insert(0, new Block(Vector3I.Zero, new BlockDef(string.Empty, 1, BlockType.Pasive, Vector2I.One)));
+            bool insertBlockAtZero = blocks.Length > 0 && blocks[0].Pos != Vector3I.Zero;
 
             Compression compression = Compression.Base64;
 
@@ -131,22 +126,25 @@ namespace FanScript.Compiler.Emit.CodeBuilders
             switch (compression)
             {
                 case Compression.None:
-                    return buildNormal();
+                    return buildNormal(blocks, insertBlockAtZero);
                 case Compression.Base64:
-                    return buildBase64();
+                    return buildBase64(blocks, insertBlockAtZero);
                 default:
                     throw new Exception($"Unsuported compression: {compression}");
             }
         }
 
-        private string buildNormal()
+        private string buildNormal(Block[] blocks, bool insertBlockAtZero)
         {
             StringBuilder builder = new StringBuilder();
 
-            for (int i = 0; i < blocks.Count; i++)
+            if (insertBlockAtZero)
+                builder.AppendLine($"setBlock(0,0,0,1);"); // make sure the level origin doesn't shift
+
+            for (int i = 0; i < blocks.Length; i++)
             {
                 Block block = blocks[i];
-                builder.AppendLine($"setBlock({block.Pos.X},{block.Pos.Y},{block.Pos.Z}, {block.Type.Id});");
+                builder.AppendLine($"setBlock({block.Pos.X},{block.Pos.Y},{block.Pos.Z},{block.Type.Id});");
             }
 
             builder.AppendLine("updateChanges();");
@@ -154,7 +152,7 @@ namespace FanScript.Compiler.Emit.CodeBuilders
             for (int i = 0; i < values.Count; i++)
             {
                 ValueRecord set = values[i];
-                builder.AppendLine($"setBlockValue({set.Block.Pos.X},{set.Block.Pos.Y}, {set.Block.Pos.Z},{set.ValueIndex},{set.Value.ToBlockValue()});");
+                builder.AppendLine($"setBlockValue({set.Block.Pos.X},{set.Block.Pos.Y},{set.Block.Pos.Z},{set.ValueIndex},{set.Value.ToBlockValue()});");
             }
 
             builder.AppendLine("updateChanges();");
@@ -173,14 +171,24 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 
             return builder.ToString();
         }
-        private string buildBase64()
+        private string buildBase64(Block[] blocks, bool insertBlockAtZero)
         {
             byte[] bufer;
             using (MemoryStream stream = new MemoryStream())
             using (SaveWriter writer = new SaveWriter(stream))
             {
-                writer.WriteInt32(blocks.Count);
-                for (int i = 0; i < blocks.Count; i++)
+                writer.WriteInt32(blocks.Length);
+
+                if (insertBlockAtZero)
+                {
+                    // make sure the level origin doesn't shift
+                    writer.WriteInt32(0);
+                    writer.WriteInt32(0);
+                    writer.WriteInt32(0);
+                    writer.WriteInt32(1);
+                }
+
+                for (int i = 0; i < blocks.Length; i++)
                 {
                     Block block = blocks[i];
                     writer.WriteInt32(block.Pos.X);

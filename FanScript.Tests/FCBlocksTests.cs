@@ -28,25 +28,26 @@ namespace FanScript.Tests
 
             FrozenDictionary<(TerminalType, WireType), (BlockDef, Terminal)> terminalDict = new Dictionary<(TerminalType, WireType), (BlockDef, Terminal)>(generateTerminalDict()).ToFrozenDictionary();
 
-            CodeBuilder builder = new GameFileCodeBuilder(new GroundBlockPlacer());
-            builder.BlockPlacer.EnterStatementBlock();
+            BlockBuilder builder = new GameFileBlockBuilder();
+            CodePlacer placer = new GroundCodePlacer(builder);
 
-            Block? lastBlock = null;
-
-            foreach (var def in active)
+            using (placer.StatementBlock())
             {
-                Block block = placeAndConnectAllTerminals(def);
+                Block? lastBlock = null;
 
-                if (lastBlock is not null)
-                    builder.Connect(new BlockConnectTarget(lastBlock, lastBlock.Type.After), new BlockConnectTarget(block, block.Type.Before));
+                foreach (var def in active)
+                {
+                    Block block = placeAndConnectAllTerminals(def);
 
-                lastBlock = block;
+                    if (lastBlock is not null)
+                        builder.Connect(new BlockConnectTarget(lastBlock, lastBlock.Type.After), new BlockConnectTarget(block, block.Type.Before));
+
+                    lastBlock = block;
+                }
+
+                foreach (var def in pasive)
+                    placeAndConnectAllTerminals(def);
             }
-
-            foreach (var def in pasive)
-                placeAndConnectAllTerminals(def);
-
-            builder.BlockPlacer.ExitStatementBlock();
 
             FancadeLoaderLib.Game game = (FancadeLoaderLib.Game)builder.Build(Vector3I.Zero);
 
@@ -57,27 +58,28 @@ namespace FanScript.Tests
             {
                 int off = def.Type == BlockType.Active ? 1 : 0;
                 if (def.Terminals.Length - off * 2 <= 0)
-                    return builder.AddBlock(def);
+                    return placer.PlaceBlock(def);
 
                 ReadOnlySpan<Terminal> terminals = def.Terminals.AsSpan(off..^off);
 
                 (Block, Terminal)[] connectToTerminals = new (Block, Terminal)[terminals.Length];
 
-                builder.BlockPlacer.EnterStatementBlock();
-                for (int i = 0; i < terminals.Length; i++)
+                using (placer.StatementBlock())
                 {
-                    Terminal terminal = terminals[i];
+                    for (int i = 0; i < terminals.Length; i++)
+                    {
+                        Terminal terminal = terminals[i];
 
-                    WireType type = terminal.WireType;
-                    if (type != WireType.Void)
-                        type = (WireType)((int)type & (int.MaxValue ^ 1)); // xPtr => x
+                        WireType type = terminal.WireType;
+                        if (type != WireType.Void)
+                            type = (WireType)((int)type & (int.MaxValue ^ 1)); // xPtr => x
 
-                    var (_def, _terminal) = terminalDict[(terminal.Type, type)];
-                    connectToTerminals[i] = (builder.AddBlock(_def), _terminal);
+                        var (_def, _terminal) = terminalDict[(terminal.Type, type)];
+                        connectToTerminals[i] = (placer.PlaceBlock(_def), _terminal);
+                    }
                 }
-                builder.BlockPlacer.ExitStatementBlock();
 
-                Block block = builder.AddBlock(def);
+                Block block = placer.PlaceBlock(def);
 
                 for (int i = 0; i < connectToTerminals.Length; i++)
                 {

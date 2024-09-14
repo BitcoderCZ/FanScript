@@ -7,6 +7,7 @@ namespace FanScript.FCInfo
     public static class Blocks
     {
         public static BlockDef Stone = new BlockDef("Stone Block", 1, BlockType.NonScript, new Vector2I(1, 1));
+        public static BlockDef Shrub = new BlockDef("Shrub", 500, BlockType.NonScript, new Vector2I(1, 1));
 
         public static class Game
         {

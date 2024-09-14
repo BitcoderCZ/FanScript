@@ -20,7 +20,7 @@ namespace FanScript.Compiler.Binding
         private readonly FunctionSymbol? function;
 
         private Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)> loopStack = new Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)>();
-        private int onStatementDepth = 0;
+        private Stack<bool> blockStack = new Stack<bool>(); // if true - is in an event, else is in a loop
         private Dictionary<FunctionSymbol, int> functionCallCount = new();
         private int labelCounter;
         private BoundScope scope;
@@ -367,9 +367,9 @@ namespace FanScript.Compiler.Binding
                 return BindErrorStatement(syntax);
             }
 
-            onStatementDepth++;
+            blockStack.Push(true);
             BoundBlockStatement block = (BoundBlockStatement)BindBlockStatement(syntax.Block);
-            onStatementDepth--;
+            _ = blockStack.Pop();
 
             scope = scope.Parent!;
 
@@ -532,7 +532,9 @@ namespace FanScript.Compiler.Binding
             continueLabel = new BoundLabel($"continue{labelCounter}");
 
             loopStack.Push((breakLabel, continueLabel));
+            blockStack.Push(false);
             BoundStatement boundBody = BindStatement(body);
+            _ = blockStack.Pop();
             _ = loopStack.Pop();
 
             return boundBody;
@@ -545,7 +547,7 @@ namespace FanScript.Compiler.Binding
                 diagnostics.ReportInvalidBreakOrContinue(syntax.Keyword.Location, syntax.Keyword.Text);
                 return BindErrorStatement(syntax);
             }
-            else if (onStatementDepth != 0)
+            else if (blockStack.Peek())
             {
                 diagnostics.ReportBreakOrContinueInSB(syntax.Keyword.Location, syntax.Keyword.Text);
                 return BindErrorStatement(syntax);
@@ -562,7 +564,7 @@ namespace FanScript.Compiler.Binding
                 diagnostics.ReportInvalidBreakOrContinue(syntax.Keyword.Location, syntax.Keyword.Text);
                 return BindErrorStatement(syntax);
             }
-            else if (onStatementDepth != 0)
+            else if (blockStack.Peek())
             {
                 diagnostics.ReportBreakOrContinueInSB(syntax.Keyword.Location, syntax.Keyword.Text);
                 return BindErrorStatement(syntax);

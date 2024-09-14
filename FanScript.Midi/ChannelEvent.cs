@@ -25,13 +25,13 @@ namespace FanScript.Midi
         }
     }
 
+    // When adding types, make sure that the most used ones have the fewest bits set
     public enum ChannelEventType : byte
     {
-        Nop,
-        Wait,
-        PlayNote,
-        StopCurrentNote,
-        SetInstrument,
+        Wait = 0b_000,
+        PlayNote = 0b_001,
+        StopCurrentNote = 0b_010,
+        SetInstrument = 0b_011,
         //SetChannelVolume,
     }
 }

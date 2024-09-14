@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler;
 using FanScript.Compiler.Diagnostics;
+using FanScript.Compiler.Emit;
 using FanScript.Compiler.Emit.BlockPlacers;
 using FanScript.Compiler.Emit.CodeBuilders;
 using FanScript.Compiler.Symbols;
@@ -985,7 +986,11 @@ namespace FanScript.Tests
             AnnotatedText annotatedText = AnnotatedText.Parse(text);
             SyntaxTree syntaxTree = SyntaxTree.Parse(annotatedText.Text);
             Compilation compilation = Compilation.CreateScript(null, syntaxTree);
-            ImmutableArray<Diagnostic> diagnostics = compilation.Emit(new EditorScriptCodeBuilder(new TowerBlockPlacer()));
+
+            BlockBuilder builder = new EditorScriptBlockBuilder();
+            CodePlacer placer = new TowerCodePlacer(builder);
+
+            ImmutableArray<Diagnostic> diagnostics = compilation.Emit(placer, builder);
 
             string[] expectedDiagnostics = AnnotatedText.UnindentLines(diagnosticText);
 

@@ -7,6 +7,7 @@ using MathUtils.Vectors;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 
 namespace FanScript.Compiler.Emit
 {
@@ -15,8 +16,9 @@ namespace FanScript.Compiler.Emit
         private EmitContext emitContext = null!;
 
         internal DiagnosticBag diagnostics = new DiagnosticBag();
-        internal CodeBuilder builder = null!;
         private BoundProgram program = null!;
+        internal CodePlacer placer = null!;
+        internal BlockBuilder builder = null!;
 
         // key - a label before antoher label, item - the label after key
         private Dictionary<string, string> sameTargetLabels = new();
@@ -34,21 +36,22 @@ namespace FanScript.Compiler.Emit
         private Dictionary<FunctionSymbol, EmitStore> functions = new();
         private Dictionary<FunctionSymbol, List<EmitStore>> calls = new();
 
-        public static ImmutableArray<Diagnostic> Emit(BoundProgram program, CodeBuilder builder)
+        public static ImmutableArray<Diagnostic> Emit(BoundProgram program, CodePlacer placer, BlockBuilder builder)
         {
             if (program.Diagnostics.HasErrors())
                 return program.Diagnostics;
             else
             {
                 Emitter emitter = new Emitter();
-                return emitter.emit(program, builder);
+                return emitter.emit(program, placer, builder);
             }
         }
 
-        internal ImmutableArray<Diagnostic> emit(BoundProgram program, CodeBuilder builder)
+        internal ImmutableArray<Diagnostic> emit(BoundProgram program, CodePlacer placer, BlockBuilder builder)
         {
-            this.builder = builder;
             this.program = program;
+            this.placer = placer;
+            this.builder = builder;
 
             emitContext = new EmitContext(this);
 
@@ -60,7 +63,7 @@ namespace FanScript.Compiler.Emit
                 if (func.Modifiers.HasFlag(Modifiers.Inline) || (func != program.ScriptFunction && program.FunctionInfos.GetValueOrDefault(func, new FunctionInfo()).CallCount <= 1))
                     continue;
 
-                using (this.builder.BlockPlacer.StatementBlock())
+                using (statementBlock())
                 {
                     writeComment(func.Name);
 
@@ -160,9 +163,9 @@ namespace FanScript.Compiler.Emit
 
             EmitConnector connector = new EmitConnector(connect);
 
-            bool newCodeBlock = builder.BlockPlacer.CurrentCodeBlockBlocks > 0;
+            bool newCodeBlock = placer.CurrentCodeBlockBlocks > 0;
             if (newCodeBlock)
-                builder.BlockPlacer.EnterStatementBlock();
+                enterStatementBlock();
 
             for (int i = 0; i < statement.Statements.Length; i++)
             {
@@ -172,7 +175,7 @@ namespace FanScript.Compiler.Emit
             }
 
             if (newCodeBlock)
-                builder.BlockPlacer.ExitStatementBlock();
+                exitStatementBlock();
 
             return connector.Store;
         }
@@ -210,20 +213,20 @@ namespace FanScript.Compiler.Emit
                     throw new Exception($"Unknown {typeof(EventType)}: {type}");
             }
 
-            Block block = builder.AddBlock(def);
+            Block block = addBlock(def);
 
-            builder.BlockPlacer.EnterStatementBlock();
+            enterStatementBlock();
 
             switch (type)
             {
                 case EventType.Touch:
                     {
-                        object?[]? values = emitContext.ValidateConstants(arguments!.Value.AsMemory(2..), true);
+                        object?[]? values = validateConstants(arguments!.Value.AsMemory(2..), true);
                         if (values is null)
                             break;
 
                         for (int i = 0; i < values.Length; i++)
-                            builder.SetBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
+                            setBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
 
                         connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(..2)));
                         return new BasicEmitStore(block);
@@ -235,12 +238,12 @@ namespace FanScript.Compiler.Emit
                     }
                 case EventType.Button:
                     {
-                        object?[]? values = emitContext.ValidateConstants(arguments!.Value.AsMemory(), true);
+                        object?[]? values = validateConstants(arguments!.Value.AsMemory(), true);
                         if (values is null)
                             break;
 
                         for (int i = 0; i < values.Length; i++)
-                            builder.SetBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
+                            setBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
                     }
                     break;
                 case EventType.Collision:
@@ -267,9 +270,9 @@ namespace FanScript.Compiler.Emit
 
                 if (arguments.Value.Length != 0)
                 {
-                    builder.BlockPlacer.ExitStatementBlock();
+                    exitStatementBlock();
 
-                    using (builder.BlockPlacer.ExpressionBlock())
+                    using (expressionBlock())
                     {
                         var argumentsSpan = arguments.Value.Span;
 
@@ -281,7 +284,7 @@ namespace FanScript.Compiler.Emit
                         }
                     }
 
-                    builder.BlockPlacer.EnterStatementBlock();
+                    enterStatementBlock();
                 }
 
                 for (int i = 0; i < outArguments.Length; i++)
@@ -318,9 +321,9 @@ namespace FanScript.Compiler.Emit
                     throw new InvalidDataException($"Unknown {nameof(BoundPostfixKind)} '{statement.PostfixKind}'");
             }
 
-            Block block = builder.AddBlock(def);
+            Block block = addBlock(def);
 
-            using (builder.BlockPlacer.ExpressionBlock())
+            using (expressionBlock())
             {
                 EmitStore store = emitGetVariable(statement.Variable);
 
@@ -338,9 +341,9 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitConditionalGotoStatement(BoundConditionalGotoStatement statement)
         {
-            Block block = builder.AddBlock(Blocks.Control.If);
+            Block block = addBlock(Blocks.Control.If);
 
-            using (builder.BlockPlacer.ExpressionBlock())
+            using (expressionBlock())
             {
                 EmitStore condition = emitExpression(statement.Condition);
 
@@ -366,16 +369,16 @@ namespace FanScript.Compiler.Emit
             switch (statement.Hint)
             {
                 case BoundEmitterHint.HintKind.StatementBlockStart:
-                    builder.BlockPlacer.EnterStatementBlock();
+                    enterStatementBlock();
                     break;
                 case BoundEmitterHint.HintKind.StatementBlockEnd:
-                    builder.BlockPlacer.ExitStatementBlock();
+                    exitStatementBlock();
                     break;
                 case BoundEmitterHint.HintKind.HighlightStart:
-                    builder.BlockPlacer.EnterHighlight();
+                    placer.EnterHighlight();
                     break;
                 case BoundEmitterHint.HintKind.HighlightEnd:
-                    builder.BlockPlacer.ExitHightlight();
+                    placer.ExitHightlight();
                     break;
                 default:
                     throw new InvalidDataException($"Unknown emitter hint: '{statement.Hint}'");
@@ -408,10 +411,10 @@ namespace FanScript.Compiler.Emit
             if (value is null)
                 return new NopEmitStore();
 
-            Block block = builder.AddBlock(Blocks.Values.ValueByType(value));
+            Block block = addBlock(Blocks.Values.ValueByType(value));
 
             if (value is not bool)
-                builder.SetBlockValue(block, 0, value);
+                setBlockValue(block, 0, value);
 
             return BasicEmitStore.COut(block, block.Type.Terminals[0]);
         }
@@ -422,9 +425,9 @@ namespace FanScript.Compiler.Emit
                 return emitLiteralExpression(expression.ConstantValue.Value);
 
             BlockDef def = Blocks.Math.MakeByType(expression.Type.ToWireType());
-            Block block = builder.AddBlock(def);
+            Block block = addBlock(def);
 
-            using (builder.BlockPlacer.ExpressionBlock())
+            using (expressionBlock())
             {
                 EmitStore xStore = emitExpression(expression.ExpressionX);
                 EmitStore yStore = emitExpression(expression.ExpressionY);
@@ -448,14 +451,14 @@ namespace FanScript.Compiler.Emit
                     {
                         if (expression.Type == TypeSymbol.Vector3)
                         {
-                            Block block = builder.AddBlock(Blocks.Math.Multiply_Vector);
+                            Block block = addBlock(Blocks.Math.Multiply_Vector);
 
-                            using (builder.BlockPlacer.ExpressionBlock())
+                            using (expressionBlock())
                             {
                                 EmitStore opStore = emitExpression(expression.Operand);
 
-                                Block numb = builder.AddBlock(Blocks.Values.Number);
-                                builder.SetBlockValue(numb, 0, -1f);
+                                Block numb = addBlock(Blocks.Values.Number);
+                                setBlockValue(numb, 0, -1f);
 
                                 connect(opStore, BasicEmitStore.CIn(block, block.Type.Terminals[2]));
                                 connect(BasicEmitStore.COut(numb, numb.Type.Terminals[0]), BasicEmitStore.CIn(block, block.Type.Terminals[1]));
@@ -466,9 +469,9 @@ namespace FanScript.Compiler.Emit
                         else
                         {
 
-                            Block block = builder.AddBlock(expression.Type == TypeSymbol.Float ? Blocks.Math.Negate : Blocks.Math.Inverse);
+                            Block block = addBlock(expression.Type == TypeSymbol.Float ? Blocks.Math.Negate : Blocks.Math.Inverse);
 
-                            using (builder.BlockPlacer.ExpressionBlock())
+                            using (expressionBlock())
                             {
                                 EmitStore opStore = emitExpression(expression.Operand);
 
@@ -480,9 +483,9 @@ namespace FanScript.Compiler.Emit
                     }
                 case BoundUnaryOperatorKind.LogicalNegation:
                     {
-                        Block block = builder.AddBlock(Blocks.Math.Not);
+                        Block block = addBlock(Blocks.Math.Not);
 
-                        using (builder.BlockPlacer.ExpressionBlock())
+                        using (expressionBlock())
                         {
                             EmitStore opStore = emitExpression(expression.Operand);
 
@@ -552,15 +555,15 @@ namespace FanScript.Compiler.Emit
                 || expression.Op.Kind == BoundBinaryOperatorKind.GreaterOrEquals)
             {
                 // invert output, >= or <=, >= can be accomplished as inverted <
-                Block not = builder.AddBlock(Blocks.Math.Not);
-                using (builder.BlockPlacer.ExpressionBlock())
+                Block not = addBlock(Blocks.Math.Not);
+                using (expressionBlock())
                 {
-                    Block block = builder.AddBlock(op);
+                    Block block = addBlock(op);
 
                     connect(BasicEmitStore.COut(block, block.Type.Terminals[0]),
                         BasicEmitStore.CIn(not, not.Type.Terminals[1]));
 
-                    using (builder.BlockPlacer.ExpressionBlock())
+                    using (expressionBlock())
                     {
                         EmitStore store0 = emitExpression(expression.Left);
                         EmitStore store1 = emitExpression(expression.Right);
@@ -574,8 +577,8 @@ namespace FanScript.Compiler.Emit
             }
             else
             {
-                Block block = builder.AddBlock(op);
-                using (builder.BlockPlacer.ExpressionBlock())
+                Block block = addBlock(op);
+                using (expressionBlock())
                 {
                     EmitStore store0 = emitExpression(expression.Left);
                     EmitStore store1 = emitExpression(expression.Right);
@@ -645,15 +648,15 @@ namespace FanScript.Compiler.Emit
                             else
                                 throw new Exception($"Unexpected BoundBinaryOperatorKind: '{expression.Op.Kind}'.");
 
-                            Block not = builder.AddBlock(Blocks.Math.Not);
-                            using (builder.BlockPlacer.ExpressionBlock())
+                            Block not = addBlock(Blocks.Math.Not);
+                            using (expressionBlock())
                             {
-                                Block op = builder.AddBlock(defOp);
+                                Block op = addBlock(defOp);
 
                                 connect(BasicEmitStore.COut(op, op.Type.Terminals[0]),
                                     BasicEmitStore.CIn(not, not.Type.Terminals[1]));
 
-                                using (builder.BlockPlacer.ExpressionBlock())
+                                using (expressionBlock())
                                 {
                                     EmitStore store0 = emitExpression(expression.Left);
                                     EmitStore store1 = emitExpression(expression.Right);
@@ -671,8 +674,8 @@ namespace FanScript.Compiler.Emit
             }
             else
             {
-                Block op = builder.AddBlock(defOp);
-                using (builder.BlockPlacer.ExpressionBlock())
+                Block op = addBlock(defOp);
+                using (expressionBlock())
                 {
                     EmitStore store0 = emitExpression(expression.Left);
                     EmitStore store1 = emitExpression(expression.Right);
@@ -686,19 +689,19 @@ namespace FanScript.Compiler.Emit
 
             EmitStore buildOperatorWithBreak(BlockDef defMake, BlockDef defOp)
             {
-                Block make = builder.AddBlock(defMake);
+                Block make = addBlock(defMake);
 
-                using (builder.BlockPlacer.ExpressionBlock())
+                using (expressionBlock())
                 {
-                    Block op1 = builder.AddBlock(defOp);
+                    Block op1 = addBlock(defOp);
 
-                    EmitStore leftX = null!;
-                    EmitStore leftY = null!;
-                    EmitStore leftZ = null!;
-                    EmitStore rightX = null!;
-                    EmitStore rightY = null!;
-                    EmitStore rightZ = null!;
-                    using (builder.BlockPlacer.ExpressionBlock())
+                    EmitStore leftX;
+                    EmitStore leftY;
+                    EmitStore leftZ;
+                    EmitStore rightX;
+                    EmitStore rightY;
+                    EmitStore rightZ;
+                    using (expressionBlock())
                     {
                         (leftX, leftY, leftZ) = breakVector(expression.Left);
 
@@ -708,8 +711,8 @@ namespace FanScript.Compiler.Emit
                             rightZ = rightY = rightX = emitExpression(expression.Right);
                     }
 
-                    Block op2 = builder.AddBlock(defOp);
-                    Block op3 = builder.AddBlock(defOp);
+                    Block op2 = addBlock(defOp);
+                    Block op3 = addBlock(defOp);
 
                     // left to op
                     connect(leftX,
@@ -771,11 +774,11 @@ namespace FanScript.Compiler.Emit
                 connector.Add(setStore);
             }
 
-            Block callBlock = builder.AddBlock(Blocks.Control.If);
+            Block callBlock = addBlock(Blocks.Control.If);
 
-            using (builder.BlockPlacer.ExpressionBlock())
+            using (expressionBlock())
             {
-                Block trueBlock = builder.AddBlock(Blocks.Values.True);
+                Block trueBlock = addBlock(Blocks.Values.True);
                 connect(BasicEmitStore.COut(trueBlock, trueBlock.Type.Terminals[0]), BasicEmitStore.CIn(callBlock, callBlock.Type.Terminals[3]));
             }
 
@@ -792,7 +795,7 @@ namespace FanScript.Compiler.Emit
 
                 EmitStore setStore = emitSetExpression(expression.ArgumentClause.Arguments[i], () =>
                 {
-                    using (builder.BlockPlacer.ExpressionBlock())
+                    using (expressionBlock())
                         return emitGetVariable(func.Parameters[i]);
                 });
 
@@ -855,41 +858,7 @@ namespace FanScript.Compiler.Emit
             return connector.Store;
         }
 
-        internal void connect(EmitStore from, EmitStore to)
-        {
-            while (from is MultiEmitStore multi)
-                from = multi.OutStore;
-            while (to is MultiEmitStore multi)
-                to = multi.InStore;
-
-            if (from is RollbackEmitStore || to is RollbackEmitStore)
-            {
-                if (to is ReturnEmitStore && from is not RollbackEmitStore)
-                    beforeReturnStack.Peek().Add(from);
-
-                return;
-            }
-
-            if (from is LabelEmitStore sameFrom && to is LabelEmitStore sameTo)
-                sameTargetLabels.Add(sameFrom.Name, sameTo.Name);
-            else if (from is GotoEmitStore fromGoto)
-            {
-                // ignore, the going to is handeled if to is GotoEmitStore
-            }
-            else if (from is LabelEmitStore fromLabel)
-                afterLabel.Add(fromLabel.Name, to);
-            else if (to is LabelEmitStore toLabel)
-                connectToLabel(toLabel.Name, from); // normal block before label, connect to block after the label
-            else if (to is GotoEmitStore toGoto)
-                connectToLabel(toGoto.LabelName, from);
-            else
-                builder.Connect(from, to);
-        }
-        private void connectToLabel(string labelName, EmitStore store)
-        {
-            gotosToConnect.AddMultiValue(labelName, store);
-        }
-
+        #region Utils
         internal EmitStore emitGetVariable(VariableSymbol variable)
         {
             switch (variable)
@@ -910,9 +879,9 @@ namespace FanScript.Compiler.Emit
                                 return new NopEmitStore();
                         }
 
-                        Block block = builder.AddBlock(Blocks.Variables.VariableByType(variable.Type!.ToWireType()));
+                        Block block = addBlock(Blocks.Variables.VariableByType(variable.Type!.ToWireType()));
 
-                        builder.SetBlockValue(block, 0, variable.ResultName);
+                        setBlockValue(block, 0, variable.ResultName);
 
                         return BasicEmitStore.COut(block, block.Type.Terminals[0]);
                     }
@@ -921,10 +890,12 @@ namespace FanScript.Compiler.Emit
         internal EmitStore emitSetExpression(BoundExpression expression, BoundExpression valueExpression)
             => emitSetExpression(expression, () =>
             {
-                builder.BlockPlacer.EnterExpressionBlock();
-                EmitStore store = emitExpression(valueExpression);
-                builder.BlockPlacer.ExitExpressionBlock();
-                return store;
+                using (expressionBlock())
+                {
+                    EmitStore store = emitExpression(valueExpression);
+
+                    return store;
+                }
             });
         internal EmitStore emitSetExpression(BoundExpression expression, Func<EmitStore> getValueStore)
         {
@@ -934,7 +905,7 @@ namespace FanScript.Compiler.Emit
                     return emitSetVariable(var.Variable, getValueStore);
                 default:
                     {
-                        Block set = builder.AddBlock(Blocks.Variables.Set_PtrByType(expression.Type.ToWireType()));
+                        Block set = addBlock(Blocks.Variables.Set_PtrByType(expression.Type.ToWireType()));
 
                         EmitStore exStore = emitExpression(expression);
                         EmitStore valStore = getValueStore();
@@ -949,10 +920,11 @@ namespace FanScript.Compiler.Emit
         internal EmitStore emitSetVariable(VariableSymbol variable, BoundExpression expression)
             => emitSetVariable(variable, () =>
             {
-                builder.BlockPlacer.EnterExpressionBlock();
-                EmitStore store = emitExpression(expression);
-                builder.BlockPlacer.ExitExpressionBlock();
-                return store;
+                using (expressionBlock())
+                {
+                    EmitStore store = emitExpression(expression);
+                    return store;
+                }
             });
         internal EmitStore emitSetVariable(VariableSymbol variable, Func<EmitStore> getValueStore)
         {
@@ -972,9 +944,9 @@ namespace FanScript.Compiler.Emit
                             return new NopEmitStore();
                         }
 
-                        Block block = builder.AddBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
+                        Block block = addBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
 
-                        builder.SetBlockValue(block, 0, variable.ResultName);
+                        setBlockValue(block, 0, variable.ResultName);
 
                         EmitStore valueStore = getValueStore();
 
@@ -1041,10 +1013,10 @@ namespace FanScript.Compiler.Emit
                     .AddIfAbsent(var.Variable, new BreakBlockCache());
                 if (!cache.TryGet(out Block? block))
                 {
-                    block = builder.AddBlock(var.Type == TypeSymbol.Vector3 ? Blocks.Math.Break_Vector : Blocks.Math.Break_Rotation);
+                    block = addBlock(var.Type == TypeSymbol.Vector3 ? Blocks.Math.Break_Vector : Blocks.Math.Break_Rotation);
                     cache.SetNewBlock(block);
 
-                    using (builder.BlockPlacer.ExpressionBlock())
+                    using (expressionBlock())
                     {
                         EmitStore store = emitVariableExpression(var);
                         connect(store, BasicEmitStore.CIn(block, block.Type.Terminals[3]));
@@ -1058,10 +1030,11 @@ namespace FanScript.Compiler.Emit
                 ];
             }
             else
-            { // just break it
-                Block block = builder.AddBlock(expression.Type == TypeSymbol.Vector3 ? Blocks.Math.Break_Vector : Blocks.Math.Break_Rotation);
+            {
+                // just break it
+                Block block = addBlock(expression.Type == TypeSymbol.Vector3 ? Blocks.Math.Break_Vector : Blocks.Math.Break_Rotation);
 
-                using (builder.BlockPlacer.ExpressionBlock())
+                using (expressionBlock())
                 {
                     EmitStore store = emitExpression(expression);
                     connect(store, BasicEmitStore.CIn(block, block.Type.Terminals[3]));
@@ -1105,9 +1078,66 @@ namespace FanScript.Compiler.Emit
         {
             for (int i = 0; i < text.Length; i += FancadeConstants.MaxCommentLength)
             {
-                Block block = builder.AddBlock(Blocks.Values.Comment);
-                builder.SetBlockValue(block, 0, text.Substring(i, Math.Min(FancadeConstants.MaxCommentLength, text.Length - i)));
+                Block block = addBlock(Blocks.Values.Comment);
+                setBlockValue(block, 0, text.Substring(i, Math.Min(FancadeConstants.MaxCommentLength, text.Length - i)));
             }
         }
+        #endregion
+
+        #region CodePlacer and BlockBuilder redirects
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal Block addBlock(BlockDef def)
+            => placer.PlaceBlock(def);
+        internal void connect(EmitStore from, EmitStore to)
+        {
+            while (from is MultiEmitStore multi)
+                from = multi.OutStore;
+            while (to is MultiEmitStore multi)
+                to = multi.InStore;
+
+            if (from is RollbackEmitStore || to is RollbackEmitStore)
+            {
+                if (to is ReturnEmitStore && from is not RollbackEmitStore)
+                    beforeReturnStack.Peek().Add(from);
+
+                return;
+            }
+
+            if (from is LabelEmitStore sameFrom && to is LabelEmitStore sameTo)
+                sameTargetLabels.Add(sameFrom.Name, sameTo.Name);
+            else if (from is GotoEmitStore fromGoto)
+            {
+                // ignore, the going to is handeled if to is GotoEmitStore
+            }
+            else if (from is LabelEmitStore fromLabel)
+                afterLabel.Add(fromLabel.Name, to);
+            else if (to is LabelEmitStore toLabel)
+                connectToLabel(toLabel.Name, from); // normal block before label, connect to block after the label
+            else if (to is GotoEmitStore toGoto)
+                connectToLabel(toGoto.LabelName, from);
+            else
+                builder.Connect(from, to);
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void connectToLabel(string labelName, EmitStore store)
+            => gotosToConnect.AddMultiValue(labelName, store);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void setBlockValue(Block block, int valueIndex, object value)
+            => builder.SetBlockValue(block, valueIndex, value);
+
+        private void enterStatementBlock()
+            => placer.EnterStatementBlock();
+        internal IDisposable statementBlock()
+            => placer.StatementBlock();
+        private void exitStatementBlock()
+            => placer.ExitStatementBlock();
+
+        private void enterExpressionBlock()
+            => placer.EnterExpressionBlock();
+        internal IDisposable expressionBlock()
+            => placer.ExpressionBlock();
+        private void exitExpressionBlock()
+            => placer.ExitExpressionBlock();
+        #endregion
     }
 }

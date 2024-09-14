@@ -93,15 +93,15 @@ namespace FanScript.Compiler.Symbols
                 {
                     Block make;
 
-                    using (context.Builder.BlockPlacer.ExpressionBlock())
+                    using (context.ExpressionBlock())
                     {
-                        make = context.Builder.AddBlock(Blocks.Math.MakeByType(varType));
+                        make = context.AddBlock(Blocks.Math.MakeByType(varType));
 
-                        using (context.Builder.BlockPlacer.ExpressionBlock())
+                        using (context.ExpressionBlock())
                         {
-                            Block @break = context.Builder.AddBlock(Blocks.Math.BreakByType(varType));
+                            Block @break = context.AddBlock(Blocks.Math.BreakByType(varType));
 
-                            using (context.Builder.BlockPlacer.ExpressionBlock())
+                            using (context.ExpressionBlock())
                             {
                                 EmitStore expressionStore = context.EmitExpression(expression);
 
@@ -114,7 +114,7 @@ namespace FanScript.Compiler.Symbols
                                     context.Connect(BasicEmitStore.COut(@break, @break.Type.Terminals[2 - i]), BasicEmitStore.CIn(make, make.Type.Terminals[(2 - i) + 1]));
                             }
                         }
-                        using (context.Builder.BlockPlacer.ExpressionBlock())
+                        using (context.ExpressionBlock())
                         {
                             EmitStore store = getStore();
 

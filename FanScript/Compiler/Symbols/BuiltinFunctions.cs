@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Emit;
+using FanScript.Compiler.Emit.BlockPlacers;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using FanScript.FCInfo;
@@ -23,13 +24,13 @@ namespace FanScript.Compiler.Symbols
         {
             constantTypes ??= [];
 
-            Block block = context.Builder.AddBlock(blockDef);
+            Block block = context.AddBlock(blockDef);
 
             int argLength = call.Arguments.Length - constantTypes.Length;
             Debug.Assert(argLength >= 0);
 
             if (argLength != 0)
-                using (context.Builder.BlockPlacer.ExpressionBlock())
+                using (context.ExpressionBlock())
                 {
                     for (int i = 0; i < argLength; i++)
                         context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[argLength - i + argumentOffset]));
@@ -60,7 +61,7 @@ namespace FanScript.Compiler.Symbols
                     else
                         val = Convert.ChangeType(val, type);
 
-                    context.Builder.SetBlockValue(block, i, val);
+                    context.SetBlockValue(block, i, val);
                 }
             }
 
@@ -78,19 +79,19 @@ namespace FanScript.Compiler.Symbols
 
             int retArgStart = call.Arguments.Length - numbReturnArgs;
 
-            Block? block = context.Builder.AddBlock(blockDef);
+            Block? block = context.AddBlock(blockDef);
 
             EmitConnector connector = new EmitConnector(context.Connect);
             connector.Add(new BasicEmitStore(block));
 
             if (retArgStart != 0)
-                using (context.Builder.BlockPlacer.ExpressionBlock())
+                using (context.ExpressionBlock())
                 {
                     for (int i = 0; i < retArgStart; i++)
                         context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[retArgStart - i + numbReturnArgs]));
                 }
 
-            using (context.Builder.BlockPlacer.StatementBlock())
+            using (context.StatementBlock())
             {
                 for (int i = retArgStart; i < call.Arguments.Length; i++)
                 {
@@ -127,12 +128,12 @@ namespace FanScript.Compiler.Symbols
                 {
                     varStore = context.EmitSetVariable(variable, () =>
                     {
-                        using (context.Builder.BlockPlacer.ExpressionBlock())
+                        using (context.ExpressionBlock())
                         {
-                            block = context.Builder.AddBlock(blockDef);
+                            block = context.AddBlock(blockDef);
 
                             if (retArgStart != 0)
-                                using (context.Builder.BlockPlacer.ExpressionBlock())
+                                using (context.ExpressionBlock())
                                 {
                                     for (int i = 0; i < retArgStart; i++)
                                         context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[(retArgStart - 1) - i + numbReturnArgs]));
@@ -152,10 +153,10 @@ namespace FanScript.Compiler.Symbols
         }
         private static EmitStore emitX1(BoundCallExpression call, EmitContext context, BlockDef blockDef)
         {
-            Block block = context.Builder.AddBlock(blockDef);
+            Block block = context.AddBlock(blockDef);
 
             if (call.Arguments.Length != 0)
-                using (context.Builder.BlockPlacer.ExpressionBlock())
+                using (context.ExpressionBlock())
                 {
                     for (int i = 0; i < call.Arguments.Length; i++)
                         context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[call.Arguments.Length - i]));
@@ -201,11 +202,11 @@ namespace FanScript.Compiler.Symbols
             public static readonly FunctionSymbol GetScreenSize2
                = new BuiltinFunctionSymbol("getScreenSize", [], TypeSymbol.Vector3, (call, context) =>
                {
-                   Block make = context.Builder.AddBlock(Blocks.Math.Make_Vector);
+                   Block make = context.AddBlock(Blocks.Math.Make_Vector);
 
-                   using (context.Builder.BlockPlacer.ExpressionBlock())
+                   using (context.ExpressionBlock())
                    {
-                       Block ss = context.Builder.AddBlock(Blocks.Game.ScreenSize);
+                       Block ss = context.AddBlock(Blocks.Game.ScreenSize);
 
                        context.Connect(BasicEmitStore.COut(ss, ss.Type.Terminals[1]), BasicEmitStore.CIn(make, make.Type.Terminals[3]));
                        context.Connect(BasicEmitStore.COut(ss, ss.Type.Terminals[0]), BasicEmitStore.CIn(make, make.Type.Terminals[2]));
@@ -227,9 +228,9 @@ namespace FanScript.Compiler.Symbols
                     if (constants is null)
                         return new NopEmitStore();
 
-                    Block block = context.Builder.AddBlock(Blocks.Game.MenuItem);
+                    Block block = context.AddBlock(Blocks.Game.MenuItem);
 
-                    context.Builder.SetBlockValue(block, 0, constants[0] ?? string.Empty);
+                    context.SetBlockValue(block, 0, constants[0] ?? string.Empty);
 
                     return new BasicEmitStore(block);
                 });
@@ -263,7 +264,7 @@ namespace FanScript.Compiler.Symbols
                 {
                     context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
 
-                    using (context.Builder.BlockPlacer.ExpressionBlock())
+                    using (context.ExpressionBlock())
                         context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
 
                     return new NopEmitStore();
@@ -289,7 +290,7 @@ namespace FanScript.Compiler.Symbols
                     {
                         context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
 
-                        using (context.Builder.BlockPlacer.ExpressionBlock())
+                        using (context.ExpressionBlock())
                             context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
 
                         return new NopEmitStore();
@@ -383,12 +384,12 @@ namespace FanScript.Compiler.Symbols
                   if (values is null)
                       return new NopEmitStore();
 
-                  Block playSound = context.Builder.AddBlock(Blocks.Sound.PlaySound);
+                  Block playSound = context.AddBlock(Blocks.Sound.PlaySound);
 
-                  context.Builder.SetBlockValue(playSound, 0, (byte)(((bool?)values[0] ?? false) ? 1 : 0)); // loop
-                  context.Builder.SetBlockValue(playSound, 1, (ushort)((float?)values[1] ?? 0f)); // sound
+                  context.SetBlockValue(playSound, 0, (byte)(((bool?)values[0] ?? false) ? 1 : 0)); // loop
+                  context.SetBlockValue(playSound, 1, (ushort)((float?)values[1] ?? 0f)); // sound
 
-                  using (context.Builder.BlockPlacer.ExpressionBlock())
+                  using (context.ExpressionBlock())
                   {
                       EmitStore volume = context.EmitExpression(call.Arguments[0]);
                       EmitStore pitch = context.EmitExpression(call.Arguments[1]);
@@ -398,7 +399,7 @@ namespace FanScript.Compiler.Symbols
                   }
 
                   EmitStore varStore;
-                  using (context.Builder.BlockPlacer.StatementBlock())
+                  using (context.StatementBlock())
                   {
                       VariableSymbol variable = ((BoundVariableExpression)call.Arguments[2]).Variable;
 
@@ -584,12 +585,12 @@ namespace FanScript.Compiler.Symbols
                     if (values is null)
                         return new NopEmitStore();
 
-                    Block joystick = context.Builder.AddBlock(Blocks.Control.Joystick);
+                    Block joystick = context.AddBlock(Blocks.Control.Joystick);
 
-                    context.Builder.SetBlockValue(joystick, 0, (byte)((float?)values[0] ?? 0f)); // unbox, then cast
+                    context.SetBlockValue(joystick, 0, (byte)((float?)values[0] ?? 0f)); // unbox, then cast
 
                     EmitStore varStore;
-                    using (context.Builder.BlockPlacer.StatementBlock())
+                    using (context.StatementBlock())
                     {
                         VariableSymbol variable = ((BoundVariableExpression)call.Arguments[0]).Variable;
 
@@ -726,13 +727,13 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("worldPos", TypeSymbol.Vector3),
                 ], TypeSymbol.Vector3, (call, context) =>
                 {
-                    Block make = context.Builder.AddBlock(Blocks.Math.Make_Vector);
+                    Block make = context.AddBlock(Blocks.Math.Make_Vector);
 
-                    using (context.Builder.BlockPlacer.ExpressionBlock())
+                    using (context.ExpressionBlock())
                     {
-                        Block wts = context.Builder.AddBlock(Blocks.Math.WorldToScreen);
+                        Block wts = context.AddBlock(Blocks.Math.WorldToScreen);
 
-                        using (context.Builder.BlockPlacer.ExpressionBlock())
+                        using (context.ExpressionBlock())
                         {
                             EmitStore store = context.EmitExpression(call.Arguments[0]);
                             context.Connect(store, BasicEmitStore.CIn(wts, wts.Type.Terminals[2]));
@@ -766,9 +767,9 @@ namespace FanScript.Compiler.Symbols
                 new ParameterSymbol("value", TypeSymbol.Generic)
             ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
                 {
-                    Block inspect = context.Builder.AddBlock(Blocks.Values.InspectByType(call.GenericType!.ToWireType()));
+                    Block inspect = context.AddBlock(Blocks.Values.InspectByType(call.GenericType!.ToWireType()));
 
-                    using (context.Builder.BlockPlacer.ExpressionBlock())
+                    using (context.ExpressionBlock())
                     {
                         EmitStore store = context.EmitExpression(call.Arguments[0]);
 
@@ -785,9 +786,9 @@ namespace FanScript.Compiler.Symbols
                 new ParameterSymbol("index", TypeSymbol.Float),
             ], TypeSymbol.Generic, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
                 {
-                    Block list = context.Builder.AddBlock(Blocks.Variables.ListByType(call.GenericType!.ToWireType()));
+                    Block list = context.AddBlock(Blocks.Variables.ListByType(call.GenericType!.ToWireType()));
 
-                    using (context.Builder.BlockPlacer.ExpressionBlock())
+                    using (context.ExpressionBlock())
                     {
                         EmitStore array = context.EmitExpression(call.Arguments[0]);
                         EmitStore index = context.EmitExpression(call.Arguments[1]);
@@ -810,13 +811,13 @@ namespace FanScript.Compiler.Symbols
                 new ParameterSymbol("value", TypeSymbol.Generic),
             ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
                 {
-                    Block setPtr = context.Builder.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));
+                    Block setPtr = context.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));
 
-                    using (context.Builder.BlockPlacer.ExpressionBlock())
+                    using (context.ExpressionBlock())
                     {
-                        Block list = context.Builder.AddBlock(Blocks.Variables.ListByType(call.GenericType!.ToWireType()));
+                        Block list = context.AddBlock(Blocks.Variables.ListByType(call.GenericType!.ToWireType()));
 
-                        using (context.Builder.BlockPlacer.ExpressionBlock())
+                        using (context.ExpressionBlock())
                         {
                             EmitStore array = context.EmitExpression(call.Arguments[0]);
                             EmitStore index = context.EmitExpression(call.Arguments[1]);
@@ -893,9 +894,9 @@ namespace FanScript.Compiler.Symbols
                 new ParameterSymbol("value", TypeSymbol.Generic),
             ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
                 {
-                    Block setPtr = context.Builder.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));
+                    Block setPtr = context.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));
 
-                    using (context.Builder.BlockPlacer.ExpressionBlock())
+                    using (context.ExpressionBlock())
                     {
                         EmitStore ptr = context.EmitExpression(call.Arguments[0]);
                         EmitStore value = context.EmitExpression(call.Arguments[1]);
@@ -948,84 +949,143 @@ namespace FanScript.Compiler.Symbols
                     // aaaa_aaaa - z_pos: 1
                     // bbbb_bbbb - z_pos: 2
 
+                    // TODO: emit set variable originObj to originBlock variable
+
                     SyntaxTree tree = SyntaxTree.Parse(SourceText.From($$"""
-                        global float midi_counter
-                        global vec3 midi_pos
-                        global array<float> channels
+                    global array<vec3> midi_c_pos // channel pos
+                    global array<float> midi_c_si // channel sound index
+                    global array<float> midi_c_wt // channel wait time
 
-                        on Play
+                    on Play
+                    {
+                        obj originObj
+                        originObj.getPos(out global vec3 origin, out _)
+                        origin.y -= .5
+                        on Loop(0, {{song.Channels.Count}}, out inline float channelIndex)
                         {
-                            obj originObj
-                            originObj.getPos(out global vec3 origin, out _)
-                            origin.y -= .5
-                            midi_pos = origin
+                            midi_c_pos.set(channelIndex, origin + vec3(0, 0, channelIndex * {{FcSong.ChannelSize.X}}))
+                            midi_c_wt.set(channelIndex, -1)
                         }
+                    }
 
-                        midi_counter--
-                        if (midi_counter <= 0)
-                        {
-                            on Loop(0, {{song.Channels.Count}}, out inline float _channelIndex)
+                    on Loop(0, {{song.Channels.Count}}, out inline float channelIndex)
+                    {
+                        //inline float channelIndex = _channelIndex * {{FcSong.ChannelSize.X}}
+                        vec3 midi_pos = midi_c_pos.get(channelIndex)
+                        inline vec3 midi_pos_ref = midi_c_pos.get(channelIndex)
+                        inline float midi_t = midi_c_wt.get(channelIndex)
+
+                        //while (true)
+                        //{
+                            inspect(midi_pos)
+                            inspect(midi_t)
+
+                            if (midi_t > 0)
                             {
-                                inline float channelIndex = _channelIndex * {{FcSong.ChannelSize.X}}
+                                midi_t--
+                                //break
+                            }
+                            else
+                            {
+                                // read event type
+                                readBinary(midi_pos, 3, out float midi_et)
+                                // read event delta (time since last event)
+                                readBinary(midi_pos + vec3(0, 3, 0), 5, out float midi_ed)
 
-                                readBinary(midi_pos + vec3(0, 7, channelIndex), 1, out float stopCurrent)
+                                inspect(midi_ed)
 
-                                if (stopCurrent > 0)
+                                if (midi_t == -1 && midi_ed > 0)
                                 {
-                                    stopSound(channels.get(channelIndex))
+                                    setPtrValue(midi_t, midi_ed)
+                                    //break
                                 }
-
-                                readBinary(midi_pos + vec3(0, 0, channelIndex), 7, out float newNote)
-
-                                inspect(newNote)
-
-                                if (newNote > 0)
+                                else
                                 {
-                                    // https://discord.com/channels/409219533618806786/464440459410800644/1224463893058031778
-                                    playSound(1, pow(2, (newNote - 1) / 12), out float channel, false, SOUND_PIANO)
-                                    channels.set(channelIndex, channel)
+                                    inspect(midi_et)
+
+                                    if (midi_et < 0.5)
+                                    {
+                                        // wait
+                                        readBinary(midi_pos + vec3(1, 0, 0), 8, out float midi_w_d)
+
+                                        setPtrValue(midi_pos_ref, midi_pos + vec3(2, 0, 0)) 
+                                        setPtrValue(midi_t, midi_w_d)
+                                        //break
+                                    }
+                                    else if (midi_et < 1.5)
+                                    {
+                                        // play note
+                                        readBinary(midi_pos + vec3(1, 0, 0), 8, out float midi_n_n)
+                                        readBinary(midi_pos + vec3(2, 0, 0), 8, out float midi_n_v)
+
+                                        // https://discord.com/channels/409219533618806786/464440459410800644/1224463893058031778
+                                        playSound(midi_n_v / 255, pow(2, midi_n_n / 12), out float channel, false, SOUND_PIANO)
+                                        midi_c_si.set(channelIndex, channel)
+
+                                        setPtrValue(midi_pos_ref, midi_pos + vec3(3, 0, 0)) 
+                                        setPtrValue(midi_t, -1)
+                                    }
+                                    else if (midi_et < 2.5)
+                                    {
+                                        // stop current note
+                                        stopSound(midi_c_si.get(channelIndex))
+
+                                        setPtrValue(midi_pos_ref, midi_pos + vec3(1, 0, 0))
+                                        setPtrValue(midi_t, -1)
+                                    }
+                                    else if (midi_et < 3.5)
+                                    {
+                                        // set instrument, nop for now
+                                        //midi_c_pos.set(channelIndex, midi_pos + vec3(2, 0, 0))
+                                        setPtrValue(midi_pos_ref, midi_pos + vec3(2, 0, 0))
+                                        setPtrValue(midi_t, -1)
+                                    }
+                                    else
+                                    {
+                                        // prevent infinite loop
+                                        setPtrValue(midi_pos_ref, midi_pos + vec3(1, 0, 0))
+                                        setPtrValue(midi_t, -1)
+                                    }
                                 }
                             }
+                        //}
+                    }
 
-                            midi_counter = {{1}}
+                    func readBinary(vec3 pos, float len, out float value)
+                    {
+                        float y = pos.y + 0.5//0.9375
 
-                            midi_pos.x += 1
-                        }
+                        value = 0
+                        float bitVal = 1
 
-                        func readBinary(vec3 pos, float len, out float value)
+                        on Loop(0, len, out inline float i)
                         {
-                            // + 1 - .0625 ((1 / 8) / 2)
-                            float y = pos.y + 0.9375
+                            raycast(vec3(pos.x, y + 0.625/*0.125*/, pos.z), vec3(pos.x, y, pos.z), out bool didHit, out _, out _)
 
-                            value = 0
-                            float bitVal = 1
+                            if (didHit)
+                                value += bitVal
 
-                            on Loop(0, len, out inline float i)
-                            {
-                                raycast(vec3(pos.x, y + 0.125 /* 1/8 */, pos.z), vec3(pos.x, y, pos.z), out bool didHit, out _, out _)
-
-                                if (didHit)
-                                    value += bitVal
-
-                                y++
-                                bitVal *= 2
-                            }
+                            y++
+                            bitVal *= 2
                         }
-                        """));
+
+                        value = round(value)
+                    }
+                    """));
 
                     Compilation compilation = Compilation.CreateScript(null, tree);
 
                     // TODO: Replace with Debug.Assert lenght == 0
-                    var diagnostics = compilation.Emit(context.Builder);
+                    var diagnostics = compilation.Emit(new TowerCodePlacer(context.Builder), context.Builder);
                     if (diagnostics.Length != 0)
                         throw new Exception(diagnostics[0].ToString());
 
-                    Block originBlock = context.Builder.AddBlock(Blocks.Stone);
+                    Block originBlock = new Block(Vector3I.Zero, new BlockDef(string.Empty, 512, BlockType.NonScript, new Vector2I(1, 1)));
 
-                    foreach (Vector3I pos in blocks)
-                    {
-                        context.Builder.AddBlockRelativeTo(Blocks.Stone, originBlock, pos);
-                    }
+                    context.Builder.AddBlockSegments(
+                        new Block[] { originBlock }
+                            .Concat(blocks.Select(pos => new Block(pos, Blocks.Shrub)))
+                    );
 
                     return connector.Store;
                 });

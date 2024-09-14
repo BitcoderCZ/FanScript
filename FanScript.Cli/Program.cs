@@ -84,36 +84,36 @@ namespace FanScript.Cli
                 Console.WriteLine();
             }
 
-            IBlockPlacer blockPlacer;
-            switch (opts.Placer)
-            {
-                case BlockPlacerEnum.Tower:
-                    blockPlacer = new TowerBlockPlacer()
-                    {
-                        MaxHeight = 10
-                    };
-                    break;
-                case BlockPlacerEnum.Ground:
-                    blockPlacer = new GroundBlockPlacer();
-                    break;
-                default:
-                    throw new InvalidDataException($"Unknown BlockPlacer '{opts.Placer}'");
-            }
-
-            CodeBuilder builder;
+            BlockBuilder builder;
             switch (opts.Builder)
             {
                 case CodeBuilderEnum.EditorScript:
-                    builder = new EditorScriptCodeBuilder(blockPlacer);
+                    builder = new EditorScriptBlockBuilder();
                     break;
                 case CodeBuilderEnum.GameFile:
-                    builder = new GameFileCodeBuilder(blockPlacer);
+                    builder = new GameFileBlockBuilder();
                     break;
                 default:
                     throw new InvalidDataException($"Unknown CodeBuilder '{opts.Builder}'");
             }
 
-            var diagnostics = compilation.Emit(builder);
+            CodePlacer placer;
+            switch (opts.Placer)
+            {
+                case BlockPlacerEnum.Tower:
+                    placer = new TowerCodePlacer(builder)
+                    {
+                        MaxHeight = 10
+                    };
+                    break;
+                case BlockPlacerEnum.Ground:
+                    placer = new GroundCodePlacer(builder);
+                    break;
+                default:
+                    throw new InvalidDataException($"Unknown BlockPlacer '{opts.Placer}'");
+            }
+
+            var diagnostics = compilation.Emit(placer, builder);
 
             if (diagnostics.Any())
             {

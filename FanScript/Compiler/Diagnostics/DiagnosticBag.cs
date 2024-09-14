@@ -255,9 +255,9 @@ namespace FanScript.Compiler.Diagnostics
         {
             string msg = platformInfo switch
             {
-                BuildPlatformInfo.CanGetBlocks => $"Current {nameof(CodeBuilder)} cannot connect object wires to blocks.",
-                BuildPlatformInfo.CanCreateCustomBlocks => $"Current {nameof(CodeBuilder)} cannot create custom blocks.",
-                _ => $"Operation not supported by current {nameof(CodeBuilder)}.",
+                BuildPlatformInfo.CanGetBlocks => $"Current {nameof(BlockBuilder)} cannot connect object wires to blocks.",
+                BuildPlatformInfo.CanCreateCustomBlocks => $"Current {nameof(BlockBuilder)} cannot create custom blocks.",
+                _ => $"Operation not supported by current {nameof(BlockBuilder)}.",
             };
 
             ReportWarning(location, msg);

@@ -5,9 +5,9 @@ using System.Diagnostics;
 
 namespace FanScript.Compiler.Emit.BlockPlacers
 {
-    public class TowerBlockPlacer : IBlockPlacer
+    public class TowerCodePlacer : CodePlacer
     {
-        public int CurrentCodeBlockBlocks => blocks.Count;
+        public override int CurrentCodeBlockBlocks => blocks.Count;
 
         private int maxHeight = 25;
         public int MaxHeight
@@ -19,18 +19,21 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                 maxHeight = value;
             }
         }
-        public Move NextTowerMove { get; set; } = Move.X;
         public bool SquarePlacement { get; set; } = true;
 
         private int highlightX = 0;
-        private Vector3I pos = Vector3I.Zero;
 
         private bool inHighlight = false;
         private int statementDepth = 0;
 
         private List<Block> blocks = new List<Block>(256);
 
-        public Block Place(BlockDef blockDef)
+        public TowerCodePlacer(BlockBuilder builder)
+            : base(builder)
+        {
+        }
+
+        public override Block PlaceBlock(BlockDef blockDef)
         {
             Block block;
 
@@ -41,18 +44,18 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             }
             else
             {
-                block = new Block(pos, blockDef);
+                block = new Block(Vector3I.Zero, blockDef);
                 blocks.Add(block);
             }
 
             return block;
         }
 
-        public void EnterStatementBlock()
+        public override void EnterStatementBlock()
         {
             statementDepth++;
         }
-        public void ExitStatementBlock()
+        public override void ExitStatementBlock()
         {
             const int move = 4;
 
@@ -69,9 +72,8 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                     width = Math.Max(1, (int)Math.Ceiling(Math.Sqrt(width)));
 
                 width *= move;
-                int off = NextTowerMove == Move.X ? pos.X : 0;
 
-                Vector3I bPos = pos;
+                Vector3I bPos = Vector3I.Zero;
 
                 for (int i = 0; i < blocks.Count; i++)
                 {
@@ -83,43 +85,33 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                         bPos.Y = 0;
                         bPos.X += move;
 
-                        if (bPos.X >= width + off)
+                        if (bPos.X >= width)
                         {
-                            bPos.X = off;
+                            bPos.X = 0;
                             bPos.Z += move;
                         }
                     }
                 }
 
-                switch (NextTowerMove)
-                {
-                    case Move.X:
-                        pos.X += width + 4;
-                        break;
-                    case Move.Z:
-                        pos.Z = bPos.Z + 4;
-                        break;
-                    default:
-                        throw new InvalidEnumArgumentException(nameof(NextTowerMove), (int)NextTowerMove, typeof(Move));
-                }
+                Builder.AddBlockSegments(blocks);
 
                 blocks.Clear();
             }
         }
 
-        public void EnterExpressionBlock()
+        public override void EnterExpressionBlock()
         {
         }
-        public void ExitExpressionBlock()
+        public override void ExitExpressionBlock()
         {
         }
 
-        public void EnterHighlight()
+        public override void EnterHighlight()
         {
             inHighlight = true;
         }
 
-        public void ExitHightlight()
+        public override void ExitHightlight()
         {
             if (inHighlight)
                 highlightX += 2;

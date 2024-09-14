@@ -143,7 +143,7 @@ namespace FanScript.Midi
 
         private byte addLongDelta(byte channel, long wholeDelta)
         {
-            uint maxWait = (uint)((1 << (ChannelEvent.MaxDeltaTimeBits + 8)) - 1);
+            uint maxWait = (uint)(ChannelEvent.MaxDeltaTime + 255);
 
             while (wholeDelta > ChannelEvent.MaxDeltaTime)
             {
@@ -159,7 +159,21 @@ namespace FanScript.Midi
                     wholeDelta = 0;
                 }
 
-                channels[channel].Events.Add(new ChannelEvent(ChannelEventType.Wait,(byte)(wait & ChannelEvent.MaxDeltaTime), (byte)(wait >> ChannelEvent.MaxDeltaTimeBits)));
+                byte wait1;
+                byte wait2;
+                if (wait > ChannelEvent.MaxDeltaTime)
+                {
+                    wait1 = ChannelEvent.MaxDeltaTime;
+                    wait -= ChannelEvent.MaxDeltaTime;
+                    wait2 = (byte)wait;
+                }
+                else
+                {
+                    wait1 = (byte)wait;
+                    wait2 = 0;
+                }
+
+                channels[channel].Events.Add(new ChannelEvent(ChannelEventType.Wait, wait1, wait2));
             }
 
             return (byte)wholeDelta;

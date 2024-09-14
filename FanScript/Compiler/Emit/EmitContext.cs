@@ -1,6 +1,7 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Symbols;
+using FanScript.FCInfo;
 
 namespace FanScript.Compiler.Emit
 {
@@ -8,7 +9,13 @@ namespace FanScript.Compiler.Emit
     {
         private Func<BoundStatement, EmitStore> emitStatement;
         private Func<BoundExpression, EmitStore> emitExpression;
+
+        private Func<IDisposable> statementBlock;
+        private Func<IDisposable> expressionBlock;
+
+        private Func<BlockDef, Block> addBlock;
         private Action<EmitStore, EmitStore> connect;
+        private Action<Block, int, object> setBlockValue;
 
         private Func<object?, EmitStore> emitLiteralExpression;
 
@@ -20,7 +27,7 @@ namespace FanScript.Compiler.Emit
         private Func<ReadOnlyMemory<BoundExpression>, bool, object?[]?> validateConstants;
         private Action<string> writeComment;
 
-        public readonly CodeBuilder Builder;
+        public readonly BlockBuilder Builder;
         public readonly DiagnosticBag Diagnostics;
 
         public EmitContext(Emitter emitter)
@@ -30,7 +37,13 @@ namespace FanScript.Compiler.Emit
 
             emitStatement = emitter.emitStatement;
             emitExpression = emitter.emitExpression;
+
+            statementBlock = emitter.statementBlock;
+            expressionBlock = emitter.expressionBlock;
+
+            addBlock = emitter.addBlock;
             connect = emitter.connect;
+            setBlockValue = emitter.setBlockValue;
 
             emitLiteralExpression = emitter.emitLiteralExpression;
 
@@ -48,8 +61,17 @@ namespace FanScript.Compiler.Emit
         public EmitStore EmitExpression(BoundExpression expression)
             => emitExpression(expression);
 
+        public IDisposable StatementBlock()
+            => statementBlock();
+        public IDisposable ExpressionBlock()
+            => expressionBlock();
+
+        public Block AddBlock(BlockDef def)
+            => addBlock(def);
         public void Connect(EmitStore from, EmitStore to)
             => connect(from, to);
+        public void SetBlockValue(Block block, int valueIndex, object value)
+            => setBlockValue(block, valueIndex, value);
 
         public EmitStore EmitLiteralExpression(object? value)
             => emitLiteralExpression(value);
@@ -60,7 +82,7 @@ namespace FanScript.Compiler.Emit
         /// Emits setting <paramref name="expression"/> to <paramref name="getValueStore"/>
         /// </summary>
         /// <remarks>
-        /// DOES NOT automatically <see cref="IBlockPlacer.ExpressionBlock(Action)"/>
+        /// DOES NOT automatically call <see cref="CodePlacer.ExpressionBlock()"/>
         /// </remarks>
         /// <param name="expression"></param>
         /// <param name="getValueStore"></param>
@@ -71,7 +93,7 @@ namespace FanScript.Compiler.Emit
         /// Emits setting <paramref name="variable"/> to <paramref name="getValueStore"/>
         /// </summary>
         /// <remarks>
-        /// DOES NOT automatically <see cref="IBlockPlacer.ExpressionBlock(Action)"/>
+        /// DOES NOT automatically call <see cref="CodePlacer.ExpressionBlock()"/>
         /// </remarks>
         /// <param name="expression"></param>
         /// <param name="getValueStore"></param>

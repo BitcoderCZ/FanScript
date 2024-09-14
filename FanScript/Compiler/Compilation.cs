@@ -145,13 +145,13 @@ namespace FanScript.Compiler
             body.WriteTo(writer);
         }
 
-        public ImmutableArray<Diagnostic> Emit(CodeBuilder builder)
+        public ImmutableArray<Diagnostic> Emit(CodePlacer placer, BlockBuilder builder)
         {
             if (GlobalScope.Diagnostics.HasErrors())
                 return GlobalScope.Diagnostics;
 
             BoundProgram program = GetProgram();
-            return Emitter.Emit(program, builder);
+            return Emitter.Emit(program, placer, builder);
         }
     }
 }
