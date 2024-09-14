@@ -971,19 +971,20 @@ namespace FanScript.Compiler.Symbols
                     on Loop(0, {{song.Channels.Count}}, out inline float channelIndex)
                     {
                         //inline float channelIndex = _channelIndex * {{FcSong.ChannelSize.X}}
-                        vec3 midi_pos = midi_c_pos.get(channelIndex)
                         inline vec3 midi_pos_ref = midi_c_pos.get(channelIndex)
                         inline float midi_t = midi_c_wt.get(channelIndex)
 
-                        //while (true)
-                        //{
+                        while (true)
+                        {
+                            vec3 midi_pos = midi_c_pos.get(channelIndex)
+
                             inspect(midi_pos)
                             inspect(midi_t)
 
                             if (midi_t > 0)
                             {
                                 midi_t--
-                                //break
+                                break
                             }
                             else
                             {
@@ -997,7 +998,7 @@ namespace FanScript.Compiler.Symbols
                                 if (midi_t == -1 && midi_ed > 0)
                                 {
                                     setPtrValue(midi_t, midi_ed)
-                                    //break
+                                    break
                                 }
                                 else
                                 {
@@ -1010,7 +1011,7 @@ namespace FanScript.Compiler.Symbols
 
                                         setPtrValue(midi_pos_ref, midi_pos + vec3(2, 0, 0)) 
                                         setPtrValue(midi_t, midi_w_d)
-                                        //break
+                                        break
                                     }
                                     else if (midi_et < 1.5)
                                     {
@@ -1036,7 +1037,6 @@ namespace FanScript.Compiler.Symbols
                                     else if (midi_et < 3.5)
                                     {
                                         // set instrument, nop for now
-                                        //midi_c_pos.set(channelIndex, midi_pos + vec3(2, 0, 0))
                                         setPtrValue(midi_pos_ref, midi_pos + vec3(2, 0, 0))
                                         setPtrValue(midi_t, -1)
                                     }
@@ -1048,7 +1048,7 @@ namespace FanScript.Compiler.Symbols
                                     }
                                 }
                             }
-                        //}
+                        }
                     }
 
                     func readBinary(vec3 pos, float len, out float value)
