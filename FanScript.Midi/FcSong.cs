@@ -76,11 +76,25 @@ namespace FanScript.Midi
 
                     switch (cEvent.Type)
                     {
+                        case ChannelEventType.Wait:
+                            {
+                                setBinary(cEvent.Data0, pos); // delay
+                                pos.X++;
+                            }
+                            break;
                         case ChannelEventType.PlayNote:
-                            setBinary(cEvent.Data0, pos); // note
-                            pos.X++;
-                            setBinary(cEvent.Data1, pos); // velocity
-                            pos.X++;
+                            if (cEvent.Data1 == 255)
+                            {
+                                setBinary(cEvent.Data0, pos); // note
+                                pos.X++;
+                            }
+                            else
+                            {
+                                setBinary((byte)(cEvent.Data0 | 0b_1000_0000), pos); // note
+                                pos.X++;
+                                setBinary(cEvent.Data1, pos); // velocity
+                                pos.X++;
+                            }
                             break;
                         case ChannelEventType.SetInstrument:
                             setBinary(cEvent.Data0, pos); // the "instrument" - fc sound

@@ -54,23 +54,29 @@ namespace FanScript.Midi
 
         public void PlayNote(byte channel, TimeSpan deltaTime, Note note, float velocity)
         {
-            if (getLongDelta(channel, deltaTime, out long longDelta))
-                return;
-
             if (channel < 0 || channel >= MidiConverter.MaxNumbChannels)
             {
                 Console.WriteLine($"[{channel}] Out of bounds channel");
                 return;
             }
 
-            if (playingNotes.TryGetValue(channel, out Note? currentlyPlaying))
-                Console.WriteLine($"[{channel}] Tried to start note, but one is aready playing ({currentlyPlaying})");
-
-            playingNotes[channel] = note;
+            if (getLongDelta(channel, deltaTime, out long longDelta))
+                return;
 
             byte noteNumb = noteToNumb(note);
             byte delta = addLongDelta(channel, longDelta);
             byte bVelocity = (byte)Math.Min(velocity * 255f, 255f);
+
+            if (playingNotes.TryGetValue(channel, out Note? currentlyPlaying))
+            {
+                Console.WriteLine($"[{channel}] Tried to start note, but one is aready playing ({currentlyPlaying}), the current one was stopped.");
+
+                channels[channel].Events.Add(new ChannelEvent(ChannelEventType.StopCurrentNote, delta));
+                delta = 0;
+                playingNotes.Remove(channel);
+            }
+
+            playingNotes.Add(channel, note);
 
             stats.ChannelUsed(channel);
 
@@ -81,14 +87,14 @@ namespace FanScript.Midi
         }
         public void EndPlayNote(byte channel, TimeSpan deltaTime, Note note)
         {
-            if (getLongDelta(channel, deltaTime, out long longDelta))
-                return;
-
             if (channel < 0 || channel >= MidiConverter.MaxNumbChannels)
             {
                 Console.WriteLine($"Out of bounds channel ({channel})");
                 return;
             }
+
+            if (getLongDelta(channel, deltaTime, out long longDelta))
+                return;
 
             if (!playingNotes.TryGetValue(channel, out Note? currentlyPlaying))
             {
@@ -115,6 +121,12 @@ namespace FanScript.Midi
 
         public void SetInstrument(byte channel, TimeSpan deltaTime, SevenBitNumber instrument)
         {
+            if (channel < 0 || channel >= MidiConverter.MaxNumbChannels)
+            {
+                Console.WriteLine($"[{channel}] Out of bounds channel");
+                return;
+            }
+
             if (getLongDelta(channel, deltaTime, out long longDelta))
                 return;
 
@@ -129,7 +141,7 @@ namespace FanScript.Midi
 
         private byte noteToNumb(Note note)
         {
-            return (byte)note.NoteName;
+            return (byte)note.NoteName;//note.NoteNumber;
         }
 
         private bool getLongDelta(byte channel, TimeSpan deltaTime, out long longDelta)

@@ -910,185 +910,199 @@ namespace FanScript.Compiler.Symbols
                 }
             );
 
-        public static readonly FunctionSymbol PlayMidi
-            = new BuiltinFunctionSymbol("playMidi",
-                [
-                    new ParameterSymbol("fileName", TypeSymbol.String),
-                ], TypeSymbol.Void, (call, context) =>
-                {
-                    object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), true);
+        //public static readonly FunctionSymbol PlayMidi
+        //    = new BuiltinFunctionSymbol("playMidi",
+        //        [
+        //            new ParameterSymbol("fileName", TypeSymbol.String),
+        //        ], TypeSymbol.Void, (call, context) =>
+        //        {
+        //            object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), true);
 
-                    if (constants is null)
-                        return new NopEmitStore();
+        //            if (constants is null)
+        //                return new NopEmitStore();
 
-                    string? path = constants[0] as string;
+        //            string? path = constants[0] as string;
 
-                    if (string.IsNullOrWhiteSpace(path))
-                        throw new Exception();
+        //            if (string.IsNullOrWhiteSpace(path))
+        //                throw new Exception();
 
-                    MidiFile file;
-                    using (FileStream stream = File.OpenRead(path))
-                        file = MidiFile.Read(stream, new ReadingSettings());
+        //            MidiFile file;
+        //            using (FileStream stream = File.OpenRead(path))
+        //                file = MidiFile.Read(stream, new ReadingSettings());
 
-                    MidiConvertSettings convertSettings = MidiConvertSettings.Default;
-                    convertSettings.MaxFrames = 60 * 30;
+        //            MidiConvertSettings convertSettings = MidiConvertSettings.Default;
+        //            convertSettings.MaxFrames = 60 * 45;
 
-                    MidiConverter converter = new MidiConverter(file, convertSettings);
+        //            MidiConverter converter = new MidiConverter(file, convertSettings);
 
-                    FcSong song = converter.Convert();
-                    var (blocksSize, blocks) = song.ToBlocks();
+        //            FcSong song = converter.Convert();
+        //            var (blocksSize, blocks) = song.ToBlocks();
 
-                    EmitConnector connector = new EmitConnector(context.Connect);
+        //            EmitConnector connector = new EmitConnector(context.Connect);
 
-                    // channel event structure:
-                    // t - type
-                    // d - delta time since last event (in frames)
-                    // a - data0 (optional - depends on type)
-                    // b - data1 (optional - depends on type)
-                    // tttd_dddd - z_pos: 0
-                    // aaaa_aaaa - z_pos: 1
-                    // bbbb_bbbb - z_pos: 2
+        //            // channel event structure:
+        //            // t - type
+        //            // d - delta time since last event (in frames)
+        //            // a - data0 (optional - depends on type)
+        //            // b - data1 (optional - depends on type)
+        //            // tttd_dddd - z_pos: 0
+        //            // aaaa_aaaa - z_pos: 1
+        //            // bbbb_bbbb - z_pos: 2
 
-                    // TODO: emit set variable originObj to originBlock variable
+        //            // TODO: emit set variable originObj to originBlock variable
 
-                    SyntaxTree tree = SyntaxTree.Parse(SourceText.From($$"""
-                    global array<vec3> midi_c_pos // channel pos
-                    global array<float> midi_c_si // channel sound index
-                    global array<float> midi_c_wt // channel wait time
+        //            SyntaxTree tree = SyntaxTree.Parse(SourceText.From($$"""
+        //            global array<vec3> midi_c_pos // channel pos
+        //            global array<float> midi_c_si // channel sound index
+        //            global array<float> midi_c_wt // channel wait time
 
-                    on Play
-                    {
-                        obj originObj
-                        originObj.getPos(out global vec3 origin, out _)
-                        origin.y -= .5
-                        on Loop(0, {{song.Channels.Count}}, out inline float channelIndex)
-                        {
-                            midi_c_pos.set(channelIndex, origin + vec3(0, 0, channelIndex * {{FcSong.ChannelSize.X}}))
-                            midi_c_wt.set(channelIndex, -1)
-                        }
-                    }
+        //            on Play
+        //            {
+        //                obj originObj
+        //                originObj.getPos(out global vec3 origin, out _)
+        //                origin.y -= .5
+        //                on Loop(0, {{song.Channels.Count}}, out inline float channelIndex)
+        //                {
+        //                    midi_c_pos.set(channelIndex, origin + vec3(0, 0, channelIndex * {{FcSong.ChannelSize.X}}))
+        //                    midi_c_wt.set(channelIndex, -1)
+        //                }
+        //            }
 
-                    on Loop(0, {{song.Channels.Count}}, out inline float channelIndex)
-                    {
-                        //inline float channelIndex = _channelIndex * {{FcSong.ChannelSize.X}}
-                        inline vec3 midi_pos_ref = midi_c_pos.get(channelIndex)
-                        inline float midi_t = midi_c_wt.get(channelIndex)
+        //            on Loop(0, {{song.Channels.Count}}, out inline float channelIndex)
+        //            {
+        //                //inline float channelIndex = _channelIndex * {{FcSong.ChannelSize.X}}
+        //                inline vec3 midi_pos_ref = midi_c_pos.get(channelIndex)
+        //                inline float midi_t_ref = midi_c_wt.get(channelIndex)
 
-                        while (true)
-                        {
-                            vec3 midi_pos = midi_c_pos.get(channelIndex)
+        //                while (true)
+        //                {
+        //                    vec3 midi_pos = midi_c_pos.get(channelIndex)
+        //                    float midi_t = midi_c_wt.get(channelIndex)
 
-                            inspect(midi_pos)
-                            inspect(midi_t)
+        //                    inspect(midi_pos)
+        //                    inspect(midi_t)
 
-                            if (midi_t > 0)
-                            {
-                                midi_t--
-                                break
-                            }
-                            else
-                            {
-                                // read event type
-                                readBinary(midi_pos, 3, out float midi_et)
-                                // read event delta (time since last event)
-                                readBinary(midi_pos + vec3(0, 3, 0), 5, out float midi_ed)
+        //                    if (midi_t > 0)
+        //                    {
+        //                        midi_t_ref--
+        //                        break
+        //                    }
+        //                    else
+        //                    {
+        //                        // read event type
+        //                        readBinary(midi_pos, 3, out float midi_et)
+        //                        // read event delta (time since last event)
+        //                        readBinary(midi_pos + vec3(0, 3, 0), 5, out float midi_ed)
 
-                                inspect(midi_ed)
+        //                        inspect(midi_ed)
 
-                                if (midi_t == -1 && midi_ed > 0)
-                                {
-                                    setPtrValue(midi_t, midi_ed)
-                                    break
-                                }
-                                else
-                                {
-                                    inspect(midi_et)
+        //                        if (midi_t == -1 && midi_ed > 0)
+        //                        {
+        //                            setPtrValue(midi_t_ref, midi_ed)
+        //                            break
+        //                        }
+        //                        else
+        //                        {
+        //                            inspect(midi_et)
 
-                                    if (midi_et < 0.5)
-                                    {
-                                        // wait
-                                        readBinary(midi_pos + vec3(1, 0, 0), 8, out float midi_w_d)
+        //                            if (midi_et < 0.5)
+        //                            {
+        //                                // wait
+        //                                readBinary(midi_pos + vec3(1, 0, 0), 8, out float midi_w_d)
 
-                                        setPtrValue(midi_pos_ref, midi_pos + vec3(2, 0, 0)) 
-                                        setPtrValue(midi_t, midi_w_d)
-                                        break
-                                    }
-                                    else if (midi_et < 1.5)
-                                    {
-                                        // play note
-                                        readBinary(midi_pos + vec3(1, 0, 0), 8, out float midi_n_n)
-                                        readBinary(midi_pos + vec3(2, 0, 0), 8, out float midi_n_v)
+        //                                setPtrValue(midi_pos_ref, midi_pos + vec3(2, 0, 0)) 
+        //                                setPtrValue(midi_t_ref, midi_w_d)
+        //                                break
+        //                            }
+        //                            else if (midi_et < 1.5)
+        //                            {
+        //                                // play note
+        //                                readBinary(midi_pos + vec3(1, 0, 0), 7, out float midi_n_n)
+        //                                readBinary(midi_pos + vec3(1, 7, 0), 1, out float midi_n_hv) // has non default velocity (not 255)
+        //                                float midi_n_v
+        //                                if (midi_n_hv > 0.5)
+        //                                {
+        //                                    readBinary(midi_pos + vec3(2, 0, 0), 8, out midi_n_v)
+        //                                    setPtrValue(midi_pos_ref, midi_pos + vec3(3, 0, 0)) 
+        //                                }
+        //                                else
+        //                                {
+        //                                    midi_n_v = 255
+        //                                    setPtrValue(midi_pos_ref, midi_pos + vec3(2, 0, 0)) 
+        //                                }
+                    
+        //                                // stop current note if playing - shouldn't be needed, but...
+        //                                stopSound(midi_c_si.get(channelIndex))
 
-                                        // https://discord.com/channels/409219533618806786/464440459410800644/1224463893058031778
-                                        playSound(midi_n_v / 255, pow(2, midi_n_n / 12), out float channel, false, SOUND_PIANO)
-                                        midi_c_si.set(channelIndex, channel)
+        //                                // https://discord.com/channels/409219533618806786/464440459410800644/1224463893058031778
+        //                                playSound(midi_n_v / 255, pow(2, /*(*/midi_n_n /*- 60)*/ / 12), out float channel, false, SOUND_PIANO)
+        //                                midi_c_si.set(channelIndex, channel)
 
-                                        setPtrValue(midi_pos_ref, midi_pos + vec3(3, 0, 0)) 
-                                        setPtrValue(midi_t, -1)
-                                    }
-                                    else if (midi_et < 2.5)
-                                    {
-                                        // stop current note
-                                        stopSound(midi_c_si.get(channelIndex))
+        //                                setPtrValue(midi_t_ref, -1)
+        //                            }
+        //                            else if (midi_et < 2.5)
+        //                            {
+        //                                // stop current note
+        //                                stopSound(midi_c_si.get(channelIndex))
 
-                                        setPtrValue(midi_pos_ref, midi_pos + vec3(1, 0, 0))
-                                        setPtrValue(midi_t, -1)
-                                    }
-                                    else if (midi_et < 3.5)
-                                    {
-                                        // set instrument, nop for now
-                                        setPtrValue(midi_pos_ref, midi_pos + vec3(2, 0, 0))
-                                        setPtrValue(midi_t, -1)
-                                    }
-                                    else
-                                    {
-                                        // prevent infinite loop
-                                        setPtrValue(midi_pos_ref, midi_pos + vec3(1, 0, 0))
-                                        setPtrValue(midi_t, -1)
-                                    }
-                                }
-                            }
-                        }
-                    }
+        //                                setPtrValue(midi_pos_ref, midi_pos + vec3(1, 0, 0))
+        //                                setPtrValue(midi_t_ref, -1)
+        //                            }
+        //                            else if (midi_et < 3.5)
+        //                            {
+        //                                // set instrument, nop for now
+        //                                setPtrValue(midi_pos_ref, midi_pos + vec3(2, 0, 0))
+        //                                setPtrValue(midi_t_ref, -1)
+        //                            }
+        //                            else
+        //                            {
+        //                                // prevent infinite loop
+        //                                setPtrValue(midi_pos_ref, midi_pos + vec3(1, 0, 0))
+        //                                setPtrValue(midi_t_ref, -1)
+        //                            }
+        //                        }
+        //                    }
+        //                }
+        //            }
 
-                    func readBinary(vec3 pos, float len, out float value)
-                    {
-                        float y = pos.y + 0.5//0.9375
+        //            func readBinary(vec3 pos, float len, out float value)
+        //            {
+        //                float y = pos.y + 0.5//0.9375
 
-                        value = 0
-                        float bitVal = 1
+        //                value = 0
+        //                float bitVal = 1
 
-                        on Loop(0, len, out inline float i)
-                        {
-                            raycast(vec3(pos.x, y + 0.625/*0.125*/, pos.z), vec3(pos.x, y, pos.z), out bool didHit, out _, out _)
+        //                on Loop(0, len, out inline float i)
+        //                {
+        //                    raycast(vec3(pos.x, y + 0.625/*0.125*/, pos.z), vec3(pos.x, y, pos.z), out bool didHit, out _, out _)
 
-                            if (didHit)
-                                value += bitVal
+        //                    if (didHit)
+        //                        value += bitVal
 
-                            y++
-                            bitVal *= 2
-                        }
+        //                    y++
+        //                    bitVal *= 2
+        //                }
 
-                        value = round(value)
-                    }
-                    """));
+        //                value = round(value)
+        //            }
+        //            """));
 
-                    Compilation compilation = Compilation.CreateScript(null, tree);
+        //            Compilation compilation = Compilation.CreateScript(null, tree);
 
-                    // TODO: Replace with Debug.Assert lenght == 0
-                    var diagnostics = compilation.Emit(new TowerCodePlacer(context.Builder), context.Builder);
-                    if (diagnostics.Length != 0)
-                        throw new Exception(diagnostics[0].ToString());
+        //            // TODO: Replace with Debug.Assert lenght == 0
+        //            var diagnostics = compilation.Emit(new TowerCodePlacer(context.Builder), context.Builder);
+        //            if (diagnostics.Length != 0)
+        //                throw new Exception(diagnostics[0].ToString());
 
-                    Block originBlock = new Block(Vector3I.Zero, new BlockDef(string.Empty, 512, BlockType.NonScript, new Vector2I(1, 1)));
+        //            Block originBlock = new Block(Vector3I.Zero, new BlockDef(string.Empty, 512, BlockType.NonScript, new Vector2I(1, 1)));
 
-                    context.Builder.AddBlockSegments(
-                        new Block[] { originBlock }
-                            .Concat(blocks.Select(pos => new Block(pos, Blocks.Shrub)))
-                    );
+        //            context.Builder.AddBlockSegments(
+        //                new Block[] { originBlock }
+        //                    .Concat(blocks.Select(pos => new Block(pos, Blocks.Shrub)))
+        //            );
 
-                    return connector.Store;
-                });
+        //            return connector.Store;
+        //        });
 
         public static void Init()
         {
