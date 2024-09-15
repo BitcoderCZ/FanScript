@@ -21,7 +21,6 @@ namespace FanScript.Compiler.Binding
 
         private Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)> loopStack = new Stack<(BoundLabel BreakLabel, BoundLabel ContinueLabel)>();
         private Stack<bool> blockStack = new Stack<bool>(); // if true - is in an event, else is in a loop
-        private Dictionary<FunctionSymbol, int> functionCallCount = new();
         private int labelCounter;
         private BoundScope scope;
 
@@ -50,7 +49,7 @@ namespace FanScript.Compiler.Binding
 
             binder.Diagnostics.AddRange(syntaxTrees.SelectMany(st => st.Diagnostics));
             if (binder.Diagnostics.HasErrors())
-                return new BoundGlobalScope(previous, binder.Diagnostics.ToImmutableArray(), null, ImmutableArray<FunctionSymbol>.Empty, ImmutableArray<VariableSymbol>.Empty, ImmutableArray<BoundStatement>.Empty, new Dictionary<FunctionSymbol, int>().AsReadOnly());
+                return new BoundGlobalScope(previous, binder.Diagnostics.ToImmutableArray(), null, ImmutableArray<FunctionSymbol>.Empty, ImmutableArray<VariableSymbol>.Empty, ImmutableArray<BoundStatement>.Empty);
 
             IEnumerable<FunctionDeclarationSyntax> functionDeclarations = syntaxTrees.SelectMany(st => st.Root.Members)
                                                   .OfType<FunctionDeclarationSyntax>();
@@ -70,10 +69,6 @@ namespace FanScript.Compiler.Binding
                 statements.Add(statement);
             }
             binder.scope = binder.scope.Parent!;
-
-            Dictionary<FunctionSymbol, int> functionCallCounts = new();
-            foreach (var (func, count) in binder.functionCallCount)
-                functionCallCounts[func] = functionCallCounts.GetValueOrDefault(func, 0) + count;
 
             // Check global statements
             GlobalStatementSyntax[] firstGlobalStatementPerSyntaxTree = syntaxTrees
@@ -102,7 +97,7 @@ namespace FanScript.Compiler.Binding
             if (previous is not null)
                 diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
 
-            return new BoundGlobalScope(previous, diagnostics, scriptFunction, functions, variables, statements.ToImmutable(), functionCallCounts.AsReadOnly());
+            return new BoundGlobalScope(previous, diagnostics, scriptFunction, functions, variables, statements.ToImmutable());
         }
 
         public static BoundProgram BindProgram(bool isScript, BoundProgram? previous, BoundGlobalScope globalScope)
@@ -111,15 +106,16 @@ namespace FanScript.Compiler.Binding
             BoundScope parentScope = CreateParentScope(globalScope, scopeDiagnostics);
 
             if (globalScope.Diagnostics.HasErrors())
-                return new BoundProgram(previous, globalScope.Diagnostics, null, ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Empty, ImmutableDictionary<FunctionSymbol, FunctionInfo>.Empty);
+                return new BoundProgram(previous, globalScope.Diagnostics, null, ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Empty, new BoundAnalysisResult());
 
             ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Builder functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
-            Dictionary<FunctionSymbol, ImmutableArray<VariableSymbol>> functionLocals = new();
-            Dictionary<FunctionSymbol, int> functionCallCounts = new();
+
             ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
             diagnostics.AddRange(scopeDiagnostics);
 
             int varDistinguisher = 0;
+
+            BoundAnalysisResult analysisResult = new BoundAnalysisResult();
 
             foreach (FunctionSymbol function in globalScope.Functions)
             {
@@ -128,6 +124,8 @@ namespace FanScript.Compiler.Binding
                 BoundStatement body = binder.BindStatement(function.Declaration!.Body);
 
                 BoundBlockStatement loweredBody = Lowerer.Lower(function, body);
+
+                analysisResult.Add(BoundTreeAnalyzer.Analyze(loweredBody));
 
                 if (function.Type != TypeSymbol.Void && !ControlFlowGraph.AllPathsReturn(loweredBody))
                     binder.diagnostics.ReportAllPathsMustReturn(function.Declaration.Identifier.Location);
@@ -144,9 +142,6 @@ namespace FanScript.Compiler.Binding
                 }
 
                 functionBodies.Add(function, loweredBody);
-                functionLocals.Add(function, binder.scope.GetDeclaredVariables());
-                foreach (var (func, count) in binder.functionCallCount)
-                    functionCallCounts[func] = functionCallCounts.GetValueOrDefault(func, 0) + count;
 
                 diagnostics.AddRange(binder.Diagnostics);
             }
@@ -170,16 +165,15 @@ namespace FanScript.Compiler.Binding
 
                 BoundBlockStatement body = Lowerer.Lower(globalScope.ScriptFunction, new BoundBlockStatement(compilationUnit!, statements));
                 functionBodies.Add(globalScope.ScriptFunction, body);
+
+                analysisResult.Add(BoundTreeAnalyzer.Analyze(body));
             }
 
             return new BoundProgram(previous,
                 diagnostics.ToImmutable(),
                 globalScope.ScriptFunction,
                 functionBodies.ToImmutable(),
-                functionLocals.Select(item =>
-                {
-                    return new KeyValuePair<FunctionSymbol, FunctionInfo>(item.Key, new FunctionInfo(item.Value, functionCallCounts.GetValueOrDefault(item.Key, 0) + globalScope.FunctionCallCounts.GetValueOrDefault(item.Key, 0)));
-                }).ToImmutableDictionary());
+                analysisResult);
         }
 
         private void BindFunctionDeclaration(FunctionDeclarationSyntax syntax)
@@ -912,8 +906,6 @@ namespace FanScript.Compiler.Binding
                 syntax.BoundResult = new BoundCallExpression(syntax, function, null!, fixType(function.Type)!, genericType);
                 return new BoundErrorExpression(syntax);
             }
-
-            functionCallCount[function] = functionCallCount.GetValueOrDefault(function, 0) + 1;
 
             var res = new BoundCallExpression(syntax, function, argumentClause, fixType(function.Type)!, genericType);
             syntax.BoundResult = res;

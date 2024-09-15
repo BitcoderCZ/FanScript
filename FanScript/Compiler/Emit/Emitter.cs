@@ -13,6 +13,8 @@ namespace FanScript.Compiler.Emit
 {
     internal sealed class Emitter
     {
+        const int MaxCallCountToInline = 1;
+
         private EmitContext emitContext = null!;
 
         internal DiagnosticBag diagnostics = new DiagnosticBag();
@@ -60,7 +62,7 @@ namespace FanScript.Compiler.Emit
 
             foreach (var (func, body) in this.program.Functions.ToImmutableSortedDictionary())
             {
-                if (func.Modifiers.HasFlag(Modifiers.Inline) || (func != program.ScriptFunction && program.FunctionInfos.GetValueOrDefault(func, new FunctionInfo()).CallCount <= 1))
+                if (func.Modifiers.HasFlag(Modifiers.Inline) || (func != program.ScriptFunction && program.Analysis.GetCallCount(func) <= MaxCallCountToInline))
                     continue;
 
                 using (statementBlock())
@@ -751,7 +753,7 @@ namespace FanScript.Compiler.Emit
             if (expression.Function is BuiltinFunctionSymbol builtinFunction)
                 return builtinFunction.Emit(expression, emitContext);
 
-            if (expression.Function.Modifiers.HasFlag(Modifiers.Inline) || program.FunctionInfos.GetValueOrDefault(expression.Function, new FunctionInfo()).CallCount <= 1)
+            if (expression.Function.Modifiers.HasFlag(Modifiers.Inline) || program.Analysis.GetCallCount(expression.Function) <= MaxCallCountToInline)
                 return emitInlineCall(expression);
             else
                 return emitNormalCall(expression);

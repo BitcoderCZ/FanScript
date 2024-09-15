@@ -12,8 +12,7 @@ namespace FanScript.Compiler.Binding
                                 FunctionSymbol? scriptFunction,
                                 ImmutableArray<FunctionSymbol> functions,
                                 ImmutableArray<VariableSymbol> variables,
-                                ImmutableArray<BoundStatement> statements,
-                                ReadOnlyDictionary<FunctionSymbol, int> functionCallCounts)
+                                ImmutableArray<BoundStatement> statements)
         {
             Previous = previous;
             Diagnostics = diagnostics;
@@ -21,7 +20,6 @@ namespace FanScript.Compiler.Binding
             Functions = functions;
             Variables = variables;
             Statements = statements;
-            FunctionCallCounts = functionCallCounts;
         }
 
         public BoundGlobalScope? Previous { get; }
@@ -30,6 +28,5 @@ namespace FanScript.Compiler.Binding
         public ImmutableArray<FunctionSymbol> Functions { get; }
         public ImmutableArray<VariableSymbol> Variables { get; }
         public ImmutableArray<BoundStatement> Statements { get; }
-        public ReadOnlyDictionary<FunctionSymbol, int> FunctionCallCounts { get; }
     }
 }

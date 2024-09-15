@@ -242,10 +242,10 @@ namespace FanScript.LangServer.Handlers
                         length += (variables = compilation.GetVariables().ToArray()).Length;
                     else
                     {
-                        variables = program.FunctionInfos.GetValueOrDefault(currentFunc, new FunctionInfo())
-                            .LocalVariables
-                            .Concat(compilation.GetVariables().Where(var => var is GlobalVariableSymbol))
-                            .ToArray();
+                        //variables = program.FunctionInfos.GetValueOrDefault(currentFunc, new FunctionInfo())
+                        //    .LocalVariables
+                        //    .Concat(compilation.GetVariables().Where(var => var is GlobalVariableSymbol))
+                        //    .ToArray();
                     }
                 }
                 if (recomendations.HasFlag(CurrentRecomendations.Functions))
