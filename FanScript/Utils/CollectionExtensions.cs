@@ -36,16 +36,5 @@ namespace FanScript.Utils
             var (start, length) = range.GetOffsetAndLength(array.Length);
             return array.AsMemory().Slice(start, length);
         }
-
-        public static void AddMultiValue<TKey, TValue>(this IDictionary<TKey, List<TValue>> dics, TKey key, TValue value)
-        {
-            if (!dics.TryGetValue(key, out var list))
-            {
-                list = new List<TValue>();
-                dics.Add(key, list);
-            }
-
-            list.Add(value);
-        }
     }
 }

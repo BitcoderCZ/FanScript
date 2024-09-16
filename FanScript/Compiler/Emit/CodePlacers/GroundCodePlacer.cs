@@ -27,8 +27,6 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         protected readonly Stack<StatementCodeBlock> statements = new();
         protected readonly Stack<ExpressionCodeBlock> expressions = new();
 
-        private readonly Dictionary<int, LayerStack> availableLayerInfo = new();
-
         protected bool inHighlight = false;
         protected int highlightX = 0;
 
@@ -74,8 +72,6 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             else
             {
                 // end of function
-                availableLayerInfo.Clear();
-
                 Builder.AddBlockSegments(statement.AllBlocks);
             }
         }
@@ -139,16 +135,17 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             public IEnumerable<Block> AllBlocks => Blocks
                 .Concat(ChildBlocks.SelectMany(item => item.Item2));
             public int BlockCount => Blocks.Count;
-            protected readonly List<Block> Blocks = new();
-            internal readonly List<(CodeBlock, List<Block>)> ChildBlocks = new();
+            public readonly List<Block> Blocks = new();
+            public readonly List<(CodeBlock, List<Block>)> ChildBlocks = new();
 
             [MemberNotNullWhen(true, nameof(Parent), nameof(XOffsetFromParent))]
             public bool HasParent { get; private set; }
             public readonly CodeBlock? Parent;
             protected int? XOffsetFromParent { get; private set; }
-            public int LayerPos => HasParent ? Parent.LayerPos + XOffsetFromParent.Value : 0;
 
-            protected LayerStack.Request? YPosRequest;
+            public int LayerPos => HasParent ? Parent.LayerPos + XOffsetFromParent.Value : 0;
+            public int StartZ => StartPos.Z + blockZOffset + 1;
+            public int CurrentZ => BlockPos.Z - 1;
 
             public CodeBlock(GroundCodePlacer placer, Vector3I pos, CodeBlock parent, int xOffsetFromParent)
             {
@@ -176,24 +173,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             public abstract StatementCodeBlock CreateStatementChild();
             public abstract ExpressionCodeBlock CreateExpressionChild();
-            public void RequestYPos()
-            {
-                Debug.Assert(YPosRequest is null);
 
-                int acceptableZ = StartPos.Z + blockZOffset;
-
-                YPosRequest = Placer.availableLayerInfo.AddIfAbsent(LayerPos, new LayerStack()).RequestYPos(acceptableZ, BlockPos.Z);
-            }
-            public void AssignYPos()
-            {
-                if (YPosRequest is null || YPosRequest.Result is null)
-                    return;
-
-                int yPos = YPosRequest.Result.Value;
-
-                for (int i = 0; i < Blocks.Count; i++)
-                    Blocks[i].Pos.Y = yPos;
-            }
             public virtual void HandlePopChild(CodeBlock child)
             {
                 if (child.MinX < MinX)
@@ -288,18 +268,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
                 // if this is the top statement, process and assign y position to blocks
                 if (Parent is null)
-                {
-                    child.RequestYPos();
-                    foreach (var _child in child.ChildBlocks.Select(item => item.Item1))
-                        _child.RequestYPos();
-
-                    foreach (var info in Placer.availableLayerInfo)
-                        info.Value.ProcessRequests();
-
-                    child.AssignYPos();
-                    foreach (var _child in child.ChildBlocks.Select(item => item.Item1))
-                        _child.AssignYPos();
-                }
+                    LayerStack.Process(child);
             }
         }
 
@@ -352,72 +321,42 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             }
         }
 
-        [DebuggerDisplay("{" + nameof(DebuggerDisplay) + "}")]
-        protected class LayerStack
+        protected static class LayerStack
         {
-            private List<int> positions = new();
-
-            private readonly List<Request> requests = new();
-
-            public void ProcessRequests()
+            public static void Process(CodeBlock block)
             {
-                if (requests.Count == 0)
-                    return;
+                MultiValueDictionary<int, CodeBlock> xToBlocks = block.ChildBlocks.ToMultiValueDictionary(item => item.Item1.LayerPos, item => item.Item1);
 
-                // sort in descending order
-                requests.Sort((a, b) => b.PlaceZ.CompareTo(a.PlaceZ));
+                xToBlocks.Add(block.LayerPos, block);
 
-                for (int i = 0; i < requests.Count; i++)
+                foreach (var (_, list) in xToBlocks)
                 {
-                    Request request = requests[i];
+                    // sort in descending order
+                    list.Sort((a, b) => b.CurrentZ.CompareTo(a.CurrentZ));
 
-                    int yPos = -1;
-                    for (int j = 0; j < positions.Count; j++)
-                        if (positions[j] > request.AcceptableZ)
+                    List<int> positions = new();
+
+                    foreach (var item in list)
+                    {
+                        int yPos = -1;
+
+                        for (int j = 0; j < positions.Count; j++)
+                            if (positions[j] > item.StartZ)
+                            {
+                                positions[j] = item.CurrentZ;
+                                yPos = j;
+                                break;
+                            }
+
+                        if (yPos == -1)
                         {
-                            positions[j] = request.PlaceZ;
-                            yPos = j;
-                            break;
+                            yPos = positions.Count;
+                            positions.Add(item.CurrentZ);
                         }
 
-                    if (yPos == -1)
-                    {
-                        positions.Add(request.PlaceZ);
-                        yPos = positions.Count - 1;
+                        foreach (var itemBlock in item.Blocks)
+                            itemBlock.Pos.Y = yPos;
                     }
-
-                    request.Result = yPos;
-                }
-
-                requests.Clear();
-            }
-
-            /// <summary>
-            /// 
-            /// </summary>
-            /// <param name="acceptableZ">Z position that should be free</param>
-            /// <param name="placeZ">Z position that will get written</param>
-            /// <returns>The <see cref="Request"/></returns>
-            public Request RequestYPos(int acceptableZ, int placeZ)
-            {
-                Request request = new Request(acceptableZ, placeZ);
-                requests.Add(request);
-                return request;
-            }
-
-            private string DebuggerDisplay => $"[{string.Join(", ", positions)}]";
-
-            public class Request
-            {
-                public readonly int AcceptableZ;
-                public readonly int PlaceZ;
-
-                public int? Result { get; internal set; }
-
-                internal Request(int acceptableZ, int placeZ)
-                {
-                    AcceptableZ = acceptableZ;
-                    PlaceZ = placeZ;
                 }
             }
         }

@@ -13,7 +13,7 @@ namespace FanScript.Compiler.Emit
 {
     internal sealed class Emitter
     {
-        const int MaxCallCountToInline = 1;
+        const int MaxCallCountToInline = 0;
 
         private EmitContext emitContext = null!;
 
@@ -25,7 +25,7 @@ namespace FanScript.Compiler.Emit
         // key - a label before antoher label, item - the label after key
         private Dictionary<string, string> sameTargetLabels = new();
         // key - label name, item - list of goto "origins", not only gotos but also statements just before the label
-        private Dictionary<string, List<EmitStore>> gotosToConnect = new();
+        private MultiValueDictionary<string, EmitStore> gotosToConnect = new();
         // key - label name, item - the store to connect gotos to
         private Dictionary<string, EmitStore> afterLabel = new();
 
@@ -36,7 +36,7 @@ namespace FanScript.Compiler.Emit
 
         private Stack<List<EmitStore>> beforeReturnStack = new();
         private Dictionary<FunctionSymbol, EmitStore> functions = new();
-        private Dictionary<FunctionSymbol, List<EmitStore>> calls = new();
+        private MultiValueDictionary<FunctionSymbol, EmitStore> calls = new();
 
         public static ImmutableArray<Diagnostic> Emit(BoundProgram program, CodePlacer placer, BlockBuilder builder)
         {
@@ -784,7 +784,7 @@ namespace FanScript.Compiler.Emit
                 connect(BasicEmitStore.COut(trueBlock, trueBlock.Type.Terminals[0]), BasicEmitStore.CIn(callBlock, callBlock.Type.Terminals[3]));
             }
 
-            calls.AddMultiValue(func, BasicEmitStore.COut(callBlock, callBlock.Type.Terminals[2]));
+            calls.Add(func, BasicEmitStore.COut(callBlock, callBlock.Type.Terminals[2]));
 
             connector.Add(new BasicEmitStore(callBlock));
 
@@ -846,6 +846,8 @@ namespace FanScript.Compiler.Emit
             beforeReturnStack.Push(new List<EmitStore>());
             EmitStore bodyStore = emitStatement(program.Functions[func]);
             List<EmitStore> beforeReturn = beforeReturnStack.Pop();
+
+            Debug.Assert(beforeReturn.Count > 0, "beforeReturn.Count > 0");
 
             connector.Add(new MultiEmitStore(bodyStore, new BasicEmitStore(new NopConnectTarget(),
                 beforeReturn.Aggregate(new List<ConnectTarget>(), (list, store) =>
@@ -1099,7 +1101,7 @@ namespace FanScript.Compiler.Emit
 
             if (from is RollbackEmitStore || to is RollbackEmitStore)
             {
-                if (to is ReturnEmitStore && from is not RollbackEmitStore)
+                if (to is ReturnEmitStore && from is not RollbackEmitStore && beforeReturnStack.Count > 0)
                     beforeReturnStack.Peek().Add(from);
 
                 return;
@@ -1122,7 +1124,7 @@ namespace FanScript.Compiler.Emit
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void connectToLabel(string labelName, EmitStore store)
-            => gotosToConnect.AddMultiValue(labelName, store);
+            => gotosToConnect.Add(labelName, store);
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal void setBlockValue(Block block, int valueIndex, object value)
             => builder.SetBlockValue(block, valueIndex, value);
