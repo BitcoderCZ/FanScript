@@ -1,6 +1,7 @@
-﻿using MathUtils.Vectors;
+﻿using FanScript.FCInfo;
+using MathUtils.Vectors;
 
-namespace FanScript.FCInfo
+namespace FanScript.Compiler
 {
     public class Block
     {

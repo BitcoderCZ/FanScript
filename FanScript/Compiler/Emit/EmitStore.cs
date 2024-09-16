@@ -1,5 +1,4 @@
-﻿
-using FanScript.FCInfo;
+﻿using FanScript.FCInfo;
 using MathUtils.Vectors;
 using System.Diagnostics;
 

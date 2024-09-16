@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Emit;
+﻿using FanScript.Compiler;
+using FanScript.Compiler.Emit;
 using FanScript.Compiler.Emit.BlockPlacers;
 using FanScript.Compiler.Emit.CodeBuilders;
 using FanScript.FCInfo;

@@ -1,8 +1,5 @@
-﻿using MathUtils.Vectors;
-using Melanchall.DryWetMidi.Core;
+﻿using Melanchall.DryWetMidi.Core;
 using Melanchall.DryWetMidi.Multimedia;
-using Melanchall.DryWetMidi.MusicTheory;
-using System.Timers;
 
 namespace FanScript.Midi
 {

@@ -1,10 +1,5 @@
 ﻿using MathUtils.Vectors;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FanScript.Utils
 {
@@ -18,7 +13,7 @@ namespace FanScript.Utils
         public static Vector3I[] Compute(Vector3I[] sizes)
         {
             // sort both split containes and sizes by volume
-            SortedSet<Container> containers = 
+            SortedSet<Container> containers =
             [
                 new Container(Vector3I.Zero, new Vector3I(int.MaxValue, int.MaxValue, int.MaxValue))
             ];

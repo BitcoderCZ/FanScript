@@ -36,7 +36,7 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 
             prefabIndex = Math.Clamp(prefabIndex, 0, game.Prefabs.Count - 1);
 
-            FCInfo.Block[] blocks = PreBuild(startPos, false);
+            Block[] blocks = PreBuild(startPos, false);
 
             PrefabList stockPrefabs;
             using (FcBinaryReader reader = new FcBinaryReader("baseBlocks.fcbl")) // fcbl - Fancade block list
@@ -48,7 +48,7 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 
             for (int i = 0; i < blocks.Length; i++)
             {
-                FCInfo.Block block = blocks[i];
+                Block block = blocks[i];
                 if (block.Type.IsGroup)
                 {
                     if (!groupCache.TryGetValue(block.Type.Id, out var group))

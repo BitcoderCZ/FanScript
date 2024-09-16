@@ -1,15 +1,9 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Emit;
-using FanScript.Compiler.Emit.BlockPlacers;
-using FanScript.Compiler.Syntax;
-using FanScript.Compiler.Text;
 using FanScript.FCInfo;
-using FanScript.Midi;
 using FanScript.Utils;
 using MathUtils.Vectors;
-using Melanchall.DryWetMidi.Core;
 using System.Diagnostics;
-using System.Globalization;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -1030,7 +1024,7 @@ namespace FanScript.Compiler.Symbols
         //                                    midi_n_v = 255
         //                                    setPtrValue(midi_pos_ref, midi_pos + vec3(2, 0, 0)) 
         //                                }
-                    
+
         //                                // stop current note if playing - shouldn't be needed, but...
         //                                stopSound(midi_c_si.get(channelIndex))
 

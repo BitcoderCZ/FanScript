@@ -1,10 +1,4 @@
 ﻿using FanScript.Compiler.Symbols;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FanScript.Compiler.Binding
 {
@@ -216,7 +210,7 @@ namespace FanScript.Compiler.Binding
 
         protected virtual void VisitCallExpression(BoundCallExpression node)
         {
-           RewriteArgumentClause(node.ArgumentClause);
+            RewriteArgumentClause(node.ArgumentClause);
         }
 
         protected virtual void VisitConversionExpression(BoundConversionExpression node)

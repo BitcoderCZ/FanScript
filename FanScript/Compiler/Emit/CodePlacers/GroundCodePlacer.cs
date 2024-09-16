@@ -131,7 +131,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             /// </summary>
             public int MinX { get; protected set; }
 
-            protected BlockDef? LastPlacedBlock;
+            protected BlockDef? LastPlacedBlockType;
 
             /// <summary>
             /// Blocks of this <see cref="CodeBlock"/> and it's children
@@ -205,14 +205,12 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             public Block PlaceBlock(BlockDef blockDef)
             {
-                BlockPos = BlockPos with { Z = BlockPos.Z - 5 };
-
                 if (BlockCount != 0)
                     BlockPos = BlockPos with { Z = BlockPos.Z - (blockDef.Size.Y + blockZOffset) };
                 else
                     BlockPos = BlockPos with { Z = BlockPos.Z - (blockDef.Size.Y - 1) };
 
-                LastPlacedBlock = blockDef;
+                LastPlacedBlockType = blockDef;
 
                 Block block = new Block(BlockPos, blockDef);
                 Blocks.Add(block);
@@ -220,7 +218,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             }
 
             protected Vector3I CalculatePosOfNextChild(int xPos, int blockZOffset)
-                => new Vector3I(xPos, 0, BlockPos.Z + (LastPlacedBlock is null ? 0 : LastPlacedBlock.Size.Y - 1));
+                => new Vector3I(xPos, 0, BlockPos.Z + (LastPlacedBlockType is null ? 0 : LastPlacedBlockType.Size.Y - 1));
 
             protected void IncrementXOffsetOfStatementParent()
             {

@@ -1,12 +1,6 @@
-﻿using MathUtils.Vectors;
-using Melanchall.DryWetMidi.Common;
+﻿using Melanchall.DryWetMidi.Common;
 using Melanchall.DryWetMidi.MusicTheory;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
 
 namespace FanScript.Midi
 {

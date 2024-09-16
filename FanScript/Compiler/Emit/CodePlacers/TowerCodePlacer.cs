@@ -1,6 +1,5 @@
 ﻿using FanScript.FCInfo;
 using MathUtils.Vectors;
-using System.ComponentModel;
 using System.Diagnostics;
 
 namespace FanScript.Compiler.Emit.BlockPlacers
