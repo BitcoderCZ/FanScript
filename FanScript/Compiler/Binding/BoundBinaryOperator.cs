@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
+using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Binding
 {
@@ -30,6 +31,8 @@ namespace FanScript.Compiler.Binding
         public TypeSymbol RightType { get; }
         public TypeSymbol Type { get; }
 
+        public static ImmutableArray<BoundBinaryOperator> Operators
+            => operators.ToImmutableArray();
         private static BoundBinaryOperator[] operators =
         {
             new BoundBinaryOperator(SyntaxKind.PlusToken, BoundBinaryOperatorKind.Addition, TypeSymbol.Float),

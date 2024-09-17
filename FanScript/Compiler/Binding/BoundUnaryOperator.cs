@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
+using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Binding
 {
@@ -23,6 +24,8 @@ namespace FanScript.Compiler.Binding
         public TypeSymbol OperandType { get; }
         public TypeSymbol Type { get; }
 
+        public static ImmutableArray<BoundUnaryOperator> Operators
+            => operators.ToImmutableArray();
         private static BoundUnaryOperator[] operators =
         {
             new BoundUnaryOperator(SyntaxKind.BangToken, BoundUnaryOperatorKind.LogicalNegation, TypeSymbol.Bool),
