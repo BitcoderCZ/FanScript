@@ -143,8 +143,8 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportInvalidModifierOnType(TextLocation location, Modifiers modifier, TypeSymbol type)
             => ReportError(location, $"Modifier '{modifier.ToKind().GetText()}' isn't valid on a variable of type '{type}'.");
 
-        public void ReportConstantNotInitialized(TextLocation location)
-            => ReportError(location, "A constant variable needs to be initialized.");
+        public void ReportVariableNotInitialized(TextLocation location)
+            => ReportError(location, "A readonly/constant variable needs to be initialized.");
 
         public void ReportConflictingModifiers(TextLocation location, Modifiers modifier, Modifiers conflictingModifier)
             => ReportError(location, $"Modifier '{conflictingModifier.ToKind().GetText()}' conflicts with modifier '{modifier.ToKind().GetText()}'.");

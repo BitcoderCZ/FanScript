@@ -768,15 +768,17 @@ namespace FanScript.Tests
             AssertDiagnostics(text, diagnostics);
         }
 
-        [Fact]
-        public void Emitter_Constant_Not_Initialized()
+        [Theory]
+        [InlineData("readonly")]
+        [InlineData("const")]
+        public void Emitter_Variable_Not_Initialized(string modifier)
         {
             var text = $"""
-                const float $[x]$
+                {modifier} float $[x]$
                 """;
 
             var diagnostics = $"""
-                A constant variable needs to be initialized.
+                A readonly/constant variable needs to be initialized.
                 """;
 
             AssertDiagnostics(text, diagnostics);

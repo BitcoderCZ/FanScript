@@ -404,7 +404,7 @@ namespace FanScript.Compiler.Binding
             VariableSymbol variable = BindVariableDeclaration(syntax.IdentifierToken, syntax.Modifiers, variableType);
 
             if (variable.IsReadOnly && syntax.OptionalAssignment is null)
-                diagnostics.ReportConstantNotInitialized(syntax.IdentifierToken.Location);
+                diagnostics.ReportVariableNotInitialized(syntax.IdentifierToken.Location);
 
             BoundStatement? optionalAssignment = syntax.OptionalAssignment is null ? null : BindStatement(syntax.OptionalAssignment);
 
@@ -759,7 +759,7 @@ namespace FanScript.Compiler.Binding
             VariableSymbol variable = BindVariableDeclaration(syntax.IdentifierToken, syntax.Modifiers, variableType);
 
             if (variable.Modifiers.HasFlag(Modifiers.Constant))
-                diagnostics.ReportConstantNotInitialized(syntax.IdentifierToken.Location);
+                diagnostics.ReportVariableNotInitialized(syntax.IdentifierToken.Location);
 
             var res = new BoundVariableExpression(syntax, variable);
             syntax.BoundResult = res;
