@@ -1,6 +1,7 @@
 ﻿using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
+using Melanchall.DryWetMidi.Core;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
@@ -67,9 +68,15 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             StatementCodeBlock statement = statements.Pop();
 
-            if (statements.Count != 0)
-                statements.Peek().HandlePopChild(statement);
-            else
+            if (statements.Count == 1)
+            {
+                if (statement.Parent!.Parent is not null)
+                    throw new Exception("Parent not null.");
+
+                // if this is child of the top statement, process and assign x and y position to blocks
+                LayerStack.Process(statement, BlockXOffset);
+            }
+            else if (statements.Count == 0)
             {
                 // end of function
                 Builder.AddBlockSegments(statement.AllBlocks);
@@ -89,15 +96,18 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             ExpressionCodeBlock expression = expressions.Pop();
 
-            if (expressions.Count != 0)
-                expressions.Peek().HandlePopChild(expression);
-            else
-                statements.Peek().HandlePopChild(expression);
+            if (statements.Count == 1)
+            {
+                if (expression.Parent!.Parent is not null)
+                    throw new Exception("Parent not null.");
+                // if this is child of the top statement, process and assign x and y position to blocks
+                LayerStack.Process(expression, BlockXOffset);
+            }
         }
 
         protected StatementCodeBlock createFunction()
         {
-            return new StatementCodeBlock(this, new Vector3I(0, 0, 0));
+            return new StatementCodeBlock(this, 0);
         }
 
         public override void EnterHighlight()
@@ -119,86 +129,71 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             protected readonly GroundCodePlacer Placer;
 
-            public Vector3I StartPos { get; private set; }
-            public Vector3I BlockPos { get; protected set; }
-
-            /// <summary>
-            /// Lowest position of a blocks placed by this <see cref="CodeBlock"/> or one of it's children
-            /// </summary>
-            public int MinX { get; protected set; }
+            public int StartPos { get; private set; }
+            public int CurrentPos { get; protected set; }
 
             protected BlockDef? LastPlacedBlockType;
 
             /// <summary>
             /// Blocks of this <see cref="CodeBlock"/> and it's children
             /// </summary>
-            public IEnumerable<Block> AllBlocks => Blocks
-                .Concat(ChildBlocks.SelectMany(item => item.Item2));
+            public IEnumerable<Block> AllBlocks 
+                => Blocks
+                .Concat(Children.SelectMany(child => child.AllBlocks));
             public int BlockCount => Blocks.Count;
             public readonly List<Block> Blocks = new();
-            public readonly List<(CodeBlock, List<Block>)> ChildBlocks = new();
+            public IEnumerable<CodeBlock> AllChildren
+                => Children
+                .Concat(Children.SelectMany(child => child.AllChildren));
+            public List<CodeBlock> Children = new List<CodeBlock>();
 
-            [MemberNotNullWhen(true, nameof(Parent), nameof(XOffsetFromParent))]
+            [MemberNotNullWhen(true, nameof(Parent), nameof(LayerOffsetFromParent))]
             public bool HasParent { get; private set; }
             public readonly CodeBlock? Parent;
-            protected int? XOffsetFromParent { get; private set; }
+            protected int? LayerOffsetFromParent { get; private set; }
 
-            public int LayerPos => HasParent ? Parent.LayerPos + XOffsetFromParent.Value : 0;
-            public int StartZ => StartPos.Z + blockZOffset + 1;
-            public int CurrentZ => BlockPos.Z - 1;
+            public int LayerPos => HasParent ? Parent.LayerPos + LayerOffsetFromParent.Value : 0;
+            public int StartZ => StartPos + blockZOffset;
 
-            public CodeBlock(GroundCodePlacer placer, Vector3I pos, CodeBlock parent, int xOffsetFromParent)
+            public CodeBlock(GroundCodePlacer placer, int pos, CodeBlock parent, int layerOffset)
             {
                 ArgumentNullException.ThrowIfNull(parent);
-                Debug.Assert(xOffsetFromParent == 1 || xOffsetFromParent == -1, $"{nameof(xOffsetFromParent)} == 1 || {nameof(xOffsetFromParent)} == -1, Value: '{xOffsetFromParent}'");
+                Debug.Assert(layerOffset == 1 || layerOffset == -1, $"{nameof(layerOffset)} == 1 || {nameof(layerOffset)} == -1, Value: '{layerOffset}'");
 
                 Placer = placer;
                 StartPos = pos;
-                BlockPos = StartPos;
+                CurrentPos = StartPos;
                 HasParent = true;
                 Parent = parent;
-                XOffsetFromParent = xOffsetFromParent;
-
-                MinX = StartPos.X;
+                LayerOffsetFromParent = layerOffset;
             }
-            public CodeBlock(GroundCodePlacer placer, Vector3I pos)
+            public CodeBlock(GroundCodePlacer placer, int pos)
             {
                 Placer = placer;
                 StartPos = pos;
-                BlockPos = StartPos;
+                CurrentPos = StartPos;
                 HasParent = false;
-
-                MinX = StartPos.X;
             }
 
             public abstract StatementCodeBlock CreateStatementChild();
             public abstract ExpressionCodeBlock CreateExpressionChild();
 
-            public virtual void HandlePopChild(CodeBlock child)
-            {
-                if (child.MinX < MinX)
-                    MinX = child.MinX;
-
-                ChildBlocks.Add((child, child.Blocks));
-                ChildBlocks.AddRange(child.ChildBlocks);
-            }
-
             public Block PlaceBlock(BlockDef blockDef)
             {
                 if (BlockCount != 0)
-                    BlockPos = BlockPos with { Z = BlockPos.Z - (blockDef.Size.Y + blockZOffset) };
+                    CurrentPos -= blockDef.Size.Y + blockZOffset;
                 else
-                    BlockPos = BlockPos with { Z = BlockPos.Z - (blockDef.Size.Y - 1) };
+                    CurrentPos -= blockDef.Size.Y - 1;
 
                 LastPlacedBlockType = blockDef;
 
-                Block block = new Block(BlockPos, blockDef);
+                Block block = new Block(new Vector3I(0, 0, CurrentPos), blockDef);
                 Blocks.Add(block);
                 return block;
             }
 
-            protected Vector3I CalculatePosOfNextChild(int xPos, int blockZOffset)
-                => new Vector3I(xPos, 0, BlockPos.Z + (LastPlacedBlockType is null ? 0 : LastPlacedBlockType.Size.Y - 1));
+            protected int CalculatePosOfNextChild(int blockZOffset)
+                => CurrentPos + (LastPlacedBlockType is null ? 0 : LastPlacedBlockType.Size.Y - 1);
 
             protected void IncrementXOffsetOfStatementParent()
             {
@@ -208,7 +203,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                 {
                     if (current is StatementCodeBlock)
                     {
-                        current.XOffsetFromParent++;
+                        current.LayerOffsetFromParent++;
                         return;
                     }
 
@@ -221,18 +216,20 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         {
             protected override int blockZOffset => 2;
 
-            public StatementCodeBlock(GroundCodePlacer placer, Vector3I pos)
+            public StatementCodeBlock(GroundCodePlacer placer, int pos)
                 : base(placer, pos)
             {
             }
-            public StatementCodeBlock(GroundCodePlacer placer, Vector3I pos, CodeBlock parent, int offset)
-                : base(placer, pos, parent, offset)
+            public StatementCodeBlock(GroundCodePlacer placer, int pos, CodeBlock parent, int layerOffset)
+                : base(placer, pos, parent, layerOffset)
             {
             }
 
             public override StatementCodeBlock CreateStatementChild()
             {
-                return new StatementCodeBlock(Placer, CalculatePosOfNextChild(BlockPos.X + Placer.BlockXOffset, blockZOffset), this, 1);
+                StatementCodeBlock child = new StatementCodeBlock(Placer, CalculatePosOfNextChild(blockZOffset), this, 1);
+                Children.Add(child);
+                return child;
             }
 
             public override ExpressionCodeBlock CreateExpressionChild()
@@ -246,29 +243,9 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                         IncrementXOffsetOfStatementParent();
                 }
 
-                return new ExpressionCodeBlock(Placer, CalculatePosOfNextChild(BlockPos.X - Placer.BlockXOffset, ExpressionCodeBlock.BlockZOffset), this, -1);
-            }
-
-            public override void HandlePopChild(CodeBlock child)
-            {
-                int appropriateX = StartPos.X + Placer.BlockXOffset;
-
-                // if required, move the child to the right, necessary if it is statement and had expression children (to the left of it)
-                if (child is StatementCodeBlock statement && child.MinX < appropriateX)
-                {
-                    int move = appropriateX - child.MinX;
-
-                    foreach (Block block in statement.ChildBlocks
-                        .SelectMany(item => item.Item2)
-                        .Concat(statement.Blocks))
-                        block.Pos.X += move;
-                }
-
-                base.HandlePopChild(child);
-
-                // if this is the top statement, process and assign y position to blocks
-                if (Parent is null)
-                    LayerStack.Process(child);
+                ExpressionCodeBlock child = new ExpressionCodeBlock(Placer, CalculatePosOfNextChild(ExpressionCodeBlock.BlockZOffset), this, -1);
+                Children.Add(child);
+                return child;
             }
         }
 
@@ -277,8 +254,8 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             public static readonly int BlockZOffset = 0;
             protected override int blockZOffset => BlockZOffset;
 
-            public ExpressionCodeBlock(GroundCodePlacer placer, Vector3I pos, CodeBlock parent, int offset)
-                : base(placer, pos, parent, offset)
+            public ExpressionCodeBlock(GroundCodePlacer placer, int pos, CodeBlock parent, int layerOffset)
+                : base(placer, pos, parent, layerOffset)
             {
             }
 
@@ -296,7 +273,9 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                         IncrementXOffsetOfStatementParent();
                 }
 
-                return new ExpressionCodeBlock(Placer, CalculatePosOfNextChild(BlockPos.X - Placer.BlockXOffset, blockZOffset), this, -1);
+                ExpressionCodeBlock child = new ExpressionCodeBlock(Placer, CalculatePosOfNextChild(blockZOffset), this, -1);
+                Children.Add(child);
+                return child;
 
                 // returns the statement to the left of this expression block
                 StatementCodeBlock? getStatementParentOfParent()
@@ -323,27 +302,30 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
         protected static class LayerStack
         {
-            public static void Process(CodeBlock block)
+            public static void Process(CodeBlock block, int blockXOffset)
             {
-                MultiValueDictionary<int, CodeBlock> xToBlocks = block.ChildBlocks.ToMultiValueDictionary(item => item.Item1.LayerPos, item => item.Item1);
+                MultiValueDictionary<int, CodeBlock> xToBlocks = block.AllChildren.ToMultiValueDictionary(child => child.LayerPos, child => child);
 
                 xToBlocks.Add(block.LayerPos, block);
 
                 foreach (var (_, list) in xToBlocks)
                 {
-                    // sort in descending order
-                    list.Sort((a, b) => b.CurrentZ.CompareTo(a.CurrentZ));
+                    // sort in descending order - blocks start and zero and go down
+                    list.Sort((a, b) => b.StartPos.CompareTo(a.StartPos));
 
                     List<int> positions = new();
 
                     foreach (var item in list)
                     {
+                        if (item.BlockCount == 0)
+                            continue;
+
                         int yPos = -1;
 
                         for (int j = 0; j < positions.Count; j++)
                             if (positions[j] > item.StartZ)
                             {
-                                positions[j] = item.CurrentZ;
+                                positions[j] = item.CurrentPos;
                                 yPos = j;
                                 break;
                             }
@@ -351,11 +333,14 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                         if (yPos == -1)
                         {
                             yPos = positions.Count;
-                            positions.Add(item.CurrentZ);
+                            positions.Add(item.CurrentPos);
                         }
 
                         foreach (var itemBlock in item.Blocks)
+                        {
+                            itemBlock.Pos.X = blockXOffset * item.LayerPos;
                             itemBlock.Pos.Y = yPos;
+                        }
                     }
                 }
             }

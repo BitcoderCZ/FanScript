@@ -1,44 +1,4 @@
-const global float SEGMENTS_PER_LEG = 4
-const global float POINTS_PER_LEG = SEGMENTS_PER_LEG + 1
-const global float NUMB_LEGS = 4
-const global float TOTAL_POINTS = POINTS_PER_LEG * NUMB_LEGS
-
-const global float BODY_HEIGHT = 1.8
-
-// dist when not moving
-const global float RELOCATE_LIMB_DIST_BASE = .35
-// dist when moving at max speed + RELOCATE_LIMB_DIST_BASE
-const global float RELOCATE_LIMB_DIST = .9
-
-const global float MOVE_SPEED = 0.075
-
-const global float LIMB_INTERPOLATION_SPEED = 0.2
-const global float LIMB_INTERPOLATION_SPEED_INV = 1 - LIMB_INTERPOLATION_SPEED
-const global float BODY_INTERPOLATION_SPEED = 0.15
-const global float BODY_INTERPOLATION_SPEED_INV = 1 - BODY_INTERPOLATION_SPEED
-
-const global float CAN_MOVE_AFTER = 15
-const global float CAN_MOVE_AFTER_ADJACENT = 10 // !!! MUST BE SMALLER THAN CAN_MOVE_AFTER !!!
-
-obj segmentPrefab = null // rod on the z axis, without collision
-global obj body = null // any 1x1x1 block
-
-global vec3 bodyPos = vec3(0, BODY_HEIGHT, 0)
-
-const float legOff = 0.35
-global array<vec3> legOffs
-global array<vec3> legDirs
-global array<obj> legSegments
-global array<float> legMoveStart
-global array<float> lengths
-global array<vec3> points
-global array<vec3> targetPoints
-global array<vec3> legCastHits
-global array<vec3> legTargets
-
-global float currentSpeed
-
-/*on Play
+on Play
 {
     const global float SEGMENTS_PER_LEG = 4
     const global float POINTS_PER_LEG = SEGMENTS_PER_LEG + 1
@@ -115,12 +75,12 @@ joyDir *= MOVE_SPEED
 bodyPos += joyDir
 
 currentSpeed = dist(null, joyDir)
-inspect(currentSpeed)*/
+inspect(currentSpeed)
 
 updateLegs()
 
 // body y pos
-/*float bodyY = 0
+float bodyY = 0
 
 on Loop(null, NUMB_LEGS, out inline float i)
 {
@@ -131,7 +91,7 @@ bodyY /= NUMB_LEGS
 
 bodyY += BODY_HEIGHT
 
-bodyPos.y = bodyY * BODY_INTERPOLATION_SPEED + bodyPos.y * BODY_INTERPOLATION_SPEED_INV*/
+bodyPos.y = bodyY * BODY_INTERPOLATION_SPEED + bodyPos.y * BODY_INTERPOLATION_SPEED_INV
 
 func updateLegs()
 {
@@ -202,8 +162,7 @@ func updateLegs()
 // based on https://youtu.be/Hc9x1e85L0w?si=SR8pjkoIZcdPxRKN
 func fabric(float limb, vec3 target)
 {
-    float f = 0
-    /*inline float off = limb * POINTS_PER_LEG
+    inline float off = limb * POINTS_PER_LEG
 
     // set first point
     targetPoints.set(off, bodyPos + legOffs.get(limb))
@@ -253,16 +212,15 @@ func fabric(float limb, vec3 target)
 
             targetPoints.set(nextIndex, point + move)
         }
-    }*/
+    }
 }
 
 func checkCanMove(float leg, out bool canMove)
 {
-    float f = 0
-    /*inline float currentFrame = getCurrentFrame()
+    inline float currentFrame = getCurrentFrame()
     inline float canMoveTime = currentFrame - CAN_MOVE_AFTER_ADJACENT
 
     canMove = legMoveStart.get((leg + 1) % NUMB_LEGS) < canMoveTime && 
         legMoveStart.get(((leg - 1) % NUMB_LEGS + NUMB_LEGS) % NUMB_LEGS) < canMoveTime &&
-        legMoveStart.get(leg) < currentFrame - CAN_MOVE_AFTER*/
+        legMoveStart.get(leg) < currentFrame - CAN_MOVE_AFTER
 }

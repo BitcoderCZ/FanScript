@@ -44,15 +44,15 @@ namespace FanScript.Utils
                 var split = selectedContainer.Split(size);
                 containers.UnionWith(split); // AddRange
 
-                Console.WriteLine($"Container: {selectedContainer} split into (box size: {size}):");
-                foreach (var c in split)
-                    Console.WriteLine(" - " + c);
+                //Console.WriteLine($"Container: {selectedContainer} split into (box size: {size}):");
+                //foreach (var c in split)
+                //    Console.WriteLine(" - " + c);
 
                 Container.MergeAll(containers);
 
-                Console.WriteLine("All containers after merge:");
-                foreach (var c in containers)
-                    Console.WriteLine(" - " + c);
+                //Console.WriteLine("All containers after merge:");
+                //foreach (var c in containers)
+                //    Console.WriteLine(" - " + c);
 
                 positions[index] = selectedContainer.Pos;
             }
@@ -73,11 +73,6 @@ namespace FanScript.Utils
             {
                 Pos = pos;
                 Size = size;
-
-                if (size.X == 0 || size.Y == 0 || size.Z == 0)
-                {
-
-                }
             }
 
             public bool CanFit(Vector3I size)
@@ -136,7 +131,7 @@ namespace FanScript.Utils
 
                     if (merged is not null)
                     {
-                        Console.WriteLine($"Merge {conA!} and {conB!} into: {merged}");
+                        // Console.WriteLine($"Merge {conA!} and {conB!} into: {merged}");
 
                         containers.Remove(conA!);
                         containers.Remove(conB!);
