@@ -1,7 +1,6 @@
 ﻿using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
-using Melanchall.DryWetMidi.Core;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
@@ -137,7 +136,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             /// <summary>
             /// Blocks of this <see cref="CodeBlock"/> and it's children
             /// </summary>
-            public IEnumerable<Block> AllBlocks 
+            public IEnumerable<Block> AllBlocks
                 => Blocks
                 .Concat(Children.SelectMany(child => child.AllBlocks));
             public int BlockCount => Blocks.Count;

@@ -58,10 +58,10 @@ namespace FanScript.Tests
             Block placeAndConnectAllTerminals(BlockDef def)
             {
                 int off = def.Type == BlockType.Active ? 1 : 0;
-                if (def.Terminals.Length - off * 2 <= 0)
+                if (def.TerminalArray.Length - off * 2 <= 0)
                     return placer.PlaceBlock(def);
 
-                ReadOnlySpan<Terminal> terminals = def.Terminals.AsSpan(off..^off);
+                ReadOnlySpan<Terminal> terminals = def.TerminalArray.AsSpan(off..^off);
 
                 (Block, Terminal)[] connectToTerminals = new (Block, Terminal)[terminals.Length];
 
@@ -116,7 +116,7 @@ namespace FanScript.Tests
 
                     var type = (WireType)((int)_type | 1);
 
-                    var terminal = def.Terminals.First(term => term.Type == TerminalType.Out && term.WireType == type);
+                    var terminal = def.TerminalArray.First(term => term.Type == TerminalType.Out && term.WireType == type);
 
                     yield return new KeyValuePair<(TerminalType, WireType), (BlockDef, Terminal)>((TerminalType.In, _type), (def, terminal));
                 }
@@ -130,7 +130,7 @@ namespace FanScript.Tests
 
                     BlockDef def = _type == WireType.Void ? Blocks.Variables.Set_Variable_Num : Blocks.Variables.Set_VariableByType(_type);
 
-                    var terminal = def.Terminals.First(term => term.Type == TerminalType.In && term.WireType == _type);
+                    var terminal = def.TerminalArray.First(term => term.Type == TerminalType.In && term.WireType == _type);
 
                     yield return new KeyValuePair<(TerminalType, WireType), (BlockDef, Terminal)>((TerminalType.Out, _type), (def, terminal));
                 }

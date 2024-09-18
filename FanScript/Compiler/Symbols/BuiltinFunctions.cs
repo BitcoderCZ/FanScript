@@ -27,7 +27,7 @@ namespace FanScript.Compiler.Symbols
                 using (context.ExpressionBlock())
                 {
                     for (int i = 0; i < argLength; i++)
-                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[argLength - i + argumentOffset]));
+                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.TerminalArray[argLength - i + argumentOffset]));
                 }
 
             if (constantTypes.Length != 0)
@@ -61,9 +61,6 @@ namespace FanScript.Compiler.Symbols
 
             return new BasicEmitStore(block);
         }
-        /// <summary>
-        /// TODO: if used with anything differend than 11, test
-        /// </summary>
         private static EmitStore emitAXX(BoundCallExpression call, EmitContext context, int numbReturnArgs, BlockDef blockDef)
         {
             if (numbReturnArgs <= 0)
@@ -82,7 +79,7 @@ namespace FanScript.Compiler.Symbols
                 using (context.ExpressionBlock())
                 {
                     for (int i = 0; i < retArgStart; i++)
-                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[retArgStart - i + numbReturnArgs]));
+                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.TerminalArray[retArgStart - i + numbReturnArgs]));
                 }
 
             using (context.StatementBlock())
@@ -91,7 +88,7 @@ namespace FanScript.Compiler.Symbols
                 {
                     VariableSymbol variable = ((BoundVariableExpression)call.Arguments[i]).Variable;
 
-                    EmitStore varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.Terminals[call.Arguments.Length - i]));
+                    EmitStore varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.TerminalArray[call.Arguments.Length - i]));
 
                     connector.Add(varStore);
                 }
@@ -130,15 +127,15 @@ namespace FanScript.Compiler.Symbols
                                 using (context.ExpressionBlock())
                                 {
                                     for (int i = 0; i < retArgStart; i++)
-                                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[(retArgStart - 1) - i + numbReturnArgs]));
+                                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.TerminalArray[(retArgStart - 1) - i + numbReturnArgs]));
                                 }
                         }
 
-                        return BasicEmitStore.COut(block, block.Type.Terminals[(call.Arguments.Length - 1) - i]);
+                        return BasicEmitStore.COut(block, block.Type.TerminalArray[(call.Arguments.Length - 1) - i]);
                     });
                 }
                 else
-                    varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.Terminals[(call.Arguments.Length - 1) - i]));
+                    varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.TerminalArray[(call.Arguments.Length - 1) - i]));
 
                 connector.Add(varStore);
             }
@@ -153,10 +150,10 @@ namespace FanScript.Compiler.Symbols
                 using (context.ExpressionBlock())
                 {
                     for (int i = 0; i < call.Arguments.Length; i++)
-                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.Terminals[call.Arguments.Length - i]));
+                        context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.TerminalArray[call.Arguments.Length - i]));
                 }
 
-            return BasicEmitStore.COut(block, block.Type.Terminals[0]);
+            return BasicEmitStore.COut(block, block.Type.TerminalArray[0]);
         }
         #endregion
 
@@ -202,11 +199,11 @@ namespace FanScript.Compiler.Symbols
                    {
                        Block ss = context.AddBlock(Blocks.Game.ScreenSize);
 
-                       context.Connect(BasicEmitStore.COut(ss, ss.Type.Terminals[1]), BasicEmitStore.CIn(make, make.Type.Terminals[3]));
-                       context.Connect(BasicEmitStore.COut(ss, ss.Type.Terminals[0]), BasicEmitStore.CIn(make, make.Type.Terminals[2]));
+                       context.Connect(BasicEmitStore.COut(ss, ss.Type.Terminals["Width"]), BasicEmitStore.CIn(make, make.Type.Terminals["X"]));
+                       context.Connect(BasicEmitStore.COut(ss, ss.Type.Terminals["Height"]), BasicEmitStore.CIn(make, make.Type.Terminals["Y"]));
                    }
 
-                   return BasicEmitStore.COut(make, make.Type.Terminals[0]);
+                   return BasicEmitStore.COut(make, make.Type.Terminals["Vector"]);
                });
             public static readonly FunctionSymbol GetAccelerometer
                 = new BuiltinFunctionSymbol("getAccelerometer", [], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Game.Accelerometer));
@@ -388,8 +385,8 @@ namespace FanScript.Compiler.Symbols
                       EmitStore volume = context.EmitExpression(call.Arguments[0]);
                       EmitStore pitch = context.EmitExpression(call.Arguments[1]);
 
-                      context.Connect(volume, BasicEmitStore.CIn(playSound, playSound.Type.Terminals[3]));
-                      context.Connect(pitch, BasicEmitStore.CIn(playSound, playSound.Type.Terminals[2]));
+                      context.Connect(volume, BasicEmitStore.CIn(playSound, playSound.Type.Terminals["Volume"]));
+                      context.Connect(pitch, BasicEmitStore.CIn(playSound, playSound.Type.Terminals["Pitch"]));
                   }
 
                   EmitStore varStore;
@@ -397,7 +394,7 @@ namespace FanScript.Compiler.Symbols
                   {
                       VariableSymbol variable = ((BoundVariableExpression)call.Arguments[2]).Variable;
 
-                      varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(playSound, playSound.Type.Terminals[1]));
+                      varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(playSound, playSound.Type.Terminals["Channel"]));
 
                       context.Connect(BasicEmitStore.COut(playSound), varStore);
                   }
@@ -588,7 +585,7 @@ namespace FanScript.Compiler.Symbols
                     {
                         VariableSymbol variable = ((BoundVariableExpression)call.Arguments[0]).Variable;
 
-                        varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(joystick, joystick.Type.Terminals[1]));
+                        varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(joystick, joystick.Type.Terminals["Joy Dir"]));
 
                         context.Connect(BasicEmitStore.COut(joystick), varStore);
                     }
@@ -730,14 +727,14 @@ namespace FanScript.Compiler.Symbols
                         using (context.ExpressionBlock())
                         {
                             EmitStore store = context.EmitExpression(call.Arguments[0]);
-                            context.Connect(store, BasicEmitStore.CIn(wts, wts.Type.Terminals[2]));
+                            context.Connect(store, BasicEmitStore.CIn(wts, wts.Type.Terminals["World Pos"]));
                         }
 
-                        context.Connect(BasicEmitStore.COut(wts, wts.Type.Terminals[1]), BasicEmitStore.CIn(make, make.Type.Terminals[3]));
-                        context.Connect(BasicEmitStore.COut(wts, wts.Type.Terminals[0]), BasicEmitStore.CIn(make, make.Type.Terminals[2]));
+                        context.Connect(BasicEmitStore.COut(wts, wts.Type.Terminals["Screen X"]), BasicEmitStore.CIn(make, make.Type.Terminals["X"]));
+                        context.Connect(BasicEmitStore.COut(wts, wts.Type.Terminals["Screen Y"]), BasicEmitStore.CIn(make, make.Type.Terminals["Y"]));
                     }
 
-                    return BasicEmitStore.COut(make, make.Type.Terminals[0]);
+                    return BasicEmitStore.COut(make, make.Type.Terminals["Vector"]);
                 });
             public static readonly FunctionSymbol LookRotation
                 = new BuiltinFunctionSymbol("lookRotation",
@@ -767,7 +764,7 @@ namespace FanScript.Compiler.Symbols
                     {
                         EmitStore store = context.EmitExpression(call.Arguments[0]);
 
-                        context.Connect(store, BasicEmitStore.CIn(inspect, inspect.Type.Terminals[1]));
+                        context.Connect(store, BasicEmitStore.CIn(inspect, inspect.Type.TerminalArray[1]));
                     }
 
                     return new BasicEmitStore(inspect);
@@ -787,11 +784,11 @@ namespace FanScript.Compiler.Symbols
                         EmitStore array = context.EmitExpression(call.Arguments[0]);
                         EmitStore index = context.EmitExpression(call.Arguments[1]);
 
-                        context.Connect(array, BasicEmitStore.CIn(list, list.Type.Terminals[2]));
-                        context.Connect(index, BasicEmitStore.CIn(list, list.Type.Terminals[1]));
+                        context.Connect(array, BasicEmitStore.CIn(list, list.Type.Terminals["Variable"]));
+                        context.Connect(index, BasicEmitStore.CIn(list, list.Type.Terminals["Index"]));
                     }
 
-                    return BasicEmitStore.COut(list, list.Type.Terminals[0]);
+                    return BasicEmitStore.COut(list, list.Type.Terminals["Element"]);
                 }
             )
             {
@@ -816,14 +813,14 @@ namespace FanScript.Compiler.Symbols
                             EmitStore array = context.EmitExpression(call.Arguments[0]);
                             EmitStore index = context.EmitExpression(call.Arguments[1]);
 
-                            context.Connect(array, BasicEmitStore.CIn(list, list.Type.Terminals[2]));
-                            context.Connect(index, BasicEmitStore.CIn(list, list.Type.Terminals[1]));
+                            context.Connect(array, BasicEmitStore.CIn(list, list.Type.Terminals["Variable"]));
+                            context.Connect(index, BasicEmitStore.CIn(list, list.Type.Terminals["Index"]));
                         }
 
                         EmitStore value = context.EmitExpression(call.Arguments[2]);
 
-                        context.Connect(BasicEmitStore.COut(list, list.Type.Terminals[0]), BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals[2]));
-                        context.Connect(value, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals[1]));
+                        context.Connect(BasicEmitStore.COut(list, list.Type.Terminals["Element"]), BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals["Variable"]));
+                        context.Connect(value, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals["Value"]));
                     }
 
                     return new BasicEmitStore(setPtr);
@@ -895,8 +892,8 @@ namespace FanScript.Compiler.Symbols
                         EmitStore ptr = context.EmitExpression(call.Arguments[0]);
                         EmitStore value = context.EmitExpression(call.Arguments[1]);
 
-                        context.Connect(ptr, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals[2]));
-                        context.Connect(value, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals[1]));
+                        context.Connect(ptr, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals["Variable"]));
+                        context.Connect(value, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals["Value"]));
                     }
 
                     return new BasicEmitStore(setPtr);

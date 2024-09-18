@@ -59,7 +59,7 @@ namespace FanScript.Compiler.Emit
             if (checkAndInc(axis))
             {
                 // x - 2, y - 1, z - 0
-                emitStore = BasicEmitStore.COut(lastBlock, lastBlock.Type.Terminals[2 - axis]);
+                emitStore = BasicEmitStore.COut(lastBlock, lastBlock.Type.TerminalArray[2 - axis]);
                 return true;
             }
             else

@@ -1,5 +1,4 @@
 ﻿using MathUtils.Vectors;
-using System.Diagnostics.CodeAnalysis;
 
 namespace FanScript.Utils
 {
