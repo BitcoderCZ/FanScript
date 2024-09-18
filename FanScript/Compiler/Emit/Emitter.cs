@@ -13,7 +13,7 @@ namespace FanScript.Compiler.Emit
 {
     internal sealed class Emitter
     {
-        const int MaxCallCountToInline = 0;
+        const int MaxCallCountToInline = 1;
 
         private EmitContext emitContext = null!;
 

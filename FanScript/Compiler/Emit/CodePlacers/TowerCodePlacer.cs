@@ -8,7 +8,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
     {
         public override int CurrentCodeBlockBlocks => blocks.Count;
 
-        private int maxHeight = 25;
+        private int maxHeight = 20;
         public int MaxHeight
         {
             get => maxHeight;
