@@ -135,7 +135,7 @@ namespace FanScript.Cli
                     {
                         string code = (string)builder.Build(pos);
 
-                        Console.WriteLine("Compiled EditorScrip:");
+                        Console.WriteLine("Compiled EditorScript:");
                         Console.WriteLine(code);
 
                         ClipboardService.SetText(code);
