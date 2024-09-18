@@ -9,8 +9,6 @@ namespace FanScript.Compiler.Syntax
             SyntaxTree = syntaxTree;
         }
 
-        internal object? BoundResult { get; set; }
-
         public SyntaxTree SyntaxTree { get; }
 
         public SyntaxNode? Parent => SyntaxTree.GetParent(this);

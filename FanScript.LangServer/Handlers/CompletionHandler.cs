@@ -398,21 +398,21 @@ namespace FanScript.LangServer.Handlers
 
                             return CurrentRecomendations.Methods;
                         }
-                        else if ((parent.BoundResult as BoundVariableExpression)?.Variable is PropertySymbol prop)
-                        {
-                            if (node == property.Expression)
-                            {
-                                recomendationsList = prop.Expression.Type.Properties
-                                .Select(item =>
-                                {
-                                    var (_, definition) = item;
+                        //else if ((parent.BoundResult as BoundVariableExpression)?.Variable is PropertySymbol prop)
+                        //{
+                        //    if (node == property.Expression)
+                        //    {
+                        //        recomendationsList = prop.Expression.Type.Properties
+                        //        .Select(item =>
+                        //        {
+                        //            var (_, definition) = item;
 
-                                    return completionFor(definition, prop.Expression.Type);
-                                })
-                                        .ToList();
-                                return 0;
-                            }
-                        }
+                        //            return completionFor(definition, prop.Expression.Type);
+                        //        })
+                        //                .ToList();
+                        //        return 0;
+                        //    }
+                        //}
                     }
                     break;
                 case AssignableVariableClauseSyntax:

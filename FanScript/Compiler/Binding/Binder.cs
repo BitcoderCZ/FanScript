@@ -267,7 +267,6 @@ namespace FanScript.Compiler.Binding
         private BoundStatement BindStatement(StatementSyntax syntax, bool isGlobal = false)
         {
             BoundStatement result = BindStatementInternal(syntax);
-            syntax.BoundResult = result;
 
             //if (!isScript || !isGlobal)
             //{
@@ -430,8 +429,6 @@ namespace FanScript.Compiler.Binding
                             diagnostics.ReportValueMustBeConstant(syntax.Expression.Location);
 
                         variable.Initialize(boundExpression.ConstantValue);
-
-                        varClause.BoundResult = variable;
                     }
                     break;
                 case AssignablePropertyClauseSyntax propertyClause:
@@ -452,8 +449,6 @@ namespace FanScript.Compiler.Binding
                             diagnostics.ReportCannotAssignReadOnlyProperty(syntax.AssignmentToken.Location, property.Name);
 
                         variable = new PropertySymbol(property, new BoundVariableExpression(propertyClause.VariableToken, baseVariable));
-
-                        propertyClause.BoundResult = variable;
                     }
                     break;
                 default:
@@ -646,11 +641,7 @@ namespace FanScript.Compiler.Binding
                     if (innerType is null)
                         return TypeSymbol.Error;
                     else
-                    {
-                        TypeSymbol resultType = TypeSymbol.CreateGenericInstance(type, innerType);
-                        syntax.BoundResult = resultType;
-                        return resultType;
-                    }
+                        return TypeSymbol.CreateGenericInstance(type, innerType);
                 }
                 else
                 {
@@ -664,7 +655,6 @@ namespace FanScript.Compiler.Binding
                 return TypeSymbol.Error;
             }
 
-            syntax.BoundResult = type;
             return type;
         }
 
@@ -682,13 +672,12 @@ namespace FanScript.Compiler.Binding
         private BoundExpression BindExpression(ExpressionSyntax syntax, bool canBeVoid = false, Context? context = null)
         {
             BoundExpression result = BindExpressionInternal(syntax, context);
+
             if (!canBeVoid && result.Type == TypeSymbol.Void)
             {
                 diagnostics.ReportExpressionMustHaveValue(syntax.Location);
                 return new BoundErrorExpression(syntax);
             }
-
-            syntax.BoundResult ??= result;
 
             return result;
         }
@@ -746,9 +735,7 @@ namespace FanScript.Compiler.Binding
             if (variable is null)
                 return new BoundErrorExpression(syntax);
 
-            var res = new BoundVariableExpression(syntax, variable);
-            syntax.BoundResult = res;
-            return res;
+            return new BoundVariableExpression(syntax, variable);
         }
 
         private BoundExpression BindVariableDeclarationExpression(VariableDeclarationExpressionSyntax syntax)
@@ -761,9 +748,7 @@ namespace FanScript.Compiler.Binding
             if (variable.Modifiers.HasFlag(Modifiers.Constant))
                 diagnostics.ReportVariableNotInitialized(syntax.IdentifierToken.Location);
 
-            var res = new BoundVariableExpression(syntax, variable);
-            syntax.BoundResult = res;
-            return res;
+            return new BoundVariableExpression(syntax, variable);
         }
 
         private BoundExpression BindUnaryExpression(UnaryExpressionSyntax syntax)
@@ -902,14 +887,9 @@ namespace FanScript.Compiler.Binding
                 "Function", function.Name, boundArguments);
 
             if (argumentClause is null)
-            {
-                syntax.BoundResult = new BoundCallExpression(syntax, function, null!, fixType(function.Type)!, genericType);
                 return new BoundErrorExpression(syntax);
-            }
 
-            var res = new BoundCallExpression(syntax, function, argumentClause, fixType(function.Type)!, genericType);
-            syntax.BoundResult = res;
-            return res;
+            return new BoundCallExpression(syntax, function, argumentClause, fixType(function.Type)!, genericType);
 
             TypeSymbol fixType(TypeSymbol type)
             {
@@ -953,13 +933,10 @@ namespace FanScript.Compiler.Binding
                         if (property is null)
                         {
                             diagnostics.ReportUndefinedProperty(nameEx.IdentifierToken.Location, baseEx.Type, nameEx.IdentifierToken.Text);
-                            syntax.BoundResult = new BoundVariableExpression(syntax, new PropertySymbol(new PropertyDefinitionSymbol("?", TypeSymbol.Error, null!), baseEx));
                             return new BoundErrorExpression(syntax);
                         }
 
-                        var res = new BoundVariableExpression(syntax, new PropertySymbol(property, baseEx));
-                        syntax.BoundResult = res;
-                        return res;
+                        return new BoundVariableExpression(syntax, new PropertySymbol(property, baseEx));
                     }
                 case SyntaxKind.CallExpression:
                     return BindCallExpression((CallExpressionSyntax)syntax.Expression, new Context()
@@ -1159,11 +1136,7 @@ namespace FanScript.Compiler.Binding
                 boundArguments[i] = BindConversion(argumentLocation, argument, parameter.Type);
             }
 
-            var result = new BoundArgumentClause(syntax, argModifiersBuilder.ToImmutable(), boundArguments.ToImmutable());
-
-            syntax.BoundResult = result;
-
-            return result;
+            return new BoundArgumentClause(syntax, argModifiersBuilder.ToImmutable(), boundArguments.ToImmutable());
         }
 
         private Modifiers BindModifiers(IEnumerable<SyntaxToken> tokens, ModifierTarget target, Func<(Modifiers, SyntaxToken), bool>? checkModifier = null)

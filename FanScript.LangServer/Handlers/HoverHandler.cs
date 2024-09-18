@@ -51,57 +51,57 @@ namespace FanScript.LangServer.Handlers
             {
                 case NameExpressionSyntax name:
                     {
-                        if (name.BoundResult is BoundVariableExpression varEx)
-                            return getHoverForVariable(varEx.Variable, name.Location);
-                        else if (name.Parent is PropertyExpressionSyntax propEx &&
-                            (propEx.BoundResult as BoundVariableExpression)?.Variable is PropertySymbol prop)
-                        {
-                            if (name == propEx.Expression)
-                                return getHoverForProperty(prop, node.Location);
-                        }
+                        //if (name.BoundResult is BoundVariableExpression varEx)
+                        //    return getHoverForVariable(varEx.Variable, name.Location);
+                        //else if (name.Parent is PropertyExpressionSyntax propEx &&
+                        //    (propEx.BoundResult as BoundVariableExpression)?.Variable is PropertySymbol prop)
+                        //{
+                        //    if (name == propEx.Expression)
+                        //        return getHoverForProperty(prop, node.Location);
+                        //}
                     }
                     break;
                 case VariableDeclarationStatementSyntax variableDeclarationStatement:
                     {
-                        if (node == variableDeclarationStatement.IdentifierToken && variableDeclarationStatement.BoundResult is BoundVariableDeclarationStatement boundDeclaration)
-                            return getHoverForVariable(boundDeclaration.Variable, node.Location);
+                        //if (node == variableDeclarationStatement.IdentifierToken && variableDeclarationStatement.BoundResult is BoundVariableDeclarationStatement boundDeclaration)
+                        //    return getHoverForVariable(boundDeclaration.Variable, node.Location);
                     }
                     break;
                 case AssignableVariableClauseSyntax variableClause:
                     {
-                        if (variableClause.BoundResult is VariableSymbol varSymbol)
-                            return getHoverForVariable(varSymbol, node.Location);
+                        //if (variableClause.BoundResult is VariableSymbol varSymbol)
+                        //    return getHoverForVariable(varSymbol, node.Location);
                     }
                     break;
                 case AssignablePropertyClauseSyntax propertyClause:
                     {
-                        if (node == propertyClause.VariableToken)
-                        {
-                            if (propertyClause.BoundResult is PropertySymbol propSymbol && propSymbol.Expression is BoundVariableExpression varEx)
-                                return getHoverForVariable(varEx.Variable, node.Location);
-                        }
-                        else if (node == propertyClause.IdentifierToken && propertyClause.BoundResult is PropertySymbol propSymbol)
-                            return getHoverForProperty(propSymbol, node.Location);
+                        //if (node == propertyClause.VariableToken)
+                        //{
+                        //    if (propertyClause.BoundResult is PropertySymbol propSymbol && propSymbol.Expression is BoundVariableExpression varEx)
+                        //        return getHoverForVariable(varEx.Variable, node.Location);
+                        //}
+                        //else if (node == propertyClause.IdentifierToken && propertyClause.BoundResult is PropertySymbol propSymbol)
+                        //    return getHoverForProperty(propSymbol, node.Location);
                     }
                     break;
-                case CallExpressionSyntax call when node == call.Identifier:
-                    {
-                        BoundCallExpression? boundCall;
-                        if (call.BoundResult is null || (boundCall = call.BoundResult as BoundCallExpression) is null)
-                            break;
+                //case CallExpressionSyntax call when node == call.Identifier:
+                //    {
+                //        BoundCallExpression? boundCall;
+                //        if (call.BoundResult is null || (boundCall = call.BoundResult as BoundCallExpression) is null)
+                //            break;
 
-                        return new Hover()
-                        {
-                            Contents = new MarkedStringsOrMarkupContent(
-                                new MarkedString("#### " + boundCall.Function.ToString() +
-                                    (string.IsNullOrEmpty(boundCall.Function.Description) ?
-                                        string.Empty :
-                                        "\n" + boundCall.Function.Description)
-                                )
-                            ),
-                            Range = node.Location.ToRange(),
-                        };
-                    }
+                //        return new Hover()
+                //        {
+                //            Contents = new MarkedStringsOrMarkupContent(
+                //                new MarkedString("#### " + boundCall.Function.ToString() +
+                //                    (string.IsNullOrEmpty(boundCall.Function.Description) ?
+                //                        string.Empty :
+                //                        "\n" + boundCall.Function.Description)
+                //                )
+                //            ),
+                //            Range = node.Location.ToRange(),
+                //        };
+                //    }
                 case EventStatementSyntax sb when node == sb.Identifier:
                     {
                         if (!Enum.TryParse(sb.Identifier.Text, out EventType type))
@@ -126,30 +126,30 @@ namespace FanScript.LangServer.Handlers
 
             return null;
 
-            Hover? getHoverForVariable(VariableSymbol variable, TextLocation location)
-            {
-                return new Hover()
-                {
-                    Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
-                    {
-                        Kind = MarkupKind.PlainText,
-                        Value = variableInfo(variable),
-                    }),
-                    Range = location.ToRange(),
-                };
-            }
-            Hover? getHoverForProperty(PropertySymbol property, TextLocation location)
-            {
-                return new Hover()
-                {
-                    Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
-                    {
-                        Kind = MarkupKind.PlainText,
-                        Value = propertyInfo(property),
-                    }),
-                    Range = location.ToRange(),
-                };
-            }
+            //Hover? getHoverForVariable(VariableSymbol variable, TextLocation location)
+            //{
+            //    return new Hover()
+            //    {
+            //        Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+            //        {
+            //            Kind = MarkupKind.PlainText,
+            //            Value = variableInfo(variable),
+            //        }),
+            //        Range = location.ToRange(),
+            //    };
+            //}
+            //Hover? getHoverForProperty(PropertySymbol property, TextLocation location)
+            //{
+            //    return new Hover()
+            //    {
+            //        Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+            //        {
+            //            Kind = MarkupKind.PlainText,
+            //            Value = propertyInfo(property),
+            //        }),
+            //        Range = location.ToRange(),
+            //    };
+            //}
         }
 
         protected override HoverRegistrationOptions CreateRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities)
