@@ -31,7 +31,8 @@ namespace FanScript.LangServer.Utils
                                 return token.TrailingTrivia[i];
                         }
                     }
-                    else if (child.FullSpan.OverlapsWith(span))
+
+                    if (child.FullSpan.OverlapsWith(span))
                     {
                         current = child;
                         overlapingChild = true;

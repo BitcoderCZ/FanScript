@@ -2,7 +2,6 @@
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
-using FanScript.Compiler.Text;
 using FanScript.LangServer.Utils;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;

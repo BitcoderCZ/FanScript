@@ -1,5 +1,4 @@
 ﻿using FanScript.Compiler;
-using FanScript.Compiler.Binding;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
@@ -11,7 +10,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -136,7 +134,7 @@ namespace FanScript.LangServer.Handlers
             Keywords = 1 << 0,
             Modifiers = 1 << 1,
             Types = 1 << 2,
-            EventTypes = 1 << 3,
+            Events = 1 << 3,
             Values = 1 << 4,
             Variables = 1 << 5,
             Functions = 1 << 6,
@@ -146,6 +144,7 @@ namespace FanScript.LangServer.Handlers
 
             InExpression = Values | Variables | Functions | Methods,
 
+            UnknownSituation = Keywords | Modifiers | Types | Values | Variables | Functions,
             All = ushort.MaxValue,
         }
         public override async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
@@ -186,12 +185,12 @@ namespace FanScript.LangServer.Handlers
                             recomendations = 0;
                             break;
                         default:
-                            recomendations = CurrentRecomendations.All;
+                            recomendations = CurrentRecomendations.UnknownSituation;
                             break;
                     }
                 }
                 else
-                    recomendations = CurrentRecomendations.All;
+                    recomendations = CurrentRecomendations.UnknownSituation;
             }
 
             if (recomendations == 0 && recomendationsList is null)
@@ -207,7 +206,7 @@ namespace FanScript.LangServer.Handlers
                 length += modifiers.Length;
             if (recomendations.HasFlag(CurrentRecomendations.Types))
                 length += types.Length;
-            if (recomendations.HasFlag(CurrentRecomendations.EventTypes))
+            if (recomendations.HasFlag(CurrentRecomendations.Events))
                 length += eventTypes.Length;
             if (recomendations.HasFlag(CurrentRecomendations.Values))
                 length += values.Length;
@@ -217,10 +216,9 @@ namespace FanScript.LangServer.Handlers
             VariableSymbol[]? variables = null;
             FunctionSymbol[]? functions = null;
             FunctionSymbol[]? methods = null;
+            ScopeWSpan? scope = null;
             if (compilation is not null)
             {
-                ScopeWSpan? scope = null;
-
                 if (requestSpan is not null)
                 {
                     foreach (var (func, funcScope) in compilation
@@ -266,7 +264,7 @@ namespace FanScript.LangServer.Handlers
                 result.AddRange(modifiers);
             if (recomendations.HasFlag(CurrentRecomendations.Types))
                 result.AddRange(types);
-            if (recomendations.HasFlag(CurrentRecomendations.EventTypes))
+            if (recomendations.HasFlag(CurrentRecomendations.Events))
                 result.AddRange(eventTypes);
             if (recomendations.HasFlag(CurrentRecomendations.Values))
                 result.AddRange(values);
@@ -339,7 +337,7 @@ namespace FanScript.LangServer.Handlers
                 {
                     LabelDetailsSupport = true,
                 },
-                TriggerCharacters = new Container<string>("."),
+                TriggerCharacters = new Container<string>(".", "#"),
             };
 
         private CurrentRecomendations getRecomendations(SyntaxNode node, out List<CompletionItem>? recomendationsList, out bool inProp)
@@ -353,17 +351,17 @@ namespace FanScript.LangServer.Handlers
                 if (missing is not null)
                     node = missing;
                 else
-                    return CurrentRecomendations.All;
+                    return CurrentRecomendations.UnknownSituation;
             }
 
             SyntaxNode? parent = node.Parent;
 
             if (parent is null)
-                return CurrentRecomendations.All;
+                return CurrentRecomendations.UnknownSituation;
 
             CurrentRecomendations? recomendation = getRecomendationsWithParent(node, parent, out recomendationsList, out inProp);
 
-            return recomendation ?? CurrentRecomendations.All;
+            return recomendation ?? CurrentRecomendations.UnknownSituation;
         }
 
         private CurrentRecomendations? getRecomendationsWithParent(SyntaxNode node, SyntaxNode parent, out List<CompletionItem>? recomendationsList, out bool inProp)
@@ -429,7 +427,7 @@ namespace FanScript.LangServer.Handlers
                 case EventStatementSyntax @event:
                     {
                         if (node == @event.Identifier)
-                            return CurrentRecomendations.EventTypes;
+                            return CurrentRecomendations.Events;
                     }
                     break;
                 case BuildCommandStatementSyntax buildCommand:

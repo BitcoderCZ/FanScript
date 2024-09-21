@@ -164,7 +164,7 @@ func fabric(float limb, vec3 target)
 {
     inline float off = limb * POINTS_PER_LEG
 
-    // set first point
+    // set first point 
     targetPoints.set(off, bodyPos + legOffs.get(limb))
 
     // "lock" rotation to only 1 axis
@@ -175,7 +175,7 @@ func fabric(float limb, vec3 target)
 
         targetPoints.set(i, targetPoints.get(prevIndex) + vec3(0, 1, 0) * lengths.get(prevIndex))        
     }
-
+    
     // 10 iterations
     on Loop(0, 10, out _)
     {

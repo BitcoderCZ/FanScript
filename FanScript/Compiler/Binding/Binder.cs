@@ -6,10 +6,8 @@ using FanScript.Compiler.Text;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("FanScript.LangServer")]

@@ -7,6 +7,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Server;
 using Serilog;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
 
 namespace FanScript.LangServer
@@ -15,8 +16,7 @@ namespace FanScript.LangServer
     {
         private static async Task Main(string[] args)
         {
-            //while (!Debugger.IsAttached)
-            //    await Task.Delay(500);
+            // Debugger.Launch();
 
             Log.Logger = new LoggerConfiguration()
                         .Enrich.FromLogContext()
