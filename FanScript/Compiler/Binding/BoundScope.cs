@@ -1,4 +1,5 @@
 ﻿using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Text;
 using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Binding
@@ -8,12 +9,52 @@ namespace FanScript.Compiler.Binding
         private Dictionary<string, VariableSymbol> variables = new();
         private Dictionary<string, List<FunctionSymbol>> functions = new();
 
-        public BoundScope(BoundScope? parent)
+        private List<BoundScope> childScopes = new();
+
+        private TextSpan span;
+        public TextSpan Span
+        {
+            get
+            {
+                TextSpan sp = span;
+
+                for (int i = 0; i < childScopes.Count; i++)
+                    sp = TextSpan.Combine(sp, childScopes[i].Span);
+
+                return sp;
+            }
+        }
+
+        public BoundScope()
+        {
+        }
+        private BoundScope(BoundScope? parent)
         {
             Parent = parent;
         }
 
         public BoundScope? Parent { get; }
+
+        public BoundScope AddChild()
+        {
+            BoundScope child = new BoundScope(this);
+            childScopes.Add(child);
+            return child;
+        }
+
+        public void AddSpan(TextSpan span)
+        {
+            if (this.span == default)
+                this.span = span;
+            else
+                this.span = TextSpan.FromBounds(
+                    Math.Min(this.span.Start, span.Start),
+                    Math.Max(this.span.End, span.End)
+                );
+        }
+
+        public ScopeWSpan GetWithSpan()
+            => new ScopeWSpan(variables.Values, Span, null, childScopes.Select(child => child.GetWithSpan()));
 
         public bool TryDeclareVariable(VariableSymbol variable)
         {

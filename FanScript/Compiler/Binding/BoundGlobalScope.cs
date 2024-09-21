@@ -11,7 +11,8 @@ namespace FanScript.Compiler.Binding
                                 FunctionSymbol? scriptFunction,
                                 ImmutableArray<FunctionSymbol> functions,
                                 ImmutableArray<VariableSymbol> variables,
-                                ImmutableArray<BoundStatement> statements)
+                                ImmutableArray<BoundStatement> statements,
+                                ScopeWSpan scope)
         {
             Previous = previous;
             Diagnostics = diagnostics;
@@ -19,6 +20,7 @@ namespace FanScript.Compiler.Binding
             Functions = functions;
             Variables = variables;
             Statements = statements;
+            Scope = scope;
         }
 
         public BoundGlobalScope? Previous { get; }
@@ -27,5 +29,6 @@ namespace FanScript.Compiler.Binding
         public ImmutableArray<FunctionSymbol> Functions { get; }
         public ImmutableArray<VariableSymbol> Variables { get; }
         public ImmutableArray<BoundStatement> Statements { get; }
+        public ScopeWSpan Scope { get; }
     }
 }

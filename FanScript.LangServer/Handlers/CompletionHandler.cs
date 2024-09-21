@@ -11,6 +11,7 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -159,7 +160,6 @@ namespace FanScript.LangServer.Handlers
             Document document = documentHandler.GetDocument(request.TextDocument.Uri);
             SyntaxTree? tree = document.Tree;
             Compilation? compilation = document.Compilation;
-            _ = compilation?.GlobalScope; // make BoundReult(s) available to getRecomendations
 
             CurrentRecomendations recomendations;
 
@@ -219,33 +219,34 @@ namespace FanScript.LangServer.Handlers
             FunctionSymbol[]? methods = null;
             if (compilation is not null)
             {
-                FunctionSymbol? currentFunc = null;
+                ScopeWSpan? scope = null;
 
                 if (requestSpan is not null)
                 {
-                    for (int i = 0; i < compilation.Functions.Length; i++)
+                    foreach (var (func, funcScope) in compilation
+                        .GetScopes()
+                        .OrderBy(item => item.Value.Span.Length))
                     {
-                        var func = compilation.Functions[i];
-                        if (func.Declaration is not null && func.Declaration.Span.OverlapsWith(requestSpan.Value))
+                        if (funcScope.Span.OverlapsWith(requestSpan.Value))
                         {
-                            currentFunc = func;
+                            scope = funcScope.GetScopeAt(requestSpan.Value.Start);
                             break;
                         }
                     }
                 }
 
-                var program = compilation.GetProgram();
-
                 if (recomendations.HasFlag(CurrentRecomendations.Variables))
                 {
-                    if (currentFunc is null)
+                    if (scope is null)
                         length += (variables = compilation.GetVariables().ToArray()).Length;
                     else
                     {
-                        //variables = program.FunctionInfos.GetValueOrDefault(currentFunc, new FunctionInfo())
-                        //    .LocalVariables
-                        //    .Concat(compilation.GetVariables().Where(var => var is GlobalVariableSymbol))
-                        //    .ToArray();
+                        TextLocation loc = new TextLocation(document.Tree!.Text, scope.Span);
+
+                        variables = scope
+                            .GetAllVariables()
+                            .Concat(compilation.GetVariables().Where(var => var is GlobalVariableSymbol))
+                            .ToArray();
                     }
                 }
                 if (recomendations.HasFlag(CurrentRecomendations.Functions))

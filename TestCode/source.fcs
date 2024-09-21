@@ -181,13 +181,13 @@ func fabric(float limb, vec3 target)
     {
         // set last point to target
         targetPoints.set(off + SEGMENTS_PER_LEG, target)
-
+        
         // loop backwards
         on Loop(POINTS_PER_LEG - 2, -1, out inline float _i)
         {
             inline float i = _i + off
             inline float nextIndex = i + 1
-
+            
             inline vec3 point = targetPoints.get(i)
             inline vec3 nextPoint = targetPoints.get(nextIndex)
 
@@ -195,7 +195,7 @@ func fabric(float limb, vec3 target)
 
             targetPoints.set(i, nextPoint + move)
         }
-
+        
         // set first point
         targetPoints.set(off, bodyPos + legOffs.get(limb))
 

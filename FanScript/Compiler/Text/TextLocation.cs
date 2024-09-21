@@ -20,5 +20,8 @@
         private int? endLine;
         public int EndLine => endLine ??= Text.GetLineIndex(Span.End);
         public int EndCharacter => Span.End - Text.Lines[EndLine].Start;
+
+        public override string ToString()
+            => $"{StartLine},{StartCharacter}..{EndLine},{EndCharacter} ({Span})";
     }
 }

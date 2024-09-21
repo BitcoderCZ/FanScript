@@ -6,8 +6,10 @@ using FanScript.Compiler.Text;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("FanScript.LangServer")]
@@ -26,7 +28,7 @@ namespace FanScript.Compiler.Binding
 
         private Binder(bool isScript, BoundScope? parent, FunctionSymbol? function)
         {
-            scope = new BoundScope(parent);
+            scope = parent?.AddChild() ?? new BoundScope();
             this.isScript = isScript;
             this.function = function;
 
@@ -49,7 +51,7 @@ namespace FanScript.Compiler.Binding
 
             binder.Diagnostics.AddRange(syntaxTrees.SelectMany(st => st.Diagnostics));
             if (binder.Diagnostics.HasErrors())
-                return new BoundGlobalScope(previous, binder.Diagnostics.ToImmutableArray(), null, ImmutableArray<FunctionSymbol>.Empty, ImmutableArray<VariableSymbol>.Empty, ImmutableArray<BoundStatement>.Empty);
+                return new BoundGlobalScope(previous, binder.Diagnostics.ToImmutableArray(), null, ImmutableArray<FunctionSymbol>.Empty, ImmutableArray<VariableSymbol>.Empty, ImmutableArray<BoundStatement>.Empty, new ScopeWSpan());
 
             IEnumerable<FunctionDeclarationSyntax> functionDeclarations = syntaxTrees.SelectMany(st => st.Root.Members)
                                                   .OfType<FunctionDeclarationSyntax>();
@@ -62,13 +64,13 @@ namespace FanScript.Compiler.Binding
 
             ImmutableArray<BoundStatement>.Builder statements = ImmutableArray.CreateBuilder<BoundStatement>();
 
-            binder.scope = new BoundScope(binder.scope);
+            binder.enterScope();
             foreach (GlobalStatementSyntax globalStatement in globalStatements)
             {
                 BoundStatement statement = binder.BindGlobalStatement(globalStatement.Statement);
                 statements.Add(statement);
             }
-            binder.scope = binder.scope.Parent!;
+            binder.exitScope();
 
             // Check global statements
             GlobalStatementSyntax[] firstGlobalStatementPerSyntaxTree = syntaxTrees
@@ -97,7 +99,7 @@ namespace FanScript.Compiler.Binding
             if (previous is not null)
                 diagnostics = diagnostics.InsertRange(0, previous.Diagnostics);
 
-            return new BoundGlobalScope(previous, diagnostics, scriptFunction, functions, variables, statements.ToImmutable());
+            return new BoundGlobalScope(previous, diagnostics, scriptFunction, functions, variables, statements.ToImmutable(), binder.scope.GetWithSpan());
         }
 
         public static BoundProgram BindProgram(bool isScript, BoundProgram? previous, BoundGlobalScope globalScope)
@@ -105,8 +107,8 @@ namespace FanScript.Compiler.Binding
             DiagnosticBag scopeDiagnostics = new DiagnosticBag();
             BoundScope parentScope = CreateParentScope(globalScope, scopeDiagnostics);
 
-            if (globalScope.Diagnostics.HasErrors())
-                return new BoundProgram(previous, globalScope.Diagnostics, null, ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Empty, new BoundAnalysisResult());
+            //if (globalScope.Diagnostics.HasErrors())
+            //    return new BoundProgram(previous, globalScope.Diagnostics, null, ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Empty, new BoundAnalysisResult(), ImmutableDictionary<FunctionSymbol, ScopeWSpan>.Empty);
 
             ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Builder functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
 
@@ -116,12 +118,15 @@ namespace FanScript.Compiler.Binding
             int varDistinguisher = 0;
 
             BoundAnalysisResult analysisResult = new BoundAnalysisResult();
+            Dictionary<FunctionSymbol, ScopeWSpan> functionScopes = new();
 
             foreach (FunctionSymbol function in globalScope.Functions)
             {
                 Binder binder = new Binder(isScript, parentScope, function);
 
                 BoundStatement body = binder.BindStatement(function.Declaration!.Body);
+
+                functionScopes.Add(function, binder.scope.GetWithSpan());
 
                 BoundBlockStatement loweredBody = Lowerer.Lower(function, body);
 
@@ -165,6 +170,7 @@ namespace FanScript.Compiler.Binding
 
                 BoundBlockStatement body = Lowerer.Lower(globalScope.ScriptFunction, new BoundBlockStatement(compilationUnit!, statements));
                 functionBodies.Add(globalScope.ScriptFunction, body);
+                functionScopes.Add(globalScope.ScriptFunction, globalScope.Scope);
 
                 analysisResult.Add(BoundTreeAnalyzer.Analyze(body));
             }
@@ -173,7 +179,8 @@ namespace FanScript.Compiler.Binding
                 diagnostics.ToImmutable(),
                 globalScope.ScriptFunction,
                 functionBodies.ToImmutable(),
-                analysisResult);
+                analysisResult,
+                functionScopes.ToImmutableDictionary());
         }
 
         private void BindFunctionDeclaration(FunctionDeclarationSyntax syntax)
@@ -223,7 +230,7 @@ namespace FanScript.Compiler.Binding
             while (stack.Count > 0)
             {
                 previous = stack.Pop();
-                BoundScope scope = new BoundScope(parent);
+                BoundScope scope = parent.AddChild();
 
                 foreach (FunctionSymbol f in previous.Functions)
                     scope.TryDeclareFunction(f);
@@ -239,7 +246,7 @@ namespace FanScript.Compiler.Binding
 
         private static BoundScope CreateRootScope(DiagnosticBag diagnostics)
         {
-            BoundScope result = new BoundScope(null);
+            BoundScope result = new BoundScope();
 
             foreach (Constant con in Constants.GetAll())
             {
@@ -284,6 +291,8 @@ namespace FanScript.Compiler.Binding
 
         private BoundStatement BindStatementInternal(StatementSyntax syntax)
         {
+            spanProcessed(syntax.Span);
+
             switch (syntax.Kind)
             {
                 case SyntaxKind.BlockStatement:
@@ -322,15 +331,14 @@ namespace FanScript.Compiler.Binding
         private BoundStatement BindBlockStatement(BlockStatementSyntax syntax)
         {
             ImmutableArray<BoundStatement>.Builder statements = ImmutableArray.CreateBuilder<BoundStatement>();
-            scope = new BoundScope(scope);
 
+            enterScope();
             foreach (StatementSyntax statementSyntax in syntax.Statements)
             {
                 BoundStatement statement = BindStatement(statementSyntax);
                 statements.Add(statement);
             }
-
-            scope = scope.Parent!;
+            exitScope();
 
             return new BoundBlockStatement(syntax, statements.ToImmutable());
         }
@@ -349,7 +357,7 @@ namespace FanScript.Compiler.Binding
                 .Select(param => param.ToParameter())
                 .ToImmutableArray();
 
-            scope = new BoundScope(scope);
+            enterScope();
 
             BoundArgumentClause? argumentClause = syntax.ArgumentClause is null ? null : BindArgumentClause(syntax.ArgumentClause, parameters, "Event", syntax.Identifier.Text);
 
@@ -364,7 +372,7 @@ namespace FanScript.Compiler.Binding
             BoundBlockStatement block = (BoundBlockStatement)BindBlockStatement(syntax.Block);
             _ = blockStack.Pop();
 
-            scope = scope.Parent!;
+            exitScope();
 
             return new BoundEventStatement(syntax, type, argumentClause, block);
         }
@@ -684,6 +692,8 @@ namespace FanScript.Compiler.Binding
 
         private BoundExpression BindExpressionInternal(ExpressionSyntax syntax, Context? context = null)
         {
+            spanProcessed(syntax.Span);
+
             switch (syntax.Kind)
             {
                 case SyntaxKind.ParenthesizedExpression:
@@ -1228,6 +1238,20 @@ namespace FanScript.Compiler.Binding
             return modifiers;
         }
         #endregion
+
+        private void spanProcessed(TextSpan span)
+        {
+            scope.AddSpan(span);
+        }
+
+        private void enterScope()
+        {
+            scope = scope.AddChild();
+        }
+        private void exitScope()
+        {
+            scope = scope.Parent!;
+        }
 
         private class Context
         {

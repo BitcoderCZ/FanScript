@@ -126,6 +126,13 @@ namespace FanScript.Compiler
         //    return new EvaluationResult(program.Diagnostics, value);
         //}
 
+        public IDictionary<FunctionSymbol, ScopeWSpan> GetScopes()
+        {
+            BoundProgram program = GetProgram();
+
+            return program.FunctionScopes;
+        }
+
         public void EmitTree(TextWriter writer)
         {
             /*if (GlobalScope.MainFunction is not null)
