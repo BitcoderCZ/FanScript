@@ -29,7 +29,7 @@ namespace FanScript.Compiler.Symbols
             }
         }
 
-        internal static void WriteFunctionTo(FunctionSymbol symbol, TextWriter writer, bool onlyParams = false)
+        internal static void WriteFunctionTo(FunctionSymbol symbol, TextWriter writer, bool onlyParams = false, bool writeAsMethod = false)
         {
             if (!onlyParams)
             {
@@ -45,9 +45,10 @@ namespace FanScript.Compiler.Symbols
             }
             writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
 
-            for (int i = 0; i < symbol.Parameters.Length; i++)
+            int startParam = (writeAsMethod && symbol.IsMethod) ? 1 : 0;
+            for (int i = startParam; i < symbol.Parameters.Length; i++)
             {
-                if (i > 0)
+                if (i > startParam)
                 {
                     writer.WritePunctuation(SyntaxKind.CommaToken);
                     writer.WriteSpace();

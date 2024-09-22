@@ -1,4 +1,5 @@
 ﻿using FanScript.Compiler;
+using FanScript.Compiler.Binding;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
@@ -216,9 +217,10 @@ namespace FanScript.LangServer.Handlers
             VariableSymbol[]? variables = null;
             FunctionSymbol[]? functions = null;
             FunctionSymbol[]? methods = null;
-            ScopeWSpan? scope = null;
             if (compilation is not null)
             {
+                ScopeWSpan? scope = null;
+
                 if (requestSpan is not null)
                 {
                     foreach (var (func, funcScope) in compilation
@@ -397,21 +399,6 @@ namespace FanScript.LangServer.Handlers
 
                             return CurrentRecomendations.Methods;
                         }
-                        //else if ((parent.BoundResult as BoundVariableExpression)?.Variable is PropertySymbol prop)
-                        //{
-                        //    if (node == property.Expression)
-                        //    {
-                        //        recomendationsList = prop.Expression.Type.Properties
-                        //        .Select(item =>
-                        //        {
-                        //            var (_, definition) = item;
-
-                        //            return completionFor(definition, prop.Expression.Type);
-                        //        })
-                        //                .ToList();
-                        //        return 0;
-                        //    }
-                        //}
                     }
                     break;
                 case AssignableVariableClauseSyntax:

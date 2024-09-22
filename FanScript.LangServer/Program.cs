@@ -8,6 +8,7 @@ using OmniSharp.Extensions.LanguageServer.Server;
 using Serilog;
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.Threading.Tasks;
 
 namespace FanScript.LangServer
@@ -16,7 +17,11 @@ namespace FanScript.LangServer
     {
         private static async Task Main(string[] args)
         {
-            // Debugger.Launch();
+#if DEBUG
+            Debugger.Launch();
+#endif
+
+            CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
 
             Log.Logger = new LoggerConfiguration()
                         .Enrich.FromLogContext()
@@ -57,12 +62,12 @@ namespace FanScript.LangServer
                                 services.AddSingleton(
                                     provider =>
                                     {
-                                        var loggerFactory = provider.GetService<ILoggerFactory>();
-                                        var logger = loggerFactory.CreateLogger<CustomLogger>();
+                                        var loggerFactory = provider.GetService<ILoggerFactory>()!;
+                                        var logger = loggerFactory.CreateLogger<Program>();
 
                                         logger.LogInformation("Configuring");
 
-                                        return new CustomLogger(logger);
+                                        return logger;
                                     }
                                 );
                                 services.AddSingleton(
@@ -131,7 +136,7 @@ namespace FanScript.LangServer
                                 //await Task.Delay(2000).ConfigureAwait(false);
                                 //manager.OnNext(new WorkDoneProgressReport { Message = "doing things... 56789" });
 
-                                var logger = languageServer.Services.GetService<ILogger<CustomLogger>>();
+                                var logger = languageServer.Services.GetService<ILogger<Program>>()!;
                                 var configuration = await languageServer.Configuration.GetConfiguration(
                                     new ConfigurationItem
                                     {
@@ -155,17 +160,6 @@ namespace FanScript.LangServer
             ).ConfigureAwait(false);
 
             await server.WaitForExit.ConfigureAwait(false);
-        }
-    }
-
-    internal class CustomLogger
-    {
-        private readonly ILogger<CustomLogger> logger;
-
-        public CustomLogger(ILogger<CustomLogger> logger)
-        {
-            logger.LogInformation("inside ctor");
-            this.logger = logger;
         }
     }
 }

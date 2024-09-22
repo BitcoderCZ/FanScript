@@ -4,6 +4,7 @@ using FanScript.FCInfo;
 using FanScript.Utils;
 using System.Collections.Frozen;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
@@ -35,8 +36,6 @@ namespace FanScript.Compiler.Symbols
         public TypeSymbol? InnerType { get; }
 
         public FrozenDictionary<string, PropertyDefinitionSymbol> Properties { get; private set; } = FrozenDictionary<string, PropertyDefinitionSymbol>.Empty;
-        // TODO:
-        // public ImmutableArray<FunctionSymbol> InstanceFunctions { get; private set; }
 
         public static readonly ImmutableArray<TypeSymbol> BuiltInGenericTypes = [Array];
         public static readonly ImmutableArray<TypeSymbol> BuiltInNonGenericTypes = [Bool, Float, Vector3, Rotation, Object, Constraint];
@@ -130,11 +129,23 @@ namespace FanScript.Compiler.Symbols
         public static TypeSymbol CreateGenericInstance(TypeSymbol type, TypeSymbol innerType)
         {
             if (!type.IsGenericDefinition)
-                throw new ArgumentException(nameof(type), $"{nameof(type)} must be generic definition");
+                throw new ArgumentException(nameof(type), $"{nameof(type)} must be generic definition.");
             else if (innerType.IsGeneric) // we don't allow generic type in a generic type
-                throw new ArgumentException(nameof(innerType), $"{nameof(innerType)} must not be generic");
+                throw new ArgumentException(nameof(innerType), $"{nameof(innerType)} must not be generic.");
 
             return new TypeSymbol(type.Name, innerType);
+        }
+
+        public static TypeSymbol GetGenericDefinition(TypeSymbol genericInstance)
+        {
+            if (!genericInstance.IsGenericInstance)
+                throw new ArgumentException(nameof(genericInstance), $"{nameof(genericInstance)} must be generic instance.");
+
+            TypeSymbol definition = GetTypeInternal(genericInstance.Name);
+
+            Debug.Assert(definition.IsGenericDefinition);
+
+            return definition;
         }
 
         public static TypeSymbol GetType(string? name)

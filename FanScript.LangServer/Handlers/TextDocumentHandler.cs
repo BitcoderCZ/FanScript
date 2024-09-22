@@ -42,7 +42,7 @@ namespace FanScript.LangServer.Handlers
             }
         );
 
-        public TextDocumentHandler(ILanguageServerFacade facade, ILogger<TextDocumentHandler> logger, CustomLogger customLogger, ILanguageServerConfiguration configuration)
+        public TextDocumentHandler(ILanguageServerFacade facade, ILogger<TextDocumentHandler> logger, ILanguageServerConfiguration configuration)
         {
             this.facade = facade;
             this.logger = logger;
