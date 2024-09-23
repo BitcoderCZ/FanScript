@@ -28,7 +28,6 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         protected readonly Stack<ExpressionCodeBlock> expressions = new();
 
         protected bool inHighlight = false;
-        protected int highlightX = 0;
 
         public GroundCodePlacer(BlockBuilder builder)
             : base(builder)
@@ -41,9 +40,8 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             if (inHighlight)
             {
-                block = new Block(new Vector3I(highlightX, 0, -4), blockDef);
-
-                highlightX += blockDef.Size.X + 1;
+                block = new Block(Vector3I.Zero, blockDef);
+                Builder.AddHighlightedBlock(block);
             }
             else
             {
@@ -116,9 +114,6 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
         public override void ExitHightlight()
         {
-            if (inHighlight)
-                highlightX += 2;
-
             inHighlight = false;
         }
 

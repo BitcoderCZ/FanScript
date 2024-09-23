@@ -10,6 +10,7 @@ namespace FanScript.Compiler.Emit
         public abstract BuildPlatformInfo PlatformInfo { get; }
 
         protected List<BlockSegment> segments = new();
+        protected List<Block> highlightedBlocks = new();
         protected List<ConnectionRecord> connections = new();
         protected List<ValueRecord> values = new();
 
@@ -19,6 +20,8 @@ namespace FanScript.Compiler.Emit
 
             segments.Add(segment);
         }
+        public virtual void AddHighlightedBlock(Block block)
+            => highlightedBlocks.Add(block);
 
         internal void Connect(EmitStore? from, EmitStore to)
         {
@@ -47,7 +50,7 @@ namespace FanScript.Compiler.Emit
             else if (segments.Count == 0)
                 return Array.Empty<Block>();
 
-            int totalBlockCount = 0;
+            int totalBlockCount = highlightedBlocks.Count;
             Vector3I[] segmentSizes = new Vector3I[segments.Count];
 
             for (int i = 0; i < segments.Count; i++)
@@ -60,13 +63,23 @@ namespace FanScript.Compiler.Emit
 
             Block[] blocks = new Block[totalBlockCount];
 
-            int index = 0;
+            Vector3I highlightedPos = posToBuildAt;
+            for (int i = 0; i < highlightedBlocks.Count; i++)
+            {
+                highlightedBlocks[i].Pos = highlightedPos;
+                highlightedPos.X += 3;
+            }
+
+            highlightedBlocks.CopyTo(blocks);
+
+            int index = highlightedBlocks.Count;
+            Vector3I off = highlightedBlocks.Count > 0 ? new Vector3I(0, 0, 4) : Vector3I.Zero;
 
             for (int i = 0; i < segments.Count; i++)
             {
                 BlockSegment segment = segments[i];
 
-                segment.Move((segmentPositions[i] + posToBuildAt) - segment.MinPos);
+                segment.Move((segmentPositions[i] + posToBuildAt + off) - segment.MinPos);
 
                 segment.Blocks.CopyTo(blocks, index);
                 index += segment.Blocks.Length;

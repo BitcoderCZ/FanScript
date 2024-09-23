@@ -20,8 +20,6 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         }
         public bool SquarePlacement { get; set; } = true;
 
-        private int highlightX = 0;
-
         private bool inHighlight = false;
         private int statementDepth = 0;
 
@@ -38,8 +36,8 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             if (inHighlight)
             {
-                block = new Block(new Vector3I(highlightX, 0, -4), blockDef);
-                highlightX += blockDef.Size.X + 1;
+                block = new Block(Vector3I.Zero, blockDef);
+                Builder.AddHighlightedBlock(block);
             }
             else
             {
@@ -112,9 +110,6 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
         public override void ExitHightlight()
         {
-            if (inHighlight)
-                highlightX += 2;
-
             inHighlight = false;
         }
 
