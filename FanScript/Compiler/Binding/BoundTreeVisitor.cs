@@ -35,11 +35,11 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.WhileStatement:
                     VisitWhileStatement((BoundWhileStatement)node);
                     break;
-                //case BoundNodeKind.DoWhileStatement:
-                //    return VisitDoWhileStatement((BoundDoWhileStatement)node);
-                //    break;
+                case BoundNodeKind.DoWhileStatement:
+                    VisitDoWhileStatement((BoundDoWhileStatement)node);
+                    break;
                 //case BoundNodeKind.ForStatement:
-                //    return VisitForStatement((BoundForStatement)node);
+                //    VisitForStatement((BoundForStatement)node);
                 //    break;
                 case BoundNodeKind.LabelStatement:
                     VisitLabelStatement((BoundLabelStatement)node);
@@ -112,6 +112,12 @@ namespace FanScript.Compiler.Binding
         {
             VisitExpression(node.Condition);
             Visit(node.Body);
+        }
+
+        protected virtual void VisitDoWhileStatement(BoundDoWhileStatement node)
+        {
+            Visit(node.Body);
+            VisitExpression(node.Condition);
         }
 
         protected virtual void VisitLabelStatement(BoundLabelStatement node)

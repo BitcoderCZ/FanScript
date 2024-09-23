@@ -196,8 +196,8 @@ namespace FanScript.Compiler.Syntax
                     return ParseIfStatement();
                 case SyntaxKind.KeywordWhile:
                     return ParseWhileStatement();
-                //case SyntaxKind.DoKeyword:
-                //    return ParseDoWhileStatement();
+                case SyntaxKind.KeywordDo:
+                    return ParseDoWhileStatement();
                 //case SyntaxKind.ForKeyword:
                 //    return ParseForStatement();
                 case SyntaxKind.KeywordBreak:
@@ -322,14 +322,14 @@ namespace FanScript.Compiler.Syntax
             return new WhileStatementSyntax(syntaxTree, keyword, condition, body);
         }
 
-        //private StatementSyntax ParseDoWhileStatement()
-        //{
-        //    var doKeyword = MatchToken(SyntaxKind.DoKeyword);
-        //    var body = ParseStatement();
-        //    var whileKeyword = MatchToken(SyntaxKind.WhileKeyword);
-        //    var condition = ParseExpression();
-        //    return new DoWhileStatementSyntax(syntaxTree, doKeyword, body, whileKeyword, condition);
-        //}
+        private StatementSyntax ParseDoWhileStatement()
+        {
+            SyntaxToken doKeyword = MatchToken(SyntaxKind.KeywordDo);
+            StatementSyntax body = ParseStatement();
+            SyntaxToken whileKeyword = MatchToken(SyntaxKind.KeywordWhile);
+            ExpressionSyntax condition = ParseExpression();
+            return new DoWhileStatementSyntax(syntaxTree, doKeyword, body, whileKeyword, condition);
+        }
 
         //private StatementSyntax ParseForStatement()
         //{

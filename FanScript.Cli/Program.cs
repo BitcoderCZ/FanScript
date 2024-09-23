@@ -63,7 +63,9 @@ namespace FanScript.Cli
             if (!File.Exists(opts.Src))
                 return Log.Error($"Source file '{opts.Src}' wasn't found.", ErrorCode.FileNotFound);
 
+#if DEBUG
             Debugger.Launch();
+#endif
 
             SyntaxTree tree = SyntaxTree.Load(opts.Src);
 

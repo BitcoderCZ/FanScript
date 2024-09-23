@@ -1,5 +1,4 @@
 ﻿using FanScript.Compiler;
-using FanScript.Compiler.Binding;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;

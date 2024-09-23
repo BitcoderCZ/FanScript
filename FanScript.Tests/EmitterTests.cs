@@ -21,6 +21,26 @@ namespace FanScript.Tests
             float y
             on Touch(out x, out y, 0, 0) { }
             """)]
+        [InlineData("""
+            float i = 0
+            while (i < 10)
+                i++
+            """)]
+        [InlineData("""
+            float i = 0
+            do
+            {
+                i++
+            } while (i < 10)
+            """)]
+        // code is reachable
+        [InlineData("""
+            float i = 0
+            do
+            {
+                i++
+            } while (false)
+            """)]
         [InlineData("on Touch(out float x, out float y, 0, 0) { }")]
         [InlineData("""
             float x = 1
@@ -208,24 +228,26 @@ namespace FanScript.Tests
             AssertDiagnostics(text, diagnostics);
         }
 
-        //[Fact]
-        //public void Emitter_DoWhileStatement_Reports_CannotConvert()
-        //{
-        //    var text = @"
-        //        {
-        //            var x = 0
-        //            do
-        //                x = 10
-        //            while [10]
-        //        }
-        //    ";
+        [Fact]
+        public void Emitter_DoWhileStatement_Reports_CannotConvert()
+        {
+            var text = @"
+                {
+                    float x = 0
+                    do
+                    {
+                        x = 10
+                    }
+                    while $[(10)]$
+                }
+            ";
 
-        //    var diagnostics = @"
-        //        Cannot convert type 'int' to 'bool'.
-        //    ";
+            var diagnostics = @"
+                Cannot convert type 'float' to 'bool'.
+            ";
 
-        //    AssertDiagnostics(text, diagnostics);
-        //}
+            AssertDiagnostics(text, diagnostics);
+        }
 
         //[Fact]
         //public void Emitter_ForStatement_Reports_CannotConvert_LowerBound()
@@ -553,25 +575,25 @@ namespace FanScript.Tests
         //    AssertDiagnostics(text, diagnostics);
         //}
 
-        //[Fact]
-        //public void Emitter_WhileStatement_Reports_NotReachableCode_Warning()
-        //{
-        //    var text = @"
-        //        func test()
-        //        {
-        //            while false
-        //            {
-        //                $[continue]$
-        //            }
-        //        }
-        //    ";
+        [Fact]
+        public void Emitter_WhileStatement_Reports_NotReachableCode_Warning()
+        {
+            var text = @"
+                func test()
+                {
+                    while false
+                    {
+                        $[continue]$
+                    }
+                }
+            ";
 
-        //    var diagnostics = @"
-        //        Unreachable code detected.
-        //    ";
+            var diagnostics = @"
+                Unreachable code detected.
+            ";
 
-        //    AssertDiagnostics(text, diagnostics);
-        //}
+            AssertDiagnostics(text, diagnostics);
+        }
 
         [Fact]
         public void Emitter_ExpressionStatement_Reports_Invalid()
@@ -914,39 +936,39 @@ namespace FanScript.Tests
         //    AssertDiagnostics(text, diagnostics);
         //}
 
-        //[Fact]
-        //public void Emitter_Parameter_Already_Declared()
-        //{
-        //    var text = @"
-        //        function sum(a: int, b: int, [a: int]): int
-        //        {
-        //            return a + b + c
-        //        }
-        //    ";
+        [Fact]
+        public void Emitter_Parameter_Already_Declared()
+        {
+            var text = @"
+                func sum(float a, float b, float $[a]$, out float res)
+                {
+                    res = a + b + c
+                }
+            ";
 
-        //    var diagnostics = @"
-        //        A parameter with the name 'a' already exists.
-        //    ";
+            var diagnostics = @"
+                A parameter with the name 'a' already exists.
+            ";
 
-        //    AssertDiagnostics(text, diagnostics);
-        //}
+            AssertDiagnostics(text, diagnostics);
+        }
 
-        //[Fact]
-        //public void Emitter_Function_Must_Have_Name()
-        //{
-        //    var text = @"
-        //        function [(]a: int, b: int): int
-        //        {
-        //            return a + b
-        //        }
-        //    ";
+        [Fact]
+        public void Emitter_Function_Must_Have_Name()
+        {
+            var text = @"
+                func $[(]$float a, float b, out float res)
+                {
+                    res = a + b
+                }
+            ";
 
-        //    var diagnostics = @"
-        //        Unexpected token <OpenParenthesisToken>, expected <IdentifierToken>.
-        //    ";
+            var diagnostics = @"
+                Unexpected token <OpenParenthesisToken>, expected <IdentifierToken>.
+            ";
 
-        //    AssertDiagnostics(text, diagnostics);
-        //}
+            AssertDiagnostics(text, diagnostics);
+        }
 
         //[Fact]
         //public void Emitter_Wrong_Argument_Type()
@@ -967,11 +989,12 @@ namespace FanScript.Tests
         //    AssertDiagnostics(text, diagnostics);
         //}
 
+        // TODO: add when types aren't keywords
         //[Fact]
         //public void Emitter_Bad_Type()
         //{
         //    var text = @"
-        //        function test(n: [invalidtype])
+        //        func test($[invalidtype]$ n)
         //        {
         //        }
         //    ";

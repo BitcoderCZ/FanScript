@@ -84,6 +84,8 @@
                     return SyntaxKind.KeywordArray;
                 case "while":
                     return SyntaxKind.KeywordWhile;
+                case "do":
+                    return SyntaxKind.KeywordDo;
                 case "break":
                     return SyntaxKind.KeywordBreak;
                 case "continue":
@@ -230,6 +232,8 @@
                     "array",
                 SyntaxKind.KeywordWhile =>
                     "while",
+                SyntaxKind.KeywordDo =>
+                    "do",
                 SyntaxKind.KeywordBreak =>
                     "break",
                 SyntaxKind.KeywordContinue =>

@@ -27,8 +27,8 @@ namespace FanScript.Compiler.Binding
                     return RewriteIfStatement((BoundIfStatement)node);
                 case BoundNodeKind.WhileStatement:
                     return RewriteWhileStatement((BoundWhileStatement)node);
-                //case BoundNodeKind.DoWhileStatement:
-                //    return RewriteDoWhileStatement((BoundDoWhileStatement)node);
+                case BoundNodeKind.DoWhileStatement:
+                    return RewriteDoWhileStatement((BoundDoWhileStatement)node);
                 //case BoundNodeKind.ForStatement:
                 //    return RewriteForStatement((BoundForStatement)node);
                 case BoundNodeKind.LabelStatement:
@@ -146,6 +146,16 @@ namespace FanScript.Compiler.Binding
                 return node;
 
             return new BoundWhileStatement(node.Syntax, condition, body, node.BreakLabel, node.ContinueLabel);
+        }
+
+        protected virtual BoundStatement RewriteDoWhileStatement(BoundDoWhileStatement node)
+        {
+            BoundStatement body = RewriteStatement(node.Body);
+            BoundExpression condition = RewriteExpression(node.Condition);
+            if (body == node.Body && condition == node.Condition)
+                return node;
+
+            return new BoundDoWhileStatement(node.Syntax, body, condition, node.BreakLabel, node.ContinueLabel);
         }
 
         protected virtual BoundStatement RewriteLabelStatement(BoundLabelStatement node)

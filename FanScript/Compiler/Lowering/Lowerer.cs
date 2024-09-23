@@ -255,6 +255,35 @@ namespace FanScript.Compiler.Lowering
             return RewriteStatement(result);
         }
 
+        protected override BoundStatement RewriteDoWhileStatement(BoundDoWhileStatement node)
+        {
+            // do
+            //      <body>
+            // while <condition>
+            //
+            // ----->
+            //
+            // body:
+            // <body>
+            // continue:
+            // gotoTrue <condition> body
+            // break:
+
+            BoundLabel bodyLabel = GenerateLabel("body");
+            BoundBlockStatement result = Block(
+                node.Syntax,
+                Label(node.Syntax, bodyLabel),
+                Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),
+                node.Body,
+                Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd),
+                Label(node.Syntax, node.ContinueLabel),
+                GotoTrue(node.Syntax, bodyLabel, node.Condition),
+                Label(node.Syntax, node.BreakLabel)
+            );
+
+            return RewriteStatement(result);
+        }
+
         protected override BoundStatement RewriteConditionalGotoStatement(BoundConditionalGotoStatement node)
         {
             if (node.Condition.ConstantValue is not null)

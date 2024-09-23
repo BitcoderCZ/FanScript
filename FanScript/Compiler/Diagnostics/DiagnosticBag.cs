@@ -218,9 +218,9 @@ namespace FanScript.Compiler.Diagnostics
                 case SyntaxKind.WhileStatement:
                     ReportUnreachableCode(((WhileStatementSyntax)node).WhileKeyword.Location);
                     return;
-                //case SyntaxKind.DoWhileStatement:
-                //    ReportUnreachableCode(((DoWhileStatementSyntax)node).DoKeyword.Location);
-                //    return;
+                case SyntaxKind.DoWhileStatement:
+                    ReportUnreachableCode(((DoWhileStatementSyntax)node).DoKeyword.Location);
+                    return;
                 //case SyntaxKind.ForStatement:
                 //    ReportUnreachableCode(((ForStatementSyntax)node).Keyword.Location);
                 //    return;
@@ -230,9 +230,9 @@ namespace FanScript.Compiler.Diagnostics
                 case SyntaxKind.ContinueStatement:
                     ReportUnreachableCode(((ContinueStatementSyntax)node).Keyword.Location);
                     return;
-                //case SyntaxKind.ReturnStatement:
-                //    ReportUnreachableCode(((ReturnStatementSyntax)node).ReturnKeyword.Location);
-                //    return;
+                case SyntaxKind.ReturnStatement:
+                    ReportUnreachableCode(((ReturnStatementSyntax)node).ReturnKeyword.Location);
+                    return;
                 case SyntaxKind.AssignmentStatement:
                     ReportUnreachableCode(node.Location);
                     return;

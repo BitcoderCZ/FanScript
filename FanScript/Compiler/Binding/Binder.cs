@@ -111,6 +111,7 @@ namespace FanScript.Compiler.Binding
             ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Builder functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
 
             ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
+            diagnostics.AddRange(globalScope.Diagnostics);
             diagnostics.AddRange(scopeDiagnostics);
 
             int varDistinguisher = 0;
@@ -194,7 +195,7 @@ namespace FanScript.Compiler.Binding
                 string paramName = parameterSyntax.Identifier.Text;
 
                 if (!seenParameterNames.Add(paramName))
-                    diagnostics.ReportParameterAlreadyDeclared(parameterSyntax.Location, paramName);
+                    diagnostics.ReportParameterAlreadyDeclared(parameterSyntax.Identifier.Location, paramName);
                 else
                     parameters.Add(new ParameterSymbol(paramName, paramMods, paramType));
             }
@@ -307,8 +308,8 @@ namespace FanScript.Compiler.Binding
                     return BindIfStatement((IfStatementSyntax)syntax);
                 case SyntaxKind.WhileStatement:
                     return BindWhileStatement((WhileStatementSyntax)syntax);
-                //case SyntaxKind.DoWhileStatement:
-                //    return BindDoWhileStatement((DoWhileStatementSyntax)syntax);
+                case SyntaxKind.DoWhileStatement:
+                    return BindDoWhileStatement((DoWhileStatementSyntax)syntax);
                 //case SyntaxKind.ForStatement:
                 //    return BindForStatement((ForStatementSyntax)syntax);
                 case SyntaxKind.BreakStatement:
@@ -516,8 +517,16 @@ namespace FanScript.Compiler.Binding
                 if (!(bool)condition.ConstantValue.GetValueOrDefault(TypeSymbol.Bool))
                     diagnostics.ReportUnreachableCode(syntax.Body);
 
-            BoundStatement body = BindLoopBody(syntax.Body, out var breakLabel, out var continueLabel);
+            BoundStatement body = BindLoopBody(syntax.Body, out BoundLabel breakLabel, out BoundLabel continueLabel);
             return new BoundWhileStatement(syntax, condition, body, breakLabel, continueLabel);
+        }
+
+        private BoundStatement BindDoWhileStatement(DoWhileStatementSyntax syntax)
+        {
+            BoundExpression condition = BindExpression(syntax.Condition, TypeSymbol.Bool);
+
+            BoundStatement body = BindLoopBody(syntax.Body, out BoundLabel breakLabel, out BoundLabel continueLabel);
+            return new BoundDoWhileStatement(syntax, body, condition, breakLabel, continueLabel);
         }
 
         private BoundStatement BindLoopBody(StatementSyntax body, out BoundLabel breakLabel, out BoundLabel continueLabel)

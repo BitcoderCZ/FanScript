@@ -79,7 +79,9 @@ namespace FanScript.Compiler.Emit
 
             processCalls();
 
-            return diagnostics.ToImmutableArray();
+            return diagnostics
+                .Concat(this.program.Diagnostics)
+                .ToImmutableArray();
         }
 
         private void processLabelsAndGotos()

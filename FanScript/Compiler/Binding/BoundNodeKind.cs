@@ -11,6 +11,7 @@
         CompoundAssignmentStatement,
         IfStatement,
         WhileStatement,
+        DoWhileStatement,
         ReturnStatement,
         GotoStatement,
         RollbackGotoStatement,
