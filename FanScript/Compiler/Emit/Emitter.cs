@@ -13,8 +13,6 @@ namespace FanScript.Compiler.Emit
 {
     internal sealed class Emitter
     {
-        const int MaxCallCountToInline = 1;
-
         private EmitContext emitContext = null!;
 
         internal DiagnosticBag diagnostics = new DiagnosticBag();
@@ -62,7 +60,7 @@ namespace FanScript.Compiler.Emit
 
             foreach (var (func, body) in this.program.Functions.ToImmutableSortedDictionary())
             {
-                if (func.Modifiers.HasFlag(Modifiers.Inline) || (func != program.ScriptFunction && program.Analysis.GetCallCount(func) <= MaxCallCountToInline))
+                if (func != program.ScriptFunction && program.Analysis.GetCallCount(func) == 0)
                     continue;
 
                 using (statementBlock())
@@ -389,6 +387,14 @@ namespace FanScript.Compiler.Emit
             }
 
             return new NopEmitStore();
+        }
+
+        private EmitStore emitExpressionStatement(BoundExpressionStatement statement)
+        {
+            if (statement.Expression is BoundStatementExpression exStatement)
+                return emitStatement(exStatement.Statement);
+
+            return emitStatement(statement);
         }
 
         internal EmitStore emitExpression(BoundExpression expression)
@@ -755,10 +761,11 @@ namespace FanScript.Compiler.Emit
             if (expression.Function is BuiltinFunctionSymbol builtinFunction)
                 return builtinFunction.Emit(expression, emitContext);
 
-            if (expression.Function.Modifiers.HasFlag(Modifiers.Inline) || program.Analysis.GetCallCount(expression.Function) <= MaxCallCountToInline)
-                return emitInlineCall(expression);
-            else
-                return emitNormalCall(expression);
+            Debug.Assert(!expression.Function.Modifiers.HasFlag(Modifiers.Inline));
+            //if (expression.Function.Modifiers.HasFlag(Modifiers.Inline) || program.Analysis.GetCallCount(expression.Function) <= MaxCallCountToInline)
+            //    return emitInlineCall(expression);
+            //else
+            return emitNormalCall(expression);
         }
         private EmitStore emitNormalCall(BoundCallExpression expression)
         {
@@ -808,61 +815,61 @@ namespace FanScript.Compiler.Emit
 
             return connector.Store;
         }
-        private EmitStore emitInlineCall(BoundCallExpression expression)
-        {
-            FunctionSymbol func = expression.Function;
+        //private EmitStore emitInlineCall(BoundCallExpression expression)
+        //{
+        //    FunctionSymbol func = expression.Function;
 
-            Debug.Assert(func.Declaration is not null);
+        //    Debug.Assert(func.Declaration is not null);
 
-            EmitConnector connector = new EmitConnector(connect);
+        //    EmitConnector connector = new EmitConnector(connect);
 
-            VariableSymbol[] ogParams = new VariableSymbol[func.Parameters.Length];
+        //    VariableSymbol[] ogParams = new VariableSymbol[func.Parameters.Length];
 
-            for (int i = 0; i < func.Parameters.Length; i++)
-            {
-                ParameterSymbol param = func.Parameters[i];
-                BoundExpression argEx = expression.Arguments[i];
+        //    for (int i = 0; i < func.Parameters.Length; i++)
+        //    {
+        //        ParameterSymbol param = func.Parameters[i];
+        //        BoundExpression argEx = expression.Arguments[i];
 
-                ogParams[i] = param.Clone();
+        //        ogParams[i] = param.Clone();
 
-                if (argEx is BoundVariableExpression varEx && param.Modifiers.HasOneOfFlags(Modifiers.Readonly, Modifiers.Ref, Modifiers.Out))
-                {
-                    VariableSymbol arg = varEx.Variable;
+        //        if (argEx is BoundVariableExpression varEx && param.Modifiers.HasOneOfFlags(Modifiers.Readonly, Modifiers.Ref, Modifiers.Out))
+        //        {
+        //            VariableSymbol arg = varEx.Variable;
 
-                    if (!param.Modifiers.HasFlag(Modifiers.Out) || arg.Name != "_")
-                    {
-                        param.Replicate(arg);
+        //            if (!param.Modifiers.HasFlag(Modifiers.Out) || arg.Name != "_")
+        //            {
+        //                param.Replicate(arg);
 
-                        continue;
-                    }
-                }
+        //                continue;
+        //            }
+        //        }
 
-                if (param.Modifiers.HasFlag(Modifiers.Out))
-                    continue;
+        //        if (param.Modifiers.HasFlag(Modifiers.Out))
+        //            continue;
 
-                EmitStore setStore = emitSetVariable(param, argEx);
+        //        EmitStore setStore = emitSetVariable(param, argEx);
 
-                connector.Add(setStore);
-            }
+        //        connector.Add(setStore);
+        //    }
 
-            beforeReturnStack.Push(new List<EmitStore>());
-            EmitStore bodyStore = emitStatement(program.Functions[func]);
-            List<EmitStore> beforeReturn = beforeReturnStack.Pop();
+        //    beforeReturnStack.Push(new List<EmitStore>());
+        //    EmitStore bodyStore = emitStatement(program.Functions[func]);
+        //    List<EmitStore> beforeReturn = beforeReturnStack.Pop();
 
-            Debug.Assert(beforeReturn.Count > 0, "beforeReturn.Count > 0");
+        //    Debug.Assert(beforeReturn.Count > 0, "beforeReturn.Count > 0");
 
-            connector.Add(new MultiEmitStore(bodyStore, new BasicEmitStore(new NopConnectTarget(),
-                beforeReturn.Aggregate(new List<ConnectTarget>(), (list, store) =>
-                {
-                    list.AddRange(store.Out);
-                    return list;
-                }))));
+        //    connector.Add(new MultiEmitStore(bodyStore, new BasicEmitStore(new NopConnectTarget(),
+        //        beforeReturn.Aggregate(new List<ConnectTarget>(), (list, store) =>
+        //        {
+        //            list.AddRange(store.Out);
+        //            return list;
+        //        }))));
 
-            for (int i = 0; i < func.Parameters.Length; i++)
-                func.Parameters[i].Replicate(ogParams[i]);
+        //    for (int i = 0; i < func.Parameters.Length; i++)
+        //        func.Parameters[i].Replicate(ogParams[i]);
 
-            return connector.Store;
-        }
+        //    return connector.Store;
+        //}
 
         #region Utils
         internal EmitStore emitGetVariable(VariableSymbol variable)

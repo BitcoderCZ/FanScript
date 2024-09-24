@@ -18,6 +18,7 @@
         ConditionalGotoStatement,
         LabelStatement,
         PostfixStatement,
+        ExpressionStatement,
 
         // Expressions
         ErrorExpression,
@@ -26,11 +27,11 @@
         UnaryExpression,
         BinaryExpression,
         CallExpression,
-        ExpressionStatement,
         ConversionExpression,
         ConstructorExpression,
         ArgumentClause,
         ArraySegmentExpression,
+        StatementExpression,
 
         EventCondition,
 

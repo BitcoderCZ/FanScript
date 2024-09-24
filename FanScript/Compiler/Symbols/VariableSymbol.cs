@@ -69,11 +69,11 @@ namespace FanScript.Compiler.Symbols
             };
 
         public override int GetHashCode()
-            => HashCode.Combine(ResultName, Modifiers, Type);
+            => HashCode.Combine(ResultName, Modifiers, Type, UniqueId);
 
         public override bool Equals(object? obj)
         {
-            if (obj is VariableSymbol other) return ResultName == other.ResultName && Modifiers == other.Modifiers && Equals(Type, other.Type);
+            if (obj is VariableSymbol other) return ResultName == other.ResultName && Modifiers == other.Modifiers && Equals(Type, other.Type) && UniqueId == other.UniqueId;
             else return false;
         }
     }
