@@ -298,7 +298,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
         {
             public static void Process(CodeBlock block, int blockXOffset)
             {
-                MultiValueDictionary<int, CodeBlock> xToBlocks = block.AllChildren.ToMultiValueDictionary(child => child.LayerPos, child => child);
+                ListMultiValueDictionary<int, CodeBlock> xToBlocks = block.AllChildren.ToListMultiValueDictionary(child => child.LayerPos, child => child);
 
                 xToBlocks.Add(block.LayerPos, block);
 

@@ -1,10 +1,5 @@
 ﻿using FanScript.Compiler.Symbols;
-using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using static FanScript.Compiler.Binding.BoundNodeFactory;
 
 namespace FanScript.Compiler.Binding
@@ -13,6 +8,8 @@ namespace FanScript.Compiler.Binding
     {
         private readonly BoundAnalysisResult analysisResult;
         private readonly ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions;
+
+        // TODO: inlined cache dict FunctionSymbol, BlockStatement
 
         private int varCount = 0;
         public InlineContinuation Continuation => new InlineContinuation(varCount);
@@ -27,14 +24,22 @@ namespace FanScript.Compiler.Binding
             this.functions = functions;
         }
 
+        public static BoundStatement Inline(BoundStatement statement, BoundAnalysisResult analysisResult, ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions, ref InlineContinuation? continuation)
+        {
+            BoundTreeInliner inliner = new BoundTreeInliner(analysisResult, functions, continuation);
+            BoundStatement res = inliner.RewriteStatement(statement);
+
+            continuation = new InlineContinuation(inliner.varCount);
+
+            return res;
+        }
+
         protected override BoundExpression RewriteCallExpression(BoundCallExpression node)
         {
-            FunctionSymbol func = node.Function;
-
-            if (func.Modifiers.HasFlag(Modifiers.Inline) || analysisResult.GetCallCount(func) < 2)
-                return new BoundStatementExpression(node.Syntax, CallInliner.Inline(node, functions, ref varCount));
+            if (analysisResult.ShouldFunctionGetInlined(node.Function))
+                return new BoundStatementExpression(node.Syntax, CallInliner.Inline(node, this, ref varCount));
             else
-                return node;
+                return base.RewriteCallExpression(node);
         }
 
         public struct InlineContinuation
@@ -50,22 +55,22 @@ namespace FanScript.Compiler.Binding
         private class CallInliner : BoundTreeRewriter
         {
             private readonly BoundCallExpression call;
-            private readonly ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions;
+            BoundTreeInliner treeInliner;
             private readonly FunctionSymbol func;
             private int varCount;
 
             private readonly Dictionary<VariableSymbol, VariableSymbol> inlinedVariables = new();
 
-            private CallInliner(BoundCallExpression call, ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions)
+            private CallInliner(BoundCallExpression call, BoundTreeInliner treeInliner)
             {
                 this.call = call;
-                this.functions = functions;
+                this.treeInliner = treeInliner;
                 func = this.call.Function;
             }
 
-            public static BoundStatement Inline(BoundCallExpression call, ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions, ref int varCount)
+            public static BoundStatement Inline(BoundCallExpression call, BoundTreeInliner treeInliner, ref int varCount)
             {
-                CallInliner inliner = new CallInliner(call, functions);
+                CallInliner inliner = new CallInliner(call, treeInliner);
                 return inliner.Inline(ref varCount);
             }
 
@@ -75,6 +80,8 @@ namespace FanScript.Compiler.Binding
 
                 Syntax.SyntaxNode syntax = call.Syntax;
                 List<BoundStatement> statements = new List<BoundStatement>(func.Parameters.Length + 1);
+
+                // TODO: if a param is readonly and the arg is a variable, references to the param can be replaced with the arg variable
 
                 // assign params to args
                 for (int i = 0; i < func.Parameters.Length; i++)
@@ -88,7 +95,7 @@ namespace FanScript.Compiler.Binding
                     );
                 }
 
-                statements.Add(RewriteStatement(functions[func]));
+                statements.Add(RewriteStatement(treeInliner.functions[func]));
 
                 // assign out args
                 for (int i = 0; i < call.Arguments.Length; i++)
@@ -118,6 +125,14 @@ namespace FanScript.Compiler.Binding
                 return block;
             }
 
+            protected override BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)
+            {
+                if (node.Variable is LocalVariableSymbol or GlobalVariableSymbol)
+                    return Assignment(node.Syntax, getInlinedVar(node.Variable), RewriteExpression(node.Expression));
+                else
+                    return base.RewriteAssignmentStatement(node);
+            }
+
             protected override BoundExpression RewriteVariableExpression(BoundVariableExpression node)
             {
                 if (node.Variable is LocalVariableSymbol or GlobalVariableSymbol)
@@ -135,9 +150,10 @@ namespace FanScript.Compiler.Binding
                 else
                 {
                     if (variable is GlobalVariableSymbol)
-                        inlined = new GlobalVariableSymbol("^^inl" + varCount, variable.Modifiers, variable.Type);
-                    else
-                        inlined = new LocalVariableSymbol("^^inl" + varCount, variable.Modifiers, variable.Type);
+                        return variable;
+
+                    inlined = new LocalVariableSymbol("^^inl" + varCount, variable.Modifiers, variable.Type);
+                    inlinedVariables.Add(variable, inlined);
 
                     varCount++;
 

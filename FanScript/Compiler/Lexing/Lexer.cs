@@ -142,10 +142,12 @@ namespace FanScript.Compiler.Lexing
                         done = true;
                         break;
                     default:
-                        if (!char.IsWhiteSpace(Current))
-                            done = true;
-                        else
-                            position++;
+                        {
+                            if (!char.IsWhiteSpace(Current))
+                                done = true;
+                            else
+                                position++;
+                        }
                         break;
                 }
             }

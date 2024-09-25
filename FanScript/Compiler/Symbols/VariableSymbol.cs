@@ -54,13 +54,6 @@ namespace FanScript.Compiler.Symbols
 
         internal void MakeUnique(int id)
             => UniqueId = id.ToString();
-        internal void Replicate(VariableSymbol other)
-        {
-            Name = other.Name;
-            UniqueId = other.UniqueId;
-            Modifiers = other.Modifiers;
-            Type = other.Type;
-        }
 
         public VariableSymbol Clone()
             => new LocalVariableSymbol(Name, Modifiers, Type)

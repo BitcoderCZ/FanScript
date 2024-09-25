@@ -222,6 +222,8 @@ namespace FanScript.Compiler.Binding
                     return RewriteConstructorExpression((BoundConstructorExpression)node);
                 case BoundNodeKind.ArraySegmentExpression:
                     return RewriteArraySegmentExpression((BoundArraySegmentExpression)node);
+                case BoundNodeKind.StatementExpression:
+                    return RewriteStatementExpression((BoundStatementExpression)node);
                 default:
                     throw new Exception($"Unexpected node: {node.Kind}");
             }
@@ -341,6 +343,17 @@ namespace FanScript.Compiler.Binding
             return new BoundArraySegmentExpression(node.Syntax, node.ElementType, builder.ToImmutable());
         }
 
+        protected virtual BoundExpression RewriteStatementExpression(BoundStatementExpression node)
+        {
+            BoundStatement statement = RewriteStatement(node.Statement);
+
+            if (statement == node.Statement)
+                return node;
+
+            return new BoundStatementExpression(node.Syntax, statement);
+        }
+
+        #region Helper functions
         protected virtual BoundArgumentClause RewriteArgumentClause(BoundArgumentClause node)
         {
             ImmutableArray<BoundExpression>.Builder? builder = null;
@@ -369,5 +382,6 @@ namespace FanScript.Compiler.Binding
 
             return new BoundArgumentClause(node.Syntax, node.ArgModifiers, builder.ToImmutable());
         }
+        #endregion
     }
 }

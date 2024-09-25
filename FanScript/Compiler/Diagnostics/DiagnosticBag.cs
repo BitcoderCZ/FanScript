@@ -197,6 +197,9 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportUnknownBuildCommand(TextLocation location, string text)
             => ReportError(location, $"Unknown build command '{text}'.");
 
+        public void CircularCall(TextLocation location, IEnumerable<FunctionSymbol> cycle)
+            => ReportError(location, $"Circular calls (recursion) aren't allowed ({string.Join(" -> ", cycle.Select(func => func.ToString()))}).");
+
         public void ReportUnreachableCode(TextLocation location)
           => ReportWarning(location, $"Unreachable code detected.");
         public void ReportUnreachableCode(SyntaxNode node)

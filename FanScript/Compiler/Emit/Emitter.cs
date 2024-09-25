@@ -23,7 +23,7 @@ namespace FanScript.Compiler.Emit
         // key - a label before antoher label, item - the label after key
         private Dictionary<string, string> sameTargetLabels = new();
         // key - label name, item - list of goto "origins", not only gotos but also statements just before the label
-        private MultiValueDictionary<string, EmitStore> gotosToConnect = new();
+        private ListMultiValueDictionary<string, EmitStore> gotosToConnect = new();
         // key - label name, item - the store to connect gotos to
         private Dictionary<string, EmitStore> afterLabel = new();
 
@@ -34,7 +34,7 @@ namespace FanScript.Compiler.Emit
 
         private Stack<List<EmitStore>> beforeReturnStack = new();
         private Dictionary<FunctionSymbol, EmitStore> functions = new();
-        private MultiValueDictionary<FunctionSymbol, EmitStore> calls = new();
+        private ListMultiValueDictionary<FunctionSymbol, EmitStore> calls = new();
 
         public static ImmutableArray<Diagnostic> Emit(BoundProgram program, CodePlacer placer, BlockBuilder builder)
         {
@@ -60,7 +60,7 @@ namespace FanScript.Compiler.Emit
 
             foreach (var (func, body) in this.program.Functions.ToImmutableSortedDictionary())
             {
-                if (func != program.ScriptFunction && program.Analysis.GetCallCount(func) == 0)
+                if (func != program.ScriptFunction && program.Analysis.ShouldFunctionGetInlined(func))
                     continue;
 
                 using (statementBlock())
@@ -147,7 +147,7 @@ namespace FanScript.Compiler.Emit
                 BoundLabelStatement => emitLabelStatement((BoundLabelStatement)statement),
                 BoundReturnStatement => new ReturnEmitStore(), // TODO: add proper method when non void methods are supported
                 BoundEmitterHint => emitHint((BoundEmitterHint)statement),
-                BoundExpressionStatement => emitExpression(((BoundExpressionStatement)statement).Expression),
+                BoundExpressionStatement => emitExpressionStatement(((BoundExpressionStatement)statement)),
                 BoundNopStatement => new NopEmitStore(),
 
                 _ => throw new Exception($"Unknown statement '{statement}'."),
@@ -394,7 +394,7 @@ namespace FanScript.Compiler.Emit
             if (statement.Expression is BoundStatementExpression exStatement)
                 return emitStatement(exStatement.Statement);
 
-            return emitStatement(statement);
+            return emitExpression(statement.Expression);
         }
 
         internal EmitStore emitExpression(BoundExpression expression)

@@ -180,6 +180,9 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.ArraySegmentExpression:
                     VisitArraySegmentExpression((BoundArraySegmentExpression)node);
                     break;
+                case BoundNodeKind.StatementExpression:
+                    VisitStatementExpression((BoundStatementExpression)node);
+                    break;
                 default:
                     throw new Exception($"Unexpected node: {node.Kind}");
             }
@@ -237,10 +240,17 @@ namespace FanScript.Compiler.Binding
                 VisitExpression(node.Elements[i]);
         }
 
+        protected virtual void VisitStatementExpression(BoundStatementExpression node)
+        {
+            Visit(node.Statement);
+        }
+
+        #region Helper functions
         protected virtual void RewriteArgumentClause(BoundArgumentClause node)
         {
             for (var i = 0; i < node.Arguments.Length; i++)
                 VisitExpression(node.Arguments[i]);
         }
+        #endregion
     }
 }

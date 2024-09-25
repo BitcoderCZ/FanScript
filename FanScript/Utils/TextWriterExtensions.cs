@@ -112,7 +112,8 @@ namespace FanScript.Utils
 
         public static void WriteDiagnostics(this TextWriter writer, IEnumerable<Diagnostic> diagnostics)
         {
-            foreach (Diagnostic? diagnostic in diagnostics.Where(d => d.Location.Text is null))
+            foreach (Diagnostic? diagnostic in diagnostics
+                .Where(d => d.Location.Text is null))
             {
                 ConsoleColor messageColor = diagnostic.IsWarning ? ConsoleColor.DarkYellow : ConsoleColor.DarkRed;
                 writer.SetForeground(messageColor);
@@ -120,32 +121,33 @@ namespace FanScript.Utils
                 writer.ResetColor();
             }
 
-            foreach (Diagnostic? diagnostic in diagnostics.Where(d => d.Location.Text is not null)
-                                                  .OrderBy(d => d.Location.FileName)
-                                                  .ThenBy(d => d.Location.Span.Start)
-                                                  .ThenBy(d => d.Location.Span.Length))
+            foreach (Diagnostic? diagnostic in diagnostics
+                .Where(d => d.Location.Text is not null)
+                .OrderBy(d => d.Location.FileName)
+                .ThenBy(d => d.Location.Span.Start)
+                .ThenBy(d => d.Location.Span.Length))
             {
-                SourceText text = diagnostic.Location.Text;
+                SourceText text = diagnostic.Location.Text!;
                 string fileName = diagnostic.Location.FileName;
-                int startLine = diagnostic.Location.StartLine + 1;
+                int startLineIndex = diagnostic.Location.StartLine + 1;
                 int startCharacter = diagnostic.Location.StartCharacter + 1;
-                int endLine = diagnostic.Location.EndLine + 1;
+                int endLineIndex = diagnostic.Location.EndLine + 1;
                 int endCharacter = diagnostic.Location.EndCharacter + 1;
 
                 TextSpan span = diagnostic.Location.Span;
-                int lineIndex = text.GetLineIndex(span.Start);
-                TextLine line = text.Lines[lineIndex];
+                TextLine startLine = text.Lines[text.GetLineIndex(span.Start)];
+                TextLine endLine = text.Lines[text.GetLineIndex(span.End)];
 
                 writer.WriteLine();
 
                 ConsoleColor messageColor = diagnostic.IsWarning ? ConsoleColor.DarkYellow : ConsoleColor.DarkRed;
                 writer.SetForeground(messageColor);
-                writer.Write($"{fileName}({startLine},{startCharacter},{endLine},{endCharacter}): ");
+                writer.Write($"{fileName}({startLineIndex},{startCharacter},{endLineIndex},{endCharacter}): ");
                 writer.WriteLine(diagnostic);
                 writer.ResetColor();
 
-                TextSpan prefixSpan = TextSpan.FromBounds(line.Start, span.Start);
-                TextSpan suffixSpan = TextSpan.FromBounds(span.End, line.End);
+                TextSpan prefixSpan = TextSpan.FromBounds(startLine.Start, span.Start);
+                TextSpan suffixSpan = TextSpan.FromBounds(span.End, endLine.End);
 
                 string prefix = text.ToString(prefixSpan);
                 string error = text.ToString(span);

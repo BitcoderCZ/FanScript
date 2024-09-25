@@ -99,10 +99,13 @@ namespace FanScript.Compiler.Text
             return lower - 1;
         }
 
-        public override string ToString() => text;
+        public override string ToString()
+            => text;
 
-        public string ToString(int start, int length) => text.Substring(start, length);
+        public string ToString(int start, int length)
+            => text.Substring(start, length);
 
-        public string ToString(TextSpan span) => ToString(span.Start, span.Length);
+        public string ToString(TextSpan span)
+            => ToString(span.Start, span.Length);
     }
 }

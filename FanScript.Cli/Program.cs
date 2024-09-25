@@ -80,8 +80,13 @@ namespace FanScript.Cli
             if (opts.ShowCompiledCode)
             {
                 compilation.EmitTree(Console.Out);
+                Console.WriteLine();
+
                 foreach (var func in compilation.Functions)
+                {
                     compilation.EmitTree(func, Console.Out);
+                    Console.WriteLine();
+                }
 
                 Console.WriteLine();
             }

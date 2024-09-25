@@ -105,9 +105,6 @@ namespace FanScript.Compiler.Binding
             DiagnosticBag scopeDiagnostics = new DiagnosticBag();
             BoundScope parentScope = CreateParentScope(globalScope, scopeDiagnostics);
 
-            //if (globalScope.Diagnostics.HasErrors())
-            //    return new BoundProgram(previous, globalScope.Diagnostics, null, ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Empty, new BoundAnalysisResult(), ImmutableDictionary<FunctionSymbol, ScopeWSpan>.Empty);
-
             ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Builder functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
 
             ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
@@ -123,16 +120,12 @@ namespace FanScript.Compiler.Binding
             {
                 Binder binder = new Binder(isScript, parentScope, function);
 
-                BoundStatement body = binder.BindStatement(function.Declaration!.Body);
+                BoundStatement _body = binder.BindStatement(function.Declaration!.Body);
+                BoundBlockStatement body = _body is BoundBlockStatement block ? block : new BoundBlockStatement(_body.Syntax, [_body]);
 
                 functionScopes.Add(function, binder.scope.GetWithSpan());
 
-                BoundBlockStatement loweredBody = Lowerer.Lower(function, body);
-
-                analysisResult.Add(BoundTreeAnalyzer.Analyze(loweredBody));
-
-                if (function.Type != TypeSymbol.Void && !ControlFlowGraph.AllPathsReturn(loweredBody))
-                    binder.diagnostics.ReportAllPathsMustReturn(function.Declaration.Identifier.Location);
+                analysisResult.Add(BoundTreeAnalyzer.Analyze(body, function));
 
                 if (function != globalScope.ScriptFunction)
                 {
@@ -145,7 +138,7 @@ namespace FanScript.Compiler.Binding
                         varDistinguisher++;
                 }
 
-                functionBodies.Add(function, loweredBody);
+                functionBodies.Add(function, body);
 
                 diagnostics.AddRange(binder.Diagnostics);
             }
@@ -154,25 +147,46 @@ namespace FanScript.Compiler.Binding
                 ? globalScope.Statements.First().Syntax.AncestorsAndSelf().LastOrDefault()
                 : null;
 
+            // add the script function
             if (globalScope.ScriptFunction is not null)
             {
-                ImmutableArray<BoundStatement> statements = globalScope.Statements;
-                /*if (statements.Length == 1 &&
-                    statements[0] is BoundExpressionStatement es &&
-                    es.Expression.Type != TypeSymbol.Void)
-                    statements = statements.SetItem(0, new BoundReturnStatement(es.Expression.Syntax, es.Expression));
-                else if (statements.Any() && statements.Last().Kind != BoundNodeKind.ReturnStatement)
-                {
-                    var nullValue = new BoundLiteralExpression(compilationUnit!, "");
-                    statements = statements.Add(new BoundReturnStatement(compilationUnit!, nullValue));
-                }*/
-
-                BoundBlockStatement body = Lowerer.Lower(globalScope.ScriptFunction, new BoundBlockStatement(compilationUnit!, statements));
+                BoundBlockStatement body = new BoundBlockStatement(compilationUnit!, globalScope.Statements);
                 functionBodies.Add(globalScope.ScriptFunction, body);
                 functionScopes.Add(globalScope.ScriptFunction, globalScope.Scope);
 
-                analysisResult.Add(BoundTreeAnalyzer.Analyze(body));
+                analysisResult.Add(BoundTreeAnalyzer.Analyze(body, globalScope.ScriptFunction));
             }
+
+            if (analysisResult.HasCircularCalls(out var circularCall))
+            {
+                DiagnosticBag bag = new DiagnosticBag();
+                bag.CircularCall(TextLocation.None, circularCall);
+                diagnostics.AddRange(bag);
+            }
+            else
+            {
+                // inline function calls
+                BoundTreeInliner.InlineContinuation? inlineContinuation = null;
+
+                foreach (var func in analysisResult
+                    .EnumerateFunctionsInReverse()
+                    .Concat([globalScope.ScriptFunction!]))
+                {
+                    if (func is null)
+                        continue;
+
+                    var inlinedBody = BoundTreeInliner.Inline(functionBodies[func], analysisResult, functionBodies.ToImmutable(), ref inlineContinuation);
+
+                    functionBodies[func] =
+                        inlinedBody is BoundBlockStatement bodyBlock ?
+                            bodyBlock :
+                            new BoundBlockStatement(inlinedBody.Syntax, [inlinedBody]);
+                }
+            }
+
+            // lower the bodies of all functions
+            foreach (var func in functionBodies.Keys.ToList())
+                functionBodies[func] = Lowerer.Lower(func, functionBodies[func]);
 
             return new BoundProgram(previous,
                 diagnostics.ToImmutable(),

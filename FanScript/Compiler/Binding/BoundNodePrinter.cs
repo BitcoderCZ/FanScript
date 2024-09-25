@@ -47,9 +47,9 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.WhileStatement:
                     WriteWhileStatement((BoundWhileStatement)node, writer);
                     break;
-                //case BoundNodeKind.DoWhileStatement:
-                //    WriteDoWhileStatement((BoundDoWhileStatement)node, writer);
-                //    break;
+                case BoundNodeKind.DoWhileStatement:
+                    WriteDoWhileStatement((BoundDoWhileStatement)node, writer);
+                    break;
                 //case BoundNodeKind.ForStatement:
                 //    WriteForStatement((BoundForStatement)node, writer);
                 //    break;
@@ -103,6 +103,9 @@ namespace FanScript.Compiler.Binding
                     break;
                 case BoundNodeKind.EventCondition:
                     WriteEventCondition((BoundEventCondition)node, writer);
+                    break;
+                case BoundNodeKind.StatementExpression:
+                    WriteStatementExpression((BoundStatementExpression)node, writer);
                     break;
                 default:
                     throw new Exception($"Unexpected node {node.Kind}");
@@ -259,16 +262,16 @@ namespace FanScript.Compiler.Binding
             writer.WriteNestedStatement(node.Body);
         }
 
-        //private static void WriteDoWhileStatement(BoundDoWhileStatement node, IndentedTextWriter writer)
-        //{
-        //    writer.WriteKeyword(SyntaxKind.DoKeyword);
-        //    writer.WriteLine();
-        //    writer.WriteNestedStatement(node.Body);
-        //    writer.WriteKeyword(SyntaxKind.WhileKeyword);
-        //    writer.WriteSpace();
-        //    node.Condition.WriteTo(writer);
-        //    writer.WriteLine();
-        //}
+        private static void WriteDoWhileStatement(BoundDoWhileStatement node, IndentedTextWriter writer)
+        {
+            writer.WriteKeyword(SyntaxKind.KeywordDo);
+            writer.WriteLine();
+            writer.WriteNestedStatement(node.Body);
+            writer.WriteKeyword(SyntaxKind.KeywordWhile);
+            writer.WriteSpace();
+            node.Condition.WriteTo(writer);
+            writer.WriteLine();
+        }
 
         //private static void WriteForStatement(BoundForStatement node, IndentedTextWriter writer)
         //{
@@ -508,6 +511,10 @@ namespace FanScript.Compiler.Binding
                 WriteArgumentClause(node.ArgumentClause, writer);
         }
 
+        private static void WriteStatementExpression(BoundStatementExpression node, IndentedTextWriter writer)
+            => WriteTo(node.Statement, writer);
+
+        #region Helper functions
         private static void WriteArgumentClause(BoundArgumentClause node, IndentedTextWriter writer)
         {
             writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
@@ -550,5 +557,6 @@ namespace FanScript.Compiler.Binding
                     break;
             }
         }
+        #endregion
     }
 }
