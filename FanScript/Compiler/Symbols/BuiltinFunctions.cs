@@ -691,6 +691,106 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("to", TypeSymbol.Rotation),
                     new ParameterSymbol("amount", TypeSymbol.Float),
                 ], TypeSymbol.Rotation, (call, context) => emitX1(call, context, Blocks.Math.Lerp));
+            public static readonly FunctionSymbol LerpFloat
+                = new BuiltinFunctionSymbol("lerp",
+                [
+                    new ParameterSymbol("from", TypeSymbol.Float),
+                    new ParameterSymbol("to", TypeSymbol.Float),
+                    new ParameterSymbol("amount", TypeSymbol.Float),
+                ], TypeSymbol.Float, (call, context) =>
+                {
+                    object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), false);
+
+                    if (constants is not null)
+                    {
+                        float from = (constants[0] as float?) ?? 0f;
+                        float to = (constants[1] as float?) ?? 0f;
+                        float amount = (constants[2] as float?) ?? 0f;
+
+                        Block numb = context.AddBlock(Blocks.Values.Number);
+                        context.SetBlockValue(numb, 0, from + amount * (to - from));
+
+                        return BasicEmitStore.COut(numb, numb.Type.Terminals["Number"]);
+                    }
+
+                    Block add = context.AddBlock(Blocks.Math.Add_Number);
+
+                    using (context.ExpressionBlock())
+                    {
+                        context.Connect(context.EmitExpression(call.Arguments[0]), BasicEmitStore.CIn(add, add.Type.Terminals["Num1"]));
+
+                        Block mult = context.AddBlock(Blocks.Math.Multiply_Number);
+
+                        using (context.ExpressionBlock())
+                        {
+                            context.Connect(context.EmitExpression(call.Arguments[2]), BasicEmitStore.CIn(mult, mult.Type.Terminals["Num1"]));
+
+                            Block sub = context.AddBlock(Blocks.Math.Subtract_Number);
+
+                            using (context.ExpressionBlock())
+                            {
+                                context.Connect(context.EmitExpression(call.Arguments[1]), BasicEmitStore.CIn(sub, sub.Type.Terminals["Num1"]));
+                                context.Connect(context.EmitExpression(call.Arguments[0]), BasicEmitStore.CIn(sub, sub.Type.Terminals["Num2"]));
+                            }
+
+                            context.Connect(BasicEmitStore.COut(sub, sub.Type.Terminals["Num1 - Num2"]), BasicEmitStore.CIn(mult, mult.Type.Terminals["Num2"]));
+                        }
+
+                        context.Connect(BasicEmitStore.COut(mult, mult.Type.Terminals["Num1 * Num2"]), BasicEmitStore.CIn(add, add.Type.Terminals["Num2"]));
+                    }
+
+                    return BasicEmitStore.COut(add, add.Type.Terminals["Num1 + Num2"]);
+                });
+            public static readonly FunctionSymbol LerpVec
+                = new BuiltinFunctionSymbol("lerp",
+                [
+                    new ParameterSymbol("from", TypeSymbol.Vector3),
+                    new ParameterSymbol("to", TypeSymbol.Vector3),
+                    new ParameterSymbol("amount", TypeSymbol.Float),
+                ], TypeSymbol.Vector3, (call, context) =>
+                {
+                    object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), false);
+
+                    if (constants is not null)
+                    {
+                        Vector3F from = (constants[0] as Vector3F?) ?? Vector3F.Zero;
+                        Vector3F to = (constants[1] as Vector3F?) ?? Vector3F.Zero;
+                        float amount = (constants[2] as float?) ?? 0f;
+
+                        Block vec = context.AddBlock(Blocks.Values.Vector);
+                        context.SetBlockValue(vec, 0, from + (to - from) * amount);
+
+                        return BasicEmitStore.COut(vec, vec.Type.Terminals["Vector"]);
+                    }
+
+                    Block add = context.AddBlock(Blocks.Math.Add_Vector);
+
+                    using (context.ExpressionBlock())
+                    {
+                        context.Connect(context.EmitExpression(call.Arguments[0]), BasicEmitStore.CIn(add, add.Type.Terminals["Vec1"]));
+
+                        Block mult = context.AddBlock(Blocks.Math.Multiply_Vector);
+
+                        using (context.ExpressionBlock())
+                        {
+                            Block sub = context.AddBlock(Blocks.Math.Subtract_Vector);
+
+                            using (context.ExpressionBlock())
+                            {
+                                context.Connect(context.EmitExpression(call.Arguments[1]), BasicEmitStore.CIn(sub, sub.Type.Terminals["Vec1"]));
+                                context.Connect(context.EmitExpression(call.Arguments[0]), BasicEmitStore.CIn(sub, sub.Type.Terminals["Vec2"]));
+                            }
+
+                            context.Connect(BasicEmitStore.COut(sub, sub.Type.Terminals["Vec1 - Vec2"]), BasicEmitStore.CIn(mult, mult.Type.Terminals["Vec"]));
+
+                            context.Connect(context.EmitExpression(call.Arguments[2]), BasicEmitStore.CIn(mult, mult.Type.Terminals["Num"]));
+                        }
+
+                        context.Connect(BasicEmitStore.COut(mult, mult.Type.Terminals["Vec * Num"]), BasicEmitStore.CIn(add, add.Type.Terminals["Vec2"]));
+                    }
+
+                    return BasicEmitStore.COut(add, add.Type.Terminals["Vec1 + Vec2"]);
+                });
             public static readonly FunctionSymbol AxisAngle
                 = new BuiltinFunctionSymbol("axisAngle",
                 [
