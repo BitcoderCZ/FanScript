@@ -138,7 +138,7 @@ namespace FanScript.Compiler.Emit
             {
                 BoundBlockStatement => emitBlockStatement((BoundBlockStatement)statement),
                 BoundVariableDeclarationStatement declaration when declaration.OptionalAssignment is not null => emitStatement(declaration.OptionalAssignment),
-                BoundVariableDeclarationStatement => new NopEmitStore(),
+                BoundVariableDeclarationStatement => NopEmitStore.Instance,
                 BoundAssignmentStatement => emitAssigmentStatement((BoundAssignmentStatement)statement),
                 BoundPostfixStatement => emitPostfixStatement((BoundPostfixStatement)statement),
                 BoundGotoStatement => emitGotoStatement((BoundGotoStatement)statement),
@@ -148,7 +148,7 @@ namespace FanScript.Compiler.Emit
                 BoundReturnStatement => new ReturnEmitStore(), // TODO: add proper method when non void methods are supported
                 BoundEmitterHint => emitHint((BoundEmitterHint)statement),
                 BoundExpressionStatement => emitExpressionStatement(((BoundExpressionStatement)statement)),
-                BoundNopStatement => new NopEmitStore(),
+                BoundNopStatement => NopEmitStore.Instance,
 
                 _ => throw new Exception($"Unknown statement '{statement}'."),
             };
@@ -159,7 +159,7 @@ namespace FanScript.Compiler.Emit
         private EmitStore emitBlockStatement(BoundBlockStatement statement)
         {
             if (statement.Statements.Length == 0)
-                return new NopEmitStore();
+                return NopEmitStore.Instance;
             else if (statement.Statements.Length == 1 && statement.Statements[0] is BoundBlockStatement inBlock)
                 return emitBlockStatement(inBlock);
 
@@ -386,7 +386,7 @@ namespace FanScript.Compiler.Emit
                     throw new InvalidDataException($"Unknown emitter hint: '{statement.Hint}'");
             }
 
-            return new NopEmitStore();
+            return NopEmitStore.Instance;
         }
 
         private EmitStore emitExpressionStatement(BoundExpressionStatement statement)
@@ -419,7 +419,7 @@ namespace FanScript.Compiler.Emit
         internal EmitStore emitLiteralExpression(object? value)
         {
             if (value is null)
-                return new NopEmitStore();
+                return NopEmitStore.Instance;
 
             Block block = addBlock(Blocks.Values.ValueByType(value));
 
@@ -880,7 +880,7 @@ namespace FanScript.Compiler.Emit
                     return property.Definition.EmitGet.Invoke(emitContext, property.Expression);
                 case NullVariableSymbol:
                     {
-                        return new NopEmitStore();
+                        return NopEmitStore.Instance;
                     }
                 default:
                     {
@@ -889,7 +889,7 @@ namespace FanScript.Compiler.Emit
                             if (inlineVariableInits.TryGetValue(variable, out EmitStore? store))
                                 return store;
                             else
-                                return new NopEmitStore();
+                                return NopEmitStore.Instance;
                         }
 
                         Block block = addBlock(Blocks.Variables.VariableByType(variable.Type!.ToWireType()));
@@ -946,15 +946,15 @@ namespace FanScript.Compiler.Emit
                 case PropertySymbol property:
                     return property.Definition.EmitSet!.Invoke(emitContext, property.Expression, getValueStore);
                 case NullVariableSymbol:
-                    return new NopEmitStore();
+                    return NopEmitStore.Instance;
                 default:
                     {
                         if (variable.Modifiers.HasFlag(Modifiers.Constant))
-                            return new NopEmitStore();
+                            return NopEmitStore.Instance;
                         else if (variable.Modifiers.HasFlag(Modifiers.Inline))
                         {
                             inlineVariableInits[variable] = getValueStore();
-                            return new NopEmitStore();
+                            return NopEmitStore.Instance;
                         }
 
                         Block block = addBlock(Blocks.Variables.Set_VariableByType(variable.Type.ToWireType()));
@@ -1089,11 +1089,17 @@ namespace FanScript.Compiler.Emit
 
         internal void writeComment(string text)
         {
-            for (int i = 0; i < text.Length; i += FancadeConstants.MaxCommentLength)
+            foreach (string line in StringExtensions.SplitByMaxLength(text, FancadeConstants.MaxCommentLength))
             {
                 Block block = addBlock(Blocks.Values.Comment);
-                setBlockValue(block, 0, text.Substring(i, Math.Min(FancadeConstants.MaxCommentLength, text.Length - i)));
+                setBlockValue(block, 0, line);
             }
+
+            //for (int i = 0; i < text.Length; i += FancadeConstants.MaxCommentLength)
+            //{
+            //    Block block = addBlock(Blocks.Values.Comment);
+            //    setBlockValue(block, 0, text.Substring(i, Math.Min(FancadeConstants.MaxCommentLength, text.Length - i)));
+            //}
         }
         #endregion
 

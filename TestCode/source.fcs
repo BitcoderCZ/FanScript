@@ -1,7 +1,1 @@
-float amount1 = .75
-inspect(lerp(10, 20, .75))
-inspect(lerp(10, 20, amount1))
-
-float amount2 = .25
-inspect(lerp(vec3(10, 35, -20), vec3(25, 0, 10), .25))
-inspect(lerp(vec3(10, 35, -20), vec3(25, 0, 10), amount2))
+obj stone = getBlockById(1)

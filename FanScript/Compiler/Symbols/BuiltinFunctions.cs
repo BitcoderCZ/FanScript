@@ -35,7 +35,7 @@ namespace FanScript.Compiler.Symbols
                 object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(^constantTypes.Length..), true);
 
                 if (constants is null)
-                    return new NopEmitStore();
+                    return NopEmitStore.Instance;
 
                 for (int i = 0; i < constantTypes.Length; i++)
                 {
@@ -217,7 +217,7 @@ namespace FanScript.Compiler.Symbols
                     object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), true);
 
                     if (constants is null)
-                        return new NopEmitStore();
+                        return NopEmitStore.Instance;
 
                     Block block = context.AddBlock(Blocks.Game.MenuItem);
 
@@ -246,7 +246,7 @@ namespace FanScript.Compiler.Symbols
                 if (constant is null)
                 {
                     context.Diagnostics.ReportValueMustBeConstant(call.Arguments[0].Syntax.Location);
-                    return new NopEmitStore();
+                    return NopEmitStore.Instance;
                 }
 
                 Vector3I pos = (Vector3I)((Vector3F)constant.GetValueOrDefault(TypeSymbol.Vector3)); // unbox, then cast
@@ -258,7 +258,7 @@ namespace FanScript.Compiler.Symbols
                     using (context.ExpressionBlock())
                         context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
 
-                    return new NopEmitStore();
+                    return NopEmitStore.Instance;
                 }
 
                 return new AbsoluteEmitStore(pos, null);
@@ -273,7 +273,7 @@ namespace FanScript.Compiler.Symbols
                 {
                     object?[]? args = context.ValidateConstants(call.Arguments.AsMemory(), true);
                     if (args is null)
-                        return new NopEmitStore();
+                        return NopEmitStore.Instance;
 
                     Vector3I pos = new Vector3I((int)((float?)args[0] ?? 0f), (int)((float?)args[1] ?? 0f), (int)((float?)args[2] ?? 0f)); // unbox, then cast
 
@@ -284,7 +284,7 @@ namespace FanScript.Compiler.Symbols
                         using (context.ExpressionBlock())
                             context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
 
-                        return new NopEmitStore();
+                        return NopEmitStore.Instance;
                     }
 
                     return new AbsoluteEmitStore(pos, null);
@@ -373,7 +373,7 @@ namespace FanScript.Compiler.Symbols
               {
                   object?[]? values = context.ValidateConstants(call.Arguments.AsMemory(^2..), true);
                   if (values is null)
-                      return new NopEmitStore();
+                      return NopEmitStore.Instance;
 
                   Block playSound = context.AddBlock(Blocks.Sound.PlaySound);
 
@@ -574,7 +574,7 @@ namespace FanScript.Compiler.Symbols
                 {
                     object?[]? values = context.ValidateConstants(call.Arguments.AsMemory(Range.StartAt(1)), true);
                     if (values is null)
-                        return new NopEmitStore();
+                        return NopEmitStore.Instance;
 
                     Block joystick = context.AddBlock(Blocks.Control.Joystick);
 
@@ -939,7 +939,7 @@ namespace FanScript.Compiler.Symbols
             {
                 object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(1..2), true);
                 if (constants is null)
-                    return new NopEmitStore();
+                    return NopEmitStore.Instance;
 
                 EmitStore firstStore = null!;
                 EmitStore lastStore = null!;
@@ -1000,6 +1000,45 @@ namespace FanScript.Compiler.Symbols
 
                 }
             );
+        public static readonly FunctionSymbol FcComment
+            = new BuiltinFunctionSymbol("fcComment",
+            [
+                new ParameterSymbol("TEXT", TypeSymbol.String)
+            ], TypeSymbol.Void, (call, context) =>
+            {
+                object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), true);
+
+                if (constants is not null && constants[0] is string text && !string.IsNullOrEmpty(text))
+                    context.WriteComment(text);
+
+                return NopEmitStore.Instance;
+            }
+            );
+        public static readonly FunctionSymbol GetBlockById
+            = new BuiltinFunctionSymbol("getBlockById",
+            [
+                new ParameterSymbol("ID", TypeSymbol.Float)
+            ], TypeSymbol.Object, (call, context) =>
+            {
+                object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), true);
+
+                if (constants is not null)
+                {
+                    float _id = (constants[0] as float?) ?? 0f;
+                    ushort id = (ushort)System.Math.Clamp((int)_id, ushort.MinValue, ushort.MaxValue);
+
+                    // TODO: somehow calculate the size, for now just use the largest stock one
+                    Block block = context.AddBlock(new BlockDef(string.Empty, id, BlockType.NonScript, new Vector2I(2, 4)));
+
+                    if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
+                        context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
+
+                    return new BasicEmitStore(new NopConnectTarget(), [new BlockVoxelConnectTarget(block)]);
+                }
+
+                return NopEmitStore.Instance;
+            }
+            );
 
         //public static readonly FunctionSymbol PlayMidi
         //    = new BuiltinFunctionSymbol("playMidi",
@@ -1010,7 +1049,7 @@ namespace FanScript.Compiler.Symbols
         //            object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), true);
 
         //            if (constants is null)
-        //                return new NopEmitStore();
+        //                return NopEmitStore.Instance;
 
         //            string? path = constants[0] as string;
 

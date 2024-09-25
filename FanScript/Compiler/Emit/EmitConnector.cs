@@ -9,7 +9,7 @@
                 if (firstStore is not null && lastStore is not null)
                     return new MultiEmitStore(firstStore, lastStore);
                 else
-                    return new NopEmitStore();
+                    return NopEmitStore.Instance;
             }
         }
 

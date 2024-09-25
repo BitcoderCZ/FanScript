@@ -12,13 +12,19 @@ namespace FanScript.Compiler.Emit
 
     internal sealed class NopEmitStore : EmitStore
     {
+        public static readonly NopEmitStore Instance = new NopEmitStore();
+
         public ConnectTarget In => new NopConnectTarget();
         public IEnumerable<ConnectTarget> Out => Enumerable.Empty<ConnectTarget>();
+
+        private NopEmitStore()
+        { 
+        }
     }
 
     internal sealed class MultiEmitStore : EmitStore
     {
-        public static MultiEmitStore Empty => new MultiEmitStore(new NopEmitStore(), new NopEmitStore());
+        public static MultiEmitStore Empty => new MultiEmitStore(NopEmitStore.Instance, NopEmitStore.Instance);
 
         public EmitStore InStore { get; set; }
         public EmitStore OutStore { get; set; }
