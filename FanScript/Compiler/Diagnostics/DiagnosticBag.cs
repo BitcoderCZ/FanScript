@@ -24,8 +24,8 @@ namespace FanScript.Compiler.Diagnostics
         private void ReportWarning(TextLocation location, string message)
             => diagnostics.Add(Diagnostic.Warning(location, message));
 
-        public void ReportInvalidNumber(TextLocation location, string text, TypeSymbol type)
-            => ReportError(location, $"The number {text} isn't valid {type}.");
+        public void ReportInvalidNumber(TextLocation location, string text)
+            => ReportError(location, $"The number {text} isn't a valid number.");
 
         public void ReportBadCharacter(TextLocation location, char character)
             => ReportError(location, $"Bad character input: '{character}'.");

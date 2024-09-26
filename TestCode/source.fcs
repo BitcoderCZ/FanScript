@@ -1,1 +1,2 @@
-obj stone = getBlockById(1)
+float binary = 0b1010_0000
+float hex = 0x_FF

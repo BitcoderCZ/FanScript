@@ -10,6 +10,8 @@ namespace FanScript.Compiler.Lexing
 {
     public sealed class Lexer
     {
+        private static readonly HashSet<char> allowedChars = new HashSet<char>();
+
         private readonly DiagnosticBag diagnostics = new DiagnosticBag();
         private readonly SyntaxTree syntaxTree;
         private readonly SourceText text;
@@ -19,6 +21,21 @@ namespace FanScript.Compiler.Lexing
         private SyntaxKind kind;
         private object? value;
         private ImmutableArray<SyntaxTrivia>.Builder triviaBuilder = ImmutableArray.CreateBuilder<SyntaxTrivia>();
+
+        static Lexer()
+        {
+            for (char c = '0'; c <= '9'; c++)
+                allowedChars.Add(c);
+            for (char c = 'a'; c <= 'f'; c++)
+                allowedChars.Add(c);
+            for (char c = 'A'; c <= 'F'; c++)
+                allowedChars.Add(c);
+
+            allowedChars.Add('.');
+            allowedChars.Add('_');
+            allowedChars.Add('x');
+            allowedChars.Add('X');
+        }
 
         public Lexer(SyntaxTree syntaxTree)
         {
@@ -474,20 +491,48 @@ namespace FanScript.Compiler.Lexing
 
         private void readNumber()
         {
-            while (char.IsDigit(Current) || Current == '.')
+
+            while (allowedChars.Contains(Current))
                 position++;
 
             int length = position - start;
             string text = this.text.ToString(start, length);
-            if (!float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out float value))
+
+            float value = 0f;
+
+            if (text.EndsWith("_"))
+                reportInvalid();
+            else
             {
-                TextSpan span = new TextSpan(start, length);
-                TextLocation location = new TextLocation(this.text, span);
-                diagnostics.ReportInvalidNumber(location, text, TypeSymbol.Float);
+                text = text.Replace("_", string.Empty);
+
+                if (text.StartsWith("0b", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    if (uint.TryParse(text.Substring(2), NumberStyles.BinaryNumber, CultureInfo.InvariantCulture, out uint numb))
+                        value = numb;
+                    else
+                        reportInvalid();
+                }
+                else if (text.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    if (uint.TryParse(text.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint numb))
+                        value = numb;
+                    else
+                        reportInvalid();
+                }
+                else if (!float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
+                    reportInvalid();
             }
 
             this.value = value;
             kind = SyntaxKind.FloatToken;
+
+            void reportInvalid()
+            {
+                TextSpan span = new TextSpan(start, length);
+                TextLocation location = new TextLocation(this.text, span);
+                diagnostics.ReportInvalidNumber(location, text);
+            }
         }
 
         private void readIdentifierOrKeyword()
