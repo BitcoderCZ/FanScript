@@ -203,6 +203,24 @@ namespace FanScript.Tests.Syntax
             if (t1Kind == SyntaxKind.IdentifierToken && t2Kind == SyntaxKind.FloatToken)
                 return true;
 
+            if (t1Kind == SyntaxKind.FloatToken)
+            {
+                char? _fc = SyntaxFacts.GetText(t2Kind)?[0];
+                if (_fc is char fc)
+                {
+                    fc = char.ToLowerInvariant(fc);
+
+                    if ((fc >= 'a' && fc <= 'f') || fc == 'x')
+                        return true;
+                }
+
+                switch (t2Kind)
+                {
+                    case SyntaxKind.IdentifierToken:
+                        return true;
+                }
+            }
+
             // float1
             if (t1IsKeyword && t2Kind == SyntaxKind.FloatToken)
                 return true;

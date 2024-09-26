@@ -105,7 +105,7 @@ namespace FanScript.FCInfo
         public override bool Equals(object? obj)
         {
             if (obj is BlockDef other)
-                return Equals(other);
+                return other.Id == Id;
             else
                 return false;
         }
