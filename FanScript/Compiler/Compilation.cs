@@ -79,7 +79,7 @@ namespace FanScript.Compiler
 
             foreach (var constant in Constants.GetAll())
             {
-                VariableSymbol var = new GlobalVariableSymbol(constant.Name, Modifiers.Constant | Modifiers.Global, constant.Type);
+                VariableSymbol var = new BasicVariableSymbol(constant.Name, Modifiers.Constant | Modifiers.Global, constant.Type);
                 var.Initialize(new BoundConstant(constant.Value));
                 yield return var;
             }

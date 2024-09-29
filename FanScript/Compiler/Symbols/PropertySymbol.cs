@@ -3,7 +3,7 @@ using FanScript.Compiler.Emit;
 
 namespace FanScript.Compiler.Symbols
 {
-    public sealed class PropertySymbol : LocalVariableSymbol
+    public sealed class PropertySymbol : BasicVariableSymbol
     {
         internal PropertySymbol(PropertyDefinitionSymbol definition, BoundExpression expression) : base(definition.Name, definition.Modifiers, definition.Type)
         {
@@ -16,7 +16,7 @@ namespace FanScript.Compiler.Symbols
         internal BoundExpression Expression { get; }
     }
 
-    public sealed class PropertyDefinitionSymbol : LocalVariableSymbol
+    public sealed class PropertyDefinitionSymbol : BasicVariableSymbol
     {
         internal delegate EmitStore GetDelegate(EmitContext context, BoundExpression expression);
         internal delegate EmitStore SetDelegate(EmitContext context, BoundExpression expression, Func<EmitStore> getStore);

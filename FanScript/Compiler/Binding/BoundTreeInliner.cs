@@ -127,7 +127,7 @@ namespace FanScript.Compiler.Binding
 
             protected override BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)
             {
-                if (node.Variable is LocalVariableSymbol or GlobalVariableSymbol)
+                if (node.Variable is BasicVariableSymbol)
                     return Assignment(node.Syntax, getInlinedVar(node.Variable), RewriteExpression(node.Expression));
                 else
                     return base.RewriteAssignmentStatement(node);
@@ -135,7 +135,7 @@ namespace FanScript.Compiler.Binding
 
             protected override BoundExpression RewriteVariableExpression(BoundVariableExpression node)
             {
-                if (node.Variable is LocalVariableSymbol or GlobalVariableSymbol)
+                if (node.Variable is BasicVariableSymbol)
                     return Variable(node.Syntax, getInlinedVar(node.Variable));
                 else
                     return base.RewriteVariableExpression(node);
@@ -149,10 +149,10 @@ namespace FanScript.Compiler.Binding
                     return inlined;
                 else
                 {
-                    if (variable is GlobalVariableSymbol)
+                    if (variable.IsGlobal)
                         return variable;
 
-                    inlined = new LocalVariableSymbol("^^inl" + varCount, variable.Modifiers, variable.Type);
+                    inlined = new BasicVariableSymbol("^^inl" + varCount, variable.Modifiers, variable.Type);
                     inlinedVariables.Add(variable, inlined);
 
                     varCount++;

@@ -1,6 +1,6 @@
 ﻿namespace FanScript.Compiler.Symbols
 {
-    public sealed class ParameterSymbol : LocalVariableSymbol
+    public sealed class ParameterSymbol : BasicVariableSymbol
     {
         internal ParameterSymbol(string name, TypeSymbol type)
             : this(name, 0, type)

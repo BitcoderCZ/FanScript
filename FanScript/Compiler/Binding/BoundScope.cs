@@ -61,7 +61,7 @@ namespace FanScript.Compiler.Binding
             if (VariablelExists(variable))
                 return false;
 
-            if (variable is GlobalVariableSymbol)
+            if (variable.IsGlobal)
                 getTopScope().variables.Add(variable.Name, variable);
             else
                 variables.Add(variable.Name, variable);

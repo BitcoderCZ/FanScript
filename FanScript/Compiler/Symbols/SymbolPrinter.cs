@@ -12,11 +12,8 @@ namespace FanScript.Compiler.Symbols
                 case SymbolKind.Function:
                     WriteFunctionTo((FunctionSymbol)symbol, writer);
                     break;
-                case SymbolKind.GlobalVariable:
-                    WriteGlobalVariableTo((GlobalVariableSymbol)symbol, writer);
-                    break;
-                case SymbolKind.LocalVariable:
-                    WriteLocalVariableTo((LocalVariableSymbol)symbol, writer);
+                case SymbolKind.BasicVariable:
+                    WriteBasicVariableTo((BasicVariableSymbol)symbol, writer);
                     break;
                 case SymbolKind.Parameter:
                     WriteParameterTo((ParameterSymbol)symbol, writer);
@@ -60,14 +57,7 @@ namespace FanScript.Compiler.Symbols
             writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
         }
 
-        private static void WriteGlobalVariableTo(GlobalVariableSymbol symbol, TextWriter writer)
-        {
-            symbol.Type.WriteTo(writer);
-            writer.WriteSpace();
-            writer.WriteIdentifier(symbol.Name);
-        }
-
-        private static void WriteLocalVariableTo(LocalVariableSymbol symbol, TextWriter writer)
+        private static void WriteBasicVariableTo(BasicVariableSymbol symbol, TextWriter writer)
         {
             symbol.Type.WriteTo(writer);
             writer.WriteSpace();

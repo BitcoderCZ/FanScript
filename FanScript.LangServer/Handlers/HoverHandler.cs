@@ -74,7 +74,7 @@ namespace FanScript.LangServer.Handlers
                         {
                             PropertySymbol? prop = resolveProperty(propEx, scope
                                 .GetAllVariables()
-                                .Concat(compilation.GetVariables().Where(var => var is GlobalVariableSymbol))
+                                .Concat(compilation.GetVariables().Where(var => var.IsGlobal))
                                 .ToArray(), out _) as PropertySymbol;
 
                             if (prop is not null)
@@ -84,7 +84,7 @@ namespace FanScript.LangServer.Handlers
                         {
                             VariableSymbol? varSymbol = scope
                                 .GetAllVariables()
-                                .Concat(compilation.GetVariables().Where(var => var is GlobalVariableSymbol))
+                                .Concat(compilation.GetVariables().Where(var => var.IsGlobal))
                                 .FirstOrDefault(var => var.Name == name.IdentifierToken.Text);
 
                             if (varSymbol is not null)
@@ -101,7 +101,7 @@ namespace FanScript.LangServer.Handlers
 
                         VariableSymbol? varSymbol = scope
                             .GetAllVariables()
-                            .Concat(compilation.GetVariables().Where(var => var is GlobalVariableSymbol))
+                            .Concat(compilation.GetVariables().Where(var => var.IsGlobal))
                             .FirstOrDefault(var => var.Name == token.Text);
 
                         if (varSymbol is not null)
@@ -115,7 +115,7 @@ namespace FanScript.LangServer.Handlers
 
                         PropertySymbol? prop = resolveProperty(new PropertyExpressionSyntax(tree, new NameExpressionSyntax(tree, propertyClause.VariableToken), propertyClause.DotToken, new NameExpressionSyntax(tree, propertyClause.IdentifierToken)), scope
                               .GetAllVariables()
-                              .Concat(compilation.GetVariables().Where(var => var is GlobalVariableSymbol))
+                              .Concat(compilation.GetVariables().Where(var => var.IsGlobal))
                               .ToArray(), out _) as PropertySymbol;
 
                         if (prop is not null)
@@ -131,7 +131,7 @@ namespace FanScript.LangServer.Handlers
                             if (scope is not null)
                                 funcs = resolveProperty(propEx, scope
                                 .GetAllVariables()
-                                .Concat(compilation.GetVariables().Where(var => var is GlobalVariableSymbol))
+                                .Concat(compilation.GetVariables().Where(var => var.IsGlobal))
                                 .ToArray(), out baseType) as IEnumerable<FunctionSymbol>;
 
                             if (funcs is not null && baseType is not null)

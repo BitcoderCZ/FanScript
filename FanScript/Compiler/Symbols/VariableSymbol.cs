@@ -17,6 +17,7 @@ namespace FanScript.Compiler.Symbols
 
         public Modifiers Modifiers { get; private set; }
         public bool IsReadOnly => Modifiers.HasFlag(Modifiers.Readonly) || Modifiers.HasFlag(Modifiers.Constant);
+        public bool IsGlobal => Modifiers.HasFlag(Modifiers.Global) || Modifiers.HasFlag(Modifiers.Saved);
         public TypeSymbol Type { get; private set; }
         internal BoundConstant? Constant { get; private set; }
 
@@ -56,7 +57,7 @@ namespace FanScript.Compiler.Symbols
             => UniqueId = id.ToString();
 
         public VariableSymbol Clone()
-            => new LocalVariableSymbol(Name, Modifiers, Type)
+            => new BasicVariableSymbol(Name, Modifiers, Type)
             {
                 UniqueId = UniqueId,
             };

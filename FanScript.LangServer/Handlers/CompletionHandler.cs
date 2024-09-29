@@ -244,7 +244,7 @@ namespace FanScript.LangServer.Handlers
 
                         variables = scope
                             .GetAllVariables()
-                            .Concat(compilation.GetVariables().Where(var => var is GlobalVariableSymbol))
+                            .Concat(compilation.GetVariables().Where(var => var.IsGlobal))
                             .ToArray();
                     }
                 }

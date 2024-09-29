@@ -263,7 +263,7 @@ namespace FanScript.Compiler.Binding
 
             foreach (Constant con in Constants.GetAll())
             {
-                VariableSymbol variable = new GlobalVariableSymbol(con.Name, Modifiers.Constant | Modifiers.Global, con.Type);
+                VariableSymbol variable = new BasicVariableSymbol(con.Name, Modifiers.Constant | Modifiers.Global, con.Type);
                 variable.Initialize(new BoundConstant(con.Value));
                 if (!result.TryDeclareVariable(variable))
                     diagnostics.ReportFailedToDeclare(TextLocation.None, "Constant", variable.Name);
@@ -1055,9 +1055,7 @@ namespace FanScript.Compiler.Binding
                 return valid;
             });
 
-            VariableSymbol variable = modifiers.HasFlag(Modifiers.Global) || modifiers.HasFlag(Modifiers.Saved)
-                ? new GlobalVariableSymbol(name, modifiers, type)
-                : new LocalVariableSymbol(name, modifiers, type);
+            VariableSymbol variable = new BasicVariableSymbol(name, modifiers, type);
 
             if (declare && !scope.TryDeclareVariable(variable))
                 diagnostics.ReportSymbolAlreadyDeclared(identifier.Location, name);
