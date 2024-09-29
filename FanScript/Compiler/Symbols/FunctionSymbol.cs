@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Syntax;
+﻿using FanScript.Compiler.Symbols.Variables;
+using FanScript.Compiler.Syntax;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 

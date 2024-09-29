@@ -2,6 +2,7 @@
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Emit;
 using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;

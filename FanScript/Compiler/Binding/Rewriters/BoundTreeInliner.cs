@@ -1,8 +1,9 @@
 ﻿using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Variables;
 using System.Collections.Immutable;
 using static FanScript.Compiler.Binding.BoundNodeFactory;
 
-namespace FanScript.Compiler.Binding
+namespace FanScript.Compiler.Binding.Rewriters
 {
     internal sealed class BoundTreeInliner : BoundTreeRewriter
     {
@@ -12,9 +13,8 @@ namespace FanScript.Compiler.Binding
         // TODO: inlined cache dict FunctionSymbol, BlockStatement
 
         private int varCount = 0;
-        public InlineContinuation Continuation => new InlineContinuation(varCount);
 
-        public BoundTreeInliner(BoundAnalysisResult analysisResult, ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions, InlineContinuation? continuation = null)
+        public BoundTreeInliner(BoundAnalysisResult analysisResult, ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions, Continuation? continuation = null)
         {
             this.analysisResult = analysisResult;
             this.functions = functions;
@@ -24,14 +24,14 @@ namespace FanScript.Compiler.Binding
             this.functions = functions;
         }
 
-        public static BoundStatement Inline(BoundStatement statement, BoundAnalysisResult analysisResult, ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions, ref InlineContinuation? continuation)
+        public static BoundBlockStatement Inline(BoundBlockStatement statement, BoundAnalysisResult analysisResult, ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions, ref Continuation? continuation)
         {
             BoundTreeInliner inliner = new BoundTreeInliner(analysisResult, functions, continuation);
-            BoundStatement res = inliner.RewriteStatement(statement);
+            BoundStatement res = inliner.RewriteBlockStatement(statement);
 
-            continuation = new InlineContinuation(inliner.varCount);
+            continuation = new Continuation(inliner.varCount);
 
-            return res;
+            return res is BoundBlockStatement blockRes ? blockRes : new BoundBlockStatement(res.Syntax, [res]);
         }
 
         protected override BoundExpression RewriteCallExpression(BoundCallExpression node)
@@ -42,11 +42,11 @@ namespace FanScript.Compiler.Binding
                 return base.RewriteCallExpression(node);
         }
 
-        public struct InlineContinuation
+        public struct Continuation
         {
             public readonly int LastCount;
 
-            public InlineContinuation(int lastCount)
+            public Continuation(int lastCount)
             {
                 LastCount = lastCount;
             }
@@ -143,16 +143,13 @@ namespace FanScript.Compiler.Binding
 
             private VariableSymbol getInlinedVar(VariableSymbol variable)
             {
-                if (variable.Name.StartsWith("^^inl"))
+                if (variable.IsGlobal || variable is ReservedCompilerVariableSymbol reserved && reserved.Identifier == "inl")
                     return variable;
                 else if (inlinedVariables.TryGetValue(variable, out var inlined))
                     return inlined;
                 else
                 {
-                    if (variable.IsGlobal)
-                        return variable;
-
-                    inlined = new BasicVariableSymbol("^^inl" + varCount, variable.Modifiers, variable.Type);
+                    inlined = new ReservedCompilerVariableSymbol("inl", varCount.ToString(), variable.Modifiers, variable.Type);
                     inlinedVariables.Add(variable, inlined);
 
                     varCount++;

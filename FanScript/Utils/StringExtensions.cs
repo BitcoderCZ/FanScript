@@ -1,11 +1,4 @@
-﻿using FanScript.FCInfo;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace FanScript.Utils
+﻿namespace FanScript.Utils
 {
     public static class StringExtensions
     {

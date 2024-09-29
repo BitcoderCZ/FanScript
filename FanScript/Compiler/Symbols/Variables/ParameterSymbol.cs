@@ -1,4 +1,4 @@
-﻿namespace FanScript.Compiler.Symbols
+﻿namespace FanScript.Compiler.Symbols.Variables
 {
     public sealed class ParameterSymbol : BasicVariableSymbol
     {

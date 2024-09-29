@@ -1,4 +1,5 @@
 ﻿using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Variables;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Text;

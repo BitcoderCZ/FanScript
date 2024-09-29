@@ -1,13 +1,10 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.FCInfo;
-using System.Diagnostics;
 
-namespace FanScript.Compiler.Symbols
+namespace FanScript.Compiler.Symbols.Variables
 {
     public abstract class VariableSymbol : Symbol
     {
-        internal string? UniqueId;
-
         internal VariableSymbol(string name, Modifiers modifiers, TypeSymbol type)
             : base(name)
         {
@@ -15,13 +12,13 @@ namespace FanScript.Compiler.Symbols
             Type = type;
         }
 
-        public Modifiers Modifiers { get; private set; }
         public bool IsReadOnly => Modifiers.HasFlag(Modifiers.Readonly) || Modifiers.HasFlag(Modifiers.Constant);
         public bool IsGlobal => Modifiers.HasFlag(Modifiers.Global) || Modifiers.HasFlag(Modifiers.Saved);
+        public Modifiers Modifiers { get; private set; }
         public TypeSymbol Type { get; private set; }
         internal BoundConstant? Constant { get; private set; }
 
-        public virtual string ResultName
+        public string ResultName
         {
             get
             {
@@ -31,20 +28,17 @@ namespace FanScript.Compiler.Symbols
                 else if (Modifiers.HasFlag(Modifiers.Global))
                     preChar = "$";
 
-                if (UniqueId is null)
-                    return string.Concat(preChar, Name.AsSpan(0, Math.Min(Name.Length, FancadeConstants.MaxVariableNameLength - preChar.Length)));
-
-                Debug.Assert(UniqueId.Length <= FancadeConstants.MaxVariableNameLength - 2 - preChar.Length);
-
-                return string.Concat(preChar, "^", Name.AsSpan(0, Math.Min(Name.Length, FancadeConstants.MaxVariableNameLength - (UniqueId.Length + 2 + preChar.Length))), UniqueId);
+                string name = getNameForResult();
+                return string.Concat(preChar, name.AsSpan(0, Math.Min(name.Length, FancadeConstants.MaxVariableNameLength - preChar.Length)));
             }
         }
+        protected virtual string getNameForResult()
+            => Name;
 
         /// <summary>
         /// Used to know if a Read-Only variable has been assigned
         /// </summary>
         public bool Initialized { get; private set; }
-
         internal void Initialize(BoundConstant? value)
         {
             if (Initialized) return;
@@ -53,21 +47,15 @@ namespace FanScript.Compiler.Symbols
             Initialized = true;
         }
 
-        internal void MakeUnique(int id)
-            => UniqueId = id.ToString();
-
-        public VariableSymbol Clone()
-            => new BasicVariableSymbol(Name, Modifiers, Type)
-            {
-                UniqueId = UniqueId,
-            };
+        public virtual VariableSymbol Clone()
+            => new BasicVariableSymbol(Name, Modifiers, Type);
 
         public override int GetHashCode()
-            => HashCode.Combine(ResultName, Modifiers, Type, UniqueId);
+            => HashCode.Combine(ResultName, Modifiers, Type);
 
         public override bool Equals(object? obj)
         {
-            if (obj is VariableSymbol other) return ResultName == other.ResultName && Modifiers == other.Modifiers && Equals(Type, other.Type) && UniqueId == other.UniqueId;
+            if (obj is VariableSymbol other) return ResultName == other.ResultName && Modifiers == other.Modifiers && Equals(Type, other.Type);
             else return false;
         }
     }

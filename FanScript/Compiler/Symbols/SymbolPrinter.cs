@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Syntax;
+﻿using FanScript.Compiler.Symbols.Variables;
+using FanScript.Compiler.Syntax;
 using FanScript.Utils;
 
 namespace FanScript.Compiler.Symbols
@@ -13,7 +14,8 @@ namespace FanScript.Compiler.Symbols
                     WriteFunctionTo((FunctionSymbol)symbol, writer);
                     break;
                 case SymbolKind.BasicVariable:
-                    WriteBasicVariableTo((BasicVariableSymbol)symbol, writer);
+                case SymbolKind.NullVariable:
+                    WriteVariableTo((VariableSymbol)symbol, writer);
                     break;
                 case SymbolKind.Parameter:
                     WriteParameterTo((ParameterSymbol)symbol, writer);
@@ -57,11 +59,11 @@ namespace FanScript.Compiler.Symbols
             writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
         }
 
-        private static void WriteBasicVariableTo(BasicVariableSymbol symbol, TextWriter writer)
+        private static void WriteVariableTo(VariableSymbol symbol, TextWriter writer)
         {
             symbol.Type.WriteTo(writer);
             writer.WriteSpace();
-            writer.WriteIdentifier(symbol.Name);
+            writer.WriteIdentifier(symbol.ResultName);
         }
 
         private static void WriteParameterTo(ParameterSymbol symbol, TextWriter writer)

@@ -22,8 +22,10 @@ on Play
     const global float CAN_MOVE_AFTER = 15
     const global float CAN_MOVE_AFTER_ADJACENT = 10 // !!! MUST BE SMALLER THAN CAN_MOVE_AFTER !!!
 
+#highlight
     global obj body = getBlockById(1)
     obj segmentPrefab = null // rod on the z axis, without collision
+#endhighlight
     
     global vec3 bodyPos = vec3(0, BODY_HEIGHT, 0)
 

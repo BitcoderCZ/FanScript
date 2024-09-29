@@ -18,7 +18,7 @@ namespace FanScript.Compiler.Emit
         public IEnumerable<ConnectTarget> Out => Enumerable.Empty<ConnectTarget>();
 
         private NopEmitStore()
-        { 
+        {
         }
     }
 

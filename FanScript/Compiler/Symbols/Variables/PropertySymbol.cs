@@ -1,7 +1,7 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Emit;
 
-namespace FanScript.Compiler.Symbols
+namespace FanScript.Compiler.Symbols.Variables
 {
     public sealed class PropertySymbol : BasicVariableSymbol
     {

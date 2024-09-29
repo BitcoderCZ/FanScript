@@ -1,6 +1,7 @@
-﻿using FanScript.Compiler.Diagnostics;
-using FanScript.Compiler.Lowering;
+﻿using FanScript.Compiler.Binding.Rewriters;
+using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using FanScript.FCInfo;
@@ -111,10 +112,9 @@ namespace FanScript.Compiler.Binding
             diagnostics.AddRange(globalScope.Diagnostics);
             diagnostics.AddRange(scopeDiagnostics);
 
-            int varDistinguisher = 0;
-
             BoundAnalysisResult analysisResult = new BoundAnalysisResult();
             Dictionary<FunctionSymbol, ScopeWSpan> functionScopes = new();
+            BoundTreeVariableRenamer.Continuation? continuation = null;
 
             foreach (FunctionSymbol function in globalScope.Functions)
             {
@@ -127,18 +127,7 @@ namespace FanScript.Compiler.Binding
 
                 analysisResult.Add(BoundTreeAnalyzer.Analyze(body, function));
 
-                if (function != globalScope.ScriptFunction)
-                {
-                    ImmutableArray<VariableSymbol> vars = binder.scope.GetDeclaredVariables();
-
-                    foreach (var @var in vars)
-                        @var.MakeUnique(varDistinguisher);
-
-                    if (vars.Length > 0)
-                        varDistinguisher++;
-                }
-
-                functionBodies.Add(function, body);
+                functionBodies.Add(function, BoundTreeVariableRenamer.RenameVariables(body, ref continuation));
 
                 diagnostics.AddRange(binder.Diagnostics);
             }
@@ -166,7 +155,7 @@ namespace FanScript.Compiler.Binding
             else
             {
                 // inline function calls
-                BoundTreeInliner.InlineContinuation? inlineContinuation = null;
+                BoundTreeInliner.Continuation? inlineContinuation = null;
 
                 foreach (var func in analysisResult
                     .EnumerateFunctionsInReverse()
@@ -175,12 +164,9 @@ namespace FanScript.Compiler.Binding
                     if (func is null)
                         continue;
 
-                    var inlinedBody = BoundTreeInliner.Inline(functionBodies[func], analysisResult, functionBodies.ToImmutable(), ref inlineContinuation);
+                    BoundBlockStatement inlinedBody = BoundTreeInliner.Inline(functionBodies[func], analysisResult, functionBodies.ToImmutable(), ref inlineContinuation);
 
-                    functionBodies[func] =
-                        inlinedBody is BoundBlockStatement bodyBlock ?
-                            bodyBlock :
-                            new BoundBlockStatement(inlinedBody.Syntax, [inlinedBody]);
+                    functionBodies[func] = inlinedBody;
                 }
             }
 

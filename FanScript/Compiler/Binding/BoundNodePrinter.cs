@@ -1,4 +1,5 @@
 ﻿using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
 using MathUtils.Vectors;
@@ -553,7 +554,7 @@ namespace FanScript.Compiler.Binding
                         goto default;
                     }
                 default:
-                    writer.WriteIdentifier(variable.Name);
+                    writer.WriteIdentifier(variable.ResultName);
                     break;
             }
         }

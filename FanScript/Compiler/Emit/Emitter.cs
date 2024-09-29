@@ -1,6 +1,7 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Variables;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;

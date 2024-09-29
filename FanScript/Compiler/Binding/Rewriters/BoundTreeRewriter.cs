@@ -1,7 +1,7 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using FanScript.Compiler.Symbols.Variables;
 using System.Collections.Immutable;
 
-namespace FanScript.Compiler.Binding
+namespace FanScript.Compiler.Binding.Rewriters
 {
     internal abstract class BoundTreeRewriter
     {

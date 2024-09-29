@@ -1,9 +1,9 @@
-﻿using FanScript.Compiler.Binding;
-using FanScript.Compiler.Symbols;
+﻿using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Variables;
 using System.Collections.Immutable;
 using static FanScript.Compiler.Binding.BoundNodeFactory;
 
-namespace FanScript.Compiler.Lowering
+namespace FanScript.Compiler.Binding.Rewriters
 {
     internal sealed class Lowerer : BoundTreeRewriter
     {
@@ -325,7 +325,7 @@ namespace FanScript.Compiler.Lowering
 
         private BoundStatement lowerArraySegment(BoundArraySegmentExpression expression, VariableSymbol arrayVariable, int startIndex = 0)
         {
-            BoundArraySegmentExpression node = (BoundArraySegmentExpression)base.RewriteArraySegmentExpression(expression);
+            BoundArraySegmentExpression node = (BoundArraySegmentExpression)RewriteArraySegmentExpression(expression);
 
             // x = [a, b, c, ...]
             //

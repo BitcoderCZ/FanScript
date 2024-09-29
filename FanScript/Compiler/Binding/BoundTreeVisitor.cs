@@ -1,4 +1,4 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using FanScript.Compiler.Symbols.Variables;
 
 namespace FanScript.Compiler.Binding
 {

@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Emit;
+using FanScript.Compiler.Symbols.Variables;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
@@ -1022,21 +1023,22 @@ namespace FanScript.Compiler.Symbols
             {
                 object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), true);
 
-                if (constants is not null)
+                if (constants is null)
+                    return NopEmitStore.Instance;
+
+                float _id = (constants[0] as float?) ?? 0f;
+                ushort id = (ushort)System.Math.Clamp((int)_id, ushort.MinValue, ushort.MaxValue);
+
+                // TODO: somehow calculate the size, for now just use the largest stock one
+                Block block = context.AddBlock(new BlockDef(string.Empty, id, BlockType.NonScript, new Vector2I(2, 4)));
+
+                if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
                 {
-                    float _id = (constants[0] as float?) ?? 0f;
-                    ushort id = (ushort)System.Math.Clamp((int)_id, ushort.MinValue, ushort.MaxValue);
-
-                    // TODO: somehow calculate the size, for now just use the largest stock one
-                    Block block = context.AddBlock(new BlockDef(string.Empty, id, BlockType.NonScript, new Vector2I(2, 4)));
-
-                    if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
-                        context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
-
-                    return new BasicEmitStore(new NopConnectTarget(), [new BlockVoxelConnectTarget(block)]);
+                    context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
+                    return NopEmitStore.Instance;
                 }
 
-                return NopEmitStore.Instance;
+                return new BasicEmitStore(new NopConnectTarget(), [new BlockVoxelConnectTarget(block)]);
             }
             );
 
