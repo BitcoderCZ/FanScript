@@ -1,2 +1,5 @@
-float binary = 0b1010_0000
-float hex = 0x_FF
+vec3 v = vec3(1, 2, 3)
+
+float x = v.x
+float y = v.y
+float z = v.z

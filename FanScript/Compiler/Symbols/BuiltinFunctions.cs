@@ -1040,6 +1040,83 @@ namespace FanScript.Compiler.Symbols
             }
             );
 
+        public static readonly FunctionSymbol ToRot
+           = new BuiltinFunctionSymbol("toRot",
+           [
+               new ParameterSymbol("vec", TypeSymbol.Vector3)
+           ], TypeSymbol.Rotation, (call, context) =>
+           {
+               object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), false);
+
+               if (constants is not null)
+               {
+                   Vector3F vec = (constants[0] as Vector3F?) ?? Vector3F.Zero;
+
+                   Block block = context.AddBlock(Blocks.Values.Rotation);
+
+                   context.SetBlockValue(block, 0, new Rotation(vec));
+
+                   return BasicEmitStore.COut(block, block.Type.Terminals["Rotation"]);
+               }
+               else
+               {
+                   Block make = context.AddBlock(Blocks.Math.Make_Rotation);
+
+                   using (context.ExpressionBlock())
+                   {
+                       var (x, y, z) = context.BreakVector(call.Arguments[0]);
+
+                       context.Connect(x, BasicEmitStore.CIn(make, make.Type.Terminals["X angle"]));
+                       context.Connect(y, BasicEmitStore.CIn(make, make.Type.Terminals["Y angle"]));
+                       context.Connect(z, BasicEmitStore.CIn(make, make.Type.Terminals["Z angle"]));
+                   }
+
+                   return BasicEmitStore.COut(make, make.Type.Terminals["Rotation"]);
+               }
+           }
+           )
+           {
+               IsMethod = true
+           };
+        public static readonly FunctionSymbol ToVec
+           = new BuiltinFunctionSymbol("toVec",
+           [
+               new ParameterSymbol("rot", TypeSymbol.Rotation)
+           ], TypeSymbol.Vector3, (call, context) =>
+           {
+               object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), false);
+
+               if (constants is not null)
+               {
+                   Rotation rot = (constants[0] as Rotation) ?? new Rotation(Vector3F.Zero);
+
+                   Block block = context.AddBlock(Blocks.Values.Vector);
+
+                   context.SetBlockValue(block, 0, rot);
+
+                   return BasicEmitStore.COut(block, block.Type.Terminals["Vector"]);
+               }
+               else
+               {
+                   Block make = context.AddBlock(Blocks.Math.Make_Vector);
+
+                   using (context.ExpressionBlock())
+                   {
+                       var (x, y, z) = context.BreakVector(call.Arguments[0]);
+
+                       context.Connect(x, BasicEmitStore.CIn(make, make.Type.Terminals["X"]));
+                       context.Connect(y, BasicEmitStore.CIn(make, make.Type.Terminals["Y"]));
+                       context.Connect(z, BasicEmitStore.CIn(make, make.Type.Terminals["Z"]));
+                   }
+
+                   return BasicEmitStore.COut(make, make.Type.Terminals["Vector"]);
+               }
+           }
+           )
+           {
+               IsMethod = true
+           };
+
         //public static readonly FunctionSymbol PlayMidi
         //    = new BuiltinFunctionSymbol("playMidi",
         //        [

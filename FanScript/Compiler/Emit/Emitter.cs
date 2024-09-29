@@ -1003,7 +1003,7 @@ namespace FanScript.Compiler.Emit
                 vector = contructor.ConstantValue.Value is Vector3F ?
                     (Vector3F)contructor.ConstantValue.Value :
                     ((Rotation)contructor.ConstantValue.Value!).Value;
-            else if (expression is BoundVariableExpression variable && variable.ConstantValue is not null)
+            else if (expression is BoundVariableExpression variable && variable.Variable.Modifiers.HasFlag(Modifiers.Constant) && variable.ConstantValue is not null)
                 vector = variable.ConstantValue.Value is Vector3F ?
                     (Vector3F)variable.ConstantValue.Value :
                     ((Rotation)variable.ConstantValue.Value!).Value;
