@@ -388,19 +388,12 @@ namespace FanScript.Compiler.Binding
             else if (node.Type == TypeSymbol.Vector3 || node.Type == TypeSymbol.Rotation)
             {
                 Vector3F val;
-                SyntaxKind keyword;
                 if (node.Type == TypeSymbol.Rotation)
-                {
                     val = ((Rotation)node.Value!).Value;
-                    keyword = SyntaxKind.KeywordRotation;
-                }
                 else
-                {
                     val = (Vector3F)node.Value!;
-                    keyword = SyntaxKind.KeywordVector3;
-                }
 
-                writer.WriteKeyword(keyword);
+                node.Type.WriteTo(writer);
                 writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
                 writer.WriteNumber(val.X);
                 writer.WritePunctuation(SyntaxKind.CommaToken);

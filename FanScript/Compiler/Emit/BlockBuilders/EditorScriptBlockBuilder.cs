@@ -1,5 +1,6 @@
 ﻿using FanScript.Utils;
 using MathUtils.Vectors;
+using System.Globalization;
 using System.Text;
 
 /*
@@ -165,7 +166,20 @@ namespace FanScript.Compiler.Emit.CodeBuilders
             for (int i = 0; i < values.Count; i++)
             {
                 ValueRecord set = values[i];
-                builder.AppendLine($"setBlockValue({set.Block.Pos.X},{set.Block.Pos.Y},{set.Block.Pos.Z},{set.ValueIndex},{set.Value.ToBlockValue()});");
+
+                string val = set.Value switch
+                {
+                    null => "null",
+                    byte b => b.ToString(CultureInfo.InvariantCulture),
+                    ushort s => s.ToString(CultureInfo.InvariantCulture),
+                    float f => f.ToString(CultureInfo.InvariantCulture),
+                    string s => $"\"{s}\"",
+                    Vector3F v => $"[{v.X.ToString(CultureInfo.InvariantCulture)},{v.Y.ToString(CultureInfo.InvariantCulture)},{v.Z.ToString(CultureInfo.InvariantCulture)}]",
+                    Rotation r => $"[{r.Value.X.ToString(CultureInfo.InvariantCulture)},{r.Value.Y.ToString(CultureInfo.InvariantCulture)},{r.Value.Z.ToString(CultureInfo.InvariantCulture)}]",
+                    _ => throw new Exception($"Cannot convert object of type: '{set.Value.GetType()}' to Block Value")
+                };
+
+                builder.AppendLine($"setBlockValue({set.Block.Pos.X},{set.Block.Pos.Y},{set.Block.Pos.Z},{set.ValueIndex},{val});");
             }
 
             builder.AppendLine("updateChanges();");

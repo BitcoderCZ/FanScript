@@ -857,7 +857,7 @@ namespace FanScript.Compiler.Symbols
             = new BuiltinFunctionSymbol("inspect",
             [
                 new ParameterSymbol("value", TypeSymbol.Generic)
-            ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
+            ], TypeSymbol.Void, [TypeSymbol.Bool, TypeSymbol.Float, TypeSymbol.Vector3, TypeSymbol.Rotation, TypeSymbol.Object], (call, context) =>
                 {
                     Block inspect = context.AddBlock(Blocks.Values.InspectByType(call.GenericType!.ToWireType()));
 

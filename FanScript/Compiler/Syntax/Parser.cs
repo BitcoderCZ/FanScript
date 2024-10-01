@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Lexing;
+using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Text;
 using System.Collections.Immutable;
 
@@ -7,6 +8,10 @@ namespace FanScript.Compiler.Syntax
 {
     internal sealed class Parser
     {
+        private static readonly HashSet<string> allowedTypes = TypeSymbol.BuiltInTypes
+                .Select(type => type.Name)
+                .ToHashSet();
+
         private readonly DiagnosticBag diagnostics = new DiagnosticBag();
         private readonly SyntaxTree syntaxTree;
         private readonly SourceText text;
@@ -95,6 +100,36 @@ namespace FanScript.Compiler.Syntax
 
             diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, kinds);
             return new SyntaxToken(syntaxTree, kinds[0], Current.Position, null, null, ImmutableArray<SyntaxTrivia>.Empty, ImmutableArray<SyntaxTrivia>.Empty);
+        }
+        private SyntaxToken MatchIdentifier(string text)
+        {
+            if (Current.Kind == SyntaxKind.IdentifierToken && Current.Text == text)
+                return NextToken();
+
+            if (Current.Kind != SyntaxKind.IdentifierToken)
+                diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, SyntaxKind.IdentifierToken);
+            else
+                diagnostics.ReportUnexpectedIdentifier(Current.Location, Current.Text, text);
+            return new SyntaxToken(syntaxTree, SyntaxKind.IdentifierToken, Current.Position, null, null, ImmutableArray<SyntaxTrivia>.Empty, ImmutableArray<SyntaxTrivia>.Empty);
+        }
+        private SyntaxToken MatchType(IEnumerable<TypeSymbol> types)
+            => MatchIdentifier(types.Select(type => type.Name));
+        private SyntaxToken MatchIdentifier(IEnumerable<string> texts)
+        {
+            if (Current.Kind == SyntaxKind.IdentifierToken)
+            {
+                foreach (string text in texts)
+                {
+                    if (Current.Text == text)
+                        return NextToken();
+                }
+            }
+
+            if (Current.Kind != SyntaxKind.IdentifierToken)
+                diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, SyntaxKind.IdentifierToken);
+            else
+                diagnostics.ReportUnexpectedIdentifier(Current.Location, Current.Text, texts);
+            return new SyntaxToken(syntaxTree, SyntaxKind.IdentifierToken, Current.Position, null, null, ImmutableArray<SyntaxTrivia>.Empty, ImmutableArray<SyntaxTrivia>.Empty);
         }
 
         public CompilationUnitSyntax ParseCompilationUnit()
@@ -448,8 +483,7 @@ namespace FanScript.Compiler.Syntax
                 case SyntaxKind.StringToken:
                     return ParseStringLiteral();
 
-                case SyntaxKind.KeywordVector3:
-                case SyntaxKind.KeywordRotation:
+                case SyntaxKind.IdentifierToken when (Current.Text == TypeSymbol.Vector3.Name || Current.Text == TypeSymbol.Rotation.Name):
                     return ParseVectorConstructorExpresion();
 
                 case SyntaxKind.OpenSquareToken:
@@ -484,7 +518,7 @@ namespace FanScript.Compiler.Syntax
 
         private ExpressionSyntax ParseVectorConstructorExpresion()
         {
-            SyntaxToken keywordToken = MatchToken(SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation);
+            SyntaxToken keywordToken = MatchType([TypeSymbol.Vector3, TypeSymbol.Rotation]);
 
             SyntaxToken openParenthesisToken = MatchToken(SyntaxKind.OpenParenthesisToken);
             ExpressionSyntax expressionX = ParseExpression();
@@ -628,9 +662,7 @@ namespace FanScript.Compiler.Syntax
         }
         private bool IsTypeClauseNext(ref int nextTokenIndex)
         {
-            HashSet<SyntaxKind> allowedKinds = [SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordObject, SyntaxKind.KeywordConstraint, SyntaxKind.KeywordArray];
-
-            if (allowedKinds.Contains(Peek(nextTokenIndex++).Kind))
+            if (Peek(nextTokenIndex).Kind == SyntaxKind.IdentifierToken && allowedTypes.Contains(Peek(nextTokenIndex++).Text))
             {
                 int temp = nextTokenIndex;
 
@@ -649,7 +681,7 @@ namespace FanScript.Compiler.Syntax
         }
         private TypeClauseSyntax ParseTypeClause(bool allowGeneric, bool gettingGenericParam = false)
         {
-            SyntaxToken typeToken = MatchToken(SyntaxKind.KeywordFloat, SyntaxKind.KeywordBool, SyntaxKind.KeywordVector3, SyntaxKind.KeywordRotation, SyntaxKind.KeywordObject, SyntaxKind.KeywordConstraint, SyntaxKind.KeywordArray);
+            SyntaxToken typeToken = MatchType(TypeSymbol.BuiltInTypes);
 
             if (Current.Kind == SyntaxKind.LessToken)
             {

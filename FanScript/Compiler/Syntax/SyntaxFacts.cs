@@ -68,20 +68,6 @@
                     return SyntaxKind.KeywordIf;
                 case "else":
                     return SyntaxKind.KeywordElse;
-                case "bool":
-                    return SyntaxKind.KeywordBool;
-                case "float":
-                    return SyntaxKind.KeywordFloat;
-                case "vec3":
-                    return SyntaxKind.KeywordVector3;
-                case "rot":
-                    return SyntaxKind.KeywordRotation;
-                case "obj":
-                    return SyntaxKind.KeywordObject;
-                case "constr":
-                    return SyntaxKind.KeywordConstraint;
-                case "array":
-                    return SyntaxKind.KeywordArray;
                 case "while":
                     return SyntaxKind.KeywordWhile;
                 case "do":
@@ -216,20 +202,6 @@
                     "if",
                 SyntaxKind.KeywordElse =>
                     "else",
-                SyntaxKind.KeywordBool =>
-                    "bool",
-                SyntaxKind.KeywordFloat =>
-                    "float",
-                SyntaxKind.KeywordVector3 =>
-                    "vec3",
-                SyntaxKind.KeywordRotation =>
-                    "rot",
-                SyntaxKind.KeywordObject =>
-                    "obj",
-                SyntaxKind.KeywordConstraint =>
-                    "constr",
-                SyntaxKind.KeywordArray =>
-                    "array",
                 SyntaxKind.KeywordWhile =>
                     "while",
                 SyntaxKind.KeywordDo =>

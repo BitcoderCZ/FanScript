@@ -5,7 +5,6 @@ using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using FanScript.FCInfo;
-using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -931,7 +930,7 @@ namespace FanScript.Compiler.Binding
             BoundExpression expressionY = BindExpression(syntax.ExpressionY, TypeSymbol.Float);
             BoundExpression expressionZ = BindExpression(syntax.ExpressionZ, TypeSymbol.Float);
 
-            TypeSymbol type = syntax.KeywordToken.Kind.ToTypeSymbol();
+            TypeSymbol type = TypeSymbol.GetType(syntax.KeywordToken.Text);
 
             if (expressionX.ConstantValue is not null && expressionY.ConstantValue is not null && expressionZ.ConstantValue is not null)
             {

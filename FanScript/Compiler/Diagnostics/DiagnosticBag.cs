@@ -44,6 +44,11 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportUnexpectedToken(TextLocation location, SyntaxKind actualKind, SyntaxKind[] expectedKinds)
             => ReportError(location, $"Unexpected token <{actualKind}>, expected one of <{string.Join(", ", expectedKinds)}>.");
 
+        internal void ReportUnexpectedIdentifier(TextLocation location, string actualText, string expectedText)
+            => ReportError(location, $"Unexpected token '{actualText}', expected '{expectedText}'.");
+        internal void ReportUnexpectedIdentifier(TextLocation location, string actualText, IEnumerable<string> expectedTexts)
+            => ReportError(location, $"Unexpected token '{actualText}', expected one of {string.Join(", ", expectedTexts.Select(text => "'" + text + "'").ToArray())}.");
+
         public void ReportUndefinedUnaryOperator(TextLocation location, string operatorText, TypeSymbol? operandType)
             => ReportError(location, $"Unary operator '{operatorText}' is not defined for type '{operandType}'.");
 
