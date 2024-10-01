@@ -131,8 +131,6 @@ namespace FanScript.Compiler.Emit.CodeBuilders
         {
             Block[] blocks = PreBuild(startPos, sortByPos: true); // sortByPos is requred because of a bug that sometimes deletes objects if they are placed from +Z to -Z, even if they aren't overlaping
 
-            bool insertBlockAtZero = blocks.Length > 0 && blocks[0].Pos != Vector3I.Zero;
-
             Compression compression = Compression.Base64;
 
             if (args.Length > 0 && args[0] is Compression comp)
@@ -141,19 +139,19 @@ namespace FanScript.Compiler.Emit.CodeBuilders
             switch (compression)
             {
                 case Compression.None:
-                    return buildNormal(blocks, insertBlockAtZero);
+                    return buildNormal(blocks);
                 case Compression.Base64:
-                    return buildBase64(blocks, insertBlockAtZero);
+                    return buildBase64(blocks);
                 default:
                     throw new Exception($"Unsuported compression: {compression}");
             }
         }
 
-        private string buildNormal(Block[] blocks, bool insertBlockAtZero)
+        private string buildNormal(Block[] blocks)
         {
             StringBuilder builder = new StringBuilder();
 
-            if (insertBlockAtZero)
+            if (blocks.Length > 0 && blocks[0].Pos != Vector3I.Zero)
                 builder.AppendLine($"setBlock(0,0,0,1);"); // make sure the level origin doesn't shift
 
             for (int i = 0; i < blocks.Length; i++)
@@ -186,12 +184,14 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 
             return builder.ToString();
         }
-        private string buildBase64(Block[] blocks, bool insertBlockAtZero)
+        private string buildBase64(Block[] blocks)
         {
             byte[] bufer;
             using (MemoryStream stream = new MemoryStream())
             using (SaveWriter writer = new SaveWriter(stream))
             {
+                bool insertBlockAtZero = blocks.Length > 0 && blocks[0].Pos != Vector3I.Zero;
+
                 writer.WriteInt32(blocks.Length + (insertBlockAtZero ? 1 : 0));
 
                 if (insertBlockAtZero)

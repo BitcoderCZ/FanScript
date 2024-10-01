@@ -241,55 +241,55 @@ namespace FanScript.Compiler.Symbols
             public static readonly FunctionSymbol GetObject
           = new BuiltinFunctionSymbol("getObject", [
               new ParameterSymbol("position", TypeSymbol.Vector3),
-            ], TypeSymbol.Object, (call, context) =>
-            {
-                BoundConstant? constant = call.Arguments[0].ConstantValue;
-                if (constant is null)
-                {
-                    context.Diagnostics.ReportValueMustBeConstant(call.Arguments[0].Syntax.Location);
-                    return NopEmitStore.Instance;
-                }
+          ], TypeSymbol.Object, (call, context) =>
+          {
+              BoundConstant? constant = call.Arguments[0].ConstantValue;
+              if (constant is null)
+              {
+                  context.Diagnostics.ReportValueMustBeConstant(call.Arguments[0].Syntax.Location);
+                  return NopEmitStore.Instance;
+              }
 
-                Vector3I pos = (Vector3I)((Vector3F)constant.GetValueOrDefault(TypeSymbol.Vector3)); // unbox, then cast
+              Vector3I pos = (Vector3I)((Vector3F)constant.GetValueOrDefault(TypeSymbol.Vector3)); // unbox, then cast
 
-                if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
-                {
-                    context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
+              if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
+              {
+                  context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
 
-                    using (context.ExpressionBlock())
-                        context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
+                  using (context.ExpressionBlock())
+                      context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
 
-                    return NopEmitStore.Instance;
-                }
+                  return NopEmitStore.Instance;
+              }
 
-                return new AbsoluteEmitStore(pos, null);
-            }
+              return new AbsoluteEmitStore(pos, null);
+          }
           );
             public static readonly FunctionSymbol GetObject2
               = new BuiltinFunctionSymbol("getObject", [
                   new ParameterSymbol("x", TypeSymbol.Float),
                   new ParameterSymbol("y", TypeSymbol.Float),
                   new ParameterSymbol("z", TypeSymbol.Float),
-                ], TypeSymbol.Object, (call, context) =>
-                {
-                    object?[]? args = context.ValidateConstants(call.Arguments.AsMemory(), true);
-                    if (args is null)
-                        return NopEmitStore.Instance;
+              ], TypeSymbol.Object, (call, context) =>
+              {
+                  object?[]? args = context.ValidateConstants(call.Arguments.AsMemory(), true);
+                  if (args is null)
+                      return NopEmitStore.Instance;
 
-                    Vector3I pos = new Vector3I((int)((float?)args[0] ?? 0f), (int)((float?)args[1] ?? 0f), (int)((float?)args[2] ?? 0f)); // unbox, then cast
+                  Vector3I pos = new Vector3I((int)((float?)args[0] ?? 0f), (int)((float?)args[1] ?? 0f), (int)((float?)args[2] ?? 0f)); // unbox, then cast
 
-                    if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
-                    {
-                        context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
+                  if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
+                  {
+                      context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
 
-                        using (context.ExpressionBlock())
-                            context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
+                      using (context.ExpressionBlock())
+                          context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
 
-                        return NopEmitStore.Instance;
-                    }
+                      return NopEmitStore.Instance;
+                  }
 
-                    return new AbsoluteEmitStore(pos, null);
-                }
+                  return new AbsoluteEmitStore(pos, null);
+              }
               );
             public static readonly FunctionSymbol SetPos
                 = new BuiltinFunctionSymbol("setPos", [
@@ -366,10 +366,10 @@ namespace FanScript.Compiler.Symbols
                   = new BuiltinFunctionSymbol("playSound",
                   [
                     new ParameterSymbol("volume", TypeSymbol.Float),
-                    new ParameterSymbol("pitch", TypeSymbol.Float),
-                    new ParameterSymbol("channel", Modifiers.Out, TypeSymbol.Float),
-                    new ParameterSymbol("LOOP", TypeSymbol.Bool),
-                    new ParameterSymbol("SOUND", TypeSymbol.Float),
+                      new ParameterSymbol("pitch", TypeSymbol.Float),
+                      new ParameterSymbol("channel", Modifiers.Out, TypeSymbol.Float),
+                      new ParameterSymbol("LOOP", TypeSymbol.Bool),
+                      new ParameterSymbol("SOUND", TypeSymbol.Float),
                   ], TypeSymbol.Void, (call, context) =>
               {
                   object?[]? values = context.ValidateConstants(call.Arguments.AsMemory(^2..), true);
@@ -411,8 +411,8 @@ namespace FanScript.Compiler.Symbols
                  = new BuiltinFunctionSymbol("setVolumePitch",
                  [
                     new ParameterSymbol("channel", TypeSymbol.Float),
-                    new ParameterSymbol("volume", TypeSymbol.Float),
-                    new ParameterSymbol("pitch", TypeSymbol.Float),
+                     new ParameterSymbol("volume", TypeSymbol.Float),
+                     new ParameterSymbol("pitch", TypeSymbol.Float),
                  ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Sound.VolumePitch));
         }
 
@@ -422,9 +422,9 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("addForce",
                 [
                    new ParameterSymbol("object", TypeSymbol.Object),
-                   new ParameterSymbol("force", TypeSymbol.Vector3),
-                   new ParameterSymbol("applyAt", TypeSymbol.Vector3),
-                   new ParameterSymbol("torque", TypeSymbol.Vector3),
+                    new ParameterSymbol("force", TypeSymbol.Vector3),
+                    new ParameterSymbol("applyAt", TypeSymbol.Vector3),
+                    new ParameterSymbol("torque", TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.AddForce))
                 {
                     IsMethod = true,
@@ -433,8 +433,8 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("getVelocity",
                 [
                    new ParameterSymbol("object", TypeSymbol.Object),
-                   new ParameterSymbol("velocity", Modifiers.Out, TypeSymbol.Vector3),
-                   new ParameterSymbol("spin", Modifiers.Out, TypeSymbol.Vector3),
+                    new ParameterSymbol("velocity", Modifiers.Out, TypeSymbol.Vector3),
+                    new ParameterSymbol("spin", Modifiers.Out, TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Physics.GetVelocity))
                 {
                     IsMethod = true,
@@ -443,8 +443,8 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("setVelocity",
                 [
                    new ParameterSymbol("object", TypeSymbol.Object),
-                   new ParameterSymbol("velocity", TypeSymbol.Vector3),
-                   new ParameterSymbol("spin", TypeSymbol.Vector3),
+                    new ParameterSymbol("velocity", TypeSymbol.Vector3),
+                    new ParameterSymbol("spin", TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.SetVelocity))
                 {
                     IsMethod = true,
@@ -453,8 +453,8 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("setLocked",
                 [
                    new ParameterSymbol("object", TypeSymbol.Object),
-                   new ParameterSymbol("position", TypeSymbol.Vector3),
-                   new ParameterSymbol("rotation", TypeSymbol.Vector3),
+                    new ParameterSymbol("position", TypeSymbol.Vector3),
+                    new ParameterSymbol("rotation", TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.SetLocked))
                 {
                     IsMethod = true,
@@ -463,7 +463,7 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("setMass",
                 [
                    new ParameterSymbol("object", TypeSymbol.Object),
-                   new ParameterSymbol("mass", TypeSymbol.Float),
+                    new ParameterSymbol("mass", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.SetMass))
                 {
                     IsMethod = true,
@@ -472,7 +472,7 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("setFriction",
                 [
                    new ParameterSymbol("object", TypeSymbol.Object),
-                   new ParameterSymbol("friction", TypeSymbol.Float),
+                    new ParameterSymbol("friction", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.SetFriction))
                 {
                     IsMethod = true,
@@ -481,7 +481,7 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("setBounciness",
                 [
                    new ParameterSymbol("object", TypeSymbol.Object),
-                   new ParameterSymbol("bounciness", TypeSymbol.Float),
+                    new ParameterSymbol("bounciness", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.SetBounciness))
                 {
                     IsMethod = true,
@@ -495,9 +495,9 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("addConstraint",
                 [
                    new ParameterSymbol("base", TypeSymbol.Object),
-                   new ParameterSymbol("part", TypeSymbol.Object),
-                   new ParameterSymbol("pivot", TypeSymbol.Vector3),
-                   new ParameterSymbol("constraint", Modifiers.Out, TypeSymbol.Constraint),
+                    new ParameterSymbol("part", TypeSymbol.Object),
+                    new ParameterSymbol("pivot", TypeSymbol.Vector3),
+                    new ParameterSymbol("constraint", Modifiers.Out, TypeSymbol.Constraint),
                 ], TypeSymbol.Void, (call, context) => emitAXX(call, context, 1, Blocks.Physics.AddConstraint))
                 {
                     IsMethod = true,
@@ -506,8 +506,8 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("linearLimits",
                 [
                    new ParameterSymbol("constraint", TypeSymbol.Constraint),
-                   new ParameterSymbol("lower", TypeSymbol.Vector3),
-                   new ParameterSymbol("upper", TypeSymbol.Vector3),
+                    new ParameterSymbol("lower", TypeSymbol.Vector3),
+                    new ParameterSymbol("upper", TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.LinearLimits))
                 {
                     IsMethod = true,
@@ -516,8 +516,8 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("angularLimits",
                 [
                    new ParameterSymbol("constraint", TypeSymbol.Constraint),
-                   new ParameterSymbol("lower", TypeSymbol.Vector3),
-                   new ParameterSymbol("upper", TypeSymbol.Vector3),
+                    new ParameterSymbol("lower", TypeSymbol.Vector3),
+                    new ParameterSymbol("upper", TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.AngularLimits))
                 {
                     IsMethod = true,
@@ -526,8 +526,8 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("linearSpring",
                 [
                    new ParameterSymbol("constraint", TypeSymbol.Constraint),
-                   new ParameterSymbol("stiffness", TypeSymbol.Vector3),
-                   new ParameterSymbol("damping", TypeSymbol.Vector3),
+                    new ParameterSymbol("stiffness", TypeSymbol.Vector3),
+                    new ParameterSymbol("damping", TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.LinearSpring))
                 {
                     IsMethod = true,
@@ -536,8 +536,8 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("angularSpring",
                 [
                    new ParameterSymbol("constraint", TypeSymbol.Constraint),
-                   new ParameterSymbol("stiffness", TypeSymbol.Vector3),
-                   new ParameterSymbol("damping", TypeSymbol.Vector3),
+                    new ParameterSymbol("stiffness", TypeSymbol.Vector3),
+                    new ParameterSymbol("damping", TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.AngularSpring))
                 {
                     IsMethod = true,
@@ -546,8 +546,8 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("linearMotor",
                 [
                    new ParameterSymbol("constraint", TypeSymbol.Constraint),
-                   new ParameterSymbol("speed", TypeSymbol.Vector3),
-                   new ParameterSymbol("force", TypeSymbol.Vector3),
+                    new ParameterSymbol("speed", TypeSymbol.Vector3),
+                    new ParameterSymbol("force", TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.LinearMotor))
                 {
                     IsMethod = true,
@@ -556,8 +556,8 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol("angularMotor",
                 [
                    new ParameterSymbol("constraint", TypeSymbol.Constraint),
-                   new ParameterSymbol("speed", TypeSymbol.Vector3),
-                   new ParameterSymbol("force", TypeSymbol.Vector3),
+                    new ParameterSymbol("speed", TypeSymbol.Vector3),
+                    new ParameterSymbol("force", TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.AngularMotor))
                 {
                     IsMethod = true,
