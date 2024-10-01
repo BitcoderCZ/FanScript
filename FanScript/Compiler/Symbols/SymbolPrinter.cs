@@ -63,7 +63,7 @@ namespace FanScript.Compiler.Symbols
         {
             symbol.Type.WriteTo(writer);
             writer.WriteSpace();
-            writer.WriteIdentifier(symbol.ResultName);
+            writer.WriteIdentifier(symbol.Name);
         }
 
         private static void WriteParameterTo(ParameterSymbol symbol, TextWriter writer)

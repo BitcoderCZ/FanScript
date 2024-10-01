@@ -23,7 +23,7 @@ on Play
     const global float CAN_MOVE_AFTER_ADJACENT = 10 // !!! MUST BE SMALLER THAN CAN_MOVE_AFTER !!!
 
 #highlight
-    global obj body = getBlockById(1)
+    global obj body = getBlockById(BLOCK_STONE_BLOCK)
     obj segmentPrefab = null // rod on the z axis, without collision
 #endhighlight
     

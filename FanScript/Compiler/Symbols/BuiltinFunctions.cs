@@ -1018,7 +1018,7 @@ namespace FanScript.Compiler.Symbols
         public static readonly FunctionSymbol GetBlockById
             = new BuiltinFunctionSymbol("getBlockById",
             [
-                new ParameterSymbol("ID", TypeSymbol.Float)
+                new ParameterSymbol("BLOCK", TypeSymbol.Float)
             ], TypeSymbol.Object, (call, context) =>
             {
                 object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), true);
