@@ -553,7 +553,7 @@ namespace FanScript.Compiler.Binding
             }
             else if (blockStack.Peek())
             {
-                diagnostics.ReportBreakOrContinueInSB(syntax.Keyword.Location, syntax.Keyword.Text);
+                diagnostics.ReportInvalidKeywordInEvent(syntax.Keyword.Location, syntax.Keyword.Text);
                 return BindErrorStatement(syntax);
             }
 
@@ -570,7 +570,7 @@ namespace FanScript.Compiler.Binding
             }
             else if (blockStack.Peek())
             {
-                diagnostics.ReportBreakOrContinueInSB(syntax.Keyword.Location, syntax.Keyword.Text);
+                diagnostics.ReportInvalidKeywordInEvent(syntax.Keyword.Location, syntax.Keyword.Text);
                 return BindErrorStatement(syntax);
             }
 
@@ -580,7 +580,13 @@ namespace FanScript.Compiler.Binding
 
         private BoundStatement BindReturnStatement(ReturnStatementSyntax syntax)
         {
-            var expression = syntax.Expression is null ? null : BindExpression(syntax.Expression);
+            BoundExpression? expression = syntax.Expression is null ? null : BindExpression(syntax.Expression);
+
+            if (blockStack.Contains(true)) // contains event
+            {
+                diagnostics.ReportInvalidKeywordInEvent(syntax.ReturnKeyword.Location, syntax.ReturnKeyword.Text);
+                return BindErrorStatement(syntax);
+            }
 
             if (function is null)
             {

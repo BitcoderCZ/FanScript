@@ -624,7 +624,8 @@ namespace FanScript.Tests
         [Theory]
         [InlineData("break")]
         [InlineData("continue")]
-        public void Emitter_Break_Or_Continue_In_SB(string keyword)
+        [InlineData("return")]
+        public void Emitter_Invalid_Keyword_In_Event(string keyword)
         {
             var text = $$"""
                 float x
@@ -638,7 +639,7 @@ namespace FanScript.Tests
                 """;
 
             var diagnostics = $"""
-                The keyword '{keyword}' cannot be used inside of a event block.
+                The keyword '{keyword}' cannot be used inside of an event block.
                 """;
 
             AssertDiagnostics(text, diagnostics);
