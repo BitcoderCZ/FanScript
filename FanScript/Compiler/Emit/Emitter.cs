@@ -98,7 +98,6 @@ namespace FanScript.Compiler.Emit
             gotosToConnect.Clear();
             afterLabel.Clear();
 
-            // TODO: check for infinite loops? *technically* shouldn't be neccesary because we don't allow user labels and gotos, but...
             bool tryGetAfterLabel(string name, [NotNullWhen(true)] out EmitStore? emitStore)
             {
                 if (afterLabel.TryGetValue(name, out emitStore))

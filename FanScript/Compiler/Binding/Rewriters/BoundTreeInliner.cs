@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Variables;
+using FanScript.Utils;
 using System.Collections.Immutable;
 using static FanScript.Compiler.Binding.BoundNodeFactory;
 
@@ -10,7 +11,7 @@ namespace FanScript.Compiler.Binding.Rewriters
         private readonly BoundAnalysisResult analysisResult;
         private readonly ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions;
 
-        private int varCount = 0;
+        private Counter varCount = new Counter(0);
 
         public BoundTreeInliner(BoundAnalysisResult analysisResult, ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions, Continuation? continuation = null)
         {
@@ -42,9 +43,9 @@ namespace FanScript.Compiler.Binding.Rewriters
 
         public struct Continuation
         {
-            public readonly int LastCount;
+            public readonly Counter LastCount;
 
-            public Continuation(int lastCount)
+            public Continuation(Counter lastCount)
             {
                 LastCount = lastCount;
             }
@@ -55,7 +56,7 @@ namespace FanScript.Compiler.Binding.Rewriters
             private readonly BoundCallExpression call;
             BoundTreeInliner treeInliner;
             private readonly FunctionSymbol func;
-            private int varCount;
+            private Counter varCount;
 
             private readonly Dictionary<VariableSymbol, VariableSymbol> inlinedVariables = new();
 
@@ -66,13 +67,13 @@ namespace FanScript.Compiler.Binding.Rewriters
                 func = this.call.Function;
             }
 
-            public static BoundStatement Inline(BoundCallExpression call, BoundTreeInliner treeInliner, ref int varCount)
+            public static BoundStatement Inline(BoundCallExpression call, BoundTreeInliner treeInliner, ref Counter varCount)
             {
                 CallInliner inliner = new CallInliner(call, treeInliner);
                 return inliner.Inline(ref varCount);
             }
 
-            private BoundStatement Inline(ref int varCount)
+            private BoundStatement Inline(ref Counter varCount)
             {
                 this.varCount = varCount;
 

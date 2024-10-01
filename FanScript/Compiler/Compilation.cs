@@ -78,11 +78,14 @@ namespace FanScript.Compiler
             Compilation? submission = this;
             HashSet<string> seenVariables = new HashSet<string>();
 
-            foreach (var constant in Constants.GetAll())
+            foreach (var group in Constants.Groups)
             {
-                VariableSymbol var = new BasicVariableSymbol(constant.Name, Modifiers.Constant | Modifiers.Global, constant.Type);
-                var.Initialize(new BoundConstant(constant.Value));
-                yield return var;
+                foreach (var con in group.Values)
+                {
+                    VariableSymbol var = new BasicVariableSymbol(group.Name + con.Name, Modifiers.Constant | Modifiers.Global, group.Type);
+                    var.Initialize(new BoundConstant(con.Value));
+                    yield return var;
+                }
             }
 
             while (submission is not null)

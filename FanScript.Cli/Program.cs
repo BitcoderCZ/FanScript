@@ -6,8 +6,10 @@ using FanScript.Compiler.Emit.BlockPlacers;
 using FanScript.Compiler.Emit.CodeBuilders;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
+using MathUtils.Measures;
 using MathUtils.Vectors;
 using System.Diagnostics;
+using System.Numerics;
 using TextCopy;
 
 namespace FanScript.Cli
@@ -40,6 +42,10 @@ namespace FanScript.Cli
 
         static int Main(string[] args)
         {
+#if DEBUG
+            Debugger.Launch();
+#endif
+
             return Parser.Default.ParseArguments<BuildOptions>(args)
                 .MapResult(
                     opts => runVerb(runBuild, opts, "build"),
@@ -62,10 +68,6 @@ namespace FanScript.Cli
         {
             if (!File.Exists(opts.Src))
                 return Log.Error($"Source file '{opts.Src}' wasn't found.", ErrorCode.FileNotFound);
-
-#if DEBUG
-            Debugger.Launch();
-#endif
 
             SyntaxTree tree = SyntaxTree.Load(opts.Src);
 

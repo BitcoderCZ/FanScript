@@ -1,4 +1,5 @@
 ﻿using FanScript.Compiler.Symbols.Variables;
+using FanScript.Utils;
 using static FanScript.Compiler.Binding.BoundNodeFactory;
 
 namespace FanScript.Compiler.Binding.Rewriters
@@ -9,7 +10,7 @@ namespace FanScript.Compiler.Binding.Rewriters
     internal sealed class BoundTreeVariableRenamer : BoundTreeRewriter
     {
         private readonly Dictionary<VariableSymbol, VariableSymbol> renamedDict = new();
-        private int varCount = 0;
+        private Counter varCount = new Counter(0);
 
         public BoundTreeVariableRenamer(Continuation? continuation = null)
         {
@@ -61,9 +62,9 @@ namespace FanScript.Compiler.Binding.Rewriters
 
         public struct Continuation
         {
-            public readonly int LastCount;
+            public readonly Counter LastCount;
 
-            public Continuation(int lastCount)
+            public Continuation(Counter lastCount)
             {
                 LastCount = lastCount;
             }
