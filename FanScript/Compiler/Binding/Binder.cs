@@ -247,12 +247,15 @@ namespace FanScript.Compiler.Binding
         {
             BoundScope result = new BoundScope();
 
-            foreach (Constant con in Constants.GetAll())
+            foreach (var group in Constants.Groups)
             {
-                VariableSymbol variable = new BasicVariableSymbol(con.Name, Modifiers.Constant | Modifiers.Global, con.Type);
-                variable.Initialize(new BoundConstant(con.Value));
-                if (!result.TryDeclareVariable(variable))
-                    diagnostics.ReportFailedToDeclare(TextLocation.None, "Constant", variable.Name);
+                foreach (var con in group.Values)
+                {
+                    VariableSymbol variable = new BasicVariableSymbol(group.Name + "_" + con.Name, Modifiers.Constant | Modifiers.Global, group.Type);
+                    variable.Initialize(new BoundConstant(con.Value));
+                    if (!result.TryDeclareVariable(variable))
+                        diagnostics.ReportFailedToDeclare(TextLocation.None, "Constant", variable.Name);
+                }
             }
 
             foreach (FunctionSymbol f in BuiltinFunctions.GetAll())

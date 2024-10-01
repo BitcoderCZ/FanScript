@@ -921,7 +921,7 @@ namespace FanScript.Tests
             AssertDiagnostics(text, diagnostics);
         }
 
-        // TODO: uncommend when a modifier uses required modifiers
+        // TODO: uncomment when a modifier uses required modifiers
         //[Theory]
         //[MemberData(nameof(GetModifiersWithMissingRequiredFor), ModifierTarget.Variable)]
         //public void Emitter_Missign_Required_Modifiers(string modifier, string requiredModifiers)

@@ -571,9 +571,7 @@ namespace FanScript.Compiler.Syntax
             if (Current.Kind == listEnd)
                 goto skip;
 
-            bool parseNextArgument = true;
-            while (parseNextArgument &&
-                   //Current.Kind != listEnd &&
+            while (//Current.Kind != listEnd &&
                    Current.Kind != SyntaxKind.EndOfFileToken)
             {
                 if (parameters)
@@ -616,7 +614,7 @@ namespace FanScript.Compiler.Syntax
                     nodesAndSeparators.Add(comma);
                 }
                 else
-                    parseNextArgument = false; // TODO: this can just be break, right?
+                    break;
             }
 
         skip:

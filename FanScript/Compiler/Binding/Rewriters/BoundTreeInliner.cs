@@ -10,8 +10,6 @@ namespace FanScript.Compiler.Binding.Rewriters
         private readonly BoundAnalysisResult analysisResult;
         private readonly ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions;
 
-        // TODO: inlined cache dict FunctionSymbol, BlockStatement
-
         private int varCount = 0;
 
         public BoundTreeInliner(BoundAnalysisResult analysisResult, ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions, Continuation? continuation = null)
@@ -81,11 +79,12 @@ namespace FanScript.Compiler.Binding.Rewriters
                 Syntax.SyntaxNode syntax = call.Syntax;
                 List<BoundStatement> statements = new List<BoundStatement>(func.Parameters.Length + 1);
 
-                // TODO: if a param is readonly and the arg is a variable, references to the param can be replaced with the arg variable
-
                 // assign params to args
                 for (int i = 0; i < func.Parameters.Length; i++)
                 {
+                    if (func.Parameters[i].Modifiers.HasFlag(Modifiers.Readonly) && call.Arguments[i] is BoundVariableExpression varEx && varEx.Variable is BasicVariableSymbol)
+                        inlinedVariables.Add(func.Parameters[i], varEx.Variable);
+
                     statements.Add(
                         Assignment(
                             syntax,

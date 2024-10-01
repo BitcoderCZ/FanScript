@@ -75,7 +75,6 @@ namespace FanScript.LangServer.Handlers
 
             try
             {
-                // TODO: cache syntax tree?, versioning
                 SyntaxTree? tree = document.Tree;
                 if (tree is null)
                     return;
