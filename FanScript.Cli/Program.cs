@@ -6,10 +6,8 @@ using FanScript.Compiler.Emit.BlockPlacers;
 using FanScript.Compiler.Emit.CodeBuilders;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
-using MathUtils.Measures;
 using MathUtils.Vectors;
 using System.Diagnostics;
-using System.Numerics;
 using TextCopy;
 
 namespace FanScript.Cli
