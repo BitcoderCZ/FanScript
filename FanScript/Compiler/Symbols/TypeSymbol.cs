@@ -79,13 +79,13 @@ namespace FanScript.Compiler.Symbols
                 ["y"] = new PropertyDefinitionSymbol("y", Float, (context, expression) => getVectorComponent(context, expression, 1), (context, expression, getStore) => setVectorComponent(context, expression, getStore, 1)),
                 ["z"] = new PropertyDefinitionSymbol("z", Float, (context, expression) => getVectorComponent(context, expression, 2), (context, expression, getStore) => setVectorComponent(context, expression, getStore, 2)),
             }.ToFrozenDictionary();
-            EmitStore getVectorComponent(EmitContext context, BoundExpression expression, int index)
+            EmitStore getVectorComponent(IEmitContext context, BoundExpression expression, int index)
             {
                 bool[] arr = new bool[3];
                 arr[index] = true;
                 return context.BreakVectorAny(expression, arr)[index]!;
             }
-            EmitStore setVectorComponent(EmitContext context, BoundExpression expression, Func<EmitStore> getStore, int index)
+            EmitStore setVectorComponent(IEmitContext context, BoundExpression expression, Func<EmitStore> getStore, int index)
             {
                 WireType varType = expression.Type.ToWireType();
 

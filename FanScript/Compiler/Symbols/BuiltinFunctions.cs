@@ -15,7 +15,7 @@ namespace FanScript.Compiler.Symbols
     {
         #region Helper functions
         // (A) - active block (has before and after), num - numb inputs, num - number outputs
-        private static EmitStore emitAX0(BoundCallExpression call, EmitContext context, BlockDef blockDef, int argumentOffset = 0, Type[]? constantTypes = null)
+        private static EmitStore emitAX0(BoundCallExpression call, IEmitContext context, BlockDef blockDef, int argumentOffset = 0, Type[]? constantTypes = null)
         {
             constantTypes ??= [];
 
@@ -62,7 +62,7 @@ namespace FanScript.Compiler.Symbols
 
             return new BasicEmitStore(block);
         }
-        private static EmitStore emitAXX(BoundCallExpression call, EmitContext context, int numbReturnArgs, BlockDef blockDef)
+        private static EmitStore emitAXX(BoundCallExpression call, IEmitContext context, int numbReturnArgs, BlockDef blockDef)
         {
             if (numbReturnArgs <= 0)
                 throw new ArgumentOutOfRangeException(nameof(numbReturnArgs));
@@ -97,7 +97,7 @@ namespace FanScript.Compiler.Symbols
 
             return connector.Store;
         }
-        private static EmitStore emitXX(BoundCallExpression call, EmitContext context, int numbReturnArgs, BlockDef blockDef)
+        private static EmitStore emitXX(BoundCallExpression call, IEmitContext context, int numbReturnArgs, BlockDef blockDef)
         {
             if (numbReturnArgs <= 0)
                 throw new ArgumentOutOfRangeException(nameof(numbReturnArgs));
@@ -143,7 +143,7 @@ namespace FanScript.Compiler.Symbols
 
             return connector.Store;
         }
-        private static EmitStore emitX1(BoundCallExpression call, EmitContext context, BlockDef blockDef)
+        private static EmitStore emitX1(BoundCallExpression call, IEmitContext context, BlockDef blockDef)
         {
             Block block = context.AddBlock(blockDef);
 

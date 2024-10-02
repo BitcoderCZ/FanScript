@@ -18,8 +18,8 @@ namespace FanScript.Compiler.Symbols.Variables
 
     public sealed class PropertyDefinitionSymbol : BasicVariableSymbol
     {
-        internal delegate EmitStore GetDelegate(EmitContext context, BoundExpression expression);
-        internal delegate EmitStore SetDelegate(EmitContext context, BoundExpression expression, Func<EmitStore> getStore);
+        internal delegate EmitStore GetDelegate(IEmitContext context, BoundExpression expression);
+        internal delegate EmitStore SetDelegate(IEmitContext context, BoundExpression expression, Func<EmitStore> getStore);
 
         internal PropertyDefinitionSymbol(string name, TypeSymbol type, GetDelegate emitGet)
             : base(name, Modifiers.Readonly, type)
