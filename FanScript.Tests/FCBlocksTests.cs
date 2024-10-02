@@ -12,7 +12,7 @@ namespace FanScript.Tests
     public class FCBlocksTests
     {
         [Fact]
-        public void FCBlocks_IDsDoNotRepeated()
+        public void IDsDoNotRepeated()
         {
             HashSet<ushort> ids = new();
 
@@ -21,7 +21,7 @@ namespace FanScript.Tests
                     Assert.Fail($"Id {def.Id} has been encountered multiple times");
         }
         [Fact]
-        public void FCBlocks_Manual_TerminalsAreCorrect()
+        public void Manual_TerminalsAreCorrect()
         {
             var defBlocks = getBlockDefs().ToArray();
             var active = defBlocks.Where(def => def.Type == BlockType.Active);

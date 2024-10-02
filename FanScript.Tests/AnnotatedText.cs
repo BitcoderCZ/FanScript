@@ -15,13 +15,16 @@ namespace FanScript.Tests
         public string Text { get; }
         public ImmutableArray<TextSpan> Spans { get; }
 
-        public static AnnotatedText Parse(string text)
+        public static AnnotatedText Parse(string text, bool noLocationDiagnostic)
         {
             text = Unindent(text);
 
             var textBuilder = new StringBuilder();
             var spanBuilder = ImmutableArray.CreateBuilder<TextSpan>();
             var startStack = new Stack<int>();
+
+            if (noLocationDiagnostic)
+                spanBuilder.Add(default);
 
             int position = 0;
 

@@ -7,7 +7,7 @@ namespace FanScript.Tests.Syntax
     public class LexerTests
     {
         [Fact]
-        public void Lexer_Lexes_UnterminatedString()
+        public void Lexes_UnterminatedString()
         {
             string text = "\"text";
             ImmutableArray<SyntaxToken> tokens = SyntaxTree.ParseTokens(text, out var diagnostics);
@@ -24,7 +24,7 @@ namespace FanScript.Tests.Syntax
         }
 
         [Fact]
-        public void Lexer_Covers_AllTokens()
+        public void Covers_AllTokens()
         {
             IEnumerable<SyntaxKind> tokenKinds = Enum.GetValues<SyntaxKind>()
                                  .Where(k => k.IsToken());
@@ -44,7 +44,7 @@ namespace FanScript.Tests.Syntax
 
         [Theory]
         [MemberData(nameof(GetTokensData))]
-        public void Lexer_Lexes_Token(SyntaxKind kind, string text)
+        public void Lexes_Token(SyntaxKind kind, string text)
         {
             ImmutableArray<SyntaxToken> tokens = SyntaxTree.ParseTokens(text);
 
@@ -56,7 +56,7 @@ namespace FanScript.Tests.Syntax
 
         [Theory]
         [MemberData(nameof(GetSeparatorsData))]
-        public void Lexer_Lexes_Separator(SyntaxKind kind, string text)
+        public void Lexes_Separator(SyntaxKind kind, string text)
         {
             ImmutableArray<SyntaxToken> tokens = SyntaxTree.ParseTokens(text, includeEndOfFile: true);
 
@@ -69,8 +69,7 @@ namespace FanScript.Tests.Syntax
 
         [Theory]
         [MemberData(nameof(GetTokenPairsData))]
-        public void Lexer_Lexes_TokenPairs(SyntaxKind t1Kind, string t1Text,
-                                           SyntaxKind t2Kind, string t2Text)
+        public void Lexes_TokenPairs(SyntaxKind t1Kind, string t1Text, SyntaxKind t2Kind, string t2Text)
         {
             string text = t1Text + t2Text;
             ImmutableArray<SyntaxToken> tokens = SyntaxTree.ParseTokens(text);
@@ -84,9 +83,7 @@ namespace FanScript.Tests.Syntax
 
         [Theory]
         [MemberData(nameof(GetTokenPairsWithSeparatorData))]
-        public void Lexer_Lexes_TokenPairs_WithSeparators(SyntaxKind t1Kind, string t1Text,
-                                                          SyntaxKind separatorKind, string separatorText,
-                                                          SyntaxKind t2Kind, string t2Text)
+        public void TokenPairs_WithSeparators(SyntaxKind t1Kind, string t1Text, SyntaxKind separatorKind, string separatorText, SyntaxKind t2Kind, string t2Text)
         {
             string text = t1Text + separatorText + t2Text;
             ImmutableArray<SyntaxToken> tokens = SyntaxTree.ParseTokens(text);
@@ -109,7 +106,7 @@ namespace FanScript.Tests.Syntax
         [InlineData("foo42")]
         [InlineData("foo_42")]
         [InlineData("_foo")]
-        public void Lexer_Lexes_Identifiers(string name)
+        public void Lexes_Identifiers(string name)
         {
             ImmutableArray<SyntaxToken> tokens = SyntaxTree.ParseTokens(name);
 
@@ -148,9 +145,9 @@ namespace FanScript.Tests.Syntax
         private static IEnumerable<(SyntaxKind kind, string text)> GetTokens()
         {
             var fixedTokens = Enum.GetValues<SyntaxKind>()
-                                  .Select(k => (k, text: SyntaxFacts.GetText(k)))
-                                  .Where(t => t.text is not null)
-                                  .Cast<(SyntaxKind, string)>();
+                .Select(k => (k, text: SyntaxFacts.GetText(k)))
+                .Where(t => t.text is not null)
+                .Cast<(SyntaxKind, string)>();
 
             var dynamicTokens = new[]
             {
@@ -374,9 +371,7 @@ namespace FanScript.Tests.Syntax
             }
         }
 
-        private static IEnumerable<(SyntaxKind t1Kind, string t1Text,
-                                    SyntaxKind separatorKind, string separatorText,
-                                    SyntaxKind t2Kind, string t2Text)> GetTokenPairsWithSeparator()
+        private static IEnumerable<(SyntaxKind t1Kind, string t1Text, SyntaxKind separatorKind, string separatorText, SyntaxKind t2Kind, string t2Text)> GetTokenPairsWithSeparator()
         {
             foreach (var t1 in GetTokens())
             {

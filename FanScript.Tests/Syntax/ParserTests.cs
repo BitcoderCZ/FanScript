@@ -7,7 +7,7 @@ namespace FanScript.Tests.Syntax
     {
         [Theory]
         [MemberData(nameof(GetBinaryOperatorPairsData))]
-        public void Parser_BinaryExpression_HonorsPrecedences(SyntaxKind op1, SyntaxKind op2)
+        public void BinaryExpression_HonorsPrecedences(SyntaxKind op1, SyntaxKind op2)
         {
             int op1Precedence = SyntaxFacts.GetBinaryOperatorPrecedence(op1);
             int op2Precedence = SyntaxFacts.GetBinaryOperatorPrecedence(op2);
@@ -67,7 +67,7 @@ namespace FanScript.Tests.Syntax
 
         [Theory]
         [MemberData(nameof(GetUnaryOperatorPairsData))]
-        public void Parser_UnaryExpression_HonorsPrecedences(SyntaxKind unaryKind, SyntaxKind binaryKind)
+        public void UnaryExpression_HonorsPrecedences(SyntaxKind unaryKind, SyntaxKind binaryKind)
         {
             int unaryPrecedence = SyntaxFacts.GetUnaryOperatorPrecedence(unaryKind);
             int binaryPrecedence = SyntaxFacts.GetBinaryOperatorPrecedence(binaryKind);

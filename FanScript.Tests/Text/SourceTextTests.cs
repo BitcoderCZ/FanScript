@@ -8,7 +8,7 @@ namespace FanScript.Tests.Text
         [InlineData(".", 1)]
         [InlineData(".\r\n", 2)]
         [InlineData(".\r\n\r\n", 3)]
-        public void SourceText_IncludesLastLine(string text, int expectedLineCount)
+        public void IncludesLastLine(string text, int expectedLineCount)
         {
             SourceText sourceText = SourceText.From(text);
 

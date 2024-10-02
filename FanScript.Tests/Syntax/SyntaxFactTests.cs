@@ -7,7 +7,7 @@ namespace FanScript.Tests.Syntax
     {
         [Theory]
         [MemberData(nameof(GetSyntaxKindData))]
-        public void SyntaxFact_GetText_RoundTrips(SyntaxKind kind)
+        public void GetText_RoundTrips(SyntaxKind kind)
         {
             string? text = SyntaxFacts.GetText(kind);
             if (text is null)

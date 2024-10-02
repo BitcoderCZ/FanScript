@@ -74,11 +74,11 @@ namespace FanScript.Tests
             arr.setRange(0, [1, 2, 3])
             float first = arr.get(0)
             """)]
-        public void Emitter_NoDiagnostics(string text)
+        public void NoDiagnostics(string text)
             => AssertDiagnostics(text, string.Empty);
 
         [Fact]
-        public void Emitter_VariableDeclaration_Reports_Redeclaration()
+        public void VariableDeclaration_Reports_Redeclaration()
         {
             var text = """
                 {
@@ -96,7 +96,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_BlockStatement_NoInfiniteLoop()
+        public void BlockStatement_NoInfiniteLoop()
         {
             var text = """
                 {
@@ -112,7 +112,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_InvokeFunctionArguments_Missing()
+        public void InvokeFunctionArguments_Missing()
         {
             var text = """
                 inspect($[)]$
@@ -126,7 +126,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_InvokeFunctionArguments_Exceeding()
+        public void InvokeFunctionArguments_Exceeding()
         {
             var text = """
                 inspect(1$[, 2, 3]$)
@@ -140,7 +140,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_InvokeFunctionArguments_NoInfiniteLoop()
+        public void InvokeFunctionArguments_NoInfiniteLoop()
         {
             var text = @"
                 inspect(1$[$[=]$]$$[)]$
@@ -156,7 +156,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_FunctionParameters_NoInfiniteLoop()
+        public void FunctionParameters_NoInfiniteLoop()
         {
             var text = @"
                 func foo(float numb$[$[$[=]$]$]$$[)]$
@@ -193,7 +193,7 @@ namespace FanScript.Tests
         //}
 
         [Fact]
-        public void Emitter_IfStatement_Reports_CannotConvert()
+        public void IfStatement_Reports_CannotConvert()
         {
             var text = """
                 {
@@ -211,7 +211,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_WhileStatement_Reports_CannotConvert()
+        public void WhileStatement_Reports_CannotConvert()
         {
             var text = """
                 {
@@ -229,7 +229,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_DoWhileStatement_Reports_CannotConvert()
+        public void DoWhileStatement_Reports_CannotConvert()
         {
             var text = @"
                 {
@@ -286,7 +286,7 @@ namespace FanScript.Tests
         //}
 
         [Fact]
-        public void Emitter_NameExpression_Reports_Undefined()
+        public void NameExpression_Reports_Undefined()
         {
             var text = """
                 $[x]$ * 10
@@ -300,7 +300,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_NameExpression_Reports_NoErrorForInsertedToken()
+        public void NameExpression_Reports_NoErrorForInsertedToken()
         {
             var text = """
                 1 + $[]$
@@ -314,7 +314,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_UnaryExpression_Reports_Undefined()
+        public void UnaryExpression_Reports_Undefined()
         {
             var text = """
                 $[+]$true
@@ -328,7 +328,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_BinaryExpression_Reports_Undefined()
+        public void BinaryExpression_Reports_Undefined()
         {
             var text = """
                 10 $[*]$ false
@@ -342,7 +342,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_CompoundExpression_Reports_Undefined()
+        public void CompoundExpression_Reports_Undefined()
         {
             var text = """
                 float x = 10
@@ -357,7 +357,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_AssignmentExpression_Reports_Undefined()
+        public void AssignmentExpression_Reports_Undefined()
         {
             var text = """
                 $[x]$ = 10
@@ -371,7 +371,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_CompoundExpression_Assignemnt_NonDefinedVariable_Reports_Undefined()
+        public void CompoundExpression_Assignemnt_NonDefinedVariable_Reports_Undefined()
         {
             var text = """
                 $[x]$ += 10
@@ -385,7 +385,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_AssignmentExpression_Reports_CannotAssign()
+        public void AssignmentExpression_Reports_CannotAssign()
         {
             var text = """
                 {
@@ -406,7 +406,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_CompoundDeclarationExpression_Reports_CannotAssign()
+        public void CompoundDeclarationExpression_Reports_CannotAssign()
         {
             var text = """
                 {
@@ -426,7 +426,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_AssignmentExpression_Reports_CannotConvert()
+        public void AssignmentExpression_Reports_CannotConvert()
         {
             var text = """
                 {
@@ -443,7 +443,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_CallExpression_Reports_Undefined()
+        public void CallExpression_Reports_Undefined()
         {
             var text = """
                 $[foo]$(42)
@@ -457,7 +457,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_Void_Function_Should_Not_Return_Value()
+        public void Void_Function_Should_Not_Return_Value()
         {
             var text = @"
                 func test()
@@ -509,7 +509,7 @@ namespace FanScript.Tests
         //}
 
         [Fact]
-        public void Emitter_Expression_Must_Have_Value()
+        public void Expression_Must_Have_Value()
         {
             var text = @"
                 func test(float n)
@@ -576,7 +576,7 @@ namespace FanScript.Tests
         //}
 
         [Fact]
-        public void Emitter_WhileStatement_Reports_NotReachableCode_Warning()
+        public void WhileStatement_Reports_NotReachableCode_Warning()
         {
             var text = @"
                 func test()
@@ -596,7 +596,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_ExpressionStatement_Reports_Invalid()
+        public void ExpressionStatement_Reports_Invalid()
         {
             var text = """
                 $[random(0, 10)]$
@@ -612,7 +612,7 @@ namespace FanScript.Tests
         [Theory]
         [InlineData("$[break]$", "break")]
         [InlineData("$[continue]$", "continue")]
-        public void Emitter_Invalid_Break_Or_Continue(string text, string keyword)
+        public void Invalid_Break_Or_Continue(string text, string keyword)
         {
             var diagnostics = $"""
                 The keyword '{keyword}' can only be used inside of loops.
@@ -625,7 +625,7 @@ namespace FanScript.Tests
         [InlineData("break")]
         [InlineData("continue")]
         [InlineData("return")]
-        public void Emitter_Invalid_Keyword_In_Event(string keyword)
+        public void Invalid_Keyword_In_Event(string keyword)
         {
             var text = $$"""
                 float x
@@ -646,7 +646,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_Value_Must_Be_Constant()
+        public void Value_Must_Be_Constant()
         {
             var text = """
                 float x
@@ -661,7 +661,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_Generic_Type_Recursion()
+        public void Generic_Type_Recursion()
         {
             var text = """
                 array<array$[<float>]$> x
@@ -676,7 +676,7 @@ namespace FanScript.Tests
 
 
         [Fact]
-        public void Emitter_Not_A_Generic_Type()
+        public void Not_A_Generic_Type()
         {
             var text = """
                 float$[<float>]$ x
@@ -690,7 +690,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_Type_Must_Have_Generic_Parameter()
+        public void Type_Must_Have_Generic_Parameter()
         {
             var text = """
                 $[array]$ x
@@ -704,7 +704,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_Non_Generic_Method_Type_Arguments()
+        public void Non_Generic_Method_Type_Arguments()
         {
             var text = """
                 float x = min$[<float>]$(10, 5)
@@ -718,7 +718,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_Variable_Name_Too_Long()
+        public void Variable_Name_Too_Long()
         {
             string name = new string('x', FCInfo.FancadeConstants.MaxVariableNameLength + 1);
 
@@ -734,7 +734,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_Empty_Array_Initializer()
+        public void Empty_Array_Initializer()
         {
             var text = """
                 array<float> x = $[[]]$
@@ -749,7 +749,7 @@ namespace FanScript.Tests
 
         [Theory]
         [MemberData(nameof(GetModifiersFor), false, ModifierTarget.Variable, null)]
-        public void Emitter_Invalid_Modifier_Target_Variable(string modifier, string validTargets)
+        public void Invalid_Modifier_Target_Variable(string modifier, string validTargets)
         {
             var text = $"""
                 $[{modifier}]$ float x
@@ -764,7 +764,7 @@ namespace FanScript.Tests
 
         [Theory]
         [MemberData(nameof(GetModifiersFor), true, ModifierTarget.Variable, null)]
-        public void Emitter_Duplicate_Modifier(string modifier)
+        public void Duplicate_Modifier(string modifier)
         {
             var text = $"""
                 {modifier} $[{modifier}]$ float x = 0
@@ -778,7 +778,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_Invalid_Modifier_On_Type()
+        public void Invalid_Modifier_On_Type()
         {
             var text = $"""
                 $[const]$ array<float> x
@@ -794,7 +794,7 @@ namespace FanScript.Tests
         [Theory]
         [InlineData("readonly")]
         [InlineData("const")]
-        public void Emitter_Variable_Not_Initialized(string modifier)
+        public void Variable_Not_Initialized(string modifier)
         {
             var text = $"""
                 {modifier} float $[x]$
@@ -809,7 +809,7 @@ namespace FanScript.Tests
 
         [Theory]
         [MemberData(nameof(GetConflictingModifiersFor), ModifierTarget.Variable)]
-        public void Emitter_Conflicting_Modifiers(string modifier1, string modifier2)
+        public void Conflicting_Modifiers(string modifier1, string modifier2)
         {
             var text = $"""
                 $[{modifier1}]$ {modifier2} float x = 0
@@ -823,7 +823,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_Unknown_Special_Block()
+        public void Unknown_Special_Block()
         {
             var text = """
                 on $[Foo]$()
@@ -839,7 +839,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_Argument_Must_Have_Modifier()
+        public void Argument_Must_Have_Modifier()
         {
             var text = """
                 float x
@@ -860,7 +860,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_Argument_Cannot_Have_Modifier()
+        public void Argument_Cannot_Have_Modifier()
         {
             var text = """
                 float y
@@ -875,7 +875,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_By_Ref_Arg_Must_Be_Variable()
+        public void By_Ref_Arg_Must_Be_Variable()
         {
             var text = """
                 float x
@@ -892,7 +892,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_Undefined_Property()
+        public void Undefined_Property()
         {
             var text = """
                 float x = vec3(1, 2, 3).$[a]$
@@ -906,7 +906,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_SB_Must_Have_Arguments()
+        public void SB_Must_Have_Arguments()
         {
             var text = """
                 on $[Touch]$
@@ -924,7 +924,7 @@ namespace FanScript.Tests
         // TODO: uncomment when a modifier uses required modifiers
         //[Theory]
         //[MemberData(nameof(GetModifiersWithMissingRequiredFor), ModifierTarget.Variable)]
-        //public void Emitter_Missign_Required_Modifiers(string modifier, string requiredModifiers)
+        //public void Missign_Required_Modifiers(string modifier, string requiredModifiers)
         //{
         //    var text = $"""
         //        $[{modifier}]$ float x = 0
@@ -938,7 +938,7 @@ namespace FanScript.Tests
         //}
 
         [Fact]
-        public void Emitter_Parameter_Already_Declared()
+        public void Parameter_Already_Declared()
         {
             var text = @"
                 func sum(float a, float b, float $[a]$, out float res)
@@ -955,7 +955,7 @@ namespace FanScript.Tests
         }
 
         [Fact]
-        public void Emitter_Function_Must_Have_Name()
+        public void Function_Must_Have_Name()
         {
             var text = @"
                 func $[(]$float a, float b, out float res)
@@ -1007,9 +1007,47 @@ namespace FanScript.Tests
         //    AssertDiagnostics(text, diagnostics);
         //}
 
-        private void AssertDiagnostics(string text, string diagnosticText)
+        [Fact]
+        public void Circular_Call()
         {
-            AnnotatedText annotatedText = AnnotatedText.Parse(text);
+            var text = @"
+                func a()
+                {
+                    a()
+                }
+            ";
+
+            var diagnostics = @"
+                Circular calls (recursion) aren't allowed (void a() -> void a()).
+            ";
+
+            AssertDiagnostics(text, diagnostics, noLocationDiagnostic: true);
+        }
+        [Fact]
+        public void Circular_Call2()
+        {
+            var text = @"
+                func a()
+                {
+                    b()
+                }
+
+                func b()
+                {
+                    a()
+                }
+            ";
+
+            var diagnostics = @"
+                Circular calls (recursion) aren't allowed (void b() -> void a() -> void b()).
+            ";
+
+            AssertDiagnostics(text, diagnostics, noLocationDiagnostic: true);
+        }
+
+        private void AssertDiagnostics(string text, string diagnosticText, bool noLocationDiagnostic = false)
+        {
+            AnnotatedText annotatedText = AnnotatedText.Parse(text, noLocationDiagnostic);
             SyntaxTree syntaxTree = SyntaxTree.Parse(annotatedText.Text);
             Compilation compilation = Compilation.CreateScript(null, syntaxTree);
 
