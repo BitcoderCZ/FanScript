@@ -83,10 +83,13 @@ namespace FanScript.LangServer.Handlers
                         }
                         else
                         {
+                            if (node is not SyntaxToken token)
+                                break;
+
                             VariableSymbol? varSymbol = scope
                                 .GetAllVariables()
                                 .Concat(compilation.GetVariables().Where(var => var.IsGlobal))
-                                .FirstOrDefault(var => var.Name == name.IdentifierToken.Text);
+                                .FirstOrDefault(var => var.Name == token.Text);
 
                             if (varSymbol is not null)
                                 return getHoverForVariable(varSymbol, node.Location);
@@ -183,6 +186,21 @@ namespace FanScript.LangServer.Handlers
                             Range = node.Location.ToRange(),
                         };
                     }
+                case PostfixExpressionSyntax pe when node == pe.IdentifierToken:
+                case PostfixStatementSyntax ps when node == ps.IdentifierToken:
+                    {
+                        if (scope is null || node is not SyntaxToken token)
+                            break;
+
+                        VariableSymbol? varSymbol = scope
+                               .GetAllVariables()
+                               .Concat(compilation.GetVariables().Where(var => var.IsGlobal))
+                               .FirstOrDefault(var => var.Name == token.Text);
+
+                        if (varSymbol is not null)
+                            return getHoverForVariable(varSymbol, node.Location);
+                    }
+                    break;
             }
 
             return null;

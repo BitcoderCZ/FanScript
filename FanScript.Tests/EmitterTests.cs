@@ -602,7 +602,7 @@ namespace FanScript.Tests
         public void ExpressionStatement_Reports_Invalid(string text)
         {
             var diagnostics = """
-                Only void call expressions and postfix expressions (++, --) can be used as a statement.
+                Only void call expressions can be used as a statement.
                 """;
 
             AssertDiagnostics(text, diagnostics);

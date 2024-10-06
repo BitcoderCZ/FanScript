@@ -276,14 +276,11 @@ namespace FanScript.Compiler.Binding
         {
             BoundStatement result = BindStatementInternal(syntax);
 
-            //if (!isScript || !isGlobal)
-            //{
             if (result is BoundExpressionStatement es)
             {
                 bool isAllowedExpression = es.Expression.Kind switch
                 {
                     BoundNodeKind.ErrorExpression => true,
-                    BoundNodeKind.PostfixExpression => true,
                     BoundNodeKind.CallExpression when es.Expression.Type == TypeSymbol.Void => true,
                     _ => false,
                 };
@@ -291,7 +288,6 @@ namespace FanScript.Compiler.Binding
                 if (!isAllowedExpression)
                     diagnostics.ReportInvalidExpressionStatement(syntax.Location);
             }
-            //}
 
             return result;
         }
