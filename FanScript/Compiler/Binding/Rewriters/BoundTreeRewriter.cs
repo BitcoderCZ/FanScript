@@ -220,6 +220,8 @@ namespace FanScript.Compiler.Binding.Rewriters
                     return RewriteConversionExpression((BoundConversionExpression)node);
                 case BoundNodeKind.ConstructorExpression:
                     return RewriteConstructorExpression((BoundConstructorExpression)node);
+                case BoundNodeKind.PostfixExpression:
+                    return RewritePostfixExpression((BoundPostfixExpression)node);
                 case BoundNodeKind.ArraySegmentExpression:
                     return RewriteArraySegmentExpression((BoundArraySegmentExpression)node);
                 case BoundNodeKind.StatementExpression:
@@ -313,6 +315,9 @@ namespace FanScript.Compiler.Binding.Rewriters
             else
                 return node;
         }
+
+        protected virtual BoundExpression RewritePostfixExpression(BoundPostfixExpression node)
+            => node;
 
         protected virtual BoundExpression RewriteArraySegmentExpression(BoundArraySegmentExpression node)
         {

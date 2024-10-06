@@ -209,13 +209,6 @@ namespace FanScript.Compiler.Syntax
                     return ParseBlockStatement();
                 case SyntaxKind.KeywordOn:
                     return ParseEventStatement();
-                case SyntaxKind.IdentifierToken when Peek(1).Kind switch
-                {
-                    SyntaxKind.PlusPlusToken => true,
-                    SyntaxKind.MinusMinusToken => true,
-                    _ => false,
-                }:
-                    return ParsePostfixStatement();
                 case SyntaxKind.IdentifierToken when IsAssignableClauseNow(out int nextTokenIndex) && Peek(nextTokenIndex).Kind switch
                 {
                     SyntaxKind.EqualsToken => true,
@@ -295,14 +288,6 @@ namespace FanScript.Compiler.Syntax
             BlockStatementSyntax block = ParseBlockStatement();
 
             return new EventStatementSyntax(syntaxTree, onKeyword, identifier, argumentClause, block);
-        }
-
-        private StatementSyntax ParsePostfixStatement()
-        {
-            SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
-            SyntaxToken operatorToken = MatchToken(SyntaxKind.PlusPlusToken, SyntaxKind.MinusMinusToken);
-
-            return new PostfixStatementSyntax(syntaxTree, identifierToken, operatorToken);
         }
 
         private StatementSyntax ParseVariableDeclarationStatement(ImmutableArray<SyntaxToken>? modifiers = null)
@@ -486,6 +471,14 @@ namespace FanScript.Compiler.Syntax
                 case SyntaxKind.IdentifierToken when (Current.Text == TypeSymbol.Vector3.Name || Current.Text == TypeSymbol.Rotation.Name):
                     return ParseVectorConstructorExpresion();
 
+                case SyntaxKind.IdentifierToken when Peek(1).Kind switch
+                {
+                    SyntaxKind.PlusPlusToken => true,
+                    SyntaxKind.MinusMinusToken => true,
+                    _ => false,
+                }:
+                    return ParsePostfixExpression();
+
                 case SyntaxKind.OpenSquareToken:
                     return ParseArraySegmentExpression();
 
@@ -529,6 +522,14 @@ namespace FanScript.Compiler.Syntax
             SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
 
             return new ConstructorExpressionSyntax(syntaxTree, keywordToken, openParenthesisToken, expressionX, comma0Token, expressionY, comma1Token, expressionZ, closeParenthesisToken);
+        }
+
+        private ExpressionSyntax ParsePostfixExpression()
+        {
+            SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
+            SyntaxToken operatorToken = MatchToken(SyntaxKind.PlusPlusToken, SyntaxKind.MinusMinusToken);
+
+            return new PostfixExpressionSyntax(syntaxTree, identifierToken, operatorToken);
         }
 
         private ExpressionSyntax ParseArraySegmentExpression()

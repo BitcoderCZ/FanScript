@@ -393,6 +393,8 @@ namespace FanScript.Compiler.Emit
         {
             if (statement.Expression is BoundStatementExpression exStatement)
                 return EmitStatement(exStatement.Statement);
+            else if (statement.Expression is BoundNopExpression)
+                return NopEmitStore.Instance;
 
             return EmitExpression(statement.Expression);
         }

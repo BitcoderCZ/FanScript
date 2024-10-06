@@ -39,7 +39,8 @@ namespace FanScript.Compiler.Binding.Rewriters
         public static BoundBlockStatement Lower(FunctionSymbol function, BoundStatement statement)
         {
             Lowerer lowerer = new Lowerer(function.Name);
-            BoundStatement result = lowerer.RewriteStatement(statement);
+            BoundStatement lowered = lowerer.RewriteStatement(statement);
+            BoundStatement result = StatementExpressionExtractor.Extract(lowered);
             return RemoveDeadCode(Flatten(function, result));
         }
 

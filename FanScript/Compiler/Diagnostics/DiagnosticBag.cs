@@ -95,7 +95,7 @@ namespace FanScript.Compiler.Diagnostics
             => ReportError(location, "Not all code paths return a value.");
 
         public void ReportInvalidExpressionStatement(TextLocation location)
-            => ReportError(location, $"Only void call expressions can be used as a statement.");
+            => ReportError(location, $"Only void call expressions and postfix expressions (++, --) can be used as a statement.");
 
         public void ReportOnlyOneFileCanHaveGlobalStatements(TextLocation location)
             => ReportError(location, $"At most one file can have global statements.");

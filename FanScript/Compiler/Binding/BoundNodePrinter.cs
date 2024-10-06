@@ -99,6 +99,9 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.ConstructorExpression:
                     WriteConstructorExpression((BoundConstructorExpression)node, writer);
                     break;
+                case BoundNodeKind.PostfixExpression:
+                    WritePostfixExpression((BoundPostfixExpression)node, writer);
+                    break;
                 case BoundNodeKind.ArraySegmentExpression:
                     WriteArraySegmentExpression((BoundArraySegmentExpression)node, writer);
                     break;
@@ -368,6 +371,13 @@ namespace FanScript.Compiler.Binding
 
         private static void WriteExpressionStatement(BoundExpressionStatement node, IndentedTextWriter writer)
         {
+            if (node.Expression.Kind == BoundNodeKind.NopExpression)
+            {
+                writer.WriteKeyword("nop");
+                writer.WriteLine();
+                return;
+            }
+
             node.Expression.WriteTo(writer);
             writer.WriteLine();
         }
@@ -475,6 +485,12 @@ namespace FanScript.Compiler.Binding
             writer.WriteSpace();
             node.ExpressionZ.WriteTo(writer);
             writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
+        }
+
+        private static void WritePostfixExpression(BoundPostfixExpression node, IndentedTextWriter writer)
+        {
+            WriteVariable(node.Variable, writer);
+            writer.WritePunctuation(node.PostfixKind.ToSyntaxString());
         }
 
         private static void WriteArraySegmentExpression(BoundArraySegmentExpression node, IndentedTextWriter writer)

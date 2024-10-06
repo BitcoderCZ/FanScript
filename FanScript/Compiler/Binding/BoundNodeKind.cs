@@ -32,6 +32,8 @@
         ArgumentClause,
         ArraySegmentExpression,
         StatementExpression,
+        NopExpression,
+        PostfixExpression,
 
         EventCondition,
 

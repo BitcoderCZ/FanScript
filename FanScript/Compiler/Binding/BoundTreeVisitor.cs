@@ -84,6 +84,9 @@ namespace FanScript.Compiler.Binding
         protected virtual void VisitPostfixStatement(BoundPostfixStatement node)
         { }
 
+        protected virtual void VisitPostfixExpression(BoundPostfixExpression node)
+        { }
+
         protected virtual void VisitVariableDeclaration(BoundVariableDeclarationStatement node)
         {
             if (node.OptionalAssignment is not null)
@@ -176,6 +179,9 @@ namespace FanScript.Compiler.Binding
                     break;
                 case BoundNodeKind.ConstructorExpression:
                     VisitConstructorExpression((BoundConstructorExpression)node);
+                    break;
+                case BoundNodeKind.PostfixExpression:
+                    VisitPostfixExpression((BoundPostfixExpression)node);
                     break;
                 case BoundNodeKind.ArraySegmentExpression:
                     VisitArraySegmentExpression((BoundArraySegmentExpression)node);

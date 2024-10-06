@@ -51,7 +51,7 @@
         ContinueStatement,
         VariableDeclarationStatement,
         AssignmentStatement,
-        PostfixStatement,
+        PostfixExpression,
         ReturnStatement,
         BuildCommandStatement,
 

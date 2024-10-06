@@ -154,7 +154,7 @@ namespace FanScript.Compiler.Binding
             else
             {
                 // inline function calls
-                BoundTreeInliner.Continuation? inlineContinuation = null;
+                Inliner.Continuation? inlineContinuation = null;
 
                 foreach (var func in analysisResult
                     .EnumerateFunctionsInReverse()
@@ -163,7 +163,7 @@ namespace FanScript.Compiler.Binding
                     if (func is null)
                         continue;
 
-                    BoundBlockStatement inlinedBody = BoundTreeInliner.Inline(functionBodies[func], analysisResult, functionBodies.ToImmutable(), ref inlineContinuation);
+                    BoundBlockStatement inlinedBody = Inliner.Inline(functionBodies[func], analysisResult, functionBodies.ToImmutable(), ref inlineContinuation);
 
                     functionBodies[func] = inlinedBody;
                 }
@@ -280,8 +280,14 @@ namespace FanScript.Compiler.Binding
             //{
             if (result is BoundExpressionStatement es)
             {
-                bool isAllowedExpression = es.Expression.Kind == BoundNodeKind.ErrorExpression ||
-                                          es.Expression.Type == TypeSymbol.Void;
+                bool isAllowedExpression = es.Expression.Kind switch
+                {
+                    BoundNodeKind.ErrorExpression => true,
+                    BoundNodeKind.PostfixExpression => true,
+                    BoundNodeKind.CallExpression when es.Expression.Type == TypeSymbol.Void => true,
+                    _ => false,
+                };
+
                 if (!isAllowedExpression)
                     diagnostics.ReportInvalidExpressionStatement(syntax.Location);
             }
@@ -300,8 +306,6 @@ namespace FanScript.Compiler.Binding
                     return BindBlockStatement((BlockStatementSyntax)syntax);
                 case SyntaxKind.EventStatement:
                     return BindEventStatement((EventStatementSyntax)syntax);
-                case SyntaxKind.PostfixStatement:
-                    return BindPostfixStatement((PostfixStatementSyntax)syntax);
                 case SyntaxKind.VariableDeclarationStatement:
                     return BindVariableDeclarationStatement((VariableDeclarationStatementSyntax)syntax);
                 case SyntaxKind.AssignmentStatement:
@@ -376,32 +380,6 @@ namespace FanScript.Compiler.Binding
             exitScope();
 
             return new BoundEventStatement(syntax, type, argumentClause, block);
-        }
-
-        private BoundStatement BindPostfixStatement(PostfixStatementSyntax syntax)
-        {
-            VariableSymbol? variable = BindVariableReference(syntax.IdentifierToken);
-            if (variable is null)
-                return BindErrorStatement(syntax);
-
-            if (variable.IsReadOnly)
-                diagnostics.ReportCannotAssignReadOnlyVariable(syntax.OperatorToken.Location, variable.Name);
-
-            BoundPostfixKind kind;
-            switch (syntax.OperatorToken.Kind)
-            {
-                case SyntaxKind.PlusPlusToken when variable.Type.Equals(TypeSymbol.Float):
-                    kind = BoundPostfixKind.Increment;
-                    break;
-                case SyntaxKind.MinusMinusToken when variable.Type.Equals(TypeSymbol.Float):
-                    kind = BoundPostfixKind.Decrement;
-                    break;
-                default:
-                    diagnostics.ReportUndefinedPostfixOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, variable.Type);
-                    return BindErrorStatement(syntax);
-            }
-
-            return new BoundPostfixStatement(syntax, variable, kind);
         }
 
         private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax)
@@ -727,6 +705,8 @@ namespace FanScript.Compiler.Binding
                     return BindCallExpression((CallExpressionSyntax)syntax, context);
                 case SyntaxKind.ConstructorExpression:
                     return BindConstructorExpression((ConstructorExpressionSyntax)syntax);
+                case SyntaxKind.PostfixExpression:
+                    return BindPostfixExpression((PostfixExpressionSyntax)syntax);
                 case SyntaxKind.PropertyExpression:
                     return BindPropertyExpression((PropertyExpressionSyntax)syntax);
                 case SyntaxKind.ArraySegmentExpression:
@@ -942,6 +922,32 @@ namespace FanScript.Compiler.Binding
             }
 
             return new BoundConstructorExpression(syntax, type, expressionX, expressionY, expressionZ);
+        }
+
+        private BoundExpression BindPostfixExpression(PostfixExpressionSyntax syntax)
+        {
+            VariableSymbol? variable = BindVariableReference(syntax.IdentifierToken);
+            if (variable is null)
+                return new BoundErrorExpression(syntax);
+
+            if (variable.IsReadOnly)
+                diagnostics.ReportCannotAssignReadOnlyVariable(syntax.OperatorToken.Location, variable.Name);
+
+            BoundPostfixKind kind;
+            switch (syntax.OperatorToken.Kind)
+            {
+                case SyntaxKind.PlusPlusToken when variable.Type.Equals(TypeSymbol.Float):
+                    kind = BoundPostfixKind.Increment;
+                    break;
+                case SyntaxKind.MinusMinusToken when variable.Type.Equals(TypeSymbol.Float):
+                    kind = BoundPostfixKind.Decrement;
+                    break;
+                default:
+                    diagnostics.ReportUndefinedPostfixOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, variable.Type);
+                    return new BoundErrorExpression(syntax);
+            }
+
+            return new BoundPostfixExpression(syntax, variable, kind);
         }
 
         private BoundExpression BindPropertyExpression(PropertyExpressionSyntax syntax)

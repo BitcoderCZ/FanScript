@@ -97,5 +97,8 @@ namespace FanScript.Compiler.Binding
 
         public static BoundEmitterHint Hint(SyntaxNode syntax, BoundEmitterHint.HintKind hint)
             => new BoundEmitterHint(syntax, hint);
+
+        public static BoundPostfixStatement PostfixStatement(SyntaxNode syntax, VariableSymbol variable, BoundPostfixKind kind)
+            => new BoundPostfixStatement(syntax, variable, kind);
     }
 }

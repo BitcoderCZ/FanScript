@@ -595,15 +595,14 @@ namespace FanScript.Tests
             AssertDiagnostics(text, diagnostics);
         }
 
-        [Fact]
-        public void ExpressionStatement_Reports_Invalid()
+        [Theory]
+        [InlineData("$[random(0, 10)]$")]
+        [InlineData("$[2]$")]
+        [InlineData("$[5 + 3]$")]
+        public void ExpressionStatement_Reports_Invalid(string text)
         {
-            var text = """
-                $[random(0, 10)]$
-                """;
-
             var diagnostics = """
-                Only void call expressions can be used as a statement.
+                Only void call expressions and postfix expressions (++, --) can be used as a statement.
                 """;
 
             AssertDiagnostics(text, diagnostics);

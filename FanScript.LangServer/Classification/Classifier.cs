@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Syntax;
+﻿using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using System;
@@ -50,7 +51,12 @@ namespace FanScript.LangServer.Classification
                     AddClassification(SemanticTokenType.Function, token.Span, span, result);
                     break;
                 default:
-                    AddClassification(token.Kind, token.Span, span, result);
+                    {
+                        if (token.Kind == SyntaxKind.IdentifierToken && TypeSymbol.GetType(token.Text) != TypeSymbol.Error)
+                            AddClassification(SemanticTokenType.Type, token.Span, span, result);
+                        else
+                            AddClassification(token.Kind, token.Span, span, result);
+                    }
                     break;
             }
 

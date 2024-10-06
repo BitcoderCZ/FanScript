@@ -6,14 +6,14 @@ using static FanScript.Compiler.Binding.BoundNodeFactory;
 
 namespace FanScript.Compiler.Binding.Rewriters
 {
-    internal sealed class BoundTreeInliner : BoundTreeRewriter
+    internal sealed class Inliner : BoundTreeRewriter
     {
         private readonly BoundAnalysisResult analysisResult;
         private readonly ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions;
 
         private Counter varCount = new Counter(0);
 
-        public BoundTreeInliner(BoundAnalysisResult analysisResult, ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions, Continuation? continuation = null)
+        public Inliner(BoundAnalysisResult analysisResult, ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions, Continuation? continuation = null)
         {
             this.analysisResult = analysisResult;
             this.functions = functions;
@@ -25,7 +25,7 @@ namespace FanScript.Compiler.Binding.Rewriters
 
         public static BoundBlockStatement Inline(BoundBlockStatement statement, BoundAnalysisResult analysisResult, ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions, ref Continuation? continuation)
         {
-            BoundTreeInliner inliner = new BoundTreeInliner(analysisResult, functions, continuation);
+            Inliner inliner = new Inliner(analysisResult, functions, continuation);
             BoundStatement res = inliner.RewriteBlockStatement(statement);
 
             continuation = new Continuation(inliner.varCount);
@@ -54,20 +54,20 @@ namespace FanScript.Compiler.Binding.Rewriters
         private class CallInliner : BoundTreeRewriter
         {
             private readonly BoundCallExpression call;
-            BoundTreeInliner treeInliner;
+            Inliner treeInliner;
             private readonly FunctionSymbol func;
             private Counter varCount;
 
             private readonly Dictionary<VariableSymbol, VariableSymbol> inlinedVariables = new();
 
-            private CallInliner(BoundCallExpression call, BoundTreeInliner treeInliner)
+            private CallInliner(BoundCallExpression call, Inliner treeInliner)
             {
                 this.call = call;
                 this.treeInliner = treeInliner;
                 func = this.call.Function;
             }
 
-            public static BoundStatement Inline(BoundCallExpression call, BoundTreeInliner treeInliner, ref Counter varCount)
+            public static BoundStatement Inline(BoundCallExpression call, Inliner treeInliner, ref Counter varCount)
             {
                 CallInliner inliner = new CallInliner(call, treeInliner);
                 return inliner.Inline(ref varCount);
