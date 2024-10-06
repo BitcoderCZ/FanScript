@@ -2,6 +2,8 @@ float f = 1
 
 inspect(vec3(f++, f++, f++))
 
+f++
+
 inspect(f)
 
 inspect(f++ + f)

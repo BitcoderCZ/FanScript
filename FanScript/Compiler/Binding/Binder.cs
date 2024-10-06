@@ -306,6 +306,8 @@ namespace FanScript.Compiler.Binding
                     return BindBlockStatement((BlockStatementSyntax)syntax);
                 case SyntaxKind.EventStatement:
                     return BindEventStatement((EventStatementSyntax)syntax);
+                case SyntaxKind.PostfixStatement:
+                    return BindPostfixStatement((PostfixStatementSyntax)syntax);
                 case SyntaxKind.VariableDeclarationStatement:
                     return BindVariableDeclarationStatement((VariableDeclarationStatementSyntax)syntax);
                 case SyntaxKind.AssignmentStatement:
@@ -380,6 +382,32 @@ namespace FanScript.Compiler.Binding
             exitScope();
 
             return new BoundEventStatement(syntax, type, argumentClause, block);
+        }
+
+        private BoundStatement BindPostfixStatement(PostfixStatementSyntax syntax)
+        {
+            VariableSymbol? variable = BindVariableReference(syntax.IdentifierToken);
+            if (variable is null)
+                return BindErrorStatement(syntax);
+
+            if (variable.IsReadOnly)
+                diagnostics.ReportCannotAssignReadOnlyVariable(syntax.OperatorToken.Location, variable.Name);
+
+            BoundPostfixKind kind;
+            switch (syntax.OperatorToken.Kind)
+            {
+                case SyntaxKind.PlusPlusToken when variable.Type.Equals(TypeSymbol.Float):
+                    kind = BoundPostfixKind.Increment;
+                    break;
+                case SyntaxKind.MinusMinusToken when variable.Type.Equals(TypeSymbol.Float):
+                    kind = BoundPostfixKind.Decrement;
+                    break;
+                default:
+                    diagnostics.ReportUndefinedPostfixOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, variable.Type);
+                    return BindErrorStatement(syntax);
+            }
+
+            return new BoundPostfixStatement(syntax, variable, kind);
         }
 
         private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax)

@@ -43,6 +43,7 @@
         GlobalStatement,
         BlockStatement,
         EventStatement,
+        PostfixStatement,
         ExpressionStatement,
         IfStatement,
         WhileStatement,
