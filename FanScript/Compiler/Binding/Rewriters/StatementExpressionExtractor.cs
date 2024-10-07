@@ -600,7 +600,7 @@ namespace FanScript.Compiler.Binding.Rewriters
                             break;
                         }
                     }
-                    else if (!results[i].Before.IsDefaultOrEmpty || !results[i].After.IsDefaultOrEmpty)
+                    else if (results[i].Any)
                     {
                         found = true;
                         break;
@@ -620,24 +620,61 @@ namespace FanScript.Compiler.Binding.Rewriters
                 ImmutableArray<BoundStatement> after = default;
                 BoundExpression[] expressions = new BoundExpression[results.Length];
 
+                int lastAnyIndex = -1;
+                bool foundAfter = false;
+                for (int i = results.Length - 1; i >= 0; i--)
+                {
+                    ref readonly ExpressionResult res = ref results[i];
+
+                    if (!res.After.IsDefaultOrEmpty)
+                    {
+                        if (foundAfter)
+                        {
+                            lastAnyIndex = i + 1;
+                            break;
+                        }
+                        else 
+                            foundAfter = true;
+                    }
+
+                    if (!res.Before.IsDefaultOrEmpty)
+                    {
+                        lastAnyIndex = i;
+                        break;
+                    }
+                }
+
+                VariableSymbol? lastTemp = null;
                 for (int i = 0; i < results.Length; i++)
                 {
                     ref readonly ExpressionResult res = ref results[i];
 
                     add(res.Before);
 
-                    // TODO: this shouldn't be for the last result, but for the last result that has any and for the results after
-                    if (i == results.Length - 1)
+                    if (i >= lastAnyIndex)
                     {
                         expressions[i] = res.Expression;
-                        after = res.After;
+                        if (!res.After.IsDefaultOrEmpty)
+                            after = res.After;
                     }
                     else
                     {
-                        VariableSymbol temp = state.GetTempVar(res.Expression.Type);
-                        before.Add(Assignment(res.Expression.Syntax, temp, res.Expression));
+                        VariableSymbol temp;
+                        if (lastTemp is not null && res.Before.IsDefaultOrEmpty)
+                            temp = lastTemp;
+                        else
+                        {
+                            temp = state.GetTempVar(res.Expression.Type);
+                            before.Add(Assignment(res.Expression.Syntax, temp, res.Expression));
+                        }
+
                         add(res.After);
                         expressions[i] = Variable(res.Expression.Syntax, temp);
+
+                        if (res.After.IsDefaultOrEmpty)
+                            lastTemp = temp;
+                        else
+                            lastTemp = null;
                     }
                 }
 
