@@ -1,9 +1,12 @@
-﻿namespace FanScript.Compiler.Symbols
+﻿using System.Diagnostics;
+
+namespace FanScript.Compiler.Symbols
 {
     public abstract class Symbol
     {
         private protected Symbol(string name)
         {
+            Debug.Assert(!string.IsNullOrEmpty(name));
             Name = name;
         }
 

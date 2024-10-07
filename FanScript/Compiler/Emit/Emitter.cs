@@ -141,6 +141,7 @@ namespace FanScript.Compiler.Emit
                 BoundVariableDeclarationStatement => NopEmitStore.Instance,
                 BoundAssignmentStatement => emitAssigmentStatement((BoundAssignmentStatement)statement),
                 BoundPostfixStatement => emitPostfixStatement((BoundPostfixStatement)statement),
+                BoundPrefixStatement => emitPrefixStatement((BoundPrefixStatement)statement),
                 BoundGotoStatement => emitGotoStatement((BoundGotoStatement)statement),
                 BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundEventCondition condition => emitEventStatement(condition.EventType, condition.ArgumentClause?.Arguments, conditionalGoto.Label),
                 BoundConditionalGotoStatement => emitConditionalGotoStatement((BoundConditionalGotoStatement)statement),
@@ -313,14 +314,41 @@ namespace FanScript.Compiler.Emit
             BlockDef def;
             switch (statement.PostfixKind)
             {
-                case BoundPostfixKind.Increment:
+                case PostfixKind.Increment:
                     def = Blocks.Variables.PlusPlusFloat;
                     break;
-                case BoundPostfixKind.Decrement:
+                case PostfixKind.Decrement:
                     def = Blocks.Variables.MinusMinusFloat;
                     break;
                 default:
-                    throw new InvalidDataException($"Unknown {nameof(BoundPostfixKind)} '{statement.PostfixKind}'");
+                    throw new InvalidDataException($"Unknown {nameof(PostfixKind)} '{statement.PostfixKind}'");
+            }
+
+            Block block = AddBlock(def);
+
+            using (ExpressionBlock())
+            {
+                EmitStore store = EmitGetVariable(statement.Variable);
+
+                Connect(store, BasicEmitStore.CIn(block, block.Type.Terminals["Variable"]));
+            }
+
+            return new BasicEmitStore(block);
+        }
+
+        private EmitStore emitPrefixStatement(BoundPrefixStatement statement)
+        {
+            BlockDef def;
+            switch (statement.PrefixKind)
+            {
+                case PrefixKind.Increment:
+                    def = Blocks.Variables.PlusPlusFloat;
+                    break;
+                case PrefixKind.Decrement:
+                    def = Blocks.Variables.MinusMinusFloat;
+                    break;
+                default:
+                    throw new InvalidDataException($"Unknown {nameof(PrefixKind)} '{statement.PrefixKind}'");
             }
 
             Block block = AddBlock(def);

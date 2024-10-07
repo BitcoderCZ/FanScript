@@ -4,6 +4,8 @@ namespace FanScript.Compiler.Syntax
 {
     public abstract class SyntaxNode
     {
+        // TODO: consider caching GetChildren
+
         private protected SyntaxNode(SyntaxTree syntaxTree)
         {
             SyntaxTree = syntaxTree;

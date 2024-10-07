@@ -17,6 +17,8 @@ namespace FanScript.Compiler.Binding.Rewriters
                     return RewriteNopStatement((BoundNopStatement)node);
                 case BoundNodeKind.PostfixStatement:
                     return RewritePostfixStatement((BoundPostfixStatement)node);
+                case BoundNodeKind.PrefixStatement:
+                    return RewritePrefixStatement((BoundPrefixStatement)node);
                 case BoundNodeKind.VariableDeclarationStatement:
                     return RewriteVariableDeclaration((BoundVariableDeclarationStatement)node);
                 case BoundNodeKind.AssignmentStatement:
@@ -95,6 +97,9 @@ namespace FanScript.Compiler.Binding.Rewriters
             => node;
 
         protected virtual BoundStatement RewritePostfixStatement(BoundPostfixStatement node)
+            => node;
+
+        protected virtual BoundStatement RewritePrefixStatement(BoundPrefixStatement node)
             => node;
 
         protected virtual BoundStatement RewriteVariableDeclaration(BoundVariableDeclarationStatement node)
@@ -222,6 +227,8 @@ namespace FanScript.Compiler.Binding.Rewriters
                     return RewriteConstructorExpression((BoundConstructorExpression)node);
                 case BoundNodeKind.PostfixExpression:
                     return RewritePostfixExpression((BoundPostfixExpression)node);
+                case BoundNodeKind.PrefixExpression:
+                    return RewritePrefixExpression((BoundPrefixExpression)node);
                 case BoundNodeKind.ArraySegmentExpression:
                     return RewriteArraySegmentExpression((BoundArraySegmentExpression)node);
                 case BoundNodeKind.StatementExpression:
@@ -317,6 +324,9 @@ namespace FanScript.Compiler.Binding.Rewriters
         }
 
         protected virtual BoundExpression RewritePostfixExpression(BoundPostfixExpression node)
+            => node;
+
+        protected virtual BoundExpression RewritePrefixExpression(BoundPrefixExpression node)
             => node;
 
         protected virtual BoundExpression RewriteArraySegmentExpression(BoundArraySegmentExpression node)

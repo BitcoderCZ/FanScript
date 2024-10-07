@@ -33,6 +33,9 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.PostfixStatement:
                     WritePostfixStatement((BoundPostfixStatement)node, writer);
                     break;
+                case BoundNodeKind.PrefixStatement:
+                    WritePrefixStatement((BoundPrefixStatement)node, writer);
+                    break;
                 case BoundNodeKind.VariableDeclarationStatement:
                     WriteVariableDeclaration((BoundVariableDeclarationStatement)node, writer);
                     break;
@@ -101,6 +104,9 @@ namespace FanScript.Compiler.Binding
                     break;
                 case BoundNodeKind.PostfixExpression:
                     WritePostfixExpression((BoundPostfixExpression)node, writer);
+                    break;
+                case BoundNodeKind.PrefixExpression:
+                    WritePrefixExpression((BoundPrefixExpression)node, writer);
                     break;
                 case BoundNodeKind.ArraySegmentExpression:
                     WriteArraySegmentExpression((BoundArraySegmentExpression)node, writer);
@@ -187,6 +193,13 @@ namespace FanScript.Compiler.Binding
         {
             WriteVariable(node.Variable, writer);
             writer.WritePunctuation(node.PostfixKind.ToSyntaxString());
+            writer.WriteLine();
+        }
+
+        private static void WritePrefixStatement(BoundPrefixStatement node, IndentedTextWriter writer)
+        {
+            writer.WritePunctuation(node.PrefixKind.ToSyntaxString());
+            WriteVariable(node.Variable, writer);
             writer.WriteLine();
         }
 
@@ -491,6 +504,12 @@ namespace FanScript.Compiler.Binding
         {
             WriteVariable(node.Variable, writer);
             writer.WritePunctuation(node.PostfixKind.ToSyntaxString());
+        }
+
+        private static void WritePrefixExpression(BoundPrefixExpression node, IndentedTextWriter writer)
+        {
+            writer.WritePunctuation(node.PrefixKind.ToSyntaxString());
+            WriteVariable(node.Variable, writer);
         }
 
         private static void WriteArraySegmentExpression(BoundArraySegmentExpression node, IndentedTextWriter writer)

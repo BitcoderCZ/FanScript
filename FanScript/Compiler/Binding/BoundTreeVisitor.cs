@@ -20,6 +20,9 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.PostfixStatement:
                     VisitPostfixStatement((BoundPostfixStatement)node);
                     break;
+                case BoundNodeKind.PrefixStatement:
+                    VisitPrefixStatement((BoundPrefixStatement)node);
+                    break;
                 case BoundNodeKind.VariableDeclarationStatement:
                     VisitVariableDeclaration((BoundVariableDeclarationStatement)node);
                     break;
@@ -85,6 +88,12 @@ namespace FanScript.Compiler.Binding
         { }
 
         protected virtual void VisitPostfixExpression(BoundPostfixExpression node)
+        { }
+
+        protected virtual void VisitPrefixStatement(BoundPrefixStatement node)
+        { }
+
+        protected virtual void VisitPrefixExpression(BoundPrefixExpression node)
         { }
 
         protected virtual void VisitVariableDeclaration(BoundVariableDeclarationStatement node)
@@ -182,6 +191,9 @@ namespace FanScript.Compiler.Binding
                     break;
                 case BoundNodeKind.PostfixExpression:
                     VisitPostfixExpression((BoundPostfixExpression)node);
+                    break;
+                case BoundNodeKind.PrefixExpression:
+                    VisitPrefixExpression((BoundPrefixExpression)node);
                     break;
                 case BoundNodeKind.ArraySegmentExpression:
                     VisitArraySegmentExpression((BoundArraySegmentExpression)node);

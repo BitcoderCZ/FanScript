@@ -304,6 +304,8 @@ namespace FanScript.Compiler.Binding
                     return BindEventStatement((EventStatementSyntax)syntax);
                 case SyntaxKind.PostfixStatement:
                     return BindPostfixStatement((PostfixStatementSyntax)syntax);
+                case SyntaxKind.PrefixStatement:
+                    return BindPrefixStatement((PrefixStatementSyntax)syntax);
                 case SyntaxKind.VariableDeclarationStatement:
                     return BindVariableDeclarationStatement((VariableDeclarationStatementSyntax)syntax);
                 case SyntaxKind.AssignmentStatement:
@@ -389,14 +391,14 @@ namespace FanScript.Compiler.Binding
             if (variable.IsReadOnly)
                 diagnostics.ReportCannotAssignReadOnlyVariable(syntax.OperatorToken.Location, variable.Name);
 
-            BoundPostfixKind kind;
+            PostfixKind kind;
             switch (syntax.OperatorToken.Kind)
             {
                 case SyntaxKind.PlusPlusToken when variable.Type.Equals(TypeSymbol.Float):
-                    kind = BoundPostfixKind.Increment;
+                    kind = PostfixKind.Increment;
                     break;
                 case SyntaxKind.MinusMinusToken when variable.Type.Equals(TypeSymbol.Float):
-                    kind = BoundPostfixKind.Decrement;
+                    kind = PostfixKind.Decrement;
                     break;
                 default:
                     diagnostics.ReportUndefinedPostfixOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, variable.Type);
@@ -404,6 +406,32 @@ namespace FanScript.Compiler.Binding
             }
 
             return new BoundPostfixStatement(syntax, variable, kind);
+        }
+
+        private BoundStatement BindPrefixStatement(PrefixStatementSyntax syntax)
+        {
+            VariableSymbol? variable = BindVariableReference(syntax.IdentifierToken);
+            if (variable is null)
+                return BindErrorStatement(syntax);
+
+            if (variable.IsReadOnly)
+                diagnostics.ReportCannotAssignReadOnlyVariable(syntax.OperatorToken.Location, variable.Name);
+
+            PrefixKind kind;
+            switch (syntax.OperatorToken.Kind)
+            {
+                case SyntaxKind.PlusPlusToken when variable.Type.Equals(TypeSymbol.Float):
+                    kind = PrefixKind.Increment;
+                    break;
+                case SyntaxKind.MinusMinusToken when variable.Type.Equals(TypeSymbol.Float):
+                    kind = PrefixKind.Decrement;
+                    break;
+                default:
+                    diagnostics.ReportUndefinedPostfixOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, variable.Type);
+                    return BindErrorStatement(syntax);
+            }
+
+            return new BoundPrefixStatement(syntax, variable, kind);
         }
 
         private BoundStatement BindVariableDeclarationStatement(VariableDeclarationStatementSyntax syntax)
@@ -731,6 +759,8 @@ namespace FanScript.Compiler.Binding
                     return BindConstructorExpression((ConstructorExpressionSyntax)syntax);
                 case SyntaxKind.PostfixExpression:
                     return BindPostfixExpression((PostfixExpressionSyntax)syntax);
+                case SyntaxKind.PrefixExpression:
+                    return BindPrefixExpression((PrefixExpressionSyntax)syntax);
                 case SyntaxKind.PropertyExpression:
                     return BindPropertyExpression((PropertyExpressionSyntax)syntax);
                 case SyntaxKind.ArraySegmentExpression:
@@ -957,14 +987,14 @@ namespace FanScript.Compiler.Binding
             if (variable.IsReadOnly)
                 diagnostics.ReportCannotAssignReadOnlyVariable(syntax.OperatorToken.Location, variable.Name);
 
-            BoundPostfixKind kind;
+            PostfixKind kind;
             switch (syntax.OperatorToken.Kind)
             {
                 case SyntaxKind.PlusPlusToken when variable.Type.Equals(TypeSymbol.Float):
-                    kind = BoundPostfixKind.Increment;
+                    kind = PostfixKind.Increment;
                     break;
                 case SyntaxKind.MinusMinusToken when variable.Type.Equals(TypeSymbol.Float):
-                    kind = BoundPostfixKind.Decrement;
+                    kind = PostfixKind.Decrement;
                     break;
                 default:
                     diagnostics.ReportUndefinedPostfixOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, variable.Type);
@@ -972,6 +1002,32 @@ namespace FanScript.Compiler.Binding
             }
 
             return new BoundPostfixExpression(syntax, variable, kind);
+        }
+
+        private BoundExpression BindPrefixExpression(PrefixExpressionSyntax syntax)
+        {
+            VariableSymbol? variable = BindVariableReference(syntax.IdentifierToken);
+            if (variable is null)
+                return new BoundErrorExpression(syntax);
+
+            if (variable.IsReadOnly)
+                diagnostics.ReportCannotAssignReadOnlyVariable(syntax.OperatorToken.Location, variable.Name);
+
+            PrefixKind kind;
+            switch (syntax.OperatorToken.Kind)
+            {
+                case SyntaxKind.PlusPlusToken when variable.Type.Equals(TypeSymbol.Float):
+                    kind = PrefixKind.Increment;
+                    break;
+                case SyntaxKind.MinusMinusToken when variable.Type.Equals(TypeSymbol.Float):
+                    kind = PrefixKind.Decrement;
+                    break;
+                default:
+                    diagnostics.ReportUndefinedPrefixOperator(syntax.OperatorToken.Location, syntax.OperatorToken.Text, variable.Type);
+                    return new BoundErrorExpression(syntax);
+            }
+
+            return new BoundPrefixExpression(syntax, variable, kind);
         }
 
         private BoundExpression BindPropertyExpression(PropertyExpressionSyntax syntax)

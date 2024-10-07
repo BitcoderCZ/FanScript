@@ -216,6 +216,9 @@ namespace FanScript.Compiler.Syntax
                     _ => false,
                 }:
                     return ParsePostfixStatement();
+                case SyntaxKind.PlusPlusToken:
+                case SyntaxKind.MinusMinusToken:
+                    return ParsePrefixStatement();
                 case SyntaxKind.IdentifierToken when IsAssignableClauseNow(out int nextTokenIndex) && Peek(nextTokenIndex).Kind switch
                 {
                     SyntaxKind.EqualsToken => true,
@@ -303,6 +306,14 @@ namespace FanScript.Compiler.Syntax
             SyntaxToken operatorToken = MatchToken(SyntaxKind.PlusPlusToken, SyntaxKind.MinusMinusToken);
 
             return new PostfixStatementSyntax(syntaxTree, identifierToken, operatorToken);
+        }
+
+        private StatementSyntax ParsePrefixStatement()
+        {
+            SyntaxToken operatorToken = MatchToken(SyntaxKind.PlusPlusToken, SyntaxKind.MinusMinusToken);
+            SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
+
+            return new PrefixStatementSyntax(syntaxTree, operatorToken, identifierToken);
         }
 
         private StatementSyntax ParseVariableDeclarationStatement(ImmutableArray<SyntaxToken>? modifiers = null)
@@ -494,6 +505,10 @@ namespace FanScript.Compiler.Syntax
                 }:
                     return ParsePostfixExpression();
 
+                case SyntaxKind.PlusPlusToken:
+                case SyntaxKind.MinusMinusToken:
+                    return ParsePrefixExpression();
+
                 case SyntaxKind.OpenSquareToken:
                     return ParseArraySegmentExpression();
 
@@ -545,6 +560,13 @@ namespace FanScript.Compiler.Syntax
             SyntaxToken operatorToken = MatchToken(SyntaxKind.PlusPlusToken, SyntaxKind.MinusMinusToken);
 
             return new PostfixExpressionSyntax(syntaxTree, identifierToken, operatorToken);
+        }
+        private ExpressionSyntax ParsePrefixExpression()
+        {
+            SyntaxToken operatorToken = MatchToken(SyntaxKind.PlusPlusToken, SyntaxKind.MinusMinusToken);
+            SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
+
+            return new PrefixExpressionSyntax(syntaxTree, operatorToken, identifierToken);
         }
 
         private ExpressionSyntax ParseArraySegmentExpression()

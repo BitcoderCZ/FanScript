@@ -33,6 +33,8 @@ namespace FanScript.Compiler.Binding.Rewriters
                     return RewriteNopStatement((BoundNopStatement)node);
                 case BoundNodeKind.PostfixStatement:
                     return RewritePostfixStatement((BoundPostfixStatement)node);
+                case BoundNodeKind.PrefixStatement:
+                    return RewritePrefixStatement((BoundPrefixStatement)node);
                 case BoundNodeKind.VariableDeclarationStatement:
                     return RewriteVariableDeclaration((BoundVariableDeclarationStatement)node);
                 case BoundNodeKind.AssignmentStatement:
@@ -111,6 +113,9 @@ namespace FanScript.Compiler.Binding.Rewriters
             => node;
 
         private BoundStatement RewritePostfixStatement(BoundPostfixStatement node)
+            => node;
+
+        private BoundStatement RewritePrefixStatement(BoundPrefixStatement node)
             => node;
 
         private BoundStatement RewriteVariableDeclaration(BoundVariableDeclarationStatement node)
@@ -260,6 +265,8 @@ namespace FanScript.Compiler.Binding.Rewriters
                     return RewriteConstructorExpression((BoundConstructorExpression)node);
                 case BoundNodeKind.PostfixExpression:
                     return RewritePostfixExpression((BoundPostfixExpression)node);
+                case BoundNodeKind.PrefixExpression:
+                    return RewritePrefixExpression((BoundPrefixExpression)node);
                 case BoundNodeKind.ArraySegmentExpression:
                     return RewriteArraySegmentExpression((BoundArraySegmentExpression)node);
                 case BoundNodeKind.StatementExpression:
@@ -355,6 +362,11 @@ namespace FanScript.Compiler.Binding.Rewriters
         private ExpressionResult RewritePostfixExpression(BoundPostfixExpression node)
         {
             return new ExpressionResult([], Variable(node.Syntax, node.Variable), [PostfixStatement(node.Syntax, node.Variable, node.PostfixKind)]);
+        }
+
+        private ExpressionResult RewritePrefixExpression(BoundPrefixExpression node)
+        {
+            return new ExpressionResult([PrefixStatement(node.Syntax, node.Variable, node.PrefixKind)], Variable(node.Syntax, node.Variable), []);
         }
 
         private ExpressionResult RewriteArraySegmentExpression(BoundArraySegmentExpression node)

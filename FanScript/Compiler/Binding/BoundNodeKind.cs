@@ -18,6 +18,7 @@
         ConditionalGotoStatement,
         LabelStatement,
         PostfixStatement,
+        PrefixStatement,
         ExpressionStatement,
 
         // Expressions
@@ -34,6 +35,7 @@
         StatementExpression,
         NopExpression,
         PostfixExpression,
+        PrefixExpression,
 
         EventCondition,
 
