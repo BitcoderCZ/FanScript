@@ -205,8 +205,11 @@ namespace FanScript.Compiler.Diagnostics
         public void ReportUnknownBuildCommand(TextLocation location, string text)
             => ReportError(location, $"Unknown build command '{text}'.");
 
-        public void CircularCall(TextLocation location, IEnumerable<FunctionSymbol> cycle)
+        public void ReportCircularCall(TextLocation location, IEnumerable<FunctionSymbol> cycle)
             => ReportError(location, $"Circular calls (recursion) aren't allowed ({string.Join(" -> ", cycle.Select(func => func.ToString()))}).");
+
+        public void ReportTooManyInlineVariableUses(TextLocation location, string variableName)
+            => ReportError(location, $"Inline variable '{variableName}' has been used to many times (max is {FancadeConstants.WireSplitLimit}), either use it less times or remove the inline modifier.");
 
         public void ReportUnreachableCode(TextLocation location)
           => ReportWarning(location, $"Unreachable code detected.");

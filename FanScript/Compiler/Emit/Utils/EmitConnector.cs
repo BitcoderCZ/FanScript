@@ -1,4 +1,4 @@
-﻿namespace FanScript.Compiler.Emit
+﻿namespace FanScript.Compiler.Emit.Utils
 {
     internal class EmitConnector
     {

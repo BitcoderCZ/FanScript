@@ -1,7 +1,7 @@
 ﻿using FanScript.FCInfo;
 using System.Diagnostics.CodeAnalysis;
 
-namespace FanScript.Compiler.Emit
+namespace FanScript.Compiler.Emit.Utils
 {
     internal sealed class BreakBlockCache
     {

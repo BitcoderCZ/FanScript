@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
+using FanScript.Compiler.Emit.Utils;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.FCInfo;
@@ -26,7 +27,7 @@ namespace FanScript.Compiler.Emit
         // key - label name, item - the store to connect gotos to
         private Dictionary<string, EmitStore> afterLabel = new();
 
-        private Dictionary<VariableSymbol, EmitStore> inlineVariableInits = new();
+        private readonly InlineVarManager inlineVarManager = new();
 
         private Dictionary<VariableSymbol, BreakBlockCache> vectorBreakCache = new();
         private Dictionary<VariableSymbol, BreakBlockCache> rotationBreakCache = new();
@@ -792,13 +793,7 @@ namespace FanScript.Compiler.Emit
                 return builtinFunction.Emit(expression, this);
 
             Debug.Assert(!expression.Function.Modifiers.HasFlag(Modifiers.Inline));
-            //if (expression.Function.Modifiers.HasFlag(Modifiers.Inline) || program.Analysis.GetCallCount(expression.Function) <= MaxCallCountToInline)
-            //    return emitInlineCall(expression);
-            //else
-            return emitNormalCall(expression);
-        }
-        private EmitStore emitNormalCall(BoundCallExpression expression)
-        {
+
             FunctionSymbol func = expression.Function;
 
             EmitConnector connector = new EmitConnector(Connect);
@@ -845,61 +840,6 @@ namespace FanScript.Compiler.Emit
 
             return connector.Store;
         }
-        //private EmitStore emitInlineCall(BoundCallExpression expression)
-        //{
-        //    FunctionSymbol func = expression.Function;
-
-        //    Debug.Assert(func.Declaration is not null);
-
-        //    EmitConnector connector = new EmitConnector(connect);
-
-        //    VariableSymbol[] ogParams = new VariableSymbol[func.Parameters.Length];
-
-        //    for (int i = 0; i < func.Parameters.Length; i++)
-        //    {
-        //        ParameterSymbol param = func.Parameters[i];
-        //        BoundExpression argEx = expression.Arguments[i];
-
-        //        ogParams[i] = param.Clone();
-
-        //        if (argEx is BoundVariableExpression varEx && param.Modifiers.HasOneOfFlags(Modifiers.Readonly, Modifiers.Ref, Modifiers.Out))
-        //        {
-        //            VariableSymbol arg = varEx.Variable;
-
-        //            if (!param.Modifiers.HasFlag(Modifiers.Out) || arg.Name != "_")
-        //            {
-        //                param.Replicate(arg);
-
-        //                continue;
-        //            }
-        //        }
-
-        //        if (param.Modifiers.HasFlag(Modifiers.Out))
-        //            continue;
-
-        //        EmitStore setStore = emitSetVariable(param, argEx);
-
-        //        connector.Add(setStore);
-        //    }
-
-        //    beforeReturnStack.Push(new List<EmitStore>());
-        //    EmitStore bodyStore = emitStatement(program.Functions[func]);
-        //    List<EmitStore> beforeReturn = beforeReturnStack.Pop();
-
-        //    Debug.Assert(beforeReturn.Count > 0, "beforeReturn.Count > 0");
-
-        //    connector.Add(new MultiEmitStore(bodyStore, new BasicEmitStore(new NopConnectTarget(),
-        //        beforeReturn.Aggregate(new List<ConnectTarget>(), (list, store) =>
-        //        {
-        //            list.AddRange(store.Out);
-        //            return list;
-        //        }))));
-
-        //    for (int i = 0; i < func.Parameters.Length; i++)
-        //        func.Parameters[i].Replicate(ogParams[i]);
-
-        //    return connector.Store;
-        //}
 
         #region Utils
         public EmitStore EmitGetVariable(VariableSymbol variable)
@@ -916,10 +856,13 @@ namespace FanScript.Compiler.Emit
                     {
                         if (variable.Modifiers.HasFlag(Modifiers.Inline))
                         {
-                            if (inlineVariableInits.TryGetValue(variable, out EmitStore? store))
+                            if (inlineVarManager.TryGet(variable, this, out var store))
                                 return store;
                             else
+                            {
+                                Diagnostics.ReportTooManyInlineVariableUses(Text.TextLocation.None, variable.Name);
                                 return NopEmitStore.Instance;
+                            }
                         }
 
                         Block block = AddBlock(Blocks.Variables.VariableByType(variable.Type!.ToWireType()));
@@ -983,7 +926,7 @@ namespace FanScript.Compiler.Emit
                             return NopEmitStore.Instance;
                         else if (variable.Modifiers.HasFlag(Modifiers.Inline))
                         {
-                            inlineVariableInits[variable] = getValueStore();
+                            inlineVarManager.Set(variable, getValueStore());
                             return NopEmitStore.Instance;
                         }
 

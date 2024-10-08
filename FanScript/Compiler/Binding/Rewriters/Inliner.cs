@@ -85,8 +85,8 @@ namespace FanScript.Compiler.Binding.Rewriters
                 {
                     ParameterSymbol param = func.Parameters[i];
 
-                    if (call.Arguments[i] is BoundVariableExpression varEx && 
-                        (param.Modifiers.HasOneOfFlags(Modifiers.Ref, Modifiers.Out) || 
+                    if (call.Arguments[i] is BoundVariableExpression varEx &&
+                        (param.Modifiers.HasOneOfFlags(Modifiers.Ref, Modifiers.Out) ||
                         (param.Modifiers.HasFlag(Modifiers.Readonly) && varEx.Variable is BasicVariableSymbol)))
                         inlinedVariables.Add(param, varEx.Variable);
                     else

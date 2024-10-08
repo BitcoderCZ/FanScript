@@ -9,6 +9,23 @@ namespace FanScript.FCInfo
         public static BlockDef Stone = new BlockDef("Stone Block", 1, BlockType.NonScript, new Vector2I(1, 1));
         public static BlockDef Shrub = new BlockDef("Shrub", 500, BlockType.NonScript, new Vector2I(1, 1));
 
+        public static (BlockDef Def, Terminal In, Terminal Out)? GetPassthrough(WireType type)
+        {
+            switch (type)
+            {
+                case WireType.Bool:
+                    return (Math.LogicalOr, Math.LogicalOr.Terminals["Tru1"], Math.LogicalOr.Terminals["Tru1 | Tru2"]);
+                case WireType.Float:
+                    return (Math.Add_Number, Math.Add_Number.Terminals["Num1"], Math.Add_Number.Terminals["Num1 + Num2"]);
+                case WireType.Vec3:
+                    return (Math.Add_Vector, Math.Add_Vector.Terminals["Vec1"], Math.Add_Vector.Terminals["Vec1 + Vec2"]);
+                case WireType.Rot:
+                    return (Math.Multiply_Rotation, Math.Multiply_Rotation.Terminals["Rot1"], Math.Multiply_Rotation.Terminals["Rot1 * Rot2"]);
+                default:
+                    return null;
+            }
+        }
+
         public static class Game
         {
             public static readonly BlockDef Win = new BlockDef("Win", 252, BlockType.Active, new Vector2I(2, 2), new Terminal(WireType.Void, TerminalType.Out), new Terminal(WireType.Void, TerminalType.In));

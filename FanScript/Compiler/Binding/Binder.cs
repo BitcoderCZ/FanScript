@@ -150,7 +150,7 @@ namespace FanScript.Compiler.Binding
             if (analysisResult.HasCircularCalls(out var circularCall))
             {
                 DiagnosticBag bag = new DiagnosticBag();
-                bag.CircularCall(TextLocation.None, circularCall);
+                bag.ReportCircularCall(TextLocation.None, circularCall);
                 diagnostics.AddRange(bag);
             }
             else

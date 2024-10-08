@@ -633,7 +633,7 @@ namespace FanScript.Compiler.Binding.Rewriters
                             lastAnyIndex = i + 1;
                             break;
                         }
-                        else 
+                        else
                             foundAfter = true;
                     }
 
