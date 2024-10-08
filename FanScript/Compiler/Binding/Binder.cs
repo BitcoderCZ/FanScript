@@ -24,6 +24,8 @@ namespace FanScript.Compiler.Binding
         private int labelCounter;
         private BoundScope scope;
 
+        private FunctionFactory functionFactory = new();
+
         private Binder(bool isScript, BoundScope? parent, FunctionSymbol? function)
         {
             scope = parent?.AddChild() ?? new BoundScope();
@@ -87,7 +89,7 @@ namespace FanScript.Compiler.Binding
             FunctionSymbol? scriptFunction;
 
             if (globalStatements.Any())
-                scriptFunction = new FunctionSymbol(0, TypeSymbol.Void, "^^eval", ImmutableArray<ParameterSymbol>.Empty, null);
+                scriptFunction = binder.functionFactory.Create(0, TypeSymbol.Void, "^^eval", ImmutableArray<ParameterSymbol>.Empty, null);
             else
                 scriptFunction = null;
 
@@ -126,7 +128,7 @@ namespace FanScript.Compiler.Binding
 
                 analysisResult.Add(BoundTreeAnalyzer.Analyze(body, function));
 
-                functionBodies.Add(function, BoundTreeVariableRenamer.RenameVariables(body, ref continuation));
+                functionBodies.Add(function, BoundTreeVariableRenamer.RenameVariables(body, function, ref continuation));
 
                 diagnostics.AddRange(binder.Diagnostics);
             }
@@ -206,7 +208,7 @@ namespace FanScript.Compiler.Binding
             if (type != TypeSymbol.Void)
                 diagnostics.ReportFeatureNotImplemented(syntax.TypeClause?.Location ?? TextLocation.None, "Non void functions");
 
-            FunctionSymbol function = new FunctionSymbol(modifiers, type, syntax.Identifier.Text, parameters.ToImmutable(), syntax);
+            FunctionSymbol function = functionFactory.Create(modifiers, type, syntax.Identifier.Text, parameters.ToImmutable(), syntax);
             if (syntax.Identifier.Text is not null &&
                 !scope.TryDeclareFunction(function))
                 diagnostics.ReportSymbolAlreadyDeclared(syntax.Identifier.Location, function.Name);

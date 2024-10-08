@@ -13,7 +13,7 @@ namespace FanScript.Compiler.Symbols.Variables
         }
 
         protected override string getNameForResult()
-            => "^" + Identifier + "^" + Name;
+            => Identifier + "^" + Name;
 
         public string Identifier { get; }
 

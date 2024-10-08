@@ -358,12 +358,6 @@ namespace FanScript.LangServer.Handlers
 
             builder.Append(function.ToString());
 
-            if (!string.IsNullOrEmpty(function.Description))
-            {
-                builder.Append(" - ");
-                builder.Append(function.Description);
-            }
-
             return builder.ToString();
         }
         private static string methodInfo(TypeSymbol baseType, FunctionSymbol method)
@@ -383,12 +377,6 @@ namespace FanScript.LangServer.Handlers
             builder.Append(method.Name);
 
             SymbolPrinter.WriteFunctionTo(method, writer, true, true);
-
-            if (!string.IsNullOrEmpty(method.Description))
-            {
-                builder.Append(" - ");
-                builder.Append(method.Description);
-            }
 
             return builder.ToString();
         }

@@ -83,37 +83,29 @@ namespace FanScript.Compiler.Binding.Rewriters
                 // assign params to args
                 for (int i = 0; i < func.Parameters.Length; i++)
                 {
-                    if (func.Parameters[i].Modifiers.HasFlag(Modifiers.Readonly) && call.Arguments[i] is BoundVariableExpression varEx && varEx.Variable is BasicVariableSymbol)
-                        inlinedVariables.Add(func.Parameters[i], varEx.Variable);
+                    ParameterSymbol param = func.Parameters[i];
 
-                    statements.Add(
-                        Assignment(
-                            syntax,
-                            getInlinedVar(func.Parameters[i]),
-                            call.Arguments[i]
-                        )
-                    );
-                }
-
-                statements.Add(RewriteStatement(treeInliner.functions[func]));
-
-                // assign out args
-                for (int i = 0; i < call.Arguments.Length; i++)
-                {
-                    var param = func.Parameters[i];
-                    var arg = call.Arguments[i];
-
-                    if (param.Modifiers.HasFlag(Modifiers.Out))
+                    if (call.Arguments[i] is BoundVariableExpression varEx && 
+                        (param.Modifiers.HasOneOfFlags(Modifiers.Ref, Modifiers.Out) || 
+                        (param.Modifiers.HasFlag(Modifiers.Readonly) && varEx.Variable is BasicVariableSymbol)))
+                        inlinedVariables.Add(param, varEx.Variable);
+                    else
                     {
+                        inlinedVariables.Add(param, new ReservedCompilerVariableSymbol("func" + func.Id.ToString(), i.ToString(), param.Modifiers, param.Type));
+
                         statements.Add(
                             Assignment(
                                 syntax,
-                                ((BoundVariableExpression)arg).Variable,
-                                Variable(syntax, getInlinedVar(param))
+                                getInlinedVar(func.Parameters[i]),
+                                call.Arguments[i]
                             )
                         );
                     }
                 }
+
+                statements.Add(RewriteStatement(treeInliner.functions[func]));
+
+                // don't need to asign out args, as they were used dirrectly
 
                 BoundBlockStatement block = Block(
                     syntax,

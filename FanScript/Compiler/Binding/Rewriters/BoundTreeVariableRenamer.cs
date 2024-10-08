@@ -1,5 +1,7 @@
-﻿using FanScript.Compiler.Symbols.Variables;
+﻿using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Variables;
 using FanScript.Utils;
+using System.Diagnostics;
 using static FanScript.Compiler.Binding.BoundNodeFactory;
 
 namespace FanScript.Compiler.Binding.Rewriters
@@ -9,21 +11,24 @@ namespace FanScript.Compiler.Binding.Rewriters
     /// </summary>
     internal sealed class BoundTreeVariableRenamer : BoundTreeRewriter
     {
+        private readonly FunctionSymbol function;
         private readonly Dictionary<VariableSymbol, VariableSymbol> renamedDict = new();
         private Counter varCount = new Counter(0);
 
-        public BoundTreeVariableRenamer(Continuation? continuation = null)
+        public BoundTreeVariableRenamer(FunctionSymbol function, Continuation? continuation = null)
         {
+            this.function = function;
+
             if (continuation is not null)
                 varCount = continuation.Value.LastCount;
         }
 
-        public static BoundBlockStatement RenameVariables(BoundBlockStatement statement, ref Continuation? continuation)
+        public static BoundBlockStatement RenameVariables(BoundBlockStatement statement, FunctionSymbol function, ref Continuation? continuation)
         {
-            BoundTreeVariableRenamer unifier = new BoundTreeVariableRenamer(continuation);
-            BoundStatement res = unifier.RewriteBlockStatement(statement);
+            BoundTreeVariableRenamer renamer = new BoundTreeVariableRenamer(function, continuation);
+            BoundStatement res = renamer.RewriteBlockStatement(statement);
 
-            continuation = new Continuation(unifier.varCount);
+            continuation = new Continuation(renamer.varCount);
 
             return res is BoundBlockStatement blockRes ? blockRes : new BoundBlockStatement(statement.Syntax, [statement]);
         }
@@ -51,10 +56,21 @@ namespace FanScript.Compiler.Binding.Rewriters
                 return renamed;
             else
             {
-                renamed = new CompilerVariableSymbol(varCount.ToString(), variable.Modifiers, variable.Type);
-                renamedDict.Add(variable, renamed);
+                if (variable is ParameterSymbol param)
+                {
+                    int paramIndex = function.Parameters.IndexOf(param);
 
-                varCount++;
+                    Debug.Assert(paramIndex >= 0);
+
+                    renamed = new ReservedCompilerVariableSymbol("func" + function.Id.ToString(), paramIndex.ToString(), param.Modifiers, param.Type);
+                }
+                else
+                {
+                    renamed = new CompilerVariableSymbol(varCount.ToString(), variable.Modifiers, variable.Type);
+                    varCount++;
+                }
+
+                renamedDict.Add(variable, renamed);
 
                 return renamed;
             }

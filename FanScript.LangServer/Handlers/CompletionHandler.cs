@@ -303,7 +303,6 @@ namespace FanScript.LangServer.Handlers
                         LabelDetails = new CompletionItemLabelDetails()
                         {
                             Detail = fun.ToString(onlyParams: true),
-                            Description = fun.Description
                         },
                         Kind = CompletionItemKind.Function,
                         SortText = fun.Name,
@@ -319,7 +318,6 @@ namespace FanScript.LangServer.Handlers
                         LabelDetails = new CompletionItemLabelDetails()
                         {
                             Detail = fun.ToString(onlyParams: true),
-                            Description = fun.Description
                         },
                         Kind = CompletionItemKind.Function,
                         SortText = fun.Name,
