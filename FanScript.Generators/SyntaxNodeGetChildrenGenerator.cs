@@ -22,6 +22,7 @@ namespace FanScript.Generators
             HashSet<string> typesToSkip = new HashSet<string>()
             {
                 "CallExpressionSyntax",
+                "CallStatementSyntax",
                 "TypeClauseSyntax",
                 "VariableDeclarationStatementSyntax",
             };

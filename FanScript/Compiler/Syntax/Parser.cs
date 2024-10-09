@@ -246,6 +246,8 @@ namespace FanScript.Compiler.Syntax
                     return ParseReturnStatement();
                 case SyntaxKind.HashtagToken:
                     return ParseBuildCommandStatement();
+                case SyntaxKind.IdentifierToken when IsCallNow():
+                    return ParseCallStatement();
                 default:
                     {
                         if (IsTypeClauseNow(out _))
@@ -417,6 +419,29 @@ namespace FanScript.Compiler.Syntax
             SyntaxToken hashtagToken = MatchToken(SyntaxKind.HashtagToken);
             SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
             return new BuildCommandStatementSyntax(syntaxTree, hashtagToken, identifierToken);
+        }
+
+        private StatementSyntax ParseCallStatement()
+        {
+            SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
+
+            bool hasGegenericParam = Current.Kind == SyntaxKind.LessToken;
+            SyntaxToken lessThanToken = null!;
+            TypeClauseSyntax genericType = null!;
+            SyntaxToken greaterThanToken = null!;
+            if (hasGegenericParam)
+            {
+                lessThanToken = MatchToken(SyntaxKind.LessToken);
+                genericType = ParseTypeClause(false);
+                greaterThanToken = MatchToken(SyntaxKind.GreaterToken);
+            }
+
+            ArgumentClauseSyntax argumentClause = ParseArgumentClause();
+
+            if (hasGegenericParam)
+                return new CallStatementSyntax(syntaxTree, identifier, lessThanToken, genericType, greaterThanToken, argumentClause);
+            else
+                return new CallStatementSyntax(syntaxTree, identifier, argumentClause);
         }
 
         private StatementSyntax ParseVariableDeclarationStatementWithModifiers()
@@ -591,15 +616,20 @@ namespace FanScript.Compiler.Syntax
 
         private ExpressionSyntax ParseNameOrCallExpressions()
         {
-            int offset = 0;
-            if (Peek(offset++).Kind == SyntaxKind.IdentifierToken &&
-                (Peek(offset).Kind == SyntaxKind.OpenParenthesisToken ||
-                (Peek(offset++).Kind == SyntaxKind.LessToken && IsTypeClauseNext(ref offset)))) // not sure of a better way to do this, neccesary because of less than operator
+            if (IsCallNow())
                 return ParseCallExpression();
 
             return ParseNameExpression();
         }
 
+        private bool IsCallNow()
+        {
+            int offset = 0;
+            return Peek(offset++).Kind == SyntaxKind.IdentifierToken &&
+                (Peek(offset).Kind == SyntaxKind.OpenParenthesisToken ||
+                (Peek(offset++).Kind == SyntaxKind.LessToken && IsTypeClauseNext(ref offset))) &&
+                Peek(offset).Kind == SyntaxKind.OpenParenthesisToken; // not sure of a better way to do this, neccesary because of less than operator
+        }
         private ExpressionSyntax ParseCallExpression()
         {
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);

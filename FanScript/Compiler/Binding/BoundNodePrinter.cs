@@ -75,6 +75,9 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.EmitterHint:
                     WriteEmitterHint((BoundEmitterHint)node, writer);
                     break;
+                case BoundNodeKind.CallStatement:
+                    WriteCallStatement((BoundCallStatement)node, writer);
+                    break;
                 case BoundNodeKind.ExpressionStatement:
                     WriteExpressionStatement((BoundExpressionStatement)node, writer);
                     break;
@@ -113,9 +116,6 @@ namespace FanScript.Compiler.Binding
                     break;
                 case BoundNodeKind.EventCondition:
                     WriteEventCondition((BoundEventCondition)node, writer);
-                    break;
-                case BoundNodeKind.StatementExpression:
-                    WriteStatementExpression((BoundStatementExpression)node, writer);
                     break;
                 default:
                     throw new Exception($"Unexpected node {node.Kind}");
@@ -382,6 +382,22 @@ namespace FanScript.Compiler.Binding
             }
         }
 
+        private static void WriteCallStatement(BoundCallStatement node, IndentedTextWriter writer)
+        {
+            writer.WriteIdentifier(node.Function.Name);
+
+            if (node.Function.IsGeneric)
+            {
+                writer.WritePunctuation(SyntaxKind.LessToken);
+                node.GenericType?.WriteTo(writer);
+                writer.WritePunctuation(SyntaxKind.GreaterToken);
+            }
+
+            WriteArgumentClause(node.ArgumentClause, writer);
+
+            writer.WriteLine();
+        }
+
         private static void WriteExpressionStatement(BoundExpressionStatement node, IndentedTextWriter writer)
         {
             if (node.Expression.Kind == BoundNodeKind.NopExpression)
@@ -539,9 +555,6 @@ namespace FanScript.Compiler.Binding
             if (node.ArgumentClause is not null)
                 WriteArgumentClause(node.ArgumentClause, writer);
         }
-
-        private static void WriteStatementExpression(BoundStatementExpression node, IndentedTextWriter writer)
-            => WriteTo(node.Statement, writer);
 
         #region Helper functions
         private static void WriteArgumentClause(BoundArgumentClause node, IndentedTextWriter writer)

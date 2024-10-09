@@ -32,6 +32,11 @@ namespace FanScript.Compiler.Symbols
         {
             if (!onlyParams)
             {
+                if (symbol.Modifiers != 0)
+                {
+                    writer.WriteModifiers(symbol.Modifiers);
+                    writer.WriteSpace();
+                }
                 symbol.Type.WriteTo(writer);
                 writer.WriteSpace();
                 writer.WriteIdentifier(symbol.Name);

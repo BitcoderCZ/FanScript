@@ -38,6 +38,13 @@ namespace FanScript.Compiler.Binding
             return resultBuilder.Build();
         }
 
+        protected override void VisitCallStatement(BoundCallStatement node)
+        {
+            base.VisitCallStatement(node);
+
+            resultBuilder.FunctionCalled(node.Function, location);
+        }
+
         protected override void VisitCallExpression(BoundCallExpression node)
         {
             base.VisitCallExpression(node);

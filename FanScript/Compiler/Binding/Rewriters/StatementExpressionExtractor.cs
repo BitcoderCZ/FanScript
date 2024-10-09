@@ -61,6 +61,8 @@ namespace FanScript.Compiler.Binding.Rewriters
                     return RewriteReturnStatement((BoundReturnStatement)node);
                 case BoundNodeKind.EmitterHint:
                     return RewriteEmitterHint((BoundEmitterHint)node);
+                case BoundNodeKind.CallStatement:
+                    return RewriteCallStatement((BoundCallStatement)node);
                 case BoundNodeKind.ExpressionStatement:
                     return RewriteExpressionStatement((BoundExpressionStatement)node);
                 default:
@@ -234,6 +236,16 @@ namespace FanScript.Compiler.Binding.Rewriters
         private BoundStatement RewriteEmitterHint(BoundEmitterHint node)
             => node;
 
+        private BoundStatement RewriteCallStatement(BoundCallStatement node)
+        {
+            var (before, clause, after) = RewriteArgumentClause(node.ArgumentClause);
+
+            if (clause == node.ArgumentClause && before.IsDefaultOrEmpty && after.IsDefaultOrEmpty)
+                return node;
+
+            return HandleBeforeAfter(before, new BoundCallStatement(node.Syntax, node.Function, clause, node.ReturnType, node.GenericType, node.ResultVariable), after);
+        }
+
         private BoundStatement RewriteExpressionStatement(BoundExpressionStatement node)
         {
             ExpressionResult expression = RewriteExpression(node.Expression);
@@ -269,8 +281,6 @@ namespace FanScript.Compiler.Binding.Rewriters
                     return RewritePrefixExpression((BoundPrefixExpression)node);
                 case BoundNodeKind.ArraySegmentExpression:
                     return RewriteArraySegmentExpression((BoundArraySegmentExpression)node);
-                case BoundNodeKind.StatementExpression:
-                    return RewriteStatementExpression((BoundStatementExpression)node);
                 default:
                     throw new Exception($"Unexpected node: {node.Kind}");
             }
@@ -329,10 +339,24 @@ namespace FanScript.Compiler.Binding.Rewriters
         {
             var (before, argumentClause, after) = RewriteArgumentClause(node.ArgumentClause);
 
-            if (argumentClause == node.ArgumentClause && before.IsDefaultOrEmpty && after.IsDefaultOrEmpty)
+            bool extract = node.Function.Type != TypeSymbol.Void && node.Function is not BuiltinFunctionSymbol;
+
+            if (argumentClause == node.ArgumentClause && before.IsDefaultOrEmpty && after.IsDefaultOrEmpty &&
+                !extract)
                 return new ExpressionResult(node);
 
-            return new ExpressionResult(before, new BoundCallExpression(node.Syntax, node.Function, argumentClause, node.ReturnType, node.GenericType), after);
+            if (extract)
+            {
+                var temp = state.GetTempVar(node.Function.Type, true);
+
+                return new ExpressionResult(
+                    before.Concat([new BoundCallStatement(node.Syntax, node.Function, argumentClause, node.ReturnType, node.GenericType, temp)]).ToImmutableArray(),
+                    Variable(node.Syntax, temp),
+                    after
+                );
+            }
+            else
+                return new ExpressionResult(before, new BoundCallExpression(node.Syntax, node.Function, argumentClause, node.ReturnType, node.GenericType), after);
         }
 
         private ExpressionResult RewriteConversionExpression(BoundConversionExpression node)
@@ -398,13 +422,6 @@ namespace FanScript.Compiler.Binding.Rewriters
             var (before, after, expressions) = ExpressionResult.Resolve(state, builder.ToImmutable().AsSpan());
 
             return new ExpressionResult(before, new BoundArraySegmentExpression(node.Syntax, node.ElementType, expressions.ToImmutableArray()), after);
-        }
-
-        private ExpressionResult RewriteStatementExpression(BoundStatementExpression node)
-        {
-            BoundStatement statement = RewriteStatement(node.Statement);
-
-            return new ExpressionResult([statement], new BoundNopExpression(node.Syntax), []);
         }
 
         #region Helper functions
@@ -489,9 +506,9 @@ namespace FanScript.Compiler.Binding.Rewriters
         {
             private Counter varCounter = new Counter(0);
 
-            public VariableSymbol GetTempVar(TypeSymbol type)
+            public VariableSymbol GetTempVar(TypeSymbol type, bool inline = false)
             {
-                VariableSymbol var = new ReservedCompilerVariableSymbol("temp", varCounter.ToString(), Modifiers.Readonly, type);
+                VariableSymbol var = new ReservedCompilerVariableSymbol("temp", varCounter.ToString(), inline ? Modifiers.Inline : 0, type);
                 varCounter++;
                 return var;
             }

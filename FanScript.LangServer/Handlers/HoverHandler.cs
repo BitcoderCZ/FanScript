@@ -149,23 +149,16 @@ namespace FanScript.LangServer.Handlers
 
                             return getHoverForFunctions(functions.ToArray(), node.Location);
                         }
-                        //BoundCallExpression? boundCall;
-                        //if (call.BoundResult is null || (boundCall = call.BoundResult as BoundCallExpression) is null)
-                        //    break;
-
-                        //return new Hover()
-                        //{
-                        //    Contents = new MarkedStringsOrMarkupContent(
-                        //        new MarkedString("#### " + boundCall.Function.ToString() +
-                        //            (string.IsNullOrEmpty(boundCall.Function.Description) ?
-                        //                string.Empty :
-                        //                "\n" + boundCall.Function.Description)
-                        //        )
-                        //    ),
-                        //    Range = node.Location.ToRange(),
-                        //};
                     }
                     break;
+                case CallStatementSyntax call when node == call.Identifier:
+                    {
+                        var functions = compilation
+                            .GetFunctions()
+                            .Where(func => func.Name == call.Identifier.Text);
+
+                        return getHoverForFunctions(functions.ToArray(), node.Location);
+                    }
                 case EventStatementSyntax sb when node == sb.Identifier:
                     {
                         if (!Enum.TryParse(sb.Identifier.Text, out EventType type))

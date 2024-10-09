@@ -20,6 +20,8 @@ namespace FanScript.Compiler.Emit
         private CodePlacer placer = null!;
         public BlockBuilder Builder { get; private set; } = null!;
 
+        private FunctionSymbol currentFunciton = null!;
+
         // key - a label before antoher label, item - the label after key
         private Dictionary<string, string> sameTargetLabels = new();
         // key - label name, item - list of goto "origins", not only gotos but also statements just before the label
@@ -65,6 +67,8 @@ namespace FanScript.Compiler.Emit
                 if (func != program.ScriptFunction && program.Analysis.ShouldFunctionGetInlined(func))
                     continue;
 
+                currentFunciton = func;
+
                 using (StatementBlock())
                 {
                     WriteComment(func.Name);
@@ -75,6 +79,8 @@ namespace FanScript.Compiler.Emit
 
                     processLabelsAndGotos();
                 }
+
+                currentFunciton = null!;
             }
 
             processCalls();
@@ -147,8 +153,9 @@ namespace FanScript.Compiler.Emit
                 BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundEventCondition condition => emitEventStatement(condition.EventType, condition.ArgumentClause?.Arguments, conditionalGoto.Label),
                 BoundConditionalGotoStatement => emitConditionalGotoStatement((BoundConditionalGotoStatement)statement),
                 BoundLabelStatement => emitLabelStatement((BoundLabelStatement)statement),
-                BoundReturnStatement => new ReturnEmitStore(), // TODO: add proper method when non void methods are supported
+                BoundReturnStatement => emitReturnStatement((BoundReturnStatement)statement),
                 BoundEmitterHint => emitHint((BoundEmitterHint)statement),
+                BoundCallStatement => emitCallStatement((BoundCallStatement)statement),
                 BoundExpressionStatement => emitExpressionStatement(((BoundExpressionStatement)statement)),
                 BoundNopStatement => NopEmitStore.Instance,
 
@@ -395,6 +402,14 @@ namespace FanScript.Compiler.Emit
             return new LabelEmitStore(statement.Label.Name);
         }
 
+        private EmitStore emitReturnStatement(BoundReturnStatement statement)
+        {
+            if (statement.Expression is null)
+                return new ReturnEmitStore();
+
+            return emitSetVariable(ReservedCompilerVariableSymbol.CreateFunctionRes(currentFunciton), statement.Expression);
+        }
+
         private EmitStore emitHint(BoundEmitterHint statement)
         {
             switch (statement.Hint)
@@ -418,11 +433,74 @@ namespace FanScript.Compiler.Emit
             return NopEmitStore.Instance;
         }
 
+        private EmitStore emitCallStatement(BoundCallStatement statement)
+        {
+            if (statement.Function is BuiltinFunctionSymbol builtinFunction)
+                return builtinFunction.Emit(new BoundCallExpression(statement.Syntax, statement.Function, statement.ArgumentClause, statement.ReturnType, statement.GenericType), this);
+
+            Debug.Assert(!statement.Function.Modifiers.HasFlag(Modifiers.Inline));
+
+            FunctionSymbol func = statement.Function;
+
+            EmitConnector connector = new EmitConnector(Connect);
+
+            for (int i = 0; i < func.Parameters.Length; i++)
+            {
+                Modifiers mods = func.Parameters[i].Modifiers;
+
+                if (mods.HasFlag(Modifiers.Out))
+                    continue;
+
+                EmitStore setStore = emitSetVariable(func.Parameters[i], statement.ArgumentClause.Arguments[i]);
+
+                connector.Add(setStore);
+            }
+
+            Block callBlock = AddBlock(Blocks.Control.If);
+
+            using (ExpressionBlock())
+            {
+                Block trueBlock = AddBlock(Blocks.Values.True);
+                Connect(BasicEmitStore.COut(trueBlock, trueBlock.Type.Terminals["True"]), BasicEmitStore.CIn(callBlock, callBlock.Type.Terminals["Condition"]));
+            }
+
+            calls.Add(func, BasicEmitStore.COut(callBlock, callBlock.Type.Terminals["True"]));
+
+            connector.Add(new BasicEmitStore(callBlock));
+
+            for (int i = 0; i < func.Parameters.Length; i++)
+            {
+                Modifiers mods = func.Parameters[i].Modifiers;
+
+                if (!mods.HasFlag(Modifiers.Out) && !mods.HasFlag(Modifiers.Ref))
+                    continue;
+
+                EmitStore setStore = EmitSetExpression(statement.ArgumentClause.Arguments[i], () =>
+                {
+                    using (ExpressionBlock())
+                        return EmitGetVariable(func.Parameters[i]);
+                });
+
+                connector.Add(setStore);
+            }
+
+            if (func.Type != TypeSymbol.Void && statement.ResultVariable is not null)
+            {
+                EmitStore setStore = EmitSetVariable(statement.ResultVariable, () =>
+                {
+                    using (ExpressionBlock())
+                        return EmitGetVariable(ReservedCompilerVariableSymbol.CreateFunctionRes(func));
+                });
+
+                connector.Add(setStore);
+            }
+
+            return connector.Store;
+        }
+
         private EmitStore emitExpressionStatement(BoundExpressionStatement statement)
         {
-            if (statement.Expression is BoundStatementExpression exStatement)
-                return EmitStatement(exStatement.Statement);
-            else if (statement.Expression is BoundNopExpression)
+            if (statement.Expression is BoundNopExpression)
                 return NopEmitStore.Instance;
 
             return EmitExpression(statement.Expression);
@@ -792,53 +870,8 @@ namespace FanScript.Compiler.Emit
             if (expression.Function is BuiltinFunctionSymbol builtinFunction)
                 return builtinFunction.Emit(expression, this);
 
-            Debug.Assert(!expression.Function.Modifiers.HasFlag(Modifiers.Inline));
-
-            FunctionSymbol func = expression.Function;
-
-            EmitConnector connector = new EmitConnector(Connect);
-
-            for (int i = 0; i < func.Parameters.Length; i++)
-            {
-                Modifiers mods = func.Parameters[i].Modifiers;
-
-                if (mods.HasFlag(Modifiers.Out))
-                    continue;
-
-                EmitStore setStore = emitSetVariable(func.Parameters[i], expression.ArgumentClause.Arguments[i]);
-
-                connector.Add(setStore);
-            }
-
-            Block callBlock = AddBlock(Blocks.Control.If);
-
-            using (ExpressionBlock())
-            {
-                Block trueBlock = AddBlock(Blocks.Values.True);
-                Connect(BasicEmitStore.COut(trueBlock, trueBlock.Type.Terminals["True"]), BasicEmitStore.CIn(callBlock, callBlock.Type.Terminals["Condition"]));
-            }
-
-            calls.Add(func, BasicEmitStore.COut(callBlock, callBlock.Type.Terminals["True"]));
-
-            connector.Add(new BasicEmitStore(callBlock));
-
-            for (int i = 0; i < func.Parameters.Length; i++)
-            {
-                Modifiers mods = func.Parameters[i].Modifiers;
-
-                if (!mods.HasFlag(Modifiers.Out) && !mods.HasFlag(Modifiers.Ref))
-                    continue;
-
-                EmitStore setStore = EmitSetExpression(expression.ArgumentClause.Arguments[i], () =>
-                {
-                    using (ExpressionBlock())
-                        return EmitGetVariable(func.Parameters[i]);
-                });
-
-                connector.Add(setStore);
-            }
-
-            return connector.Store;
+            Debug.Fail("User defined function calls should be extracted to statement calls.");
+            return NopEmitStore.Instance;
         }
 
         #region Utils

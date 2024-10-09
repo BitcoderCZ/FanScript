@@ -98,7 +98,7 @@ namespace FanScript.Compiler.Diagnostics
             => ReportError(location, "Not all code paths return a value.");
 
         public void ReportInvalidExpressionStatement(TextLocation location)
-            => ReportError(location, $"Only void call expressions can be used as a statement.");
+            => ReportError(location, $"Only call expressions can be used as a statement.");
 
         public void ReportOnlyOneFileCanHaveGlobalStatements(TextLocation location)
             => ReportError(location, $"At most one file can have global statements.");
@@ -249,6 +249,9 @@ namespace FanScript.Compiler.Diagnostics
                     return;
                 case SyntaxKind.AssignmentStatement:
                     ReportUnreachableCode(node.Location);
+                    return;
+                case SyntaxKind.CallStatement:
+                    ReportUnreachableCode(((CallStatementSyntax)node).Identifier.Location);
                     return;
                 case SyntaxKind.ExpressionStatement:
                     ExpressionSyntax expression = ((ExpressionStatementSyntax)node).Expression;

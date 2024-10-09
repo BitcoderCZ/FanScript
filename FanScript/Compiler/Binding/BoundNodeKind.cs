@@ -19,6 +19,7 @@
         LabelStatement,
         PostfixStatement,
         PrefixStatement,
+        CallStatement,
         ExpressionStatement,
 
         // Expressions
@@ -32,7 +33,6 @@
         ConstructorExpression,
         ArgumentClause,
         ArraySegmentExpression,
-        StatementExpression,
         NopExpression,
         PostfixExpression,
         PrefixExpression,

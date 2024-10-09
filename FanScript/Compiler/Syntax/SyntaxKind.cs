@@ -55,6 +55,7 @@
         AssignmentStatement,
         ReturnStatement,
         BuildCommandStatement,
+        CallStatement,
 
         UnaryExpression,
         BinaryExpression,

@@ -47,7 +47,9 @@ namespace FanScript.LangServer.Classification
                     AddClassification(SemanticTokenType.Property, token.Span, span, result);
                     break;
                 case EventStatementSyntax sb when node == sb.Identifier:
-                case CallExpressionSyntax call when node == call.Identifier:
+                case CallExpressionSyntax callE when node == callE.Identifier:
+                case CallStatementSyntax callS when node == callS.Identifier:
+                case FunctionDeclarationSyntax func when node == func.Identifier:
                     AddClassification(SemanticTokenType.Function, token.Span, span, result);
                     break;
                 default:

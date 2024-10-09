@@ -147,6 +147,20 @@ namespace FanScript.Compiler.Binding
                 analysisResult.Add(BoundTreeAnalyzer.Analyze(body, globalScope.ScriptFunction));
             }
 
+            // lower the bodies of all functions
+            foreach (var func in functionBodies.Keys.ToList())
+            {
+                BoundBlockStatement loweredBody = Lowerer.Lower(func, functionBodies[func]);
+                functionBodies[func] = loweredBody;
+
+                if (func.Declaration is not null && func.Type != TypeSymbol.Void && !ControlFlowGraph.AllPathsReturn(loweredBody))
+                {
+                    DiagnosticBag bag = new DiagnosticBag();
+                    bag.ReportAllPathsMustReturn(func.Declaration.Identifier.Location);
+                    diagnostics.AddRange(bag);
+                }
+            }
+
             if (analysisResult.HasCircularCalls(out var circularCall))
             {
                 DiagnosticBag bag = new DiagnosticBag();
@@ -170,10 +184,6 @@ namespace FanScript.Compiler.Binding
                     functionBodies[func] = inlinedBody;
                 }
             }
-
-            // lower the bodies of all functions
-            foreach (var func in functionBodies.Keys.ToList())
-                functionBodies[func] = Lowerer.Lower(func, functionBodies[func]);
 
             return new BoundProgram(previous,
                 diagnostics.ToImmutable(),
@@ -205,8 +215,8 @@ namespace FanScript.Compiler.Binding
 
             TypeSymbol type = syntax.TypeClause is null ? TypeSymbol.Void : BindTypeClause(syntax.TypeClause);
 
-            if (type != TypeSymbol.Void)
-                diagnostics.ReportFeatureNotImplemented(syntax.TypeClause?.Location ?? TextLocation.None, "Non void functions");
+            //if (type != TypeSymbol.Void)
+            //    diagnostics.ReportFeatureNotImplemented(syntax.TypeClause?.Location ?? TextLocation.None, "Non void functions");
 
             FunctionSymbol function = functionFactory.Create(modifiers, type, syntax.Identifier.Text, parameters.ToImmutable(), syntax);
             if (syntax.Identifier.Text is not null &&
@@ -283,7 +293,6 @@ namespace FanScript.Compiler.Binding
                 bool isAllowedExpression = es.Expression.Kind switch
                 {
                     BoundNodeKind.ErrorExpression => true,
-                    BoundNodeKind.CallExpression when es.Expression.Type == TypeSymbol.Void => true,
                     _ => false,
                 };
 
@@ -328,6 +337,8 @@ namespace FanScript.Compiler.Binding
                     return BindReturnStatement((ReturnStatementSyntax)syntax);
                 case SyntaxKind.BuildCommandStatement:
                     return BindBuildCommandStatement((BuildCommandStatementSyntax)syntax);
+                case SyntaxKind.CallStatement:
+                    return BindCallStatement((CallStatementSyntax)syntax);
                 case SyntaxKind.ExpressionStatement:
                     return BindExpressionStatement((ExpressionStatementSyntax)syntax);
                 default:
@@ -676,6 +687,102 @@ namespace FanScript.Compiler.Binding
             return new BoundEmitterHint(syntax, kind);
         }
 
+        private BoundStatement BindCallStatement(CallStatementSyntax syntax)
+        {
+            var arguments = syntax.Arguments;
+
+            ImmutableArray<BoundExpression>.Builder boundArguments = ImmutableArray.CreateBuilder<BoundExpression>(arguments.Count);
+
+            foreach (ModifierClauseSyntax argument in arguments)
+                boundArguments.Add(BindExpression(argument.Expression, context: new Context()
+                {
+                    OutArgument = argument.Modifiers.Any(token => token.Kind == SyntaxKind.OutModifier)
+                }));
+
+            FunctionSymbol? function = scope.TryLookupFunction(syntax.Identifier.Text, boundArguments.Select(arg => arg.Type!).ToList(), false);
+
+            if (function is null)
+            {
+                diagnostics.ReportUndefinedFunction(syntax.Identifier.Location, syntax.Identifier.Text);
+                return BindErrorStatement(syntax);
+            }
+
+            TypeSymbol? genericType = null;
+            if (function.Parameters.Length == boundArguments.Count)
+            {
+                if (function.IsGeneric)
+                {
+                    if (syntax.HasGenericParameter)
+                        genericType = BindTypeClause(syntax.GenericTypeClause);
+                    else
+                    {
+                        // try to infer generic type from arguments
+                        for (int i = 0; i < function.Parameters.Length; i++)
+                        {
+                            ParameterSymbol param = function.Parameters[i];
+                            BoundExpression arg = boundArguments[i];
+
+                            TypeSymbol? paramGenericType = null;
+                            if (param.Type == TypeSymbol.Generic)
+                                paramGenericType = arg.Type;
+                            else if (param.Type!.IsGenericDefinition && arg.Type!.IsGenericInstance)
+                                paramGenericType = arg.Type.InnerType;
+
+                            if (paramGenericType is not null && paramGenericType != TypeSymbol.Null)
+                            {
+                                if (genericType is null)
+                                    genericType = paramGenericType;
+                                else if (!genericType.GenericEquals(paramGenericType))
+                                {
+                                    genericType = null;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (genericType is null)
+                    {
+                        diagnostics.ReportCannotInferGenericType(syntax.Location);
+                        return BindErrorStatement(syntax);
+                    }
+                    else if (genericType.IsGenericInstance)
+                    {
+                        diagnostics.ReportGenericTypeRecursion(syntax.HasGenericParameter ? syntax.GenericTypeClause.Location : syntax.Location);
+                        return BindErrorStatement(syntax);
+                    }
+                    else if (!function.AllowedGenericTypes.Value.Contains(genericType))
+                    {
+                        diagnostics.ReportSpecificGenericTypeNotAllowed(syntax.HasGenericParameter ? syntax.GenericTypeClause.Location : syntax.Location, genericType, function.AllowedGenericTypes.Value);
+                        return BindErrorStatement(syntax);
+                    }
+                }
+                else if (syntax.HasGenericParameter)
+                {
+                    diagnostics.ReportNonGenericMethodTypeArguments(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.LessThanToken.Span.Start, syntax.GreaterThanToken.Span.End)));
+                    return BindErrorStatement(syntax);
+                }
+            }
+
+            BoundArgumentClause? argumentClause = BindArgumentClause(new ArgumentClauseSyntax(syntax.ArgumentClause.SyntaxTree, syntax.ArgumentClause.OpenParenthesisToken, arguments, syntax.ArgumentClause.CloseParenthesisToken),
+                function.Parameters
+                    .Select(param => new ParameterSymbol(param.Name, param.Modifiers, fixType(param.Type)))
+                    .ToImmutableArray(),
+                "Function", function.Name, boundArguments);
+
+            if (argumentClause is null)
+                return BindErrorStatement(syntax);
+
+            return new BoundCallStatement(syntax, function, argumentClause, fixType(function.Type)!, genericType, null);
+
+            TypeSymbol fixType(TypeSymbol type)
+            {
+                if (type == TypeSymbol.Generic) return genericType ?? TypeSymbol.Error;
+                else if (type.IsGenericDefinition) return TypeSymbol.CreateGenericInstance(type, genericType ?? TypeSymbol.Error);
+                else return type;
+            }
+        }
+
         private TypeSymbol BindTypeClause(TypeClauseSyntax? syntax)
         {
             if (syntax is null)
@@ -851,9 +958,6 @@ namespace FanScript.Compiler.Binding
 
         private BoundExpression BindCallExpression(CallExpressionSyntax syntax, Context? context = null)
         {
-            if (syntax.Arguments.Count == 1 && LookupType(syntax.Identifier.Text) is TypeSymbol type)
-                return BindConversion(syntax.Arguments[0].Expression, type, allowExplicit: true);
-
             context ??= Context.Default;
 
             var arguments = syntax.Arguments;

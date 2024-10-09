@@ -62,7 +62,7 @@ namespace FanScript.Compiler.Binding.Rewriters
 
                     Debug.Assert(paramIndex >= 0);
 
-                    renamed = new ReservedCompilerVariableSymbol("func" + function.Id.ToString(), paramIndex.ToString(), param.Modifiers, param.Type);
+                    renamed = ReservedCompilerVariableSymbol.CreateParam(function, paramIndex);
                 }
                 else
                 {

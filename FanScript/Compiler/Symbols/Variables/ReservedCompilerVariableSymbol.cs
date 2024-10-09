@@ -19,5 +19,11 @@ namespace FanScript.Compiler.Symbols.Variables
 
         public override ReservedCompilerVariableSymbol Clone()
             => new ReservedCompilerVariableSymbol(Identifier, Name, Modifiers, Type);
+
+        public static ReservedCompilerVariableSymbol CreateParam(FunctionSymbol func, int paramIndex)
+            => new ReservedCompilerVariableSymbol("func" + func.Id.ToString(), paramIndex.ToString(), func.Parameters[paramIndex].Modifiers, func.Parameters[paramIndex].Type);
+
+        public static ReservedCompilerVariableSymbol CreateFunctionRes(FunctionSymbol func, bool inlineFunc = false)
+            => new ReservedCompilerVariableSymbol("func" + func.Id.ToString(), "res", inlineFunc ? Modifiers.Inline : 0, func.Type);
     }
 }

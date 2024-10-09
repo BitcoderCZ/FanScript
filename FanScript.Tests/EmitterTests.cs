@@ -177,7 +177,7 @@ namespace FanScript.Tests
         }
 
         //[Fact]
-        //public void Emitter_FunctionReturn_Missing()
+        //public void FunctionReturn_Missing()
         //{
         //    var text = @"
         //        function [add](a: int, b: int): int
@@ -250,7 +250,7 @@ namespace FanScript.Tests
         }
 
         //[Fact]
-        //public void Emitter_ForStatement_Reports_CannotConvert_LowerBound()
+        //public void ForStatement_Reports_CannotConvert_LowerBound()
         //{
         //    var text = @"
         //        {
@@ -268,7 +268,7 @@ namespace FanScript.Tests
         //}
 
         //[Fact]
-        //public void Emitter_ForStatement_Reports_CannotConvert_UpperBound()
+        //public void ForStatement_Reports_CannotConvert_UpperBound()
         //{
         //    var text = @"
         //        {
@@ -473,40 +473,40 @@ namespace FanScript.Tests
             AssertDiagnostics(text, diagnostics);
         }
 
-        //[Fact]
-        //public void Emitter_Function_With_ReturnValue_Should_Not_Return_Void()
-        //{
-        //    var text = @"
-        //        function test(): int
-        //        {
-        //            [return]
-        //        }
-        //    ";
+        [Fact]
+        public void Function_With_ReturnValue_Should_Not_Return_Void()
+        {
+            var text = @"
+                func float test()
+                {
+                    $[return]$
+                }
+            ";
 
-        //    var diagnostics = @"
-        //        An expression of type 'int' is expected.
-        //    ";
+            var diagnostics = @"
+                An expression of type 'float' is expected.
+            ";
 
-        //    AssertDiagnostics(text, diagnostics);
-        //}
+            AssertDiagnostics(text, diagnostics);
+        }
 
-        //[Fact]
-        //public void Emitter_Not_All_Code_Paths_Return_Value()
-        //{
-        //    var text = @"
-        //        function [test](n: int): bool
-        //        {
-        //            if (n > 10)
-        //               return true
-        //        }
-        //    ";
+        [Fact]
+        public void Not_All_Code_Paths_Return_Value()
+        {
+            var text = @"
+                func bool $[test]$(float n)
+                {
+                    if (n > 10)
+                       return true
+                }
+            ";
 
-        //    var diagnostics = @"
-        //        Not all code paths return a value.
-        //    ";
+            var diagnostics = @"
+                Not all code paths return a value.
+            ";
 
-        //    AssertDiagnostics(text, diagnostics);
-        //}
+            AssertDiagnostics(text, diagnostics);
+        }
 
         [Fact]
         public void Expression_Must_Have_Value()
@@ -527,53 +527,53 @@ namespace FanScript.Tests
             AssertDiagnostics(text, diagnostics);
         }
 
-        //[Fact]
-        //public void Emitter_IfStatement_Reports_NotReachableCode_Warning()
-        //{
-        //    var text = @"
-        //        func test()
-        //        {
-        //            const float x = 4 * 3
-        //            if x > 12
-        //            {
-        //                $[inspect]$(x)
-        //            }
-        //            else
-        //            {
-        //                inspect(x)
-        //            }
-        //        }
-        //    ";
+        [Fact]
+        public void IfStatement_Reports_NotReachableCode_Warning()
+        {
+            var text = @"
+                func test()
+                {
+                    const float x = 4 * 3
+                    if x > 12
+                    {
+                        $[inspect]$(x)
+                    }
+                    else
+                    {
+                        inspect(x)
+                    }
+                }
+            ";
 
-        //    var diagnostics = @"
-        //        Unreachable code detected.
-        //    ";
-        //    AssertDiagnostics(text, diagnostics);
-        //}
+            var diagnostics = @"
+                Unreachable code detected.
+            ";
+            AssertDiagnostics(text, diagnostics);
+        }
 
-        //[Fact]
-        //public void Emitter_ElseStatement_Reports_NotReachableCode_Warning()
-        //{
-        //    var text = @"
-        //        function test(): int
-        //        {
-        //            if true
-        //            {
-        //                return 1
-        //            }
-        //            else
-        //            {
-        //                [return] 0
-        //            }
-        //        }
-        //    ";
+        [Fact]
+        public void ElseStatement_Reports_NotReachableCode_Warning()
+        {
+            var text = @"
+                func float test()
+                {
+                    if true
+                    {
+                        return 1
+                    }
+                    else
+                    {
+                        $[return]$ 0
+                    }
+                }
+            ";
 
-        //    var diagnostics = @"
-        //        Unreachable code detected.
-        //    ";
+            var diagnostics = @"
+                Unreachable code detected.
+            ";
 
-        //    AssertDiagnostics(text, diagnostics);
-        //}
+            AssertDiagnostics(text, diagnostics);
+        }
 
         [Fact]
         public void WhileStatement_Reports_NotReachableCode_Warning()
@@ -596,13 +596,12 @@ namespace FanScript.Tests
         }
 
         [Theory]
-        [InlineData("$[random(0, 10)]$")]
         [InlineData("$[2]$")]
         [InlineData("$[5 + 3]$")]
         public void ExpressionStatement_Reports_Invalid(string text)
         {
             var diagnostics = """
-                Only void call expressions can be used as a statement.
+                Only call expressions can be used as a statement.
                 """;
 
             AssertDiagnostics(text, diagnostics);
@@ -970,28 +969,27 @@ namespace FanScript.Tests
             AssertDiagnostics(text, diagnostics);
         }
 
+        [Fact]
+        public void Wrong_Argument_Type()
+        {
+            var text = @"
+                func bool test(float n)
+                {
+                    return n > 10
+                }
+                bool testValue = false
+                test($[testValue]$)
+            ";
+
+            var diagnostics = @"
+                Cannot convert type 'bool' to 'float'.
+            ";
+
+            AssertDiagnostics(text, diagnostics);
+        }
+
         //[Fact]
-        //public void Emitter_Wrong_Argument_Type()
-        //{
-        //    var text = @"
-        //        function test(n: int): bool
-        //        {
-        //            return n > 10
-        //        }
-        //        let testValue = ""string""
-        //        test([testValue])
-        //    ";
-
-        //    var diagnostics = @"
-        //        Cannot convert type 'string' to 'int'. An explicit conversion exists (are you missing a cast?)
-        //    ";
-
-        //    AssertDiagnostics(text, diagnostics);
-        //}
-
-        // TODO: add when types aren't keywords
-        //[Fact]
-        //public void Emitter_Bad_Type()
+        //public void Bad_Type()
         //{
         //    var text = @"
         //        func test($[invalidtype]$ n)

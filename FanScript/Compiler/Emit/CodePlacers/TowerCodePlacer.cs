@@ -60,7 +60,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             Debug.Assert(statementDepth >= 0);
 
-            if (statementDepth == 0)
+            if (statementDepth == 0 && blocks.Count > 0)
             {
                 // https://stackoverflow.com/a/17974
                 int width = (blocks.Count + MaxHeight - 1) / MaxHeight;

@@ -43,7 +43,7 @@ namespace FanScript.Compiler
             [Modifiers.Out] = new ModifierInfo(SyntaxKind.OutModifier, [ModifierTarget.Argument, ModifierTarget.Parameter]) { Conflicts = [Modifiers.Ref, Modifiers.Readonly], MakesTargetReference = true },
             [Modifiers.Global] = new ModifierInfo(SyntaxKind.GlobalModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Saved] },
             [Modifiers.Saved] = new ModifierInfo(SyntaxKind.SavedModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Global, Modifiers.Constant, Modifiers.Inline] },
-            [Modifiers.Inline] = new ModifierInfo(SyntaxKind.InlineModifier, [ModifierTarget.Variable, ModifierTarget.Function]) { Conflicts = [Modifiers.Constant, Modifiers.Saved]/*, RequiredOneOf = [Modifiers.Readonly, Modifiers.Constant]*/ },
+            [Modifiers.Inline] = new ModifierInfo(SyntaxKind.InlineModifier, [ModifierTarget.Variable, ModifierTarget.Function]) { Conflicts = [Modifiers.Constant, Modifiers.Saved] },
         }.ToFrozenDictionary();
 
         public static Modifiers FromKind(SyntaxKind kind)

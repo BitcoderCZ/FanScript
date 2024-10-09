@@ -45,6 +45,8 @@ namespace FanScript.Compiler.Binding.Rewriters
                     return RewriteReturnStatement((BoundReturnStatement)node);
                 case BoundNodeKind.EmitterHint:
                     return RewriteEmitterHint((BoundEmitterHint)node);
+                case BoundNodeKind.CallStatement:
+                    return RewriteCallStatement((BoundCallStatement)node);
                 case BoundNodeKind.ExpressionStatement:
                     return RewriteExpressionStatement((BoundExpressionStatement)node);
                 default:
@@ -196,6 +198,16 @@ namespace FanScript.Compiler.Binding.Rewriters
         protected virtual BoundStatement RewriteEmitterHint(BoundEmitterHint node)
             => node;
 
+        protected virtual BoundStatement RewriteCallStatement(BoundCallStatement node)
+        {
+            BoundArgumentClause argumentClause = RewriteArgumentClause(node.ArgumentClause);
+
+            if (argumentClause == node.ArgumentClause)
+                return node;
+
+            return new BoundCallStatement(node.Syntax, node.Function, argumentClause, node.ReturnType, node.GenericType, node.ResultVariable);
+        }
+
         protected virtual BoundStatement RewriteExpressionStatement(BoundExpressionStatement node)
         {
             BoundExpression expression = RewriteExpression(node.Expression);
@@ -231,8 +243,6 @@ namespace FanScript.Compiler.Binding.Rewriters
                     return RewritePrefixExpression((BoundPrefixExpression)node);
                 case BoundNodeKind.ArraySegmentExpression:
                     return RewriteArraySegmentExpression((BoundArraySegmentExpression)node);
-                case BoundNodeKind.StatementExpression:
-                    return RewriteStatementExpression((BoundStatementExpression)node);
                 default:
                     throw new Exception($"Unexpected node: {node.Kind}");
             }
@@ -356,16 +366,6 @@ namespace FanScript.Compiler.Binding.Rewriters
                 return node;
 
             return new BoundArraySegmentExpression(node.Syntax, node.ElementType, builder.ToImmutable());
-        }
-
-        protected virtual BoundExpression RewriteStatementExpression(BoundStatementExpression node)
-        {
-            BoundStatement statement = RewriteStatement(node.Statement);
-
-            if (statement == node.Statement)
-                return node;
-
-            return new BoundStatementExpression(node.Syntax, statement);
         }
 
         #region Helper functions

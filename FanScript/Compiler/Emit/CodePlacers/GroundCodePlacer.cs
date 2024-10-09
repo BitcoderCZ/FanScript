@@ -73,7 +73,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                 // if this is child of the top statement, process and assign x and y position to blocks
                 LayerStack.Process(statement, BlockXOffset);
             }
-            else if (statements.Count == 0)
+            else if (statements.Count == 0 && statement.AllBlocks.Any())
             {
                 // end of function
                 Builder.AddBlockSegments(statement.AllBlocks);

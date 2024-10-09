@@ -105,6 +105,7 @@ namespace FanScript.Compiler.Binding
                         case BoundNodeKind.AssignmentStatement:
                         case BoundNodeKind.PostfixStatement:
                         case BoundNodeKind.PrefixStatement:
+                        case BoundNodeKind.CallStatement:
                         case BoundNodeKind.ExpressionStatement:
                             statements.Add(statement);
                             break;
@@ -204,6 +205,7 @@ namespace FanScript.Compiler.Binding
                             case BoundNodeKind.PostfixStatement:
                             case BoundNodeKind.PrefixStatement:
                             case BoundNodeKind.LabelStatement:
+                            case BoundNodeKind.CallStatement:
                             case BoundNodeKind.ExpressionStatement:
                                 if (isLastStatementInBlock)
                                     connect(current, next);

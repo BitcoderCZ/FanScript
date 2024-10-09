@@ -62,6 +62,9 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.EmitterHint:
                     VisitEmitterHint((BoundEmitterHint)node);
                     break;
+                case BoundNodeKind.CallStatement:
+                    VisitCallStatement((BoundCallStatement)node);
+                    break;
                 case BoundNodeKind.ExpressionStatement:
                     VisitExpressionStatement((BoundExpressionStatement)node);
                     break;
@@ -156,6 +159,11 @@ namespace FanScript.Compiler.Binding
         protected virtual void VisitEmitterHint(BoundEmitterHint node)
         { }
 
+        protected virtual void VisitCallStatement(BoundCallStatement node)
+        {
+            VisitArgumentClause(node.ArgumentClause);
+        }
+
         protected virtual void VisitExpressionStatement(BoundExpressionStatement node)
         {
             VisitExpression(node.Expression);
@@ -198,9 +206,6 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.ArraySegmentExpression:
                     VisitArraySegmentExpression((BoundArraySegmentExpression)node);
                     break;
-                case BoundNodeKind.StatementExpression:
-                    VisitStatementExpression((BoundStatementExpression)node);
-                    break;
                 default:
                     throw new Exception($"Unexpected node: {node.Kind}");
             }
@@ -237,7 +242,7 @@ namespace FanScript.Compiler.Binding
 
         protected virtual void VisitCallExpression(BoundCallExpression node)
         {
-            RewriteArgumentClause(node.ArgumentClause);
+            VisitArgumentClause(node.ArgumentClause);
         }
 
         protected virtual void VisitConversionExpression(BoundConversionExpression node)
@@ -258,13 +263,8 @@ namespace FanScript.Compiler.Binding
                 VisitExpression(node.Elements[i]);
         }
 
-        protected virtual void VisitStatementExpression(BoundStatementExpression node)
-        {
-            Visit(node.Statement);
-        }
-
         #region Helper functions
-        protected virtual void RewriteArgumentClause(BoundArgumentClause node)
+        protected virtual void VisitArgumentClause(BoundArgumentClause node)
         {
             for (var i = 0; i < node.Arguments.Length; i++)
                 VisitExpression(node.Arguments[i]);
