@@ -31,7 +31,11 @@ namespace FanScript.Compiler.Emit.Utils
                 return true;
             }
 
-            var passthrough = Blocks.GetPassthrough(variable.Type.ToWireType());
+            WireType type = entry.GetStoreType();
+            if (type == WireType.Error)
+                type = variable.Type.ToWireType();
+
+            var passthrough = Blocks.GetPassthrough(type);
 
             if (passthrough is null)
             {
@@ -72,6 +76,9 @@ namespace FanScript.Compiler.Emit.Utils
                 Debug.Assert(UseCount <= FancadeConstants.WireSplitLimit);
                 return store;
             }
+
+            public WireType GetStoreType()
+                => store.Out.FirstOrDefault()?.GetWireType() ?? WireType.Error;
         }
     }
 }

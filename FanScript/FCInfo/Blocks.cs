@@ -22,7 +22,15 @@ namespace FanScript.FCInfo
                 case WireType.Rot:
                     return (Math.Multiply_Rotation, Math.Multiply_Rotation.Terminals["Rot1"], Math.Multiply_Rotation.Terminals["Rot1 * Rot2"]);
                 default:
-                    return null;
+                    {
+                        if (type.IsPointer())
+                        {
+                            BlockDef def = Variables.ListByType(type);
+                            return (def, def.Terminals["Variable"], def.Terminals["Element"]);
+                        }
+
+                        return null;
+                    }
             }
         }
 

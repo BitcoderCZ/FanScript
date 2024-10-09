@@ -1,5 +1,6 @@
 ﻿using FanScript.FCInfo;
 using MathUtils.Vectors;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("FanScript.Tests")]
@@ -65,6 +66,20 @@ namespace FanScript.Compiler.Emit
         {
             Pos = pos;
             VoxelPos = voxelPos;
+        }
+    }
+
+    internal static class ConnectTargetE
+    {
+        public static WireType GetWireType(this ConnectTarget connectTarget)
+        {
+            switch (connectTarget)
+            {
+                case BlockConnectTarget blockTarget:
+                        return blockTarget.Terminal.WireType;
+                default:
+                    return WireType.Error;
+            }
         }
     }
 }
