@@ -104,14 +104,12 @@ namespace FanScript.Compiler.Binding
 
         public static BoundProgram BindProgram(bool isScript, BoundProgram? previous, BoundGlobalScope globalScope)
         {
-            DiagnosticBag scopeDiagnostics = new DiagnosticBag();
-            BoundScope parentScope = CreateParentScope(globalScope, scopeDiagnostics);
+            DiagnosticBag diagnostics = new DiagnosticBag();
+            BoundScope parentScope = CreateParentScope(globalScope, diagnostics);
 
             ImmutableDictionary<FunctionSymbol, BoundBlockStatement>.Builder functionBodies = ImmutableDictionary.CreateBuilder<FunctionSymbol, BoundBlockStatement>();
 
-            ImmutableArray<Diagnostic>.Builder diagnostics = ImmutableArray.CreateBuilder<Diagnostic>();
             diagnostics.AddRange(globalScope.Diagnostics);
-            diagnostics.AddRange(scopeDiagnostics);
 
             BoundAnalysisResult analysisResult = new BoundAnalysisResult();
             Dictionary<FunctionSymbol, ScopeWSpan> functionScopes = new();
@@ -154,18 +152,12 @@ namespace FanScript.Compiler.Binding
                 functionBodies[func] = loweredBody;
 
                 if (func.Declaration is not null && func.Type != TypeSymbol.Void && !ControlFlowGraph.AllPathsReturn(loweredBody))
-                {
-                    DiagnosticBag bag = new DiagnosticBag();
-                    bag.ReportAllPathsMustReturn(func.Declaration.Identifier.Location);
-                    diagnostics.AddRange(bag);
-                }
+                    diagnostics.ReportAllPathsMustReturn(func.Declaration.Identifier.Location);
             }
 
             if (analysisResult.HasCircularCalls(out var circularCall))
             {
-                DiagnosticBag bag = new DiagnosticBag();
-                bag.ReportCircularCall(TextLocation.None, circularCall);
-                diagnostics.AddRange(bag);
+                diagnostics.ReportCircularCall(TextLocation.None, circularCall);
             }
             else
             {
@@ -185,12 +177,14 @@ namespace FanScript.Compiler.Binding
                 }
             }
 
-            return new BoundProgram(previous,
-                diagnostics.ToImmutable(),
+            return new BoundProgram(
+                previous,
+                diagnostics.ToImmutableArray(),
                 globalScope.ScriptFunction,
                 functionBodies.ToImmutable(),
                 analysisResult,
-                functionScopes.ToImmutableDictionary());
+                functionScopes.ToImmutableDictionary()
+            );
         }
 
         private void BindFunctionDeclaration(FunctionDeclarationSyntax syntax)
@@ -214,9 +208,6 @@ namespace FanScript.Compiler.Binding
             Modifiers modifiers = BindModifiers(syntax.Modifiers, ModifierTarget.Function);
 
             TypeSymbol type = syntax.TypeClause is null ? TypeSymbol.Void : BindTypeClause(syntax.TypeClause);
-
-            //if (type != TypeSymbol.Void)
-            //    diagnostics.ReportFeatureNotImplemented(syntax.TypeClause?.Location ?? TextLocation.None, "Non void functions");
 
             FunctionSymbol function = functionFactory.Create(modifiers, type, syntax.Identifier.Text, parameters.ToImmutable(), syntax);
             if (syntax.Identifier.Text is not null &&
