@@ -9,12 +9,11 @@ namespace FanScript.Documentation
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Enum, AllowMultiple = true, Inherited = true)]
     public abstract class DocumentationAttribute : Attribute
     {
-        protected DocumentationAttribute(string name)
+        protected DocumentationAttribute()
         {
-            Name = name;
         }
 
-        public string Name { get; set; }
+        public string? NameOverwrite { get; set; }
         public string? Info { get; set; }
 
         public string? Remarks { get; set; }

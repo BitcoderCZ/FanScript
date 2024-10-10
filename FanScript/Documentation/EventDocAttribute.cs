@@ -8,7 +8,7 @@ namespace FanScript.Documentation
 {
     public sealed class EventDocAttribute : DocumentationAttribute
     {
-        public EventDocAttribute(string name) : base(name)
+        public EventDocAttribute() : base()
         {
         }
 

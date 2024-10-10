@@ -8,7 +8,7 @@ namespace FanScript.Documentation
 {
     public sealed class ConstantDocAttribute : DocumentationAttribute
     {
-        public ConstantDocAttribute(string name) : base(name)
+        public ConstantDocAttribute() : base()
         {
         }
 

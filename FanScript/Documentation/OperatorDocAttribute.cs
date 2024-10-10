@@ -8,7 +8,7 @@ namespace FanScript.Documentation
 {
     public abstract class OperatorDocAttribute : DocumentationAttribute
     {
-        public OperatorDocAttribute(string name) : base(name)
+        public OperatorDocAttribute() : base()
         {
         }
 
@@ -17,14 +17,14 @@ namespace FanScript.Documentation
 
     public sealed class BinaryOperatorDocAttribute : OperatorDocAttribute
     {
-        public BinaryOperatorDocAttribute(string name) : base(name)
+        public BinaryOperatorDocAttribute() : base()
         {
         }
     }
 
     public sealed class UnaryOperatorDocAttribute : OperatorDocAttribute
     {
-        public UnaryOperatorDocAttribute(string name) : base(name)
+        public UnaryOperatorDocAttribute() : base()
         {
         }
     }

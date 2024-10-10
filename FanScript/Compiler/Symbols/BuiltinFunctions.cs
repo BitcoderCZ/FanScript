@@ -2,6 +2,7 @@
 using FanScript.Compiler.Emit;
 using FanScript.Compiler.Emit.Utils;
 using FanScript.Compiler.Symbols.Variables;
+using FanScript.Documentation;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
@@ -161,20 +162,25 @@ namespace FanScript.Compiler.Symbols
 
         private static class Game
         {
+            [FunctionDoc]
             public static readonly FunctionSymbol Win
                 = new BuiltinFunctionSymbol("win", [
                     new ParameterSymbol("DELAY", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.Win, constantTypes: [typeof(byte)]));
+            [FunctionDoc(ParameterInfos = ["Time to lose (in frames), must be constant."])]
             public static readonly FunctionSymbol Lose
                 = new BuiltinFunctionSymbol("lose", [
                     new ParameterSymbol("DELAY", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.Lose, constantTypes: [typeof(byte)]));
+            [FunctionDoc(Info = "Sets the <link param>score</> and/or <link param>coins</>.", ParameterInfos = ["The new score, if <link param>RANKING</> is <link con_value>RANKING;RANKING_TIME_FASTEST</> or <link con_value>RANKING;RANKING_TIME_LONGEST</> time is specified in frames (60 - 1s).", "The new amount of coins.", "How players are ranked, one of <link con>RANKING</>, must be constant."])]
             public static readonly FunctionSymbol SetScore
                 = new BuiltinFunctionSymbol("setScore", [
                     new ParameterSymbol("score", TypeSymbol.Float),
                     new ParameterSymbol("coins", TypeSymbol.Float),
                     new ParameterSymbol("RANKING", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.SetScore, constantTypes: [typeof(byte)]));
+            // TODO - new list sintax, not '-'
+            [FunctionDoc(Info = "Sets the <link param>position</>, <link param>rotation</>, <link param>range</> and mode of the camera.", ParameterInfos = ["The new position of the camera.", "The new rotation of the camera.", "- If in orthographic (isometric) mode, determines how wide the view frustum is\n- If in perspective mode specifies half of the field of view.", "If true, the camera will be in perspective mode, otherwise it will be in orthographic mode."])]
             public static readonly FunctionSymbol SetCamera
                 = new BuiltinFunctionSymbol("setCamera", [
                     new ParameterSymbol("position", TypeSymbol.Vector3),
