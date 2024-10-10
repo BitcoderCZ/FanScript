@@ -162,25 +162,73 @@ namespace FanScript.Compiler.Symbols
 
         private static class Game
         {
-            [FunctionDoc]
+            [FunctionDoc(
+                ParameterInfos = [
+                    """
+                    Time to win (in frames), must be constant.
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol Win
                 = new BuiltinFunctionSymbol("win", [
                     new ParameterSymbol("DELAY", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.Win, constantTypes: [typeof(byte)]));
-            [FunctionDoc(ParameterInfos = ["Time to lose (in frames), must be constant."])]
+
+            [FunctionDoc(
+                ParameterInfos = [
+                    """
+                    Time to lose (in frames), must be constant.
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol Lose
                 = new BuiltinFunctionSymbol("lose", [
                     new ParameterSymbol("DELAY", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.Lose, constantTypes: [typeof(byte)]));
-            [FunctionDoc(Info = "Sets the <link param>score</> and/or <link param>coins</>.", ParameterInfos = ["The new score, if <link param>RANKING</> is <link con_value>RANKING;RANKING_TIME_FASTEST</> or <link con_value>RANKING;RANKING_TIME_LONGEST</> time is specified in frames (60 - 1s).", "The new amount of coins.", "How players are ranked, one of <link con>RANKING</>, must be constant."])]
+
+            [FunctionDoc(
+                Info = """
+                Sets the <link type="param">score</> and/or <link type="param">coins</>.
+                """, 
+                ParameterInfos = [
+                    """
+                    The new score, if <link type="param">RANKING</link> is <link type="con_value">RANKING;RANKING_TIME_FASTEST</> or <link type="con_value">RANKING;RANKING_TIME_LONGEST</> time is specified in frames (60 - 1s).
+                    """, 
+                    """
+                    The new amount of coins.
+                    """,
+                    """
+                    How players are ranked, one of <link type="con">RANKING</>, must be constant.
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol SetScore
                 = new BuiltinFunctionSymbol("setScore", [
                     new ParameterSymbol("score", TypeSymbol.Float),
                     new ParameterSymbol("coins", TypeSymbol.Float),
                     new ParameterSymbol("RANKING", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.SetScore, constantTypes: [typeof(byte)]));
-            // TODO - new list sintax, not '-'
-            [FunctionDoc(Info = "Sets the <link param>position</>, <link param>rotation</>, <link param>range</> and mode of the camera.", ParameterInfos = ["The new position of the camera.", "The new rotation of the camera.", "- If in orthographic (isometric) mode, determines how wide the view frustum is\n- If in perspective mode specifies half of the field of view.", "If true, the camera will be in perspective mode, otherwise it will be in orthographic mode."])]
+
+            [FunctionDoc(
+                Info = """
+                Sets the <link type="param">position</>, <link type="param">rotation</>, <link type="param">range</> and mode of the camera.
+                """, 
+                ParameterInfos = [
+                    """
+                    The new position of the camera.
+                    """, 
+                    """
+                    The new rotation of the camera.
+                    """,
+                    """
+                    <list>If in orthographic (isometric) mode, determines how wide the view frustum is.</>
+                    <list>If in perspective mode specifies half of the field of view.</>
+                    """,
+                    """
+                    If true, the camera will be in perspective mode, otherwise it will be in orthographic mode.
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol SetCamera
                 = new BuiltinFunctionSymbol("setCamera", [
                     new ParameterSymbol("position", TypeSymbol.Vector3),
@@ -188,16 +236,56 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("range", TypeSymbol.Float),
                     new ParameterSymbol("PERSPECTIVE", TypeSymbol.Bool),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.SetCamera, constantTypes: [typeof(byte)]));
+
+            [FunctionDoc(
+                Info = """
+                Sets the direction of light.
+                """,
+                ParameterInfos = [
+                    """
+                    Currently unused.
+                    """,
+                    """
+                    The direction of light.
+                    """
+                ],
+                Remarks = [
+                    """
+                    If <link type="param">rotation</> is NaN (0 / 0), inf (1 / 0) or -inf (-1 / 0) there will be no shadows.
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol SetLight
                 = new BuiltinFunctionSymbol("setLight", [
                     new ParameterSymbol("position", TypeSymbol.Vector3),
                     new ParameterSymbol("rotation", TypeSymbol.Rotation),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.SetLight));
+
+            [FunctionDoc(
+                Info = """
+                Gets the size of the screen.
+                """,
+                ParameterInfos = [
+                    """
+                    Width of the screen (in pixels).
+                    """,
+                    """
+                    Height of the screen (in pixels).
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol GetScreenSize
                 = new BuiltinFunctionSymbol("getScreenSize", [
                     new ParameterSymbol("width", Modifiers.Out, TypeSymbol.Float),
                     new ParameterSymbol("height", Modifiers.Out, TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Game.ScreenSize));
+
+            [FunctionDoc(
+                NameOverwrite = "GetScreenSize",
+                Info = """
+                Size of the screen in pixels, Width/Height - X/Y.
+                """
+            )]
             public static readonly FunctionSymbol GetScreenSize2
                = new BuiltinFunctionSymbol("getScreenSize", [], TypeSymbol.Vector3, (call, context) =>
                {
@@ -213,10 +301,59 @@ namespace FanScript.Compiler.Symbols
 
                    return BasicEmitStore.COut(make, make.Type.Terminals["Vector"]);
                });
+
+            [FunctionDoc(
+                Info = """
+                Gets the phone's current acceleration.
+                """,
+                ReturnValueInfo = """
+                The acceleration, can be used to determine the phone's tilt.
+                """,
+                Examples = """
+                <codeblock lang="fcs">
+                // the acceleration can be smoothed out like this:
+                vec3 smooth
+                smooth += (getAccelerometer() - smooth) * 0.1
+                </>
+                """
+            )]
             public static readonly FunctionSymbol GetAccelerometer
                 = new BuiltinFunctionSymbol("getAccelerometer", [], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Game.Accelerometer));
+
+            [FunctionDoc(
+                Info = """
+                Gets the current frame.
+                """,
+                ReturnValueInfo = """
+                The current frame.
+                """,
+                Remarks = [
+                    """
+                    Starts at 0, increases by 1 every frame.
+                    """,
+                    """
+                    Fancade runs at 60 frames per second.
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol GetCurrentFrame
                 = new BuiltinFunctionSymbol("getCurrentFrame", [], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Game.CurrentFrame));
+
+            [FunctionDoc(
+                Info = """
+                Creates a section in the shop, calls to <link type="func">menuItem,float,obj,string,float,float</> after this will create items in this section.
+                """,
+                ParameterInfos = [
+                    """
+                    The name of this section, will be shown as a header above the items, must be constant.
+                    """
+                ],
+                Related = [
+                    """
+                    <link type="func">menuItem,float,obj,string,float,float</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol ShopSection
                 = new BuiltinFunctionSymbol("shopSection", [
                     new ParameterSymbol("NAME", TypeSymbol.String),
@@ -233,6 +370,34 @@ namespace FanScript.Compiler.Symbols
 
                     return new BasicEmitStore(block);
                 });
+
+            [FunctionDoc(
+                Info = """
+                Adds an item to the shop. Info about the shop can be found <link type="url">here;https://www.fancade.com/wiki/script/how-to-use-the-shop-system</>.
+                """,
+                ParameterInfos = [
+                    """
+                    Which variable to store the value of times bought in, should have <link type="mod">saved</> modifier.
+                    """,
+                    """
+                    Which object to display for the item.
+                    """,
+                    """
+                    Name of the item, must be constant.
+                    """,
+                    """
+                    Maximum number of times the item can be bought, can be 2-100 or one of <link type="con">MAX_ITEMS</>, must be constant.
+                    """,
+                    """
+                    Specifies what the initial price is and how it increases, one of <link type="con">PRICE_INCREASE</>, must be constant.
+                    """
+                ],
+                Related = [
+                    """
+                    <link type="func">shopSection;string</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol MenuItem
                 = new BuiltinFunctionSymbol("menuItem", [
                     new ParameterSymbol("variable", Modifiers.Ref, TypeSymbol.Float),

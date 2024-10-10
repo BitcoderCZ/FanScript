@@ -16,8 +16,8 @@ namespace FanScript.Documentation
         public string? NameOverwrite { get; set; }
         public string? Info { get; set; }
 
-        public string? Remarks { get; set; }
+        public string[]? Remarks { get; set; }
         public string? Examples { get; set; }
-        public DocLink[]? Related { get; set; }
+        public string[]? Related { get; set; }
     }
 }
