@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Variables;
+using FanScript.Compiler.Syntax;
 using FanScript.Utils;
 using System.Collections.Immutable;
 using static FanScript.Compiler.Binding.BoundNodeFactory;
@@ -65,7 +66,7 @@ namespace FanScript.Compiler.Binding.Rewriters
             private Counter varCount;
             private Counter labelCount;
 
-            private readonly Dictionary<VariableSymbol, VariableSymbol> inlinedVariables = new();
+            private readonly Dictionary<VariableSymbol, object> inlinedVariables = new();
 
             private CallInliner(BoundCallStatement call, Inliner treeInliner, bool assignReturns)
             {
@@ -120,6 +121,8 @@ namespace FanScript.Compiler.Binding.Rewriters
                         (param.Modifiers.HasOneOfFlags(Modifiers.Ref, Modifiers.Out) ||
                         (param.Modifiers.HasFlag(Modifiers.Readonly) && varEx.Variable is BasicVariableSymbol)))
                         inlinedVariables.Add(param, varEx.Variable);
+                    else if (call.Arguments[i] is BoundLiteralExpression literal)
+                        inlinedVariables.Add(param, literal);
                     else
                     {
                         inlinedVariables.Add(param, ReservedCompilerVariableSymbol.CreateParam(func, i));
@@ -127,7 +130,7 @@ namespace FanScript.Compiler.Binding.Rewriters
                         statements.Add(
                             Assignment(
                                 syntax,
-                                getInlinedVar(func.Parameters[i]),
+                                func.Parameters[i],
                                 call.Arguments[i]
                             )
                         );
@@ -157,7 +160,14 @@ namespace FanScript.Compiler.Binding.Rewriters
             protected override BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)
             {
                 if (node.Variable is BasicVariableSymbol)
-                    return Assignment(node.Syntax, getInlinedVar(node.Variable), RewriteExpression(node.Expression));
+                {
+                    BoundExpression ex = getInlinedVar(node.Variable, node.Syntax);
+                    BoundExpression rewritten = RewriteExpression(node.Expression);
+                    if (ex is BoundVariableExpression varEx)
+                        return Assignment(node.Syntax, varEx.Variable, rewritten);
+                    else
+                        return new BoundNopStatement(node.Syntax);//return Assignment(node.Syntax, ReservedCompilerVariableSymbol.CreateDiscard(rewritten.Type), rewritten);
+                }
                 else
                     return base.RewriteAssignmentStatement(node);
             }
@@ -165,7 +175,7 @@ namespace FanScript.Compiler.Binding.Rewriters
             protected override BoundExpression RewriteVariableExpression(BoundVariableExpression node)
             {
                 if (node.Variable is BasicVariableSymbol)
-                    return Variable(node.Syntax, getInlinedVar(node.Variable));
+                    return getInlinedVar(node.Variable, node.Syntax);
                 else
                     return base.RewriteVariableExpression(node);
             }
@@ -182,12 +192,12 @@ namespace FanScript.Compiler.Binding.Rewriters
                 );
             }
 
-            private VariableSymbol getInlinedVar(VariableSymbol variable)
+            private BoundExpression getInlinedVar(VariableSymbol variable, SyntaxNode syntax)
             {
                 if (variable.IsGlobal || variable is ReservedCompilerVariableSymbol reserved && reserved.Identifier == "inl")
-                    return variable;
+                    return Variable(syntax, variable);
                 else if (inlinedVariables.TryGetValue(variable, out var inlined))
-                    return inlined;
+                    return inlined is BoundExpression ex ? ex : Variable(syntax, (VariableSymbol)inlined);
                 else
                 {
                     inlined = new ReservedCompilerVariableSymbol("inl", varCount.ToString(), variable.Modifiers, variable.Type);
@@ -195,7 +205,7 @@ namespace FanScript.Compiler.Binding.Rewriters
 
                     varCount++;
 
-                    return inlined;
+                    return Variable(syntax, (VariableSymbol)inlined);
                 }
             }
         }

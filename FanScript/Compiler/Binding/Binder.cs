@@ -199,6 +199,9 @@ namespace FanScript.Compiler.Binding
                 TypeSymbol paramType = BindTypeClause(parameterSyntax.TypeClause);
                 string paramName = parameterSyntax.Identifier.Text;
 
+                if (!paramMods.MakesTargetReference(out _) && !paramMods.HasFlag(Modifiers.Readonly))
+                    paramMods |= Modifiers.Readonly;
+
                 if (!seenParameterNames.Add(paramName))
                     diagnostics.ReportParameterAlreadyDeclared(parameterSyntax.Identifier.Location, paramName);
                 else
