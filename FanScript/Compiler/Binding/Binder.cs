@@ -284,6 +284,7 @@ namespace FanScript.Compiler.Binding
                 bool isAllowedExpression = es.Expression.Kind switch
                 {
                     BoundNodeKind.ErrorExpression => true,
+                    BoundNodeKind.CallExpression when es.Expression.Type == TypeSymbol.Void => true, // methods
                     _ => false,
                 };
 

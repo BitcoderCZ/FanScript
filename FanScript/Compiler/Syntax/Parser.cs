@@ -627,8 +627,7 @@ namespace FanScript.Compiler.Syntax
             int offset = 0;
             return Peek(offset++).Kind == SyntaxKind.IdentifierToken &&
                 (Peek(offset).Kind == SyntaxKind.OpenParenthesisToken ||
-                (Peek(offset++).Kind == SyntaxKind.LessToken && IsTypeClauseNext(ref offset))) &&
-                Peek(offset).Kind == SyntaxKind.OpenParenthesisToken; // not sure of a better way to do this, neccesary because of less than operator
+                (Peek(offset++).Kind == SyntaxKind.LessToken && IsTypeClauseNext(ref offset) && Peek(offset++).Kind == SyntaxKind.GreaterToken && Peek(offset).Kind == SyntaxKind.OpenParenthesisToken)); // not sure of a better way to do this, neccesary because of less than operator
         }
         private ExpressionSyntax ParseCallExpression()
         {
