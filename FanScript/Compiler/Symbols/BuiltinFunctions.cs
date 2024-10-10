@@ -189,11 +189,11 @@ namespace FanScript.Compiler.Symbols
             [FunctionDoc(
                 Info = """
                 Sets the <link type="param">score</> and/or <link type="param">coins</>.
-                """, 
+                """,
                 ParameterInfos = [
                     """
                     The new score, if <link type="param">RANKING</link> is <link type="con_value">RANKING;RANKING_TIME_FASTEST</> or <link type="con_value">RANKING;RANKING_TIME_LONGEST</> time is specified in frames (60 - 1s).
-                    """, 
+                    """,
                     """
                     The new amount of coins.
                     """,
@@ -212,11 +212,11 @@ namespace FanScript.Compiler.Symbols
             [FunctionDoc(
                 Info = """
                 Sets the <link type="param">position</>, <link type="param">rotation</>, <link type="param">range</> and mode of the camera.
-                """, 
+                """,
                 ParameterInfos = [
                     """
                     The new position of the camera.
-                    """, 
+                    """,
                     """
                     The new rotation of the camera.
                     """,
@@ -410,33 +410,76 @@ namespace FanScript.Compiler.Symbols
 
         private static class Objects
         {
+            [FunctionDoc(
+                Info = """
+                Returns the object at <link type="param">position</>.
+                """,
+                ReturnValueInfo = """
+                The object at <link type="param">position</>.
+                """,
+                ParameterInfos = [
+                    """
+                    Position of the object, must be constant.
+                    """
+                ],
+                Related = [
+                    """
+                    <link type="func">getObject;float;float;float</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol GetObject
-          = new BuiltinFunctionSymbol("getObject", [
-              new ParameterSymbol("position", TypeSymbol.Vector3),
-          ], TypeSymbol.Object, (call, context) =>
-          {
-              BoundConstant? constant = call.Arguments[0].ConstantValue;
-              if (constant is null)
+              = new BuiltinFunctionSymbol("getObject", [
+                  new ParameterSymbol("position", TypeSymbol.Vector3),
+              ], TypeSymbol.Object, (call, context) =>
               {
-                  context.Diagnostics.ReportValueMustBeConstant(call.Arguments[0].Syntax.Location);
-                  return NopEmitStore.Instance;
+                  BoundConstant? constant = call.Arguments[0].ConstantValue;
+                  if (constant is null)
+                  {
+                      context.Diagnostics.ReportValueMustBeConstant(call.Arguments[0].Syntax.Location);
+                      return NopEmitStore.Instance;
+                  }
+
+                  Vector3I pos = (Vector3I)((Vector3F)constant.GetValueOrDefault(TypeSymbol.Vector3)); // unbox, then cast
+
+                  if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
+                  {
+                      context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
+
+                      using (context.ExpressionBlock())
+                          context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
+
+                      return NopEmitStore.Instance;
+                  }
+
+                  return new AbsoluteEmitStore(pos, null);
               }
+              );
 
-              Vector3I pos = (Vector3I)((Vector3F)constant.GetValueOrDefault(TypeSymbol.Vector3)); // unbox, then cast
-
-              if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
-              {
-                  context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
-
-                  using (context.ExpressionBlock())
-                      context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
-
-                  return NopEmitStore.Instance;
-              }
-
-              return new AbsoluteEmitStore(pos, null);
-          }
-          );
+            [FunctionDoc(
+                Info = """
+                Returns the object at (<link type="param">x</>, <link type="param">y</>, <link type="param">z</>).
+                """,
+                ReturnValueInfo = """
+                The object at (<link type="param">x</>, <link type="param">y</>, <link type="param">z</>).
+                """,
+                ParameterInfos = [
+                    """
+                    X position of the object, must be constant.
+                    """,
+                    """
+                    Y position of the object, must be constant.
+                    """,
+                    """
+                    Z position of the object, must be constant.
+                    """
+                ],
+                Related = [
+                    """
+                    <link type="func">getObject;vec3</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol GetObject2
               = new BuiltinFunctionSymbol("getObject", [
                   new ParameterSymbol("x", TypeSymbol.Float),
@@ -463,6 +506,20 @@ namespace FanScript.Compiler.Symbols
                   return new AbsoluteEmitStore(pos, null);
               }
               );
+
+            [FunctionDoc(
+                Info = """
+                Sets the position of <link type="param">object</>.
+                """,
+                Related = [
+                    """
+                    <link type="func">getPos;obj;vec3;rot</>
+                    """,
+                    """
+                    <link type="func">setPos;obj;vec3;rot</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol SetPos
                 = new BuiltinFunctionSymbol("setPos", [
                     new ParameterSymbol("object", TypeSymbol.Object),
@@ -471,6 +528,20 @@ namespace FanScript.Compiler.Symbols
                 {
                     IsMethod = true,
                 };
+
+            [FunctionDoc(
+                Info = """
+                Sets the position and rotation of <link type="param">object</>.
+                """,
+                Related = [
+                    """
+                    <link type="func">getPos;obj;vec3;rot</>
+                    """,
+                    """
+                    <link type="func">setPos;obj;vec3</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol SetPosWithRot
                 = new BuiltinFunctionSymbol("setPos",
                 [
@@ -481,6 +552,29 @@ namespace FanScript.Compiler.Symbols
                 {
                     IsMethod = true,
                 };
+
+            [FunctionDoc(
+                Info = """
+                Gets the <link type="param">position</> and <link type="param">rotation</> of <link type="param">object</>.
+                """,
+                ParameterInfos = [
+                    null,
+                    """
+                    <link type="param">object</>'s position.
+                    """,
+                    """
+                    <link type="param">object</>'s rotation.
+                    """
+                ],
+                Related = [
+                    """
+                    <link type="func">setPos;obj;vec3</>
+                    """,
+                    """
+                    <link type="func">setPos;obj;vec3;rot</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol GetPos
                 = new BuiltinFunctionSymbol("getPos", [
                     new ParameterSymbol("object", TypeSymbol.Object),
@@ -490,6 +584,43 @@ namespace FanScript.Compiler.Symbols
                 {
                     IsMethod = true,
                 };
+
+            [FunctionDoc(
+                Info = """
+                Detects if an object intersects a line between <link type="param">from</> and <link type="param">to</>.
+                """,
+                ParameterInfos = [
+                    """
+                    From position of the ray.
+                    """,
+                    """
+                    To position of the ray.
+                    """,
+                    """
+                    If the ray hit an object.
+                    """,
+                    """
+                    The position at which the ray intersected <link type="param">hitObj</>.
+                    """,
+                    """
+                    The object that was hit.
+                    """
+                ],
+                Remarks = [
+                    """
+                    Only detects the outside surface of a block. If it starts inside of a block, the block won't be detected.
+                    """,
+                    """
+                    Won't detect object created on the same frame as the raycast is performed.
+                    """,
+                    """
+                    Won't detect objects without collion or script blocks.
+                    """,
+                    """
+                    If the raycast hits the floor, <link type="param">hitObj</> will be equal to null.
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol Raycast
                 = new BuiltinFunctionSymbol("raycast", [
                     new ParameterSymbol("from", TypeSymbol.Vector3),
@@ -498,6 +629,34 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("hitPos", Modifiers.Out, TypeSymbol.Vector3),
                     new ParameterSymbol("hitObj", Modifiers.Out, TypeSymbol.Object),
                 ], TypeSymbol.Void, (call, context) => emitXX(call, context, 3, Blocks.Objects.Raycast));
+
+            [FunctionDoc(
+                Info = """
+                Gets the size of <link type="param">object</>.
+                """,
+                ParameterInfos = [
+                    null,
+                    """
+                    Distance from the center of <link type="param">object</> to the negative edge.
+                    """,
+                    """
+                    Distance from the center of <link type="param">object</> to the positive edge.
+                    """
+                ],
+                Remarks = [
+                    """
+                    Size is measured in blocks, not in voxels.
+                    """
+                ],
+                Examples = """
+                <codeblock lang="fcs">
+                // to get the total size of the object, you can do this:
+                object obj
+                obj.getSize(out inline vec3 min, out inline vec3 max)
+                vec3 totalSize = max - min
+                </>
+                """
+            )]
             public static readonly FunctionSymbol GetSize
                 = new BuiltinFunctionSymbol("getSize", [
                     new ParameterSymbol("object", TypeSymbol.Object),
@@ -507,6 +666,28 @@ namespace FanScript.Compiler.Symbols
                 {
                     IsMethod = true,
                 };
+
+            [FunctionDoc(
+                Info = """
+                Sets if <link type="param">object</> is visible and has collision/physics.
+                """,
+                Remarks = [
+                    """
+                    When <link type="param">object</> is set to invisible, all constraints associated with it will be deleted.
+                    """
+                ],
+                Examples = """
+                <codeblock lang="fcs">
+                // Here's how an object can be invisible, while also having physics:
+                object obj
+                obj.setVisible(true)
+                on LateUpdate
+                {
+                    obj.setVisible(false)
+                }
+                </>
+                """
+            )]
             public static readonly FunctionSymbol SetVisible
                 = new BuiltinFunctionSymbol("setVisible", [
                     new ParameterSymbol("object", TypeSymbol.Object),
