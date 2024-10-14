@@ -1293,6 +1293,19 @@ namespace FanScript.Compiler.Symbols
 
         private static class Control
         {
+            [FunctionDoc(
+                Info = """
+                Creates a joystick on screen and outputs the direction in which it is held.
+                """,
+                ParameterInfos = [
+                    """
+                    The direction which the joystick is held.
+                    """,
+                    """
+                    One of <link type="con">JOYSTICK_TYPE</>, must be constant.
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol Joystick
                 = new BuiltinFunctionSymbol("joystick",
                 [
