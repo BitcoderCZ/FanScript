@@ -26,7 +26,7 @@ namespace FanScript.Compiler.Symbols.Variables
         public static ReservedCompilerVariableSymbol CreateFunctionRes(FunctionSymbol func, bool inlineFunc = false)
             => new ReservedCompilerVariableSymbol("func" + func.Id.ToString(), "res", inlineFunc ? Modifiers.Inline : 0, func.Type);
 
-        public static ReservedCompilerVariableSymbol CreateDiscard(TypeSymbol type) 
+        public static ReservedCompilerVariableSymbol CreateDiscard(TypeSymbol type)
             => new ReservedCompilerVariableSymbol("discard", string.Empty, 0, type);
     }
 }

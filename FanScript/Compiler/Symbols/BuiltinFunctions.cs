@@ -715,15 +715,45 @@ namespace FanScript.Compiler.Symbols
 
         private static class Sound
         {
+            [FunctionDoc(
+                Info = """
+                Plays the <link type="param">SOUND</>.
+                """,
+                ParameterInfos = [
+                    """
+                    Volume of the sound (0 - 1).
+                    """,
+                    """
+                    Pitch of the sound (0 - 4).
+                    """,
+                    """
+                    The channel at which the sound is playing (0 - 9, or -1 if all other channels are used).
+                    """,
+                    """
+                    If the sound should loop, must be constant.
+                    """,
+                    """
+                    Which sound to play, one of <link type="con">SOUND</>, must be constant.
+                    """
+                ],
+                Related = [
+                    """
+                    <link type="func">stopSound;float</>
+                    """,
+                    """
+                    <link type="func">setVolumePitch;float;float;float</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol PlaySound
-                  = new BuiltinFunctionSymbol("playSound",
-                  [
+                = new BuiltinFunctionSymbol("playSound",
+                [
                     new ParameterSymbol("volume", TypeSymbol.Float),
-                      new ParameterSymbol("pitch", TypeSymbol.Float),
-                      new ParameterSymbol("channel", Modifiers.Out, TypeSymbol.Float),
-                      new ParameterSymbol("LOOP", TypeSymbol.Bool),
-                      new ParameterSymbol("SOUND", TypeSymbol.Float),
-                  ], TypeSymbol.Void, (call, context) =>
+                    new ParameterSymbol("pitch", TypeSymbol.Float),
+                    new ParameterSymbol("channel", Modifiers.Out, TypeSymbol.Float),
+                    new ParameterSymbol("LOOP", TypeSymbol.Bool),
+                    new ParameterSymbol("SOUND", TypeSymbol.Float),
+                ], TypeSymbol.Void, (call, context) =>
               {
                   object?[]? values = context.ValidateConstants(call.Arguments.AsMemory(^2..), true);
                   if (values is null)
@@ -755,11 +785,55 @@ namespace FanScript.Compiler.Symbols
 
                   return new MultiEmitStore(BasicEmitStore.CIn(playSound), varStore is NopEmitStore ? BasicEmitStore.COut(playSound) : varStore);
               });
+
+            [FunctionDoc(
+                Info = """
+                Stops the sound playing at <link type="param">channel</>.
+                """,
+                ParameterInfos = [
+                    """
+                    The channel from <link type="func">playSound;float;float;float;bool;float</>.
+                    """
+                ],
+                Related = [
+                    """
+                    <link type="func">playSound;float;float;float;bool;float</>
+                    """,
+                    """
+                    <link type="func">setVolumePitch;float;float;float</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol StopSound
                  = new BuiltinFunctionSymbol("stopSound",
                  [
                     new ParameterSymbol("channel", TypeSymbol.Float),
                  ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Sound.StopSound));
+
+            [FunctionDoc(
+                Info = """
+                Sets the <link type="param">volume</> and <link type="param">pitch</> of the sound playing at <link type="param">channel</>. 
+                """,
+                ParameterInfos = [
+                    """
+                    The channel from <link type="func">playSound;float;float;float;bool;float</>.
+                    """,
+                    """
+                    The new volume (0 - 1).
+                    """,
+                    """
+                    The new pitch (0 - 4).
+                    """
+                ],
+                Related = [
+                    """
+                    <link type="func">playSound;float;float;float;bool;float</>
+                    """,
+                    """
+                    <link type="func">stopSound;float</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol SetVolumePitch
                  = new BuiltinFunctionSymbol("setVolumePitch",
                  [
