@@ -1337,94 +1337,328 @@ namespace FanScript.Compiler.Symbols
 
         private static class Math
         {
+            [FunctionDoc(
+                Info = """
+                Raises <link type="param">base</> to <link type="param">exponent</>.
+                """,
+                ReturnValueInfo = """
+                <link type="param">base</> raised to <link type="param">exponent</>.
+                """
+            )]
             public static readonly FunctionSymbol Pow
                 = new BuiltinFunctionSymbol("pow",
                 [
                     new ParameterSymbol("base", TypeSymbol.Float),
                     new ParameterSymbol("exponent", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Power));
+
+            [FunctionDoc(
+                Info = """
+                Returns a random float between <link type="param">min</> and <link type="param">max</>.
+                """,
+                ReturnValueInfo = """
+                The randomly selected number.
+                """,
+                ParameterInfos = [
+                    """
+                    The minimum number (inclusive).
+                    """,
+                    """
+                    The maximum number (exclusive).
+                    """
+                ],
+                Remarks = [
+                    """
+                    Do not use in inline variables, may return the same number.
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol Random
                 = new BuiltinFunctionSymbol("random",
                 [
                     new ParameterSymbol("min", TypeSymbol.Float),
                     new ParameterSymbol("max", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Random));
+
+            [FunctionDoc(
+                Info = """
+                Sets the seed used by <link type="func">random;float;float</>.
+                """,
+                ParameterInfos = [
+                    """
+                    The new random seed.
+                    """,
+                ]
+            )]
             public static readonly FunctionSymbol RandomSeed
                 = new BuiltinFunctionSymbol("setRandomSeed",
                 [
                     new ParameterSymbol("seed", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Math.RandomSeed));
+
+            [FunctionDoc(
+                Info = """
+                Returns the smaller of 2 numbers.
+                """,
+                ReturnValueInfo = """
+                Returns either <link type="param">num1</> or <link type="param">num2</>, depending on which one is smaller.
+                """
+            )]
             public static readonly FunctionSymbol Min
                 = new BuiltinFunctionSymbol("min",
                 [
                     new ParameterSymbol("num1", TypeSymbol.Float),
                     new ParameterSymbol("num2", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Min));
+
+            [FunctionDoc(
+                Info = """
+                Returns the larger of 2 numbers.
+                """,
+                ReturnValueInfo = """
+                Returns either <link type="param">num1</> or <link type="param">num2</>, depending on which one is larger.
+                """
+            )]
             public static readonly FunctionSymbol Max
                 = new BuiltinFunctionSymbol("max",
                 [
                     new ParameterSymbol("num1", TypeSymbol.Float),
                     new ParameterSymbol("num2", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Max));
+
+            [FunctionDoc(
+                Info = """
+                Retuns <link type="url">sine;https://en.wikipedia.org/wiki/Sine_and_cosine</> of <link type="param">num</>.
+                """,
+                ReturnValueInfo = """
+                Sine of <link type="param">num</>.
+                """,
+                ParameterInfos = [
+                    """
+                    Angle in degrees.
+                    """,
+                ],
+                Related = [
+                    """
+                    <link type="func">cos;float</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol Sin
                 = new BuiltinFunctionSymbol("sin",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Sin));
+
+            [FunctionDoc(
+                Info = """
+                Retuns <link type="url">cosine;https://en.wikipedia.org/wiki/Sine_and_cosine</> of <link type="param">num</>.
+                """,
+                ReturnValueInfo = """
+                Cos of <link type="param">num</>.
+                """,
+                ParameterInfos = [
+                    """
+                    Angle in degrees.
+                    """,
+                ],
+                Related = [
+                    """
+                    <link type="func">sin;float</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol Cos
                 = new BuiltinFunctionSymbol("cos",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Cos));
+
+            [FunctionDoc(
+                Info = """
+                Returns <link type="param">num</> rounded to the nearest integer.
+                """,
+                ReturnValueInfo = """
+                <link type="param">num</> rounded to the nearest integer.
+                """
+            )]
             public static readonly FunctionSymbol Round
                 = new BuiltinFunctionSymbol("round",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Round));
+
+            [FunctionDoc(
+                Info = """
+                Returns <link type="param">num</> rounded down.
+                """,
+                ReturnValueInfo = """
+                <link type="param">num</> rounded down.
+                """
+            )]
             public static readonly FunctionSymbol Floor
                 = new BuiltinFunctionSymbol("floor",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Floor));
+
+            [FunctionDoc(
+                Info = """
+                Returns <link type="param">num</> rounded up.
+                """,
+                ReturnValueInfo = """
+                <link type="param">num</> rounded up.
+                """
+            )]
             public static readonly FunctionSymbol Ceiling
                 = new BuiltinFunctionSymbol("ceiling",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Ceiling));
+
+            [FunctionDoc(
+                Info = """
+                Gets the absolute value of <link type="param">num</>.
+                """,
+                ReturnValueInfo = """
+                Absolute value of <link type="param">num</> (if (<link type="param">num</> >= 0) <link type="param">num</> else -<link type="param">num</>).
+                """
+            )]
             public static readonly FunctionSymbol Abs
                 = new BuiltinFunctionSymbol("abs",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Absolute));
+
+            [FunctionDoc(
+                Info = """
+                Returns the <link type="url">logarithm;https://en.wikipedia.org/wiki/Logarithm</> of <link type="param">number</> to <link type="param">base</>.
+                """
+            )]
             public static readonly FunctionSymbol Log
                 = new BuiltinFunctionSymbol("log",
                 [
                     new ParameterSymbol("number", TypeSymbol.Float),
                     new ParameterSymbol("base", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Logarithm));
+
+            [FunctionDoc(
+                Info = """
+                Returns a vector with the same direction as <link type="param">vector</>, but with the lenght of 1.
+                """,
+                ReturnValueInfo = """
+                The normalized <link type="param">vector</>.
+                """
+            )]
             public static readonly FunctionSymbol Normalize
                 = new BuiltinFunctionSymbol("normalize",
                 [
                     new ParameterSymbol("vector", TypeSymbol.Vector3),
                 ], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Math.Normalize));
+
+            [FunctionDoc(
+                Info = """
+                Returns the <link type="url">dot product;https://en.wikipedia.org/wiki/Dot_product</> of <link type="param">vector1</> and <link type="param">vector2</>.
+                """,
+                ReturnValueInfo = """
+                Dot product of <link type="param">vector1</> and <link type="param">vector2</>.
+                """,
+                ParameterInfos = [
+                    """
+                    The first vector.
+                    """,
+                    """
+                    The second vector.
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol DotProduct
                 = new BuiltinFunctionSymbol("dot",
                 [
-                    new ParameterSymbol("vector", TypeSymbol.Vector3),
-                    new ParameterSymbol("vector", TypeSymbol.Vector3),
+                    new ParameterSymbol("vector1", TypeSymbol.Vector3),
+                    new ParameterSymbol("vector2", TypeSymbol.Vector3),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.DotProduct));
+
+            [FunctionDoc(
+                Info = """
+                Returns the <link type="url">cross product;https://en.wikipedia.org/wiki/Cross_product</> of <link type="param">vector1</> and <link type="param">vector2</>.
+                """,
+                ReturnValueInfo = """
+                Cross product of <link type="param">vector1</> and <link type="param">vector2</>.
+                """,
+                ParameterInfos = [
+                    """
+                    The first vector.
+                    """,
+                    """
+                    The second vector.
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol CrossProduct
                 = new BuiltinFunctionSymbol("cross",
                 [
-                    new ParameterSymbol("vector", TypeSymbol.Vector3),
-                    new ParameterSymbol("vector", TypeSymbol.Vector3),
+                    new ParameterSymbol("vector1", TypeSymbol.Vector3),
+                    new ParameterSymbol("vector2", TypeSymbol.Vector3),
                 ], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Math.CrossProduct));
+
+            [FunctionDoc(
+                Info = """
+                Returns the distance between <link type="param">vector1</> and <link type="param">vector2</>.
+                """,
+                ReturnValueInfo = """
+                The distance between <link type="param">vector1</> and <link type="param">vector2</>.
+                """,
+                ParameterInfos = [
+                    """
+                    The first vector.
+                    """,
+                    """
+                    The second vector.
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol Distance
                 = new BuiltinFunctionSymbol("dist",
                 [
-                    new ParameterSymbol("vector", TypeSymbol.Vector3),
-                    new ParameterSymbol("vector", TypeSymbol.Vector3),
+                    new ParameterSymbol("vector1", TypeSymbol.Vector3),
+                    new ParameterSymbol("vector2", TypeSymbol.Vector3),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Distance));
+
+            [FunctionDoc(
+                Info = """
+                Linearly interpolates between <link type="param">from</> and <link type="param">to</>, depending on <link type="param">amount</>.
+                """,
+                ReturnValueInfo = """
+                The value between <link type="param">from</> and <link type="param">to</>.
+                """,
+                ParameterInfos = [
+                    """
+                    The start value.
+                    """,
+                    """
+                    The end value.
+                    """,
+                    """
+                    How far between <link type="param">from</> and <link type="param">to</> to transition (0 - 1).
+                    """
+                ],
+                Examples = """
+                <codeblock lang="fcs">
+                // ease out from "from" to "to"
+                rot from
+                rot to
+                float speed
+                on Play()
+                {
+                    from = rot(0, 0, 0)
+                    to = rot(0, 90, 0)
+                    speed = 0.05 // 5% between from and to
+                }
+                from = lerp(from, to, speed)
+                </>
+                """
+            )]
             public static readonly FunctionSymbol Lerp
                 = new BuiltinFunctionSymbol("lerp",
                 [
@@ -1432,6 +1666,42 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("to", TypeSymbol.Rotation),
                     new ParameterSymbol("amount", TypeSymbol.Float),
                 ], TypeSymbol.Rotation, (call, context) => emitX1(call, context, Blocks.Math.Lerp));
+
+            [FunctionDoc(
+                NameOverwrite = "Lerp",
+                Info = """
+                Linearly interpolates between <link type="param">from</> and <link type="param">to</>, depending on <link type="param">amount</>.
+                """,
+                ReturnValueInfo = """
+                The value between <link type="param">from</> and <link type="param">to</>.
+                """,
+                ParameterInfos = [
+                    """
+                    The start value.
+                    """,
+                    """
+                    The end value.
+                    """,
+                    """
+                    How far between <link type="param">from</> and <link type="param">to</> to transition (0 - 1).
+                    """
+                ],
+                Examples = """
+                <codeblock lang="fcs">
+                // ease out from "from" to "to"
+                float from
+                float to
+                float speed
+                on Play()
+                {
+                    from = 0
+                    to = 100
+                    speed = 0.05 // 5% between from and to
+                }
+                from = lerp(from, to, speed)
+                </>
+                """
+            )]
             public static readonly FunctionSymbol LerpFloat
                 = new BuiltinFunctionSymbol("lerp",
                 [
@@ -1482,6 +1752,42 @@ namespace FanScript.Compiler.Symbols
 
                     return BasicEmitStore.COut(add, add.Type.Terminals["Num1 + Num2"]);
                 });
+
+            [FunctionDoc(
+                NameOverwrite = "Lerp",
+                Info = """
+                Linearly interpolates between <link type="param">from</> and <link type="param">to</>, depending on <link type="param">amount</>.
+                """,
+                ReturnValueInfo = """
+                The value between <link type="param">from</> and <link type="param">to</>.
+                """,
+                ParameterInfos = [
+                    """
+                    The start value.
+                    """,
+                    """
+                    The end value.
+                    """,
+                    """
+                    How far between <link type="param">from</> and <link type="param">to</> to transition (0 - 1).
+                    """
+                ],
+                Examples = """
+                <codeblock lang="fcs">
+                // ease out from "from" to "to"
+                vec3 from
+                vec3 to
+                float speed
+                on Play()
+                {
+                    from = vec3(0, 0, 0)
+                    to = vec3(0, 90, 0)
+                    speed = 0.05 // 5% between from and to
+                }
+                from = lerp(from, to, speed)
+                </>
+                """
+            )]
             public static readonly FunctionSymbol LerpVec
                 = new BuiltinFunctionSymbol("lerp",
                 [
@@ -1532,12 +1838,66 @@ namespace FanScript.Compiler.Symbols
 
                     return BasicEmitStore.COut(add, add.Type.Terminals["Vec1 + Vec2"]);
                 });
+
+            [FunctionDoc(
+                Info = """
+                Outputs rotation of <link type="param">angle</> around <link type="param">axis</>.
+                """,
+                ParameterInfos = [
+                    """
+                    The axis to rotate around.
+                    """,
+                    """
+                    How much to rotate (in degrees).
+                    """
+                ],
+                Examples = """
+                <codeblock lang="fcs">
+                inspect(axisAngle(vec3(0, 1, 0), 90)) // (0, 90, 0))
+
+                inspect(axisAngle(vec3(1, 0, 0), 45)) // (45, 0, 0)
+                </>
+                """
+            )]
             public static readonly FunctionSymbol AxisAngle
                 = new BuiltinFunctionSymbol("axisAngle",
                 [
                     new ParameterSymbol("axis", TypeSymbol.Vector3),
                     new ParameterSymbol("angle", TypeSymbol.Float),
                 ], TypeSymbol.Rotation, (call, context) => emitX1(call, context, Blocks.Math.AxisAngle));
+
+            [FunctionDoc(
+                Info = """
+                Gets a ray going from ($plink screenX;, $plink screenY;).
+                """,
+                ParameterInfos = [
+                    """
+                    The x screen coordinate.
+                    """,
+                    """
+                    The y screen coordinate.
+                    """,
+                    """
+                    Position 2 units away from the camera.
+                    """,
+                    """
+                    Position 400 units away from the camera.
+                    """
+                ],
+                Remarks = [
+                    """
+                    Due to a technical issue, still to be fixed, the output lags by one frame. I.e. if you Set Camera on frame N, then this block's output will change on frame N+1 - the function will not work on the first frame.
+                    """
+                ],
+                Related = [
+                    """
+                    <link type="func">worldToScreen;vec3;float;float</>
+                    """,
+                    """
+                    <link type="func">worldToScreen;vec3</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol ScreenToWorld
                 = new BuiltinFunctionSymbol("screenToWorld",
                 [
@@ -1546,6 +1906,25 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("worldNear", Modifiers.Out, TypeSymbol.Vector3),
                     new ParameterSymbol("worldFar", Modifiers.Out, TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Math.ScreenToWorld));
+
+            [FunctionDoc(
+                Info = """
+                Gets at what screen position is <link type="param">worldPos</> located.
+                """,
+                Remarks = [
+                    """
+                    Due to a technical issue, still to be fixed, the output lags by one frame. I.e. if you Set Camera on frame N, then this block's output will change on frame N+1 - the function will not work on the first frame.
+                    """
+                ],
+                Related = [
+                    """
+                    <link type="func">worldToScreen;vec3</>
+                    """,
+                    """
+                    <link type="func">screenToWorld;float;float;vec3;vec3</>
+                    """,
+                ]
+            )]
             public static readonly FunctionSymbol WorldToScreen
                 = new BuiltinFunctionSymbol("worldToScreen",
                 [
@@ -1553,6 +1932,28 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("screenX", Modifiers.Out, TypeSymbol.Float),
                     new ParameterSymbol("screenY", Modifiers.Out, TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Math.WorldToScreen));
+
+            [FunctionDoc(
+                Info = """
+                Returns at what screen position is <link type="param">worldPos</> located.
+                """,
+                ReturnValueInfo = """
+                The screen position of <link type="param">worldPos</> (X, Y).
+                """,
+                Remarks = [
+                    """
+                    Due to a technical issue, still to be fixed, the output lags by one frame. I.e. if you Set Camera on frame N, then this block's output will change on frame N+1 - the function will not work on the first frame.
+                    """
+                ],
+                Related = [
+                    """
+                    <link type="func">worldToScreen;vec3;float;float</>
+                    """,
+                    """
+                    <link type="func">screenToWorld;float;float;vec3;vec3</>
+                    """,
+                ]
+            )]
             public static readonly FunctionSymbol WorldToScreen2
                 = new BuiltinFunctionSymbol("worldToScreen",
                 [
@@ -1577,12 +1978,57 @@ namespace FanScript.Compiler.Symbols
 
                     return BasicEmitStore.COut(make, make.Type.Terminals["Vector"]);
                 });
+
+            [FunctionDoc(
+                Info = """
+                Returns a rotation pointing in <link type="param">direction</>.
+                """,
+                ReturnValueInfo = """
+                Rotation "looking" in <link type="param">direction</>.
+                """,
+                ParameterInfos = [
+                    """
+                    The direction to point in.
+                    """,
+                    """
+                    The up direction (default is (0, 1, 0)).
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol LookRotation
                 = new BuiltinFunctionSymbol("lookRotation",
                 [
                     new ParameterSymbol("direction", TypeSymbol.Vector3),
                     new ParameterSymbol("up", TypeSymbol.Vector3),
                 ], TypeSymbol.Rotation, (call, context) => emitX1(call, context, Blocks.Math.LookRotation));
+
+            [FunctionDoc(
+                Info = """
+                Returns the point at which a line intersects a plane.
+                """,
+                ReturnValueInfo = """
+                The intersection of a line and a plane.
+                """,
+                ParameterInfos = [
+                    """
+                    Line's starting position.
+                    """,
+                    """
+                    Line's end position.
+                    """,
+                    """
+                    A point on the plane.
+                    """,
+                    """
+                    A vector perpendicular to the plane (the up direction from the plane's surface).
+                    """
+                ],
+                Remarks = [
+                    """
+                    The line is not a line segment, so the intersection will be found even if it's not in-between <link type="param">lineFrom</>/<link type="param">lineTo</>.
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol LineVsPlane
                 = new BuiltinFunctionSymbol("lineVsPlane",
                 [
