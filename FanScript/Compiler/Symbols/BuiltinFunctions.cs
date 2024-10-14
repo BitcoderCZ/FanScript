@@ -2039,6 +2039,18 @@ namespace FanScript.Compiler.Symbols
                 ], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Math.LineVsPlane));
         }
 
+        [FunctionDoc(
+            Info = """
+            Displays <link type="param">value</>.
+            """,
+            Examples = """
+            <codeblock lang="fcs">
+            vec3 pos
+            // ...
+            inspect(pos)
+            </>
+            """
+        )]
         public static readonly FunctionSymbol Inspect
             = new BuiltinFunctionSymbol("inspect",
             [
@@ -2057,6 +2069,21 @@ namespace FanScript.Compiler.Symbols
                     return new BasicEmitStore(inspect);
                 }
             );
+
+        [FunctionDoc(
+            Info = """
+            Returns the value (reference) from <link type="param">array</> at <link type="param">index</>.
+            """,
+            ReturnValueInfo = """
+            The value at <link type="param">index</>.
+            """,
+            Examples = """
+            <codeblock lang="fcs">
+            array<float> arr = [3, 2, 1]
+            inspect(arr.get(1)) // 2
+            </>
+            """
+        )]
         public static readonly FunctionSymbol Array_Get
             = new BuiltinFunctionSymbol("get",
             [
@@ -2081,6 +2108,22 @@ namespace FanScript.Compiler.Symbols
             {
                 IsMethod = true,
             };
+
+        [FunctionDoc(
+            Info = """
+            Sets <link type="param">array</> at <link type="param">index</> to <link type="param">value</>.
+            """,
+            Examples = """
+            <codeblock lang="fcs">
+            array<float> arr
+            on Loop(0, 5, out inline float i)
+            {
+                arr.set(i, i + 1)
+            }
+            // arr - [1, 2, 3, 4, 5]
+            </>
+            """
+        )]
         public static readonly FunctionSymbol Array_Set
             = new BuiltinFunctionSymbol("set",
             [
@@ -2116,6 +2159,19 @@ namespace FanScript.Compiler.Symbols
             {
                 IsMethod = true,
             };
+
+        [FunctionDoc(
+            Info = """
+            Sets a range of <link type="param">array</>, starting at <link type="param">index</>.
+            """,
+            Examples = """
+            <codeblock lang="fcs">
+            array<float> arr
+            arr.setRange(2, [1, 2, 3])
+            // arr - [0, 0, 1, 2, 3]
+            </>
+            """
+        )]
         public static readonly FunctionSymbol Array_SetRange
             = new BuiltinFunctionSymbol("setRange",
             [
@@ -2165,6 +2221,30 @@ namespace FanScript.Compiler.Symbols
             {
                 IsMethod = true,
             };
+
+        [FunctionDoc(
+            Info = """
+            Sets the value of a variable/array element.
+            """,
+            ParameterInfos = [
+                """
+                The variable/array element to set.
+                """,
+                """
+                The value to set <link type="param">pointer</> to.
+                """
+            ],
+            Examples = """
+            <codeblock lang="fcs">
+            array<float> arr
+            // ...
+            inline float first = arr.get(0)
+            inspect(first)
+            setPtrValue(first, 10)
+            // arr - [10, ...]
+            </>
+            """
+        )]
         public static readonly FunctionSymbol Ptr_SetValue
             = new BuiltinFunctionSymbol("setPtrValue",
             [
@@ -2187,6 +2267,23 @@ namespace FanScript.Compiler.Symbols
 
                 }
             );
+
+        [FunctionDoc(
+            Info = """
+            Creates a comment, that gets emitted into fancade as comment blocks.
+            """,
+            ParameterInfos = [
+                """
+                The text of the comment, must be constant.
+                """
+            ],
+            Examples = """
+            <codeblock lang="fcs">
+            // comment only visible in code
+            fcComment("comment also visible in fancade")
+            </>
+            """
+        )]
         public static readonly FunctionSymbol FcComment
             = new BuiltinFunctionSymbol("fcComment",
             [
@@ -2201,6 +2298,33 @@ namespace FanScript.Compiler.Symbols
                 return NopEmitStore.Instance;
             }
             );
+
+        [FunctionDoc(
+            Info = """
+            Returns a block with the specified id.
+            """,
+            ReturnValueInfo = """
+            The <link type="type">obj</> specified by <link type="param">BLOCK</>.
+            """,
+            ParameterInfos = [
+                """
+                Id of the block, one of <link type="con">BLOCK</>, must be constant.
+                """
+            ],
+            Remarks = [
+                """
+                The id of a block can be get by placing the block at (0, 0, 0) and running log(getBlock(0, 0, 0)) in the EditorScript.
+                """,
+                """
+                EditorScript cannot connect wires to blocks, so if you are using it as the builder, you will have to connect the object wire to the block manually.
+                """
+            ],
+            Examples = """
+            <codeblock lang="fcs">
+            obj dirt = getBlockById(BLOCK_DIRT)
+            </>
+            """
+        )]
         public static readonly FunctionSymbol GetBlockById
             = new BuiltinFunctionSymbol("getBlockById",
             [
@@ -2228,6 +2352,11 @@ namespace FanScript.Compiler.Symbols
             }
             );
 
+        [FunctionDoc(
+            Info = """
+            *Dirrectly* convers <link type="param">vec</> to <link type="param">rot</>.
+            """
+        )]
         public static readonly FunctionSymbol ToRot
            = new BuiltinFunctionSymbol("toRot",
            [
@@ -2266,6 +2395,12 @@ namespace FanScript.Compiler.Symbols
            {
                IsMethod = true
            };
+
+        [FunctionDoc(
+            Info = """
+            *Dirrectly* convers <link type="param">rot</> to <link type="param">vec3</>.
+            """
+        )]
         public static readonly FunctionSymbol ToVec
            = new BuiltinFunctionSymbol("toVec",
            [
