@@ -7,17 +7,19 @@ namespace FanScript.Compiler.Symbols
 {
     public class FunctionSymbol : Symbol, IComparable<FunctionSymbol>
     {
-        internal FunctionSymbol(Modifiers modifiers, TypeSymbol type, string name, ImmutableArray<ParameterSymbol> parameters, FunctionDeclarationSyntax? declaration = null)
+        internal FunctionSymbol(Namespace @namespace, Modifiers modifiers, TypeSymbol type, string name, ImmutableArray<ParameterSymbol> parameters, FunctionDeclarationSyntax? declaration = null)
             : base(name)
         {
+            Namespace = @namespace;
             Modifiers = modifiers;
             Type = type;
             Parameters = parameters;
             Declaration = declaration;
         }
-        internal FunctionSymbol(Modifiers modifiers, TypeSymbol type, string name, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<TypeSymbol>? allowedGenericTypes, FunctionDeclarationSyntax? declaration = null)
+        internal FunctionSymbol(Namespace @namespace, Modifiers modifiers, TypeSymbol type, string name, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<TypeSymbol>? allowedGenericTypes, FunctionDeclarationSyntax? declaration = null)
             : base(name)
         {
+            Namespace = @namespace;
             Modifiers = modifiers;
             Type = type;
             Parameters = parameters;
@@ -28,6 +30,7 @@ namespace FanScript.Compiler.Symbols
         }
 
         public override SymbolKind Kind => SymbolKind.Function;
+        public Namespace Namespace { get; }
         public Modifiers Modifiers { get; }
         public TypeSymbol Type { get; }
         public ImmutableArray<ParameterSymbol> Parameters { get; }
@@ -56,7 +59,7 @@ namespace FanScript.Compiler.Symbols
         {
             if (other is null) return 1;
 
-            int nameComp = string.Compare(Name, other.Name, StringComparison.InvariantCulture);
+            int nameComp = string.Compare(Name, other.Name, StringComparison.Ordinal);
 
             if (nameComp != 0)
                 return nameComp;
@@ -92,14 +95,14 @@ namespace FanScript.Compiler.Symbols
     {
         private short lastId;
 
-        public FunctionSymbol Create(Modifiers modifiers, TypeSymbol type, string name, ImmutableArray<ParameterSymbol> parameters, FunctionDeclarationSyntax? declaration = null)
-            => new FunctionSymbol(modifiers, type, name, parameters, declaration)
+        public FunctionSymbol Create(Namespace @namespace, Modifiers modifiers, TypeSymbol type, string name, ImmutableArray<ParameterSymbol> parameters, FunctionDeclarationSyntax? declaration = null)
+            => new FunctionSymbol(@namespace, modifiers, type, name, parameters, declaration)
             {
                 Id = lastId++,
             };
 
-        public FunctionSymbol CreateGeneric(Modifiers modifiers, TypeSymbol type, string name, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<TypeSymbol>? allowedGenericTypes, FunctionDeclarationSyntax? declaration = null)
-            => new FunctionSymbol(modifiers, type, name, parameters, allowedGenericTypes, declaration)
+        public FunctionSymbol CreateGeneric(Namespace @namespace, Modifiers modifiers, TypeSymbol type, string name, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<TypeSymbol>? allowedGenericTypes, FunctionDeclarationSyntax? declaration = null)
+            => new FunctionSymbol(@namespace, modifiers, type, name, parameters, allowedGenericTypes, declaration)
             {
                 Id = lastId++,
             };

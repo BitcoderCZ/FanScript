@@ -2,7 +2,7 @@
 
 namespace FanScript.Utils
 {
-    public readonly struct Counter
+    internal readonly struct Counter
     {
         const int maxValPerChar = 63;
         const int shift = 6;

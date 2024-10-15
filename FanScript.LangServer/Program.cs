@@ -7,7 +7,6 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Server;
 using Serilog;
 using System;
-using System.Diagnostics;
 using System.Globalization;
 using System.Threading.Tasks;
 

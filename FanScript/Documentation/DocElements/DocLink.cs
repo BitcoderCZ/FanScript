@@ -29,7 +29,7 @@ namespace FanScript.Documentation.DocElements
             StringBuilder linkBuilder = new();
 
             displayBuilder.Append(Function.Name);
-            linkBuilder.Append(Function.Name);
+            linkBuilder.Append(Function.Namespace + Function.Name);
             if (Function.IsGeneric)
                 displayBuilder.Append("<>");
 
@@ -51,5 +51,26 @@ namespace FanScript.Documentation.DocElements
 
             return (displayBuilder.ToString(), linkBuilder.ToString());
         }
+    }
+
+    public sealed class ParamLink : DocLink
+    {
+        public ParamLink(FunctionSymbol function, int paramIndex)
+            : base(ImmutableArray<DocArg>.Empty, new DocString(function.Name))
+        {
+            if (paramIndex < 0 || paramIndex >= function.Parameters.Length)
+                throw new ArgumentOutOfRangeException(nameof(paramIndex));
+
+            Function = function;
+            ParamIndex = paramIndex;
+        }
+
+        public FunctionSymbol Function { get; }
+        public int ParamIndex { get; }
+
+        public string ParamName => Function.Parameters[ParamIndex].Name;
+
+        public override (string DisplayString, string LinkString) GetStrings()
+            => (ParamName, ParamName);
     }
 }

@@ -15,6 +15,8 @@ namespace FanScript.Compiler.Symbols
 {
     internal static class BuiltinFunctions
     {
+        private static Namespace builtinNamespace = new Namespace("builtin");
+
         #region Helper functions
         // (A) - active block (has before and after), num - numb inputs, num - number outputs
         private static EmitStore emitAX0(BoundCallExpression call, IEmitContext context, BlockDef blockDef, int argumentOffset = 0, Type[]? constantTypes = null)
@@ -162,6 +164,8 @@ namespace FanScript.Compiler.Symbols
 
         private static class Game
         {
+            private static Namespace gameNamespace = builtinNamespace + "game";
+
             [FunctionDoc(
                 ParameterInfos = [
                     """
@@ -170,7 +174,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol Win
-                = new BuiltinFunctionSymbol("win", [
+                = new BuiltinFunctionSymbol(gameNamespace, "win", [
                     new ParameterSymbol("DELAY", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.Win, constantTypes: [typeof(byte)]));
 
@@ -182,7 +186,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol Lose
-                = new BuiltinFunctionSymbol("lose", [
+                = new BuiltinFunctionSymbol(gameNamespace, "lose", [
                     new ParameterSymbol("DELAY", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.Lose, constantTypes: [typeof(byte)]));
 
@@ -203,7 +207,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol SetScore
-                = new BuiltinFunctionSymbol("setScore", [
+                = new BuiltinFunctionSymbol(gameNamespace, "setScore", [
                     new ParameterSymbol("score", TypeSymbol.Float),
                     new ParameterSymbol("coins", TypeSymbol.Float),
                     new ParameterSymbol("RANKING", TypeSymbol.Float),
@@ -232,7 +236,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol SetCamera
-                = new BuiltinFunctionSymbol("setCamera", [
+                = new BuiltinFunctionSymbol(gameNamespace, "setCamera", [
                     new ParameterSymbol("position", TypeSymbol.Vector3),
                     new ParameterSymbol("rotation", TypeSymbol.Rotation),
                     new ParameterSymbol("range", TypeSymbol.Float),
@@ -258,7 +262,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol SetLight
-                = new BuiltinFunctionSymbol("setLight", [
+                = new BuiltinFunctionSymbol(gameNamespace, "setLight", [
                     new ParameterSymbol("position", TypeSymbol.Vector3),
                     new ParameterSymbol("rotation", TypeSymbol.Rotation),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.SetLight));
@@ -277,7 +281,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol GetScreenSize
-                = new BuiltinFunctionSymbol("getScreenSize", [
+                = new BuiltinFunctionSymbol(gameNamespace, "getScreenSize", [
                     new ParameterSymbol("width", Modifiers.Out, TypeSymbol.Float),
                     new ParameterSymbol("height", Modifiers.Out, TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitXX(call, context, 2, Blocks.Game.ScreenSize));
@@ -289,7 +293,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol GetScreenSize2
-               = new BuiltinFunctionSymbol("getScreenSize", [], TypeSymbol.Vector3, (call, context) =>
+               = new BuiltinFunctionSymbol(gameNamespace, "getScreenSize", [], TypeSymbol.Vector3, (call, context) =>
                {
                    Block make = context.AddBlock(Blocks.Math.Make_Vector);
 
@@ -320,7 +324,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol GetAccelerometer
-                = new BuiltinFunctionSymbol("getAccelerometer", [], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Game.Accelerometer));
+                = new BuiltinFunctionSymbol(gameNamespace, "getAccelerometer", [], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Game.Accelerometer));
 
             [FunctionDoc(
                 Info = """
@@ -339,7 +343,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol GetCurrentFrame
-                = new BuiltinFunctionSymbol("getCurrentFrame", [], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Game.CurrentFrame));
+                = new BuiltinFunctionSymbol(gameNamespace, "getCurrentFrame", [], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Game.CurrentFrame));
 
             [FunctionDoc(
                 Info = """
@@ -357,7 +361,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol ShopSection
-                = new BuiltinFunctionSymbol("shopSection", [
+                = new BuiltinFunctionSymbol(gameNamespace, "shopSection", [
                     new ParameterSymbol("NAME", TypeSymbol.String),
                 ], TypeSymbol.Void, (call, context) =>
                 {
@@ -401,7 +405,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol MenuItem
-                = new BuiltinFunctionSymbol("menuItem", [
+                = new BuiltinFunctionSymbol(gameNamespace, "menuItem", [
                     new ParameterSymbol("variable", Modifiers.Ref, TypeSymbol.Float),
                     new ParameterSymbol("picture", TypeSymbol.Object),
                     new ParameterSymbol("NAME", TypeSymbol.String),
@@ -412,6 +416,8 @@ namespace FanScript.Compiler.Symbols
 
         private static class Objects
         {
+            private static Namespace objectNamespace = builtinNamespace + "object";
+
             [FunctionDoc(
                 Info = """
                 Returns the object at <link type="param">position</>.
@@ -431,7 +437,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol GetObject
-              = new BuiltinFunctionSymbol("getObject", [
+              = new BuiltinFunctionSymbol(objectNamespace, "getObject", [
                   new ParameterSymbol("position", TypeSymbol.Vector3),
               ], TypeSymbol.Object, (call, context) =>
               {
@@ -483,7 +489,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol GetObject2
-              = new BuiltinFunctionSymbol("getObject", [
+              = new BuiltinFunctionSymbol(objectNamespace, "getObject", [
                   new ParameterSymbol("x", TypeSymbol.Float),
                   new ParameterSymbol("y", TypeSymbol.Float),
                   new ParameterSymbol("z", TypeSymbol.Float),
@@ -523,7 +529,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol SetPos
-                = new BuiltinFunctionSymbol("setPos", [
+                = new BuiltinFunctionSymbol(objectNamespace, "setPos", [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("position", TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.SetPos, argumentOffset: 1))
@@ -545,7 +551,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol SetPosWithRot
-                = new BuiltinFunctionSymbol("setPos",
+                = new BuiltinFunctionSymbol(objectNamespace, "setPos",
                 [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("position", TypeSymbol.Vector3),
@@ -578,7 +584,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol GetPos
-                = new BuiltinFunctionSymbol("getPos", [
+                = new BuiltinFunctionSymbol(objectNamespace, "getPos", [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("position", Modifiers.Out, TypeSymbol.Vector3),
                     new ParameterSymbol("rotation", Modifiers.Out, TypeSymbol.Rotation),
@@ -624,7 +630,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol Raycast
-                = new BuiltinFunctionSymbol("raycast", [
+                = new BuiltinFunctionSymbol(objectNamespace, "raycast", [
                     new ParameterSymbol("from", TypeSymbol.Vector3),
                     new ParameterSymbol("to", TypeSymbol.Vector3),
                     new ParameterSymbol("didHit", Modifiers.Out, TypeSymbol.Bool),
@@ -660,7 +666,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol GetSize
-                = new BuiltinFunctionSymbol("getSize", [
+                = new BuiltinFunctionSymbol(objectNamespace, "getSize", [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("min", Modifiers.Out, TypeSymbol.Vector3),
                     new ParameterSymbol("max", Modifiers.Out, TypeSymbol.Vector3),
@@ -691,7 +697,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol SetVisible
-                = new BuiltinFunctionSymbol("setVisible", [
+                = new BuiltinFunctionSymbol(objectNamespace, "setVisible", [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("visible", TypeSymbol.Bool),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.SetVisible))
@@ -699,7 +705,7 @@ namespace FanScript.Compiler.Symbols
                     IsMethod = true,
                 };
             public static readonly FunctionSymbol Clone
-                = new BuiltinFunctionSymbol("clone", [
+                = new BuiltinFunctionSymbol(objectNamespace, "clone", [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("copy", Modifiers.Out, TypeSymbol.Object),
                 ], TypeSymbol.Void, (call, context) => emitAXX(call, context, 1, Blocks.Objects.CreateObject))
@@ -707,7 +713,7 @@ namespace FanScript.Compiler.Symbols
                     IsMethod = true,
                 };
             public static readonly FunctionSymbol Destroy
-                = new BuiltinFunctionSymbol("destroy", [
+                = new BuiltinFunctionSymbol(objectNamespace, "destroy", [
                     new ParameterSymbol("object", TypeSymbol.Object),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Objects.DestroyObject))
                 {
@@ -717,6 +723,8 @@ namespace FanScript.Compiler.Symbols
 
         private static class Sound
         {
+            private static Namespace soundNamespace = builtinNamespace + "sound";
+
             [FunctionDoc(
                 Info = """
                 Plays the <link type="param">SOUND</>.
@@ -748,7 +756,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol PlaySound
-                = new BuiltinFunctionSymbol("playSound",
+                = new BuiltinFunctionSymbol(soundNamespace, "playSound",
                 [
                     new ParameterSymbol("volume", TypeSymbol.Float),
                     new ParameterSymbol("pitch", TypeSymbol.Float),
@@ -807,7 +815,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol StopSound
-                 = new BuiltinFunctionSymbol("stopSound",
+                 = new BuiltinFunctionSymbol(soundNamespace, "stopSound",
                  [
                     new ParameterSymbol("channel", TypeSymbol.Float),
                  ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Sound.StopSound));
@@ -837,7 +845,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol SetVolumePitch
-                 = new BuiltinFunctionSymbol("setVolumePitch",
+                 = new BuiltinFunctionSymbol(soundNamespace, "setVolumePitch",
                  [
                     new ParameterSymbol("channel", TypeSymbol.Float),
                      new ParameterSymbol("volume", TypeSymbol.Float),
@@ -847,6 +855,8 @@ namespace FanScript.Compiler.Symbols
 
         private static class Physics
         {
+            private static Namespace physicsNamespace = builtinNamespace + "physics";
+
             [FunctionDoc(
                 Info = """
                 Adds <link type="param">force</> and/or <link type="param">torque</> to <link type="param">object</>.
@@ -875,7 +885,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol AddForce
-                = new BuiltinFunctionSymbol("addForce",
+                = new BuiltinFunctionSymbol(physicsNamespace, "addForce",
                 [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("force", TypeSymbol.Vector3),
@@ -909,7 +919,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol GetVelocity
-                = new BuiltinFunctionSymbol("getVelocity",
+                = new BuiltinFunctionSymbol(physicsNamespace, "getVelocity",
                 [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("velocity", Modifiers.Out, TypeSymbol.Vector3),
@@ -942,7 +952,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol SetVelocity
-                = new BuiltinFunctionSymbol("setVelocity",
+                = new BuiltinFunctionSymbol(physicsNamespace, "setVelocity",
                 [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("velocity", TypeSymbol.Vector3),
@@ -972,7 +982,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol SetLocked
-                = new BuiltinFunctionSymbol("setLocked",
+                = new BuiltinFunctionSymbol(physicsNamespace, "setLocked",
                 [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("position", TypeSymbol.Vector3),
@@ -994,7 +1004,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol SetMass
-                = new BuiltinFunctionSymbol("setMass",
+                = new BuiltinFunctionSymbol(physicsNamespace, "setMass",
                 [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("mass", TypeSymbol.Float),
@@ -1015,7 +1025,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol SetFriction
-                = new BuiltinFunctionSymbol("setFriction",
+                = new BuiltinFunctionSymbol(physicsNamespace, "setFriction",
                 [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("friction", TypeSymbol.Float),
@@ -1036,7 +1046,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol SetBounciness
-                = new BuiltinFunctionSymbol("setBounciness",
+                = new BuiltinFunctionSymbol(physicsNamespace, "setBounciness",
                 [
                     new ParameterSymbol("object", TypeSymbol.Object),
                     new ParameterSymbol("bounciness", TypeSymbol.Float),
@@ -1056,7 +1066,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol SetGravity
-                = new BuiltinFunctionSymbol("setGravity",
+                = new BuiltinFunctionSymbol(physicsNamespace, "setGravity",
                 [
                     new ParameterSymbol("gravity", TypeSymbol.Vector3),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Physics.SetGravity));
@@ -1101,7 +1111,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol AddConstraint
-                = new BuiltinFunctionSymbol("addConstraint",
+                = new BuiltinFunctionSymbol(physicsNamespace, "addConstraint",
                 [
                     new ParameterSymbol("base", TypeSymbol.Object),
                     new ParameterSymbol("part", TypeSymbol.Object),
@@ -1132,7 +1142,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol LinearLimits
-                = new BuiltinFunctionSymbol("linearLimits",
+                = new BuiltinFunctionSymbol(physicsNamespace, "linearLimits",
                 [
                     new ParameterSymbol("constraint", TypeSymbol.Constraint),
                     new ParameterSymbol("lower", TypeSymbol.Vector3),
@@ -1162,7 +1172,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol AngularLimits
-                = new BuiltinFunctionSymbol("angularLimits",
+                = new BuiltinFunctionSymbol(physicsNamespace, "angularLimits",
                 [
                     new ParameterSymbol("constraint", TypeSymbol.Constraint),
                     new ParameterSymbol("lower", TypeSymbol.Vector3),
@@ -1192,7 +1202,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol LinearSpring
-                = new BuiltinFunctionSymbol("linearSpring",
+                = new BuiltinFunctionSymbol(physicsNamespace, "linearSpring",
                 [
                     new ParameterSymbol("constraint", TypeSymbol.Constraint),
                     new ParameterSymbol("stiffness", TypeSymbol.Vector3),
@@ -1222,7 +1232,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol AngularSpring
-                = new BuiltinFunctionSymbol("angularSpring",
+                = new BuiltinFunctionSymbol(physicsNamespace, "angularSpring",
                 [
                     new ParameterSymbol("constraint", TypeSymbol.Constraint),
                     new ParameterSymbol("stiffness", TypeSymbol.Vector3),
@@ -1252,7 +1262,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol LinearMotor
-                = new BuiltinFunctionSymbol("linearMotor",
+                = new BuiltinFunctionSymbol(physicsNamespace, "linearMotor",
                 [
                     new ParameterSymbol("constraint", TypeSymbol.Constraint),
                     new ParameterSymbol("speed", TypeSymbol.Vector3),
@@ -1282,7 +1292,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol AngularMotor
-                = new BuiltinFunctionSymbol("angularMotor",
+                = new BuiltinFunctionSymbol(physicsNamespace, "angularMotor",
                 [
                     new ParameterSymbol("constraint", TypeSymbol.Constraint),
                     new ParameterSymbol("speed", TypeSymbol.Vector3),
@@ -1295,6 +1305,8 @@ namespace FanScript.Compiler.Symbols
 
         private static class Control
         {
+            private static Namespace controlNamespace = builtinNamespace + "control";
+
             [FunctionDoc(
                 Info = """
                 Creates a joystick on screen and outputs the direction in which it is held.
@@ -1309,7 +1321,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol Joystick
-                = new BuiltinFunctionSymbol("joystick",
+                = new BuiltinFunctionSymbol(controlNamespace, "joystick",
                 [
                     new ParameterSymbol("joyDir", Modifiers.Out, TypeSymbol.Vector3),
                     new ParameterSymbol("JOYSTICK_TYPE", TypeSymbol.Float),
@@ -1339,6 +1351,8 @@ namespace FanScript.Compiler.Symbols
 
         private static class Math
         {
+            private static Namespace mathNamespace = builtinNamespace + "math";
+
             [FunctionDoc(
                 Info = """
                 Raises <link type="param">base</> to <link type="param">exponent</>.
@@ -1348,7 +1362,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Pow
-                = new BuiltinFunctionSymbol("pow",
+                = new BuiltinFunctionSymbol(mathNamespace, "pow",
                 [
                     new ParameterSymbol("base", TypeSymbol.Float),
                     new ParameterSymbol("exponent", TypeSymbol.Float),
@@ -1376,7 +1390,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol Random
-                = new BuiltinFunctionSymbol("random",
+                = new BuiltinFunctionSymbol(mathNamespace, "random",
                 [
                     new ParameterSymbol("min", TypeSymbol.Float),
                     new ParameterSymbol("max", TypeSymbol.Float),
@@ -1393,7 +1407,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol RandomSeed
-                = new BuiltinFunctionSymbol("setRandomSeed",
+                = new BuiltinFunctionSymbol(mathNamespace, "setRandomSeed",
                 [
                     new ParameterSymbol("seed", TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Math.RandomSeed));
@@ -1407,7 +1421,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Min
-                = new BuiltinFunctionSymbol("min",
+                = new BuiltinFunctionSymbol(mathNamespace, "min",
                 [
                     new ParameterSymbol("num1", TypeSymbol.Float),
                     new ParameterSymbol("num2", TypeSymbol.Float),
@@ -1422,7 +1436,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Max
-                = new BuiltinFunctionSymbol("max",
+                = new BuiltinFunctionSymbol(mathNamespace, "max",
                 [
                     new ParameterSymbol("num1", TypeSymbol.Float),
                     new ParameterSymbol("num2", TypeSymbol.Float),
@@ -1447,7 +1461,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol Sin
-                = new BuiltinFunctionSymbol("sin",
+                = new BuiltinFunctionSymbol(mathNamespace, "sin",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Sin));
@@ -1471,7 +1485,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol Cos
-                = new BuiltinFunctionSymbol("cos",
+                = new BuiltinFunctionSymbol(mathNamespace, "cos",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Cos));
@@ -1485,7 +1499,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Round
-                = new BuiltinFunctionSymbol("round",
+                = new BuiltinFunctionSymbol(mathNamespace, "round",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Round));
@@ -1499,7 +1513,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Floor
-                = new BuiltinFunctionSymbol("floor",
+                = new BuiltinFunctionSymbol(mathNamespace, "floor",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Floor));
@@ -1513,7 +1527,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Ceiling
-                = new BuiltinFunctionSymbol("ceiling",
+                = new BuiltinFunctionSymbol(mathNamespace, "ceiling",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Ceiling));
@@ -1527,7 +1541,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Abs
-                = new BuiltinFunctionSymbol("abs",
+                = new BuiltinFunctionSymbol(mathNamespace, "abs",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
                 ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Absolute));
@@ -1538,7 +1552,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Log
-                = new BuiltinFunctionSymbol("log",
+                = new BuiltinFunctionSymbol(mathNamespace, "log",
                 [
                     new ParameterSymbol("number", TypeSymbol.Float),
                     new ParameterSymbol("base", TypeSymbol.Float),
@@ -1553,7 +1567,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Normalize
-                = new BuiltinFunctionSymbol("normalize",
+                = new BuiltinFunctionSymbol(mathNamespace, "normalize",
                 [
                     new ParameterSymbol("vector", TypeSymbol.Vector3),
                 ], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Math.Normalize));
@@ -1575,7 +1589,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol DotProduct
-                = new BuiltinFunctionSymbol("dot",
+                = new BuiltinFunctionSymbol(mathNamespace, "dot",
                 [
                     new ParameterSymbol("vector1", TypeSymbol.Vector3),
                     new ParameterSymbol("vector2", TypeSymbol.Vector3),
@@ -1598,7 +1612,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol CrossProduct
-                = new BuiltinFunctionSymbol("cross",
+                = new BuiltinFunctionSymbol(mathNamespace, "cross",
                 [
                     new ParameterSymbol("vector1", TypeSymbol.Vector3),
                     new ParameterSymbol("vector2", TypeSymbol.Vector3),
@@ -1621,7 +1635,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol Distance
-                = new BuiltinFunctionSymbol("dist",
+                = new BuiltinFunctionSymbol(mathNamespace, "dist",
                 [
                     new ParameterSymbol("vector1", TypeSymbol.Vector3),
                     new ParameterSymbol("vector2", TypeSymbol.Vector3),
@@ -1662,7 +1676,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Lerp
-                = new BuiltinFunctionSymbol("lerp",
+                = new BuiltinFunctionSymbol(mathNamespace, "lerp",
                 [
                     new ParameterSymbol("from", TypeSymbol.Rotation),
                     new ParameterSymbol("to", TypeSymbol.Rotation),
@@ -1705,7 +1719,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol LerpFloat
-                = new BuiltinFunctionSymbol("lerp",
+                = new BuiltinFunctionSymbol(mathNamespace, "lerp",
                 [
                     new ParameterSymbol("from", TypeSymbol.Float),
                     new ParameterSymbol("to", TypeSymbol.Float),
@@ -1791,7 +1805,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol LerpVec
-                = new BuiltinFunctionSymbol("lerp",
+                = new BuiltinFunctionSymbol(mathNamespace, "lerp",
                 [
                     new ParameterSymbol("from", TypeSymbol.Vector3),
                     new ParameterSymbol("to", TypeSymbol.Vector3),
@@ -1862,7 +1876,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol AxisAngle
-                = new BuiltinFunctionSymbol("axisAngle",
+                = new BuiltinFunctionSymbol(mathNamespace, "axisAngle",
                 [
                     new ParameterSymbol("axis", TypeSymbol.Vector3),
                     new ParameterSymbol("angle", TypeSymbol.Float),
@@ -1901,7 +1915,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol ScreenToWorld
-                = new BuiltinFunctionSymbol("screenToWorld",
+                = new BuiltinFunctionSymbol(mathNamespace, "screenToWorld",
                 [
                     new ParameterSymbol("screenX", TypeSymbol.Float),
                     new ParameterSymbol("screenY", TypeSymbol.Float),
@@ -1928,7 +1942,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol WorldToScreen
-                = new BuiltinFunctionSymbol("worldToScreen",
+                = new BuiltinFunctionSymbol(mathNamespace, "worldToScreen",
                 [
                     new ParameterSymbol("worldPos", TypeSymbol.Vector3),
                     new ParameterSymbol("screenX", Modifiers.Out, TypeSymbol.Float),
@@ -1957,7 +1971,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol WorldToScreen2
-                = new BuiltinFunctionSymbol("worldToScreen",
+                = new BuiltinFunctionSymbol(mathNamespace, "worldToScreen",
                 [
                     new ParameterSymbol("worldPos", TypeSymbol.Vector3),
                 ], TypeSymbol.Vector3, (call, context) =>
@@ -1998,7 +2012,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol LookRotation
-                = new BuiltinFunctionSymbol("lookRotation",
+                = new BuiltinFunctionSymbol(mathNamespace, "lookRotation",
                 [
                     new ParameterSymbol("direction", TypeSymbol.Vector3),
                     new ParameterSymbol("up", TypeSymbol.Vector3),
@@ -2032,7 +2046,7 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol LineVsPlane
-                = new BuiltinFunctionSymbol("lineVsPlane",
+                = new BuiltinFunctionSymbol(mathNamespace, "lineVsPlane",
                 [
                     new ParameterSymbol("lineFrom", TypeSymbol.Vector3),
                     new ParameterSymbol("lineTo", TypeSymbol.Vector3),
@@ -2054,7 +2068,7 @@ namespace FanScript.Compiler.Symbols
             """
         )]
         public static readonly FunctionSymbol Inspect
-            = new BuiltinFunctionSymbol("inspect",
+            = new BuiltinFunctionSymbol(builtinNamespace, "inspect",
             [
                 new ParameterSymbol("value", TypeSymbol.Generic)
             ], TypeSymbol.Void, [TypeSymbol.Bool, TypeSymbol.Float, TypeSymbol.Vector3, TypeSymbol.Rotation, TypeSymbol.Object], (call, context) =>
@@ -2087,7 +2101,7 @@ namespace FanScript.Compiler.Symbols
             """
         )]
         public static readonly FunctionSymbol Array_Get
-            = new BuiltinFunctionSymbol("get",
+            = new BuiltinFunctionSymbol(builtinNamespace, "get",
             [
                 new ParameterSymbol("array", TypeSymbol.Array),
                 new ParameterSymbol("index", TypeSymbol.Float),
@@ -2127,7 +2141,7 @@ namespace FanScript.Compiler.Symbols
             """
         )]
         public static readonly FunctionSymbol Array_Set
-            = new BuiltinFunctionSymbol("set",
+            = new BuiltinFunctionSymbol(builtinNamespace, "set",
             [
                 new ParameterSymbol("array", TypeSymbol.Array),
                 new ParameterSymbol("index", TypeSymbol.Float),
@@ -2175,7 +2189,7 @@ namespace FanScript.Compiler.Symbols
             """
         )]
         public static readonly FunctionSymbol Array_SetRange
-            = new BuiltinFunctionSymbol("setRange",
+            = new BuiltinFunctionSymbol(builtinNamespace, "setRange",
             [
                 new ParameterSymbol("array", TypeSymbol.Array),
                 new ParameterSymbol("index", TypeSymbol.Float),
@@ -2248,7 +2262,7 @@ namespace FanScript.Compiler.Symbols
             """
         )]
         public static readonly FunctionSymbol Ptr_SetValue
-            = new BuiltinFunctionSymbol("setPtrValue",
+            = new BuiltinFunctionSymbol(builtinNamespace, "setPtrValue",
             [
                 new ParameterSymbol("pointer", TypeSymbol.Generic),
                 new ParameterSymbol("value", TypeSymbol.Generic),
@@ -2287,7 +2301,7 @@ namespace FanScript.Compiler.Symbols
             """
         )]
         public static readonly FunctionSymbol FcComment
-            = new BuiltinFunctionSymbol("fcComment",
+            = new BuiltinFunctionSymbol(builtinNamespace, "fcComment",
             [
                 new ParameterSymbol("TEXT", TypeSymbol.String)
             ], TypeSymbol.Void, (call, context) =>
@@ -2328,7 +2342,7 @@ namespace FanScript.Compiler.Symbols
             """
         )]
         public static readonly FunctionSymbol GetBlockById
-            = new BuiltinFunctionSymbol("getBlockById",
+            = new BuiltinFunctionSymbol(builtinNamespace, "getBlockById",
             [
                 new ParameterSymbol("BLOCK", TypeSymbol.Float)
             ], TypeSymbol.Object, (call, context) =>
@@ -2360,7 +2374,7 @@ namespace FanScript.Compiler.Symbols
             """
         )]
         public static readonly FunctionSymbol ToRot
-           = new BuiltinFunctionSymbol("toRot",
+           = new BuiltinFunctionSymbol(builtinNamespace, "toRot",
            [
                new ParameterSymbol("vec", TypeSymbol.Vector3)
            ], TypeSymbol.Rotation, (call, context) =>
@@ -2404,7 +2418,7 @@ namespace FanScript.Compiler.Symbols
             """
         )]
         public static readonly FunctionSymbol ToVec
-           = new BuiltinFunctionSymbol("toVec",
+           = new BuiltinFunctionSymbol(builtinNamespace, "toVec",
            [
                new ParameterSymbol("rot", TypeSymbol.Rotation)
            ], TypeSymbol.Vector3, (call, context) =>

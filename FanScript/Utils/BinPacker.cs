@@ -2,7 +2,7 @@
 
 namespace FanScript.Utils
 {
-    public static class BinPacker
+    internal static class BinPacker
     {
         /// <summary>
         /// 

@@ -202,7 +202,7 @@ namespace FanScript.Compiler.Emit.CodeBuilders
         {
             byte[] bufer;
             using (MemoryStream stream = new MemoryStream())
-            using (SaveWriter writer = new SaveWriter(stream))
+            using (EditorScriptBase64Writer writer = new EditorScriptBase64Writer(stream))
             {
                 bool insertBlockAtZero = blocks.Length > 0 && blocks[0].Pos != Vector3I.Zero;
 

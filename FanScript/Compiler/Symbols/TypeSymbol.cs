@@ -161,13 +161,13 @@ namespace FanScript.Compiler.Symbols
             return Error;
         }
 
-        public static TypeSymbol GetTypeInternal(string? name)
+        public static TypeSymbol GetTypeInternal(ReadOnlySpan<char> name)
         {
-            if (string.IsNullOrEmpty(name))
+            if (name.IsEmpty)
                 return Error;
 
             for (int i = 0; i < AllTypes.Length; i++)
-                if (AllTypes[i].Name == name)
+                if (name.Equals(AllTypes[i].Name.AsSpan(), StringComparison.InvariantCulture))
                     return AllTypes[i];
 
             return Error;

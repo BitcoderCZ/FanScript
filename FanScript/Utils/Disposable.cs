@@ -1,6 +1,6 @@
 ﻿namespace FanScript.Utils
 {
-    public class Disposable : IDisposable
+    internal class Disposable : IDisposable
     {
         private Action? onDispose;
 

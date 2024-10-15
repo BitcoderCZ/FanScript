@@ -7,6 +7,15 @@ namespace FanScript.Documentation.DocElements
 {
     public static class DocElementParser
     {
+        private static readonly DefaultValidator validator = new DefaultValidator(); // avoid reallocation
+
+        public static DocElement Parse(ReadOnlySpan<char> text, FunctionSymbol? currentFunction)
+        {
+            validator.CurrentFunction = currentFunction;
+
+            return Parse(text, validator);
+        }
+
         public static DocElement Parse(ReadOnlySpan<char> text, IValidator validator)
         {
             if (text.IsEmpty)
@@ -51,7 +60,7 @@ namespace FanScript.Documentation.DocElements
             switch (name)
             {
                 case "link":
-                    return validator.CreateLink(arguments, value);
+                    return validator.CreateAndValidateLink(arguments, value);
                 case "list":
                     return new DocList(arguments, value);
                 case "item":
@@ -174,19 +183,14 @@ namespace FanScript.Documentation.DocElements
 
         public interface IValidator
         {
-            DocLink CreateLink(ImmutableArray<DocArg> arguments, DocElement? value);
+            DocLink CreateAndValidateLink(ImmutableArray<DocArg> arguments, DocElement? value);
         }
 
-        public class DefaultValidator : IValidator
+        private class DefaultValidator : IValidator
         {
-            public DefaultValidator(FunctionSymbol? currentFunction)
-            {
-                CurrentFunction = currentFunction;
-            }
+            public FunctionSymbol? CurrentFunction;
 
-            public FunctionSymbol? CurrentFunction { get; }
-
-            public DocLink CreateLink(ImmutableArray<DocArg> arguments, DocElement? value)
+            public DocLink CreateAndValidateLink(ImmutableArray<DocArg> arguments, DocElement? value)
             {
                 DocArg? _type = arguments.FirstOrDefault(arg => arg.Name == "type");
 
@@ -194,12 +198,15 @@ namespace FanScript.Documentation.DocElements
                     throw new ElementArgMissingException("link", "type");
                 else if (string.IsNullOrEmpty(type.Value))
                     throw new ElementArgValueMissingException("link", "type");
+                if (value is not DocString valString)
+                    throw new LinkParseException("The value of a link must be a string.");
 
                 switch (type.Value)
                 {
                     case "func":
-                        return createFunctionLink(value);
+                        return createFunctionLink(valString);
                     case "param":
+                        return createParameterLink(valString);
                     case "con":
                     case "con_value":
                     default:
@@ -207,9 +214,62 @@ namespace FanScript.Documentation.DocElements
                 }
             }
 
-            private FunctionLink createFunctionLink(DocElement? value)
+            private FunctionLink createFunctionLink(DocString value)
             {
+                ReadOnlySpan<char> valSpan = value.Text.AsSpan();
 
+                Span<Range> ranges = stackalloc Range[10]; // TODO: increase in case of a functions with more that 9 parameters
+                int numbRanges = valSpan.Split(ranges, ';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                if (numbRanges == 0)
+                    throw new LinkParseException("Empty value.");
+
+                ReadOnlySpan<char> funcName = valSpan.Slice(ranges[0]);
+
+                int numbParams = numbRanges - 1;
+
+                TypeSymbol[] paramTypes;
+                if (numbParams == 0)
+                    paramTypes = Array.Empty<TypeSymbol>();
+                else
+                {
+                    paramTypes = new TypeSymbol[numbParams];
+
+                    for (int i = 1; i < numbRanges; i++)
+                        paramTypes[i] = TypeSymbol.GetTypeInternal(valSpan.Slice(ranges[i]));
+                }
+
+                foreach (var func in BuiltinFunctions.GetAll())
+                {
+                    if (funcName.Equals(func.Name.AsSpan(), StringComparison.Ordinal) &&
+                        func.Parameters.Length == numbParams &&
+                        func.Parameters.Select(param => param.Type).SequenceEqual(paramTypes))
+                    {
+                        return new FunctionLink(func);
+                    }
+                }
+
+                throw new LinkParseException($"Functions \"{new string(funcName)}\" with parameter types: {string.Join(", ", paramTypes.Select(type => type.Name))}");
+            }
+
+            private ParamLink createParameterLink(DocString value)
+            {
+                if (CurrentFunction is null)
+                    throw new LinkParseException($"Param link cannot be used when {nameof(CurrentFunction)} is null.");
+
+                string paramName = value.Text;
+
+                int paramIndex = Array.IndexOf(
+                    CurrentFunction.Parameters
+                        .Select(param => param.Name)
+                        .ToArray(),
+                    paramName
+                );
+
+                if (paramIndex < 0)
+                    throw new LinkParseException($"Function \"{CurrentFunction.Name}\" doesn't have a parameter \"{paramName}\".");
+
+                return new ParamLink(CurrentFunction, paramIndex);
             }
         }
     }

@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace FanScript.Utils
 {
-    public interface IMultiValueDictionary<TKey, TValue, TCollection>
+    internal interface IMultiValueDictionary<TKey, TValue, TCollection>
         : IDictionary<TKey, TCollection>
         where TKey : notnull
         where TCollection : ICollection<TValue>

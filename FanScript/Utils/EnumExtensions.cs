@@ -1,6 +1,6 @@
 ﻿namespace FanScript.Utils
 {
-    public static class EnumExtensions
+    internal static class EnumExtensions
     {
         public static bool HasOneOfFlags<T>(this T value, params T[] flags) where T : Enum
         {

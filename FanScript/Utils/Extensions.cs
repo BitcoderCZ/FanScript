@@ -3,7 +3,7 @@ using FanScript.FCInfo;
 
 namespace FanScript.Utils
 {
-    public static class Extensions
+    internal static class Extensions
     {
         public static WireType ToWireType(this TypeSymbol type)
         {

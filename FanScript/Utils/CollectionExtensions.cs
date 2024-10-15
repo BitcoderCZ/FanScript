@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 
 namespace FanScript.Utils
 {
@@ -42,5 +43,12 @@ namespace FanScript.Utils
                 .GroupBy(x => x)
                 .Where(g => g.Count() > 1)
                 .Select(y => y.Key);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static ReadOnlySpan<T> Slice<T>(this ReadOnlySpan<T> span, Range range)
+        {
+            var (index, length) = range.GetOffsetAndLength(span.Length);
+            return span.Slice(index, length);
+        }
     }
 }

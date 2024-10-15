@@ -7,7 +7,6 @@ using FanScript.Compiler.Emit.CodeBuilders;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
 using MathUtils.Vectors;
-using System.Diagnostics;
 using TextCopy;
 
 namespace FanScript.Cli

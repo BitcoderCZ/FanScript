@@ -1,6 +1,6 @@
 ﻿namespace FanScript.Utils
 {
-    public static class StringExtensions
+    internal static class StringExtensions
     {
         public static IEnumerable<string> SplitByMaxLength(string str, int maxLength)
         {
@@ -92,6 +92,41 @@
 
                 return new string(line);
             }
+        }
+
+        public static int IndexOf(this ReadOnlySpan<char> str, char c, int indexNumb)
+        {
+            if (indexNumb == 0)
+                return str.IndexOf(c);
+            else if (indexNumb < 0)
+                throw new ArgumentOutOfRangeException(nameof(indexNumb));
+
+            int index = -1;
+            int removed = 0;
+            int count = 0;
+
+            do
+            {
+                index = str.IndexOf(c);
+
+                if (++count == indexNumb)
+                    return index + removed;
+
+                str = str.Slice(index + 1);
+                removed += index + 1;
+            } while (index != -1);
+
+            return -1;
+        }
+
+        public static string ToUpperFirst(this string str)
+        {
+            if (str.Length == 0)
+                return string.Empty;
+            else if (str.Length == 1)
+                return char.ToUpperInvariant(str[0]).ToString();
+            else
+                return char.ToUpperInvariant(str[0]) + str.Substring(1);
         }
     }
 }

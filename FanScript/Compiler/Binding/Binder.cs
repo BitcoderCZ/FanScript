@@ -15,6 +15,9 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class Binder
     {
+        // TODO: remove when importing/exporting is added
+        private static readonly Namespace defaultNamespace = new Namespace("default");
+
         private readonly DiagnosticBag diagnostics = new DiagnosticBag();
         private readonly bool isScript;
         private readonly FunctionSymbol? function;
@@ -89,7 +92,7 @@ namespace FanScript.Compiler.Binding
             FunctionSymbol? scriptFunction;
 
             if (globalStatements.Any())
-                scriptFunction = binder.functionFactory.Create(0, TypeSymbol.Void, "^^eval", ImmutableArray<ParameterSymbol>.Empty, null);
+                scriptFunction = binder.functionFactory.Create(defaultNamespace, 0, TypeSymbol.Void, "^^eval", ImmutableArray<ParameterSymbol>.Empty, null);
             else
                 scriptFunction = null;
 
@@ -212,7 +215,7 @@ namespace FanScript.Compiler.Binding
 
             TypeSymbol type = syntax.TypeClause is null ? TypeSymbol.Void : BindTypeClause(syntax.TypeClause);
 
-            FunctionSymbol function = functionFactory.Create(modifiers, type, syntax.Identifier.Text, parameters.ToImmutable(), syntax);
+            FunctionSymbol function = functionFactory.Create(defaultNamespace, modifiers, type, syntax.Identifier.Text, parameters.ToImmutable(), syntax);
             if (syntax.Identifier.Text is not null &&
                 !scope.TryDeclareFunction(function))
                 diagnostics.ReportSymbolAlreadyDeclared(syntax.Identifier.Location, function.Name);

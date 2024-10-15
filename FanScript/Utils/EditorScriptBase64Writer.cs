@@ -2,7 +2,7 @@
 
 namespace FanScript.Utils
 {
-    public class SaveWriter : IDisposable
+    internal class EditorScriptBase64Writer : IDisposable
     {
         private Stream stream;
 
@@ -10,7 +10,7 @@ namespace FanScript.Utils
 
         public long Length => stream.Length;
 
-        public SaveWriter(byte[] bytes)
+        public EditorScriptBase64Writer(byte[] bytes)
         {
             stream = new MemoryStream(bytes);
             if (!stream.CanWrite)
@@ -18,7 +18,7 @@ namespace FanScript.Utils
             Position = 0;
         }
 
-        public SaveWriter(Stream stream)
+        public EditorScriptBase64Writer(Stream stream)
         {
             this.stream = stream;
             if (!this.stream.CanWrite)
@@ -26,7 +26,7 @@ namespace FanScript.Utils
             Position = 0;
         }
 
-        public SaveWriter(string path)
+        public EditorScriptBase64Writer(string path)
         {
             stream = new FileStream(path, FileMode.Create, FileAccess.Write);
             if (!stream.CanWrite)
