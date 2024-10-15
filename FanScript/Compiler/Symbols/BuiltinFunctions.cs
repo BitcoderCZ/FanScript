@@ -221,8 +221,10 @@ namespace FanScript.Compiler.Symbols
                     The new rotation of the camera.
                     """,
                     """
-                    <list>If in orthographic (isometric) mode, determines how wide the view frustum is.</>
-                    <list>If in perspective mode specifies half of the field of view.</>
+                    <list>
+                    <item>If in orthographic (isometric) mode, determines how wide the view frustum is.</>
+                    <item>If in perspective mode specifies half of the field of view.</>
+                    </>
                     """,
                     """
                     If true, the camera will be in perspective mode, otherwise it will be in orthographic mode.

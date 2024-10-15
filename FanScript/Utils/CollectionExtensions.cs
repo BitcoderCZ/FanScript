@@ -36,5 +36,11 @@ namespace FanScript.Utils
             var (start, length) = range.GetOffsetAndLength(array.Length);
             return array.AsMemory().Slice(start, length);
         }
+
+        public static IEnumerable<T> GetDuplicates<T>(this IEnumerable<T> collection)
+            => collection
+                .GroupBy(x => x)
+                .Where(g => g.Count() > 1)
+                .Select(y => y.Key);
     }
 }

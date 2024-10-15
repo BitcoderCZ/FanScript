@@ -1,16 +1,22 @@
 ﻿using FanScript.Compiler.Symbols;
+using System.Collections.Immutable;
 using System.Text;
 
-namespace FanScript.Documentation
+namespace FanScript.Documentation.DocElements
 {
-    public abstract class DocLink
+    public abstract class DocLink : DocElement
     {
+        protected DocLink(ImmutableArray<DocArg> arguments, DocString value) : base(arguments, value)
+        {
+        }
+
         public abstract (string DisplayString, string LinkString) GetStrings();
     }
 
     public sealed class FunctionLink : DocLink
     {
         public FunctionLink(FunctionSymbol function)
+            : base(ImmutableArray<DocArg>.Empty, new DocString(function.Name))
         {
             Function = function;
         }
