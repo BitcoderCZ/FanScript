@@ -30,6 +30,11 @@ namespace FanScript.Documentation.DocElements
                         elements.Add(element);
                 }
             }
+
+            if (elements.Count == 1)
+                return elements[0];
+            else
+                return new DocBlock(elements.ToImmutableArray());
         }
 
         private static DocElement? parseElement(ref ReadOnlySpan<char> text, IValidator validator)
