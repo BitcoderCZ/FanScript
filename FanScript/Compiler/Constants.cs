@@ -2,17 +2,16 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("FanScript.DocumentationGenerator")]
 namespace FanScript.Compiler
 {
-    internal record ConstantGroup(TypeSymbol Type, string Name, Constant[] Values)
+    public record ConstantGroup(TypeSymbol Type, string Name, Constant[] Values)
     {
     }
-    internal record Constant(string Name, object Value)
+    public record Constant(string Name, object Value)
     {
     }
 
-    internal static class Constants
+    public static class Constants
     {
         public static readonly ConstantGroup TOUCH_STATE = new(TypeSymbol.Float, "TOUCH_STATE",
         [

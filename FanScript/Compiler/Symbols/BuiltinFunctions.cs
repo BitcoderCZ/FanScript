@@ -7,6 +7,7 @@ using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Diagnostics;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -16,6 +17,43 @@ namespace FanScript.Compiler.Symbols
     internal static class BuiltinFunctions
     {
         private static Namespace builtinNamespace = new Namespace("builtin");
+
+        public static readonly IReadOnlyDictionary<FunctionSymbol, FunctionDocAttribute> FunctionToDoc;
+
+        static BuiltinFunctions()
+        {
+            FunctionToDoc = typeof(BuiltinFunctions)
+                .GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Static)
+                .SelectMany(type => type
+                    .GetFields(BindingFlags.Public | BindingFlags.Static)
+                    .Where(f => f.FieldType == typeof(FunctionSymbol))
+                    .Select(f =>
+                    {
+                        FunctionSymbol func = (FunctionSymbol)f.GetValue(null)!;
+                        FunctionDocAttribute? attrib = f.GetCustomAttribute<FunctionDocAttribute>();
+
+                        if (attrib is null)
+                            throw new Exception($"Field \"{f.Name}\" is missing {nameof(FunctionDocAttribute)}");
+
+                        return (func, attrib);
+                    })
+                )
+                .Concat(typeof(BuiltinFunctions).GetFields(BindingFlags.Public | BindingFlags.Static)
+                    .Where(f => f.FieldType == typeof(FunctionSymbol))
+                    .Select(f =>
+                    {
+                        FunctionSymbol func = (FunctionSymbol)f.GetValue(null)!;
+                        FunctionDocAttribute? attrib = f.GetCustomAttribute<FunctionDocAttribute>();
+
+                        if (attrib is null)
+                            throw new Exception($"Field \"{f.Name}\" is missing {nameof(FunctionDocAttribute)}");
+
+                        return (func, attrib);
+                    })
+                )
+                .ToDictionary()
+                .AsReadOnly();
+        }
 
         #region Helper functions
         // (A) - active block (has before and after), num - numb inputs, num - number outputs
@@ -2669,20 +2707,6 @@ namespace FanScript.Compiler.Symbols
             .Concat(typeof(BuiltinFunctions).GetFields(BindingFlags.Public | BindingFlags.Static)
                 .Where(f => f.FieldType == typeof(FunctionSymbol))
                 .Select(f => (FunctionSymbol)f.GetValue(null)!)
-            );
-
-        private static IEnumerable<(FunctionSymbol, string?)>? functionsWithCategoryCache;
-        internal static IEnumerable<(FunctionSymbol, string?)> GetAllWithCategory()
-            => functionsWithCategoryCache ??= typeof(BuiltinFunctions)
-            .GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Static)
-            .SelectMany(type => type
-                .GetFields(BindingFlags.Public | BindingFlags.Static)
-                .Where(f => f.FieldType == typeof(FunctionSymbol))
-                .Select(f => ((FunctionSymbol)f.GetValue(null)!, (string?)type.Name))
-            )
-            .Concat(typeof(BuiltinFunctions).GetFields(BindingFlags.Public | BindingFlags.Static)
-                .Where(f => f.FieldType == typeof(FunctionSymbol))
-                .Select(f => ((FunctionSymbol)f.GetValue(null)!, (string?)null))
             );
     }
 }

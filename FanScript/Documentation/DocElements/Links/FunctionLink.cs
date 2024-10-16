@@ -2,21 +2,12 @@
 using System.Collections.Immutable;
 using System.Text;
 
-namespace FanScript.Documentation.DocElements
+namespace FanScript.Documentation.DocElements.Links
 {
-    public abstract class DocLink : DocElement
-    {
-        protected DocLink(ImmutableArray<DocArg> arguments, DocString value) : base(arguments, value)
-        {
-        }
-
-        public abstract (string DisplayString, string LinkString) GetStrings();
-    }
-
     public sealed class FunctionLink : DocLink
     {
-        public FunctionLink(FunctionSymbol function)
-            : base(ImmutableArray<DocArg>.Empty, new DocString(function.Name))
+        public FunctionLink(ImmutableArray<DocArg> arguments, DocString value, FunctionSymbol function)
+            : base(arguments, value)
         {
             Function = function;
         }
@@ -51,26 +42,5 @@ namespace FanScript.Documentation.DocElements
 
             return (displayBuilder.ToString(), linkBuilder.ToString());
         }
-    }
-
-    public sealed class ParamLink : DocLink
-    {
-        public ParamLink(FunctionSymbol function, int paramIndex)
-            : base(ImmutableArray<DocArg>.Empty, new DocString(function.Name))
-        {
-            if (paramIndex < 0 || paramIndex >= function.Parameters.Length)
-                throw new ArgumentOutOfRangeException(nameof(paramIndex));
-
-            Function = function;
-            ParamIndex = paramIndex;
-        }
-
-        public FunctionSymbol Function { get; }
-        public int ParamIndex { get; }
-
-        public string ParamName => Function.Parameters[ParamIndex].Name;
-
-        public override (string DisplayString, string LinkString) GetStrings()
-            => (ParamName, ParamName);
     }
 }
