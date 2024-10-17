@@ -1,4 +1,4 @@
-﻿namespace FanScript.Documentation
+﻿namespace FanScript.Documentation.Attributes
 {
     [AttributeUsage(AttributeTargets.Field | AttributeTargets.Enum, AllowMultiple = true, Inherited = true)]
     public abstract class DocumentationAttribute : Attribute

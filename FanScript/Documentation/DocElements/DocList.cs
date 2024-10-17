@@ -8,13 +8,13 @@ namespace FanScript.Documentation.DocElements
             : base(arguments, value)
         {
         }
-    }
 
-    public sealed class DocListItem : DocElement
-    {
-        public DocListItem(ImmutableArray<DocArg> arguments, DocElement? value)
-            : base(arguments, value)
+        public sealed class Item : DocElement
         {
+            public Item(ImmutableArray<DocArg> arguments, DocElement? value)
+                : base(arguments, value)
+            {
+            }
         }
     }
 }

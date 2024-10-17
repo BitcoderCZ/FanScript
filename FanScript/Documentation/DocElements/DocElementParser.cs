@@ -4,7 +4,6 @@ using FanScript.Documentation.DocElements.Links;
 using FanScript.Documentation.Exceptions;
 using FanScript.Utils;
 using System.Collections.Immutable;
-using System.ComponentModel.DataAnnotations;
 
 namespace FanScript.Documentation.DocElements
 {
@@ -25,7 +24,7 @@ namespace FanScript.Documentation.DocElements
             {
                 ["link"] = Validator.CreateAndValidateLink,
                 ["list"] = (args, value) => new DocList(args, value),
-                ["item"] = (args, value) => new DocListItem(args, value),
+                ["item"] = (args, value) => new DocList.Item(args, value),
                 ["codeblock"] = (args, _value) =>
                 {
                     DocArg? _lang = args.FirstOrDefault(arg => arg.Name == "lang");

@@ -128,5 +128,15 @@
             else
                 return char.ToUpperInvariant(str[0]) + str.Substring(1);
         }
+
+        public static string ToLowerFirst(this string str)
+        {
+            if (str.Length == 0)
+                return string.Empty;
+            else if (str.Length == 1)
+                return char.ToLowerInvariant(str[0]).ToString();
+            else
+                return char.ToLowerInvariant(str[0]) + str.Substring(1);
+        }
     }
 }

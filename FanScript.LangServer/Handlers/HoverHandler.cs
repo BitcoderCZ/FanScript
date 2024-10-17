@@ -171,10 +171,10 @@ namespace FanScript.LangServer.Handlers
                             Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
                             {
                                 Kind = MarkupKind.Markdown,
-                                Value = "#### " + info.ToString() +
+                                Value = "#### " + info.ToString()/* +
                                     (string.IsNullOrEmpty(info.Description) ?
                                         string.Empty :
-                                        "\n" + info.Description)
+                                        "\n" + info.Description)*/
                             }),
                             Range = node.Location.ToRange(),
                         };

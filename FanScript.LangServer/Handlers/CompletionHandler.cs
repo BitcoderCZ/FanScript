@@ -88,7 +88,7 @@ namespace FanScript.LangServer.Handlers
                     Label = info.ToString(),
                     LabelDetails = new CompletionItemLabelDetails()
                     {
-                        Description = info.Description,
+                        //Description = info.Description,
                     },
                     Kind = CompletionItemKind.Function,
                     SortText = sbt.ToString(),

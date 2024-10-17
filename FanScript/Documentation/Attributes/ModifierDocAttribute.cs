@@ -1,4 +1,4 @@
-﻿namespace FanScript.Documentation
+﻿namespace FanScript.Documentation.Attributes
 {
     public sealed class ModifierDocAttribute : DocumentationAttribute
     {

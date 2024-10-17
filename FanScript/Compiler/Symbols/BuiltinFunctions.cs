@@ -2,12 +2,11 @@
 using FanScript.Compiler.Emit;
 using FanScript.Compiler.Emit.Utils;
 using FanScript.Compiler.Symbols.Variables;
-using FanScript.Documentation;
+using FanScript.Documentation.Attributes;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Diagnostics;
-using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 

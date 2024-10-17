@@ -22,32 +22,32 @@ namespace FanScript.Compiler
     {
         private static readonly EventCollection types = new EventCollection()
         {
-            new EventTypeInfo(EventType.Play, [], "Runs only on the first frame"),
-            new EventTypeInfo(EventType.LateUpdate, [], "Runs after physics, before rendering"),
-            new EventTypeInfo(EventType.BoxArt, [], "Runs before taking a screenshot for the game cover"),
+            new EventTypeInfo(EventType.Play, []),
+            new EventTypeInfo(EventType.LateUpdate, []),
+            new EventTypeInfo(EventType.BoxArt, []),
             new EventTypeInfo(EventType.Touch, [
                 new EventTypeParam("screenX", Modifiers.Out, TypeSymbol.Float),
                 new EventTypeParam("screenY", Modifiers.Out, TypeSymbol.Float),
                 new EventTypeParam("TOUCH_STATE", 0, TypeSymbol.Float, true),
                 new EventTypeParam("TOUCH_FINGER", 0, TypeSymbol.Float, true),
-            ], "Runs on touch"),
+            ]),
             new EventTypeInfo(EventType.Swipe, [
                 new EventTypeParam("direction", Modifiers.Out, TypeSymbol.Vector3),
-            ], "Runs on swipe"),
+            ]),
             new EventTypeInfo(EventType.Button, [
                 new EventTypeParam("BUTTON_TYPE", 0, TypeSymbol.Float, true),
-            ], "Runs when the button is pressed"),
+            ]),
             new EventTypeInfo(EventType.Collision, [
                 new EventTypeParam("object1", 0, TypeSymbol.Object),
                 new EventTypeParam("object2", Modifiers.Out, TypeSymbol.Object),
                 new EventTypeParam("impulse", Modifiers.Out, TypeSymbol.Float),
                 new EventTypeParam("normal", Modifiers.Out, TypeSymbol.Vector3),
-            ], "Runs when 2 objects collide"),
+            ]),
             new EventTypeInfo(EventType.Loop, [
                 new EventTypeParam("start", 0, TypeSymbol.Float),
                 new EventTypeParam("stop", 0, TypeSymbol.Float),
                 new EventTypeParam("counter", Modifiers.Out, TypeSymbol.Float),
-            ], "Runs multiple times from start to end (start: 2, end: 5, counter: [2, 3, 4])"),
+            ]),
         };
 
         public static EventTypeInfo GetInfo(this EventType sbt)
@@ -60,7 +60,7 @@ namespace FanScript.Compiler
         }
     }
 
-    public record EventTypeInfo(EventType Type, ImmutableArray<EventTypeParam> Parameters, string? Description = null)
+    public record EventTypeInfo(EventType Type, ImmutableArray<EventTypeParam> Parameters)
     {
         public override string ToString()
         {

@@ -8,7 +8,7 @@ using System.Globalization;
 
 namespace FanScript.Utils
 {
-    internal static class TextWriterExtensions
+    public static class TextWriterExtensions
     {
         private static bool IsConsole(this TextWriter writer)
         {
