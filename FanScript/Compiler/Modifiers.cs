@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
+using FanScript.Documentation.Attributes;
 using System.Collections.Frozen;
 using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
@@ -13,12 +14,126 @@ namespace FanScript.Compiler
     [Flags]
     public enum Modifiers : ushort
     {
+        [ModifierDoc(
+            Info = """
+            Makes the variable/parameter readonly - can be assigned only once.
+
+            Can be applied to all types of varibles.
+            """,
+            Remarks = [
+                """
+                Readonly vairables need to be initialized.
+                """
+            ],
+            Examples = """
+            <codeblock lang="fcs">
+            readonly float a = 5 // works
+
+            readonly float b // error - A readonly/constant variable needs to be initialized.
+            </>
+            """
+        )]
         Readonly = 1 << 0,
+        [ModifierDoc(
+            Info = """
+            Makes the variable constant - when compiled, references to this variable get replaced by it's value.
+            
+            Can be applied to the following variable types:
+            <link>
+            <item><link type="type">bool</></>
+            <item><link type="type">float</></>
+            <item><link type="type">vec3</></>
+            <item><link type="type">rot</></>
+            </>
+            """,
+            Remarks = [
+                """
+                Only constant values can be assigned to variables with this modifier.
+                """,
+                """
+                Constant variables need to be initialized.
+                """
+            ],
+            Examples = """
+            <codeblock lang="fcs">
+            const float a = 5 // works
+
+            float b = 2
+            const float c = b // error - Value must be constant.
+
+            const float d // error - A readonly/constant variable needs to be initialized.
+            </>
+            """
+        )]
         Constant = 1 << 1,
+        [ModifierDoc(
+            Info = """
+            Similar to <link type="mod">out</>, but the argument is both taken in and out.
+            """
+        )]
         Ref = 1 << 2,
+        [ModifierDoc(
+            Info = """
+            Instead of the argument being passed to the function, it is "returned" from it.
+            """,
+            Examples = """
+            <codeblock lang="fcs">
+            func add(float a, float b, out float res)
+            {
+                res = a + b
+            }
+
+            float resA
+            add(2, 5, out resA)
+            inspect(resA)
+
+            // if a parameter has the out modifier, expression variable decleration can be used
+            add(30, 25, out float resB)
+            inspect(resB)
+
+            // if you don't need the value of the out parameter, you can use a discard
+            add(13, 22, out _)
+            </>
+            """
+        )]
         Out = 1 << 3,
+        [ModifierDoc(
+            Info = """
+            Makes the variable global - can be accesed from all functions.
+            
+            Can be applied to all types of vairables.
+            """
+        )]
         Global = 1 << 4,
+        [ModifierDoc(
+            Info = """
+            Saves the variable. Gets reset when you edit the game.
+            
+            Can be applied to the following variable types:
+            <list>
+            <item><link type="type">float</></>
+            </>
+            """
+        )]
         Saved = 1 << 5,
+        [ModifierDoc(
+            Info = """
+            <list>
+            <item>When applied to variable - instead of storing a value stores a reference to some code, which is ran every time the variable is accesed.</>
+            <item>When applied to function - inlines the function for every call (by default functions which are called only once are inlined automatically) - replaces calls to the function by the code of the function.</>
+            </>
+
+            Can be applied to the following variable types:
+            <list>
+            <item><link type="type">bool</></>
+            <item><link type="type">float</></>
+            <item><link type="type">vec3</></>
+            <item><link type="type">rot</></>
+            <item><link type="type">obj</></>
+            <item><link type="type">constr</></>
+            </>
+            """
+        )]
         Inline = 1 << 6,
     }
 

@@ -8,6 +8,6 @@
 
         public string[]? UsedBy { get; set; }
 
-        public string[]? ValueInfos { get; set; }
+        public string?[]? ValueInfos { get; set; }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler;
 using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Syntax;
 using FanScript.Documentation.DocElements.Links;
 using FanScript.Documentation.Exceptions;
 using FanScript.Utils;
@@ -271,6 +272,10 @@ namespace FanScript.Documentation.DocElements
                         return createConstantLink(arguments, valString);
                     case "con_value":
                         return createConstantValueLink(arguments, valString);
+                    case "event":
+                    case "type":
+                    case "mod":
+                    case "build_command":
                     default:
                         throw new UnknownLinkTypeException(type.Value);
                 }
@@ -377,6 +382,41 @@ namespace FanScript.Documentation.DocElements
                     throw new ElementParseException("link", $"Constant value \"{value.Text}\" doesn't exist.");
 
                 return new ConstantValueLink(args, value, group, constant);
+            }
+
+            private EventLink createEventLink(ImmutableArray<DocArg> args, DocString value)
+            {
+                if (!Enum.TryParse(value.Text, out EventType eventType))
+                    throw new ElementParseException("link", $"Event \"{value.Text}\" doesn't exist.");
+
+                return new EventLink(args, value, eventType);
+            }
+
+            private TypeLink createTypeLink(ImmutableArray<DocArg> args, DocString value)
+            {
+                TypeSymbol type = TypeSymbol.GetTypeInternal(value.Text);
+
+                return new TypeLink(args, value, type);
+            }
+
+            private ModifierLink createModifierLink(ImmutableArray<DocArg> args, DocString value)
+            {
+                SyntaxKind syntaxKind = SyntaxFacts.GetKeywordKind(value.Text);
+
+                if (syntaxKind == SyntaxKind.IdentifierToken)
+                    throw new ElementParseException("link", $"Modifier \"{value.Text}\" doesn't exist.");
+
+                Modifiers modifier = ModifiersE.FromKind(syntaxKind);
+
+                return new ModifierLink(args, value, modifier);
+            }
+
+            private BuildCommandLink createBuildCommandLink(ImmutableArray<DocArg> args, DocString value)
+            {
+                if (!Enum.TryParse(value.Text.ToUpperFirst(), out BuildCommand buildCommand))
+                    throw new ElementParseException("link", $"Build command \"{value.Text}\" doesn't exist.");
+
+                return new BuildCommandLink(args, value, buildCommand);
             }
         }
     }

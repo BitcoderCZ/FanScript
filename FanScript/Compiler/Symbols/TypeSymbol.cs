@@ -1,6 +1,7 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Emit;
 using FanScript.Compiler.Symbols.Variables;
+using FanScript.Documentation.Attributes;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using System.Collections.Frozen;
@@ -14,17 +15,182 @@ namespace FanScript.Compiler.Symbols
     public sealed class TypeSymbol : Symbol
     {
         public static readonly TypeSymbol Error = new TypeSymbol("?");
+        [TypeDoc(
+            Info = """
+            If used as an argument or in a constant operation - gets converted to the default value (0, vec3(0, 0, 0)), otherwise, when emited, no block gets placed.
+            """,
+            HowToCreate = """
+            <codeblock lang="fcs">
+            float a = null // emits just the set variable block
+            float b = 5 + null // emits b = 5
+
+            // loops from 0 to 5, nothing gets assigned to the start input of the loop block
+            on Loop(null, 5)
+            {
+
+            }
+            </>
+            """,
+            Remarks = [
+                """
+                Null has implicit cast to all types.
+                """
+            ]
+        )]
         public static readonly TypeSymbol Null = new TypeSymbol("null");
         // used in function return type or parameter
         public static readonly TypeSymbol Generic = new TypeSymbol("generic");
+        [TypeDoc(
+            Info = """
+            Holds one of 2 values: true or false.
+            """,
+            HowToCreate = """
+            <codeblock lang="fcs">
+            bool a = false
+            bool b = true
+            </>
+            """
+        )]
         public static readonly TypeSymbol Bool = new TypeSymbol("bool");
+        [TypeDoc(
+            Info = """
+            A floating point number.
+            """,
+            HowToCreate = """
+            <codeblock lang="fcs">
+            float a = 10
+            float b = 3.14
+            float c = .5
+            float d = 0b1010_0101 // binary, _ is optional
+            float e = 0x1234_ABCD // hexadecimal, _ is optional
+            </>
+            """
+        )]
         public static readonly TypeSymbol Float = new TypeSymbol("float");
+        [TypeDoc(
+            Info = """
+            List of characters (text).
+            """,
+            HowToCreate = """
+            Strings cannot currently be used as variables, only as arguments to functions.  
+            For example:
+            <codeblock lang="fcs">
+            shopSection("The string")
+            </>
+            """
+        )]
         public static readonly TypeSymbol String = new TypeSymbol("string");
+        [TypeDoc(
+            Info = """
+            A vector of 3 <link type="type">float</>s.
+            """,
+            HowToCreate = """
+            <codeblock lang="fcs">
+            // vec3(float x, float y, float z)
+            vec3 a = vec3(1, 2, 3) // constant - uses the vector block
+
+            float y = 10
+            vec3 b = vec3(5, y, 5) // uses the make vector block
+
+            const float x = 8
+            vec3 c = vec3(x, 3, 5) // constant - uses the vector block
+            </>
+            """
+        )]
         public static readonly TypeSymbol Vector3 = new TypeSymbol("vec3");
+        [TypeDoc(
+            Info = """
+            Represents a rotation using euler angles, internaly uses quaternion.
+            """,
+            HowToCreate = """
+            <codeblock lang="fcs">
+            // rot(float x, float y, float z) - euler angle in degrees
+            rot a = rot(45, 90, 45) // constant - uses the vector block
+
+            float y = 30
+            rot b = rot(60, y, 180) // uses the make vector block
+
+            const float x = 45
+            rot c = rot(x, 60, 10) // constant - uses the vector block
+            </>
+            """
+        )]
         public static readonly TypeSymbol Rotation = new TypeSymbol("rot");
+        [TypeDoc(
+            Info = """
+            A fancade object.
+            """,
+            HowToCreate = """
+            <codeblock lang="fcs">
+            obj a = getObject(5, 0, 0) // gets the object located at (5, 0, 0)
+            obj b = getBlockById(BLOCK_GRASS) // places the GRASS block (id 3) and returns a reference to it
+            // comming soon: obj c = getBlockByName("My block") // places the block with nane "My block" and returns a reference to it
+            </>
+            """
+        )]
         public static readonly TypeSymbol Object = new TypeSymbol("obj");
+        [TypeDoc(
+            Info = """
+            Fancade constraint - constraints the movement of a physics object.
+            """,
+            HowToCreate = """
+            <codeblock lang="fcs">
+            object base = getObject(20, 0, 5)
+            object part = getObject(25, 0, 5)
+            base.addConstraint(part, out constr a)
+            </>
+            """
+        )]
         public static readonly TypeSymbol Constraint = new TypeSymbol("constr");
+        [TypeDoc(
+            Info = """
+            An array/list of a type.
+            """,
+            HowToCreate = """
+            <codeblock lang="fcs">
+            // using arraySegment
+            array<float> a = [1, 2, 3]
+
+            // using setRange function
+            array<bool> b
+            b.setRange(0, [true, false, true])
+
+            // using multiple set's
+            array<vec3> c
+            c.set(0, vec3(1, 2, 3))
+            c.set(1, vec3(4, 5, 6))
+            c.set(2, vec3(7, 8, 9))
+            </>
+            """,
+            Related = [
+                """
+                <link type="type">arraySegment</>
+                """
+            ]
+        )]
         public static readonly TypeSymbol Array = new TypeSymbol("array", true);
+        [TypeDoc(
+            Info = """
+            Represents a segment of values.
+            """,
+            HowToCreate = """
+            Array segment isn't a runtime type - variables of the type cannot be created.  
+            Array segment can only be used to:
+            <list>
+            <item>create <link type="type">array</>s</>
+            <item>as argument in functions <link type="func">setRange;array;float;arraySegment</></>
+            </>
+            <codeblock lang="fcs">
+            array<float> arr = [1, 2, 3]
+            arr.setRange(3, [4, 5, 6])
+            </>
+            """,
+            Related = [
+                """
+                <link type="type">array</>
+                """
+            ]
+        )]
         public static readonly TypeSymbol ArraySegment = new TypeSymbol("arraySegment", true);
         public static readonly TypeSymbol Void = new TypeSymbol("void");
 
@@ -48,6 +214,8 @@ namespace FanScript.Compiler.Symbols
                 (allTypes = typeof(TypeSymbol).GetFields(BindingFlags.Public | BindingFlags.Static).Where(field => field.FieldType == typeof(TypeSymbol)).Select(field => (TypeSymbol)field.GetValue(null)!).ToImmutableArray()) :
                 allTypes;
 
+        public static readonly IReadOnlyDictionary<TypeSymbol, TypeDocAttribute> TypeToDoc;
+
         private TypeSymbol(string name, bool isGenericDefinition = false)
             : base(name)
         {
@@ -66,6 +234,20 @@ namespace FanScript.Compiler.Symbols
         static TypeSymbol()
         {
             BuiltinFunctions.Init();
+
+            TypeToDoc = typeof(TypeSymbol)
+                .GetFields(BindingFlags.Public | BindingFlags.Static)
+                .Where(f => f.FieldType == typeof(TypeSymbol))
+                .Select(f =>
+                {
+                    TypeSymbol group = (TypeSymbol)f.GetValue(null)!;
+                    TypeDocAttribute attrib = f.GetCustomAttribute<TypeDocAttribute>()!;
+
+                    return (group, attrib);
+                })
+                .Where(item => item.attrib is not null)
+               .ToDictionary()
+               .AsReadOnly();
 
             Vector3.Properties = new Dictionary<string, PropertyDefinitionSymbol>()
             {
