@@ -8,16 +8,14 @@ namespace FanScript.Documentation.DocElements.Builders
     /// </summary>
     public abstract class DocElementBuilder
     {
-        protected readonly StringBuilder Builder = new();
-
         public string Build(DocElement? element)
         {
-            Builder.Clear();
-            buildElement(element);
-            return Builder.ToString();
+            StringBuilder builder = new StringBuilder();
+            buildElement(element, builder);
+            return builder.ToString();
         }
 
-        protected virtual void buildElement(DocElement? element)
+        protected virtual void buildElement(DocElement? element, StringBuilder builder)
         {
             if (element is null)
                 return;
@@ -25,80 +23,80 @@ namespace FanScript.Documentation.DocElements.Builders
             switch (element)
             {
                 case DocBlock block:
-                    buildBlock(block);
+                    buildBlock(block, builder);
                     break;
                 case DocString str:
-                    buildString(str);
+                    buildString(str, builder);
                     break;
                 case DocHeader header:
-                    buildHeader(header);
+                    buildHeader(header, builder);
                     break;
                 case UrlLink urlLink:
-                    buildUrlLink(urlLink);
+                    buildUrlLink(urlLink, builder);
                     break;
                 case ParamLink paramLink:
-                    buildParamLink(paramLink);
+                    buildParamLink(paramLink, builder);
                     break;
                 case ConstantLink constantLink:
-                    buildConstantLink(constantLink);
+                    buildConstantLink(constantLink, builder);
                     break;
                 case ConstantValueLink constantValueLink:
-                    buildConstantValueLink(constantValueLink);
+                    buildConstantValueLink(constantValueLink, builder);
                     break;
                 case FunctionLink functionLink:
-                    buildFunctionLink(functionLink);
+                    buildFunctionLink(functionLink, builder);
                     break;
                 case EventLink eventLink:
-                    buildEventLink(eventLink);
+                    buildEventLink(eventLink, builder);
                     break;
                 case TypeLink typeLink:
-                    buildTypeLink(typeLink);
+                    buildTypeLink(typeLink, builder);
                     break;
                 case ModifierLink modifierLink:
-                    buildModifierLink(modifierLink);
+                    buildModifierLink(modifierLink, builder);
                     break;
                 case BuildCommandLink buildCommandLink:
-                    buildBuildCommandLink(buildCommandLink);
+                    buildBuildCommandLink(buildCommandLink, builder);
                     break;
                 case DocCodeBlock codeBlock:
-                    buildCodeBlock(codeBlock);
+                    buildCodeBlock(codeBlock, builder);
                     break;
                 case DocList list:
-                    buildList(list);
+                    buildList(list, builder);
                     break;
                 case DocList.Item item:
-                    buildListItem(item);
+                    buildListItem(item, builder);
                     break;
                 default:
-                    buildUnknownElement(element);
+                    buildUnknownElement(element, builder);
                     break;
             }
         }
 
-        protected virtual void buildUnknownElement(DocElement element)
+        protected virtual void buildUnknownElement(DocElement element, StringBuilder builder)
         {
             throw new Exception($"Unknown doc element '{element.GetType()}'.");
         }
 
-        protected virtual void buildBlock(DocBlock block)
+        protected virtual void buildBlock(DocBlock block, StringBuilder builder)
         {
             foreach (var element in block.Elements)
-                buildElement(element);
+                buildElement(element, builder);
         }
 
-        protected abstract void buildString(DocString element);
-        protected abstract void buildHeader(DocHeader element);
-        protected abstract void buildUrlLink(UrlLink element);
-        protected abstract void buildParamLink(ParamLink element);
-        protected abstract void buildConstantLink(ConstantLink element);
-        protected abstract void buildConstantValueLink(ConstantValueLink element);
-        protected abstract void buildFunctionLink(FunctionLink element);
-        protected abstract void buildEventLink(EventLink element);
-        protected abstract void buildTypeLink(TypeLink element);
-        protected abstract void buildModifierLink(ModifierLink element);
-        protected abstract void buildBuildCommandLink(BuildCommandLink element);
-        protected abstract void buildCodeBlock(DocCodeBlock element);
-        protected abstract void buildList(DocList element);
-        protected abstract void buildListItem(DocList.Item element);
+        protected abstract void buildString(DocString element, StringBuilder builder);
+        protected abstract void buildHeader(DocHeader element, StringBuilder builder);
+        protected abstract void buildUrlLink(UrlLink element, StringBuilder builder);
+        protected abstract void buildParamLink(ParamLink element, StringBuilder builder);
+        protected abstract void buildConstantLink(ConstantLink element, StringBuilder builder);
+        protected abstract void buildConstantValueLink(ConstantValueLink element, StringBuilder builder);
+        protected abstract void buildFunctionLink(FunctionLink element, StringBuilder builder);
+        protected abstract void buildEventLink(EventLink element, StringBuilder builder);
+        protected abstract void buildTypeLink(TypeLink element, StringBuilder builder);
+        protected abstract void buildModifierLink(ModifierLink element, StringBuilder builder);
+        protected abstract void buildBuildCommandLink(BuildCommandLink element, StringBuilder builder);
+        protected abstract void buildCodeBlock(DocCodeBlock element, StringBuilder builder);
+        protected abstract void buildList(DocList element, StringBuilder builder);
+        protected abstract void buildListItem(DocList.Item element, StringBuilder builder);
     }
 }

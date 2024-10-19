@@ -39,7 +39,7 @@ namespace FanScript.Compiler
             Makes the variable constant - when compiled, references to this variable get replaced by it's value.
             
             Can be applied to the following variable types:
-            <link>
+            <list>
             <item><link type="type">bool</></>
             <item><link type="type">float</></>
             <item><link type="type">vec3</></>

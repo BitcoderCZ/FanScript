@@ -4,6 +4,7 @@ using FanScript.Compiler.Syntax;
 using FanScript.Documentation.DocElements.Links;
 using FanScript.Documentation.Exceptions;
 using FanScript.Utils;
+using System.Buffers;
 using System.Collections.Immutable;
 
 namespace FanScript.Documentation.DocElements
@@ -28,15 +29,15 @@ namespace FanScript.Documentation.DocElements
                 ["item"] = (args, value) => new DocList.Item(args, value),
                 ["codeblock"] = (args, _value) =>
                 {
-                    DocArg? _lang = args.FirstOrDefault(arg => arg.Name == "lang");
+                    DocArg _lang = args.FirstOrDefault(arg => arg.Name == "lang");
 
                     string? lang = null;
-                    if (_lang is not null)
+                    if (_lang.Name is not null)
                     {
-                        if (string.IsNullOrEmpty(_lang.Value.Value))
+                        if (string.IsNullOrEmpty(_lang.Value))
                             throw new ElementArgValueMissingException("codeblock", "lang");
                         else
-                            lang = _lang.Value.Value;
+                            lang = _lang.Value;
                     }
 
                     if (_value is not DocString valueStr)
@@ -44,6 +45,22 @@ namespace FanScript.Documentation.DocElements
 
                     return new DocCodeBlock(args, valueStr, lang);
                 },
+                ["header"] = (args, value) =>
+                {
+                    DocArg levelArg = args.FirstOrDefault(arg => arg.Name == "level");
+
+                    if (levelArg.Name is null)
+                        throw new ElementArgValueMissingException("header", "level");
+
+                    if (!byte.TryParse(levelArg.Value, out byte level))
+                        throw new ElementParseException("header", $"The level arg must be an int, is: '{levelArg.Value}'.");
+
+
+                    if (value is null)
+                        throw new ElementParseException("header", "Value of a header cannot be empty.");
+
+                    return new DocHeader(args, value, level);
+                }
             };
             ElementsWithRawValues =
             [
@@ -68,12 +85,18 @@ namespace FanScript.Documentation.DocElements
                         elements.Add(new DocString(new string(text.Slice(0, index))));
 
                     text = text.Slice(index);
+                    index = 0;
 
                     DocElement? element = parseElement(ref text);
                     if (element is not null)
                         elements.Add(element);
                 }
+                else
+                    index++;
             }
+
+            if (text.Length > 0)
+                elements.Add(new DocString(new string(text)));
 
             if (elements.Count == 1)
                 return elements[0];
@@ -132,12 +155,13 @@ namespace FanScript.Documentation.DocElements
             }
 
             text = text.Slice(index + 1);
-            index = 0;
 
             List<DocArg> arguments = new();
 
-            while (text.Length != 0 && index < text.Length)
+            while (text.Length != 0 && index < text.Length && text[0] != '>')
             {
+                index = 0;
+
                 while (index < text.Length && char.IsWhiteSpace(text[index]))
                     index++;
 
@@ -151,6 +175,7 @@ namespace FanScript.Documentation.DocElements
 
                 if (text[index++] != '=')
                 {
+                    text = text.Slice(0, index - 1);
                     arguments.Add(new DocArg(argName, null));
                     continue;
                 }
@@ -169,6 +194,8 @@ namespace FanScript.Documentation.DocElements
 
                 string argValue = new string(text.Slice(0, index));
 
+                arguments.Add(new DocArg(argName, argValue));
+
                 text = text.Slice(index + 1);
             }
 
@@ -180,6 +207,64 @@ namespace FanScript.Documentation.DocElements
             return (elementName, arguments.ToImmutableArray());
         }
 
+        private bool isStartTag(ReadOnlySpan<char> text)
+        {
+            text = text.Slice(1); // skip the '<' char
+
+            int index = 0;
+
+            while (index < text.Length && text[index] != ' ' && text[index] != '>')
+                index++;
+
+            string elementName = new string(text.Slice(0, index));
+
+            if (index >= text.Length)
+                return false;
+            else if (text[index] == '>')
+                return true;
+
+            text = text.Slice(index + 1);
+
+            while (text.Length != 0 && index < text.Length && text[0] != '>')
+            {
+                index = 0;
+
+                while (index < text.Length && char.IsWhiteSpace(text[index]))
+                    index++;
+
+                while (index < text.Length && text[index] != ' ' && text[index] != '=' && text[index] != '>')
+                    index++;
+
+                if (index >= text.Length)
+                    return false;
+
+                if (text[index++] != '=')
+                {
+                    text = text.Slice(0, index - 1);
+                    continue;
+                }
+
+                if (text[index] != '"')
+                    return false;
+
+                text = text.Slice(index + 1);
+                index = 0;
+
+                while (index < text.Length && text[index] != '"')
+                    index++;
+
+                if (index >= text.Length)
+                    return false;
+
+                text = text.Slice(index + 1);
+            }
+
+            if (text.Length == 0 || text[0] != '>')
+                return false;
+
+            return true;
+        }
+
         /// <summary>
         /// Reads the value between <{name} {args}> and </> 
         /// </summary>
@@ -189,24 +274,28 @@ namespace FanScript.Documentation.DocElements
         /// <exception cref="UnclosedElementException"></exception>
         private ReadOnlySpan<char> readElementValue(ref ReadOnlySpan<char> text, string elementName)
         {
-            if (text.Length == 0 || text[0] == '<')
+            if (text.Length == 0 || (text.Length >= 3 && text[0] == '<' && text[1] == '/' && text[2] == '>'))
                 return ReadOnlySpan<char>.Empty;
+
+            bool rawValue = ElementsWithRawValues.Contains(elementName);
 
             int i;
             int depth = 0;
             for (i = 0; i < text.Length; i++)
             {
-                if (text[i++] == '<')
+                if (text[i] == '<')
                 {
-                    if (text[i++] == '/')
+                    if (text[++i] == '/')
                     {
-                        if (depth == 0)
+                        if (depth == 0 || rawValue)
                         {
-                            i -= 2;
+                            i--;
                             break;
                         }
+                        else
+                            depth--;
                     }
-                    else
+                    else if (isStartTag(text.Slice(i - 1)))
                         depth++;
                 }
             }
@@ -251,9 +340,9 @@ namespace FanScript.Documentation.DocElements
 
             public DocLink CreateAndValidateLink(ImmutableArray<DocArg> arguments, DocElement? value)
             {
-                DocArg? _type = arguments.FirstOrDefault(arg => arg.Name == "type");
+                DocArg type = arguments.FirstOrDefault(arg => arg.Name == "type");
 
-                if (_type is not DocArg type)
+                if (type.Name is null)
                     throw new ElementArgMissingException("link", "type");
                 else if (string.IsNullOrEmpty(type.Value))
                     throw new ElementArgValueMissingException("link", "type");
@@ -273,9 +362,13 @@ namespace FanScript.Documentation.DocElements
                     case "con_value":
                         return createConstantValueLink(arguments, valString);
                     case "event":
+                        return createEventLink(arguments, valString);
                     case "type":
+                        return createTypeLink(arguments, valString);
                     case "mod":
+                        return createModifierLink(arguments, valString);
                     case "build_command":
+                        return createBuildCommandLink(arguments, valString);
                     default:
                         throw new UnknownLinkTypeException(type.Value);
                 }
@@ -312,8 +405,8 @@ namespace FanScript.Documentation.DocElements
                 {
                     paramTypes = new TypeSymbol[numbParams];
 
-                    for (int i = 1; i < numbRanges; i++)
-                        paramTypes[i] = TypeSymbol.GetTypeInternal(valSpan.Slice(ranges[i]));
+                    for (int i = 0; i < numbParams; i++)
+                        paramTypes[i] = TypeSymbol.GetTypeInternal(valSpan.Slice(ranges[i + 1]));
                 }
 
                 foreach (var func in BuiltinFunctions.GetAll())

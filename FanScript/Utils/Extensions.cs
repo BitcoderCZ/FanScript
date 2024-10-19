@@ -1,6 +1,9 @@
 ﻿using FanScript.Compiler.Symbols;
 using FanScript.FCInfo;
+using System.Runtime.CompilerServices;
+using System.Text;
 
+[assembly: InternalsVisibleTo("FanScript.DocumentationGenerator")]
 namespace FanScript.Utils
 {
     internal static class Extensions
@@ -26,6 +29,17 @@ namespace FanScript.Utils
                 return WireType.Con;
 
             throw new Exception($"Cannot convert TypeSymbol '{type}' to WireType");
+        }
+
+        public static bool IsCurrentLineEmpty(this StringBuilder builder)
+        {
+            int len = builder.Length;
+            if (len == 0)
+                return true;
+
+            char last = builder[len - 1];
+
+            return last == '\n' || last == '\r';
         }
     }
 }

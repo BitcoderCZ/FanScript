@@ -25,7 +25,7 @@ namespace FanScript.Compiler
                     1. Runs scripts.
                     2. Simulates physics.
                     3. Runs Late Update scripts.
-                    4. Renders the frame
+                    4. Renders the frame.
                 """
             ]
         )]

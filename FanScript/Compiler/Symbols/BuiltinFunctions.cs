@@ -233,7 +233,7 @@ namespace FanScript.Compiler.Symbols
                 """,
                 ParameterInfos = [
                     """
-                    The new score, if <link type="param">RANKING</link> is <link type="con_value">RANKING;RANKING_TIME_FASTEST</> or <link type="con_value">RANKING;RANKING_TIME_LONGEST</> time is specified in frames (60 - 1s).
+                    The new score, if <link type="param">RANKING</> is <link type="con_value">RANKING_TIME_FASTEST</> or <link type="con_value">RANKING_TIME_LONGEST</> time is specified in frames (60 - 1s).
                     """,
                     """
                     The new amount of coins.
@@ -384,7 +384,7 @@ namespace FanScript.Compiler.Symbols
 
             [FunctionDoc(
                 Info = """
-                Creates a section in the shop, calls to <link type="func">menuItem,float,obj,string,float,float</> after this will create items in this section.
+                Creates a section in the shop, calls to <link type="func">menuItem;float;obj;string;float;float</> after this will create items in this section.
                 """,
                 ParameterInfos = [
                     """
@@ -393,7 +393,7 @@ namespace FanScript.Compiler.Symbols
                 ],
                 Related = [
                     """
-                    <link type="func">menuItem,float,obj,string,float,float</>
+                    <link type="func">menuItem;float;obj;string;float;float</>
                     """
                 ]
             )]
@@ -741,6 +741,29 @@ namespace FanScript.Compiler.Symbols
                 {
                     IsMethod = true,
                 };
+            [FunctionDoc(
+                Info = """
+                Creates a copy of <link type="param">object</>.
+                """,
+                ParameterInfos = [
+                    """
+                    The object to copy.
+                    """,
+                    """
+                    The copy of <link type="param">object</>.
+                    """
+                ],
+                Remarks = [
+                    """
+                    Scripts inside <link type="param">object</> do not get copied inside of <link type="param">copy</>.
+                    """
+                ],
+                Related = [
+                    """
+                    <link type="func">destroy;obj</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol Clone
                 = new BuiltinFunctionSymbol(objectNamespace, "clone", [
                     new ParameterSymbol("object", TypeSymbol.Object),
@@ -749,6 +772,26 @@ namespace FanScript.Compiler.Symbols
                 {
                     IsMethod = true,
                 };
+            [FunctionDoc(
+                Info = """
+                Destroys <link type="param">object</>.
+                """,
+                ParameterInfos = [
+                    """
+                    The object to destroy.
+                    """
+                ],
+                Remarks = [
+                    """
+                    **Only destroys blocks created by <link type="func">clone;obj;obj</>**.
+                    """
+                ],
+                Related = [
+                    """
+                    <link type="func">clone;obj;obj</>
+                    """
+                ]
+            )]
             public static readonly FunctionSymbol Destroy
                 = new BuiltinFunctionSymbol(objectNamespace, "destroy", [
                     new ParameterSymbol("object", TypeSymbol.Object),
@@ -859,7 +902,7 @@ namespace FanScript.Compiler.Symbols
 
             [FunctionDoc(
                 Info = """
-                Sets the <link type="param">volume</> and <link type="param">pitch</> of the sound playing at <link type="param">channel</>. 
+                Sets the <link type="param">volume</> and <link type="param">pitch</> of the sound playing at <link type="param">channel</>.
                 """,
                 ParameterInfos = [
                     """
@@ -1094,7 +1137,7 @@ namespace FanScript.Compiler.Symbols
 
             [FunctionDoc(
                 Info = """
-                Sets the direction (and magnitude) in which any physics objects falls. 
+                Sets the direction (and magnitude) in which any physics objects falls.
                 """,
                 ParameterInfos = [
                     """
@@ -2407,7 +2450,7 @@ namespace FanScript.Compiler.Symbols
 
         [FunctionDoc(
             Info = """
-            *Dirrectly* convers <link type="param">vec</> to <link type="param">rot</>.
+            *Dirrectly* convers <link type="param">vec</> to <link type="type">rot</>.
             """
         )]
         public static readonly FunctionSymbol ToRot
@@ -2451,7 +2494,7 @@ namespace FanScript.Compiler.Symbols
 
         [FunctionDoc(
             Info = """
-            *Dirrectly* convers <link type="param">rot</> to <link type="param">vec3</>.
+            *Dirrectly* convers <link type="param">rot</> to <link type="type">vec3</>.
             """
         )]
         public static readonly FunctionSymbol ToVec
