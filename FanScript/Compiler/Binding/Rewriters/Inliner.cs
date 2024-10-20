@@ -194,7 +194,7 @@ namespace FanScript.Compiler.Binding.Rewriters
 
             private BoundExpression getInlinedVar(VariableSymbol variable, SyntaxNode syntax)
             {
-                if (variable.IsGlobal || variable is ReservedCompilerVariableSymbol reserved && reserved.Identifier == "inl")
+                if (variable.IsGlobal || (variable is ReservedCompilerVariableSymbol reserved && (reserved.Identifier == "inl" || reserved.Identifier == "temp")))
                     return Variable(syntax, variable);
                 else if (inlinedVariables.TryGetValue(variable, out var inlined))
                     return inlined is BoundExpression ex ? ex : Variable(syntax, (VariableSymbol)inlined);

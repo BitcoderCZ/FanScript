@@ -3,7 +3,6 @@ using FanScript.Compiler.Symbols.Variables;
 using FanScript.Utils;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
 using static FanScript.Compiler.Binding.BoundNodeFactory;
 
 namespace FanScript.Compiler.Binding.Rewriters

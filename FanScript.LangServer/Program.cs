@@ -9,6 +9,9 @@ using Serilog;
 using System;
 using System.Globalization;
 using System.Threading.Tasks;
+#if DEBUG
+using System.Diagnostics;
+#endif
 
 namespace FanScript.LangServer
 {

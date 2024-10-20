@@ -8,6 +8,9 @@ using FanScript.Compiler.Syntax;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using TextCopy;
+#if DEBUG
+using System.Diagnostics;
+#endif
 
 namespace FanScript.Cli
 {

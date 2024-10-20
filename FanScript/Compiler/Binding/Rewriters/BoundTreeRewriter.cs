@@ -176,8 +176,27 @@ namespace FanScript.Compiler.Binding.Rewriters
 
         protected virtual BoundStatement RewriteConditionalGotoStatement(BoundConditionalGotoStatement node)
         {
-            if (node.Condition is BoundEventCondition)
-                return node;
+            if (node.Condition is BoundEventCondition eventCondition)
+            {
+                if (eventCondition.ArgumentClause is null)
+                    return node;
+
+                BoundArgumentClause clase = RewriteArgumentClause(eventCondition.ArgumentClause);
+
+                if (clase == eventCondition.ArgumentClause)
+                    return node;
+
+                return new BoundConditionalGotoStatement(
+                    node.Syntax,
+                    node.Label,
+                    new BoundEventCondition(
+                        eventCondition.Syntax,
+                        eventCondition.EventType,
+                        clase
+                    ),
+                    node.JumpIfTrue
+                );
+            }
 
             BoundExpression condition = RewriteExpression(node.Condition);
             if (condition == node.Condition)

@@ -108,15 +108,10 @@ func updateLegs()
 
         inline vec3 currentTarget = legTargets.get(i)
 
-        if (dist(hitPos, currentTarget) >= RELOCATE_LIMB_DIST_BASE + (currentSpeed / MOVE_SPEED) * RELOCATE_LIMB_DIST)
+        if (dist(hitPos, currentTarget) >= RELOCATE_LIMB_DIST_BASE + (currentSpeed / MOVE_SPEED) * RELOCATE_LIMB_DIST && checkCanMove(i))
         {
-            checkCanMove(i, out bool canMove)
-
-            if (canMove)
-            {
-                setPtrValue(currentTarget, hitPos)
-                legMoveStart.set(i, currentFrame)
-            }
+            setPtrValue(currentTarget, hitPos)
+            legMoveStart.set(i, currentFrame)
         }
 
         fabric(i, currentTarget)
@@ -216,12 +211,12 @@ func fabric(float limb, vec3 target)
     }
 }
 
-inline func checkCanMove(float leg, out bool canMove)
+inline func bool checkCanMove(float leg)
 {
     inline float currentFrame = getCurrentFrame()
     inline float canMoveTime = currentFrame - CAN_MOVE_AFTER_ADJACENT
 
-    canMove = legMoveStart.get((leg + 1) % NUMB_LEGS) < canMoveTime && 
+    return legMoveStart.get((leg + 1) % NUMB_LEGS) < canMoveTime && 
         legMoveStart.get(((leg - 1) % NUMB_LEGS + NUMB_LEGS) % NUMB_LEGS) < canMoveTime &&
         legMoveStart.get(leg) < currentFrame - CAN_MOVE_AFTER
 }

@@ -146,7 +146,12 @@ namespace FanScript.Compiler.Binding
 
         protected virtual void VisitConditionalGotoStatement(BoundConditionalGotoStatement node)
         {
-            if (node.Condition is not BoundEventCondition)
+            if (node.Condition is BoundEventCondition eventCondition)
+            {
+                if (eventCondition.ArgumentClause is not null)
+                    VisitArgumentClause(eventCondition.ArgumentClause);
+            }
+            else
                 VisitExpression(node.Condition);
         }
 
