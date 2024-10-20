@@ -5,9 +5,9 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class BoundEventCondition : BoundExpression
     {
-        public BoundEventCondition(SyntaxNode syntax, EventType sbType, BoundArgumentClause? argumentClause) : base(syntax)
+        public BoundEventCondition(SyntaxNode syntax, EventType eventType, BoundArgumentClause? argumentClause) : base(syntax)
         {
-            EventType = sbType;
+            EventType = eventType;
             ArgumentClause = argumentClause;
         }
 

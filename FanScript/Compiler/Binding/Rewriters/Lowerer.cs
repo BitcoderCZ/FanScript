@@ -7,8 +7,7 @@ namespace FanScript.Compiler.Binding.Rewriters
 {
     internal sealed class Lowerer : BoundTreeRewriter
     {
-        private int labelCount;
-        private Dictionary<string, int> customLabelCount = new();
+        private Dictionary<string, int> labelCount = new();
 
         private string funcName;
         private Lowerer(string funcName)
@@ -16,21 +15,15 @@ namespace FanScript.Compiler.Binding.Rewriters
             this.funcName = funcName + "_";
         }
 
-        private BoundLabel GenerateLabel()
-        {
-            string name = funcName + $"Label{++labelCount}";
-            return new BoundLabel(name);
-        }
-
         private BoundLabel GenerateLabel(string name)
         {
             name = funcName + name;
 
             int count;
-            if (!customLabelCount.TryGetValue(name, out count))
+            if (!labelCount.TryGetValue(name, out count))
                 count = 1;
 
-            customLabelCount[name] = count + 1;
+            labelCount[name] = count + 1;
 
             string labelName = name + count;
             return new BoundLabel(labelName);
@@ -40,7 +33,7 @@ namespace FanScript.Compiler.Binding.Rewriters
         {
             Lowerer lowerer = new Lowerer(function.Name);
             BoundStatement lowered = lowerer.RewriteStatement(statement);
-            BoundStatement result = StatementExpressionExtractor.Extract(lowered);
+            BoundStatement result = StatementExpressionExtractor.Extract(function, lowered);
             return RemoveDeadCode(Flatten(function, result));
         }
 

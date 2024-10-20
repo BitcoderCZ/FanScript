@@ -3,6 +3,7 @@ using FanScript.Compiler.Symbols.Variables;
 using FanScript.Utils;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
+using System.Text.RegularExpressions;
 using static FanScript.Compiler.Binding.BoundNodeFactory;
 
 namespace FanScript.Compiler.Binding.Rewriters
@@ -11,11 +12,16 @@ namespace FanScript.Compiler.Binding.Rewriters
     // required for stuff like assignments, ++, -- and non void functions, because these can only be executed from a void (execution) wire, so they are "extracted" and ran before/after the expression
     internal sealed class StatementExpressionExtractor
     {
-        private State state = new State();
+        private State state;
 
-        public static BoundStatement Extract(BoundStatement statement)
+        public StatementExpressionExtractor(FunctionSymbol function)
         {
-            StatementExpressionExtractor extractor = new StatementExpressionExtractor();
+            state = new State(function);
+        }
+
+        public static BoundStatement Extract(FunctionSymbol function, BoundStatement statement)
+        {
+            StatementExpressionExtractor extractor = new StatementExpressionExtractor(function);
             return extractor.RewriteStatement(statement);
         }
 
@@ -96,7 +102,7 @@ namespace FanScript.Compiler.Binding.Rewriters
             if (builder is null)
                 return node;
 
-            return new BoundBlockStatement(node.Syntax, builder.MoveToImmutable());
+            return new BoundBlockStatement(node.Syntax, builder.DrainToImmutable());
         }
 
         private BoundStatement RewriteEventStatement(BoundEventStatement node)
@@ -205,8 +211,27 @@ namespace FanScript.Compiler.Binding.Rewriters
 
         private BoundStatement RewriteConditionalGotoStatement(BoundConditionalGotoStatement node)
         {
-            if (node.Condition is BoundEventCondition)
-                return node; // TODO:
+            if (node.Condition is BoundEventCondition eventCondition)
+            {
+                if (eventCondition.ArgumentClause is null)
+                    return node;
+
+                var (before, clause) = RewriteArgumentClauseBeforeOnly(eventCondition.ArgumentClause);
+
+                if (clause == eventCondition.ArgumentClause)
+                    return node;
+
+                return HandleBeforeAfter(
+                    before,
+                    new BoundConditionalGotoStatement(node.Syntax, node.Label,
+                        new BoundEventCondition(
+                            eventCondition.Syntax,
+                            eventCondition.EventType,
+                            clause
+                        ), node.JumpIfTrue),
+                    ImmutableArray<BoundStatement>.Empty
+                );
+            }
 
             ExpressionResult condition = RewriteExpression(node.Condition);
             if (condition.IsSameAs(node.Condition))
@@ -328,11 +353,40 @@ namespace FanScript.Compiler.Binding.Rewriters
             if (left.IsSameAs(node.Left) && right.IsSameAs(node.Right))
                 return new ExpressionResult(node);
 
-            // TODO: special case for || and && - short circuting if (a || b) - if a is true, b doesn't get ran, neighter do b's before and after
+            var opKind = node.Op.Kind;
+            if (right.Any && (opKind == BoundBinaryOperatorKind.LogicalAnd || opKind == BoundBinaryOperatorKind.LogicalOr))
+            {
+                // Short-circuit evaluation
+                var variable = state.GetTempVar(left.Expression.Type);
+                var varEx = Variable(left.Expression.Syntax, variable);
 
-            var (before, after, leftEx, rightEx) = ExpressionResult.Resolve(state, left, right);
+                var before = ImmutableArray.CreateBuilder<BoundStatement>(left.Length + 1 + right.Length);
+                ImmutableArray<BoundStatement> after = right.After;
 
-            return new ExpressionResult(before, new BoundBinaryExpression(node.Syntax, leftEx, node.Op, rightEx), after);
+                before.AddRangeSafe(left.Before);
+                before.Add(Assignment(left.Expression.Syntax, variable, left.Expression));
+                before.AddRangeSafe(left.After);
+
+                BoundLabel label = state.GetLabel("short_circuit");
+
+                if (opKind == BoundBinaryOperatorKind.LogicalAnd)
+                    before.Add(GotoFalse(left.Expression.Syntax, label, varEx));
+                else
+                    before.Add(GotoTrue(left.Expression.Syntax, label, varEx));
+
+                before.AddRangeSafe(right.Before);
+                before.Add(Assignment(right.Expression.Syntax, variable, right.Expression));
+                before.AddRangeSafe(right.After);
+                before.Add(Label(right.Expression.Syntax, label));
+
+                return new ExpressionResult(before.DrainToImmutable(), varEx, after);
+            }
+            else
+            {
+                var (before, after, leftEx, rightEx) = ExpressionResult.Resolve(state, left, right);
+
+                return new ExpressionResult(before, new BoundBinaryExpression(node.Syntax, leftEx, node.Op, rightEx), after);
+            }
         }
 
         private ExpressionResult RewriteCallExpression(BoundCallExpression node)
@@ -419,7 +473,7 @@ namespace FanScript.Compiler.Binding.Rewriters
             if (builder is null)
                 return new ExpressionResult(node);
 
-            var (before, after, expressions) = ExpressionResult.Resolve(state, builder.ToImmutable().AsSpan());
+            var (before, after, expressions) = ExpressionResult.Resolve(state, builder.DrainToImmutable().AsSpan());
 
             return new ExpressionResult(before, new BoundArraySegmentExpression(node.Syntax, node.ElementType, expressions.ToImmutableArray()), after);
         }
@@ -451,9 +505,39 @@ namespace FanScript.Compiler.Binding.Rewriters
             if (builder is null)
                 return ([], node, []);
 
-            var (before, after, expressions) = ExpressionResult.Resolve(state, builder.ToImmutable().AsSpan());
+            var (before, after, expressions) = ExpressionResult.Resolve(state, builder.DrainToImmutable().AsSpan());
 
             return (before, new BoundArgumentClause(node.Syntax, node.ArgModifiers, expressions.ToImmutableArray()), after);
+        }
+        private (ImmutableArray<BoundStatement> Before, BoundArgumentClause Clause) RewriteArgumentClauseBeforeOnly(BoundArgumentClause node)
+        {
+            ImmutableArray<ExpressionResult>.Builder? builder = null;
+
+            for (var i = 0; i < node.Arguments.Length; i++)
+            {
+                BoundExpression oldArgument = node.Arguments[i];
+                ExpressionResult newArgument = RewriteExpression(oldArgument);
+                if (!newArgument.IsSameAs(oldArgument))
+                {
+                    if (builder is null)
+                    {
+                        builder = ImmutableArray.CreateBuilder<ExpressionResult>(node.Arguments.Length);
+
+                        for (int j = 0; j < i; j++)
+                            builder.Add(new ExpressionResult(node.Arguments[j]));
+                    }
+                }
+
+                if (builder is not null)
+                    builder.Add(newArgument);
+            }
+
+            if (builder is null)
+                return ([], node);
+
+            var (before, expressions) = ExpressionResult.ResolveBeforeOnly(state, builder.DrainToImmutable().AsSpan());
+
+            return (before, new BoundArgumentClause(node.Syntax, node.ArgModifiers, expressions.ToImmutableArray()));
         }
 
         private BoundStatement HandleBeforeAfterWithTemp(ExpressionResult result, Func<BoundExpression, BoundStatement> getStatement)
@@ -504,13 +588,26 @@ namespace FanScript.Compiler.Binding.Rewriters
 
         private class State
         {
+            private FunctionSymbol function;
+
+            public State(FunctionSymbol function)
+            {
+                this.function = function;
+            }
+
             private Counter varCounter = new Counter(0);
+            private Counter labelCounter = new Counter(0);
 
             public VariableSymbol GetTempVar(TypeSymbol type, bool inline = false)
             {
                 VariableSymbol var = new ReservedCompilerVariableSymbol("temp", varCounter.ToString(), inline ? Modifiers.Inline : 0, type);
                 varCounter++;
                 return var;
+            }
+
+            public BoundLabel GetLabel(string name)
+            {
+                return new BoundLabel(function.Name + "_" + name + labelCounter++);
             }
 
             public void ResetVarCount()
@@ -522,6 +619,7 @@ namespace FanScript.Compiler.Binding.Rewriters
         private readonly struct ExpressionResult
         {
             public bool Any => !Before.IsDefaultOrEmpty || !After.IsDefaultOrEmpty;
+            public int Length => Before.LengthOrZero() + 1 + After.LengthOrZero();
 
             /// <summary>
             /// Statements to be executed before <see cref="Expression"/> is evaluated.
@@ -699,6 +797,121 @@ namespace FanScript.Compiler.Binding.Rewriters
                 (
                     before.ToImmutableArray(),
                     after,
+                    expressions
+                );
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                void add(ImmutableArray<BoundStatement> arr)
+                {
+                    if (!arr.IsDefaultOrEmpty)
+                        before.AddRange(arr);
+                }
+            }
+
+            public static (ImmutableArray<BoundStatement> Before, BoundExpression[] Expressions) ResolveBeforeOnly(State state, ReadOnlySpan<ExpressionResult> results)
+            {
+                switch (results.Length)
+                {
+                    case 0:
+                        return (ImmutableArray<BoundStatement>.Empty, []);
+                    case 1:
+                        {
+                            var res = results[0];
+                            if (res.After.IsDefaultOrEmpty)
+                                return (res.Before, [res.Expression]);
+                            else
+                            {
+                                int beforeLen = res.Before.IsDefault ? 0 : res.Before.Length;
+
+                                var builder = ImmutableArray.CreateBuilder<BoundStatement>(beforeLen + res.After.Length + 1);
+
+                                builder.AddRange(res.Before, beforeLen);
+
+                                var tempVar = state.GetTempVar(res.Expression.Type);
+
+                                builder.Add(Assignment(res.Expression.Syntax, tempVar, res.Expression));
+
+                                builder.AddRange(res.After);
+
+                                return (builder.DrainToImmutable(), [Variable(res.Expression.Syntax, tempVar)]);
+                            }
+                        }
+                }
+
+                // optimize for when only the first has before (or not)
+                bool found = false;
+                for (int i = 0; i < results.Length; i++)
+                {
+                    if (i == 0)
+                    {
+                        if (!results[i].After.IsDefaultOrEmpty)
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                    else if (results[i].Any)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    BoundExpression[] expresions = new BoundExpression[results.Length];
+                    for (int i = 0; i < results.Length; i++)
+                        expresions[i] = results[i].Expression;
+
+                    return (results[0].Before, expresions);
+                }
+
+                List<BoundStatement> before = new List<BoundStatement>();
+                BoundExpression[] expressions = new BoundExpression[results.Length];
+
+                int lastAnyIndex = -1;
+                for (int i = results.Length - 1; i >= 0; i--)
+                {
+                    if (results[i].Any)
+                    {
+                        lastAnyIndex = i;
+                        break;
+                    }
+                }
+
+                VariableSymbol? lastTemp = null;
+                for (int i = 0; i < results.Length; i++)
+                {
+                    ref readonly ExpressionResult res = ref results[i];
+
+                    add(res.Before);
+
+                    if (i > lastAnyIndex)
+                        expressions[i] = res.Expression;
+                    else
+                    {
+                        VariableSymbol temp;
+                        if (lastTemp is not null && res.Before.IsDefaultOrEmpty)
+                            temp = lastTemp;
+                        else
+                        {
+                            temp = state.GetTempVar(res.Expression.Type);
+                            before.Add(Assignment(res.Expression.Syntax, temp, res.Expression));
+                        }
+
+                        add(res.After);
+                        expressions[i] = Variable(res.Expression.Syntax, temp);
+
+                        if (res.After.IsDefaultOrEmpty)
+                            lastTemp = temp;
+                        else
+                            lastTemp = null;
+                    }
+                }
+
+                return
+                (
+                    before.ToImmutableArray(),
                     expressions
                 );
 
