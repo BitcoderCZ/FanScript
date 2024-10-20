@@ -33,7 +33,7 @@ namespace FanScript.FCInfo
 
             initTerminals();
 
-            this.Terminals = new Indexable<string, Terminal>(termName =>
+            Terminals = new Indexable<string, Terminal>(termName =>
             {
                 for (int i = 0; i < TerminalArray.Length; i++)
                     if (TerminalArray[i].Name == termName)

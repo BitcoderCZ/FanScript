@@ -1107,6 +1107,52 @@ namespace FanScript.Compiler.Emit
             //    setBlockValue(block, 0, text.Substring(i, Math.Min(FancadeConstants.MaxCommentLength, text.Length - i)));
             //}
         }
+
+        public EmitStore EmitSetArraySegment(BoundArraySegmentExpression segment, BoundExpression arrayVariable, BoundExpression startIndex)
+        {
+            Debug.Assert(arrayVariable.Type.InnerType == segment.ElementType);
+            Debug.Assert(startIndex.Type == TypeSymbol.Float);
+
+            WireType type = arrayVariable.Type.ToWireType();
+
+            EmitConnector connector = new EmitConnector(Connect);
+
+            EmitStore? lastElementStore = null;
+
+            for (int i = 0; i < segment.Elements.Length; i++)
+            {
+                if (i == 0 && startIndex.ConstantValue is not null && (float)startIndex.ConstantValue.GetValueOrDefault(TypeSymbol.Float) == 0f)
+                    connector.Add(emitSetExpression(arrayVariable, segment.Elements[i]));
+                else
+                {
+                    Block setBlock = AddBlock(Blocks.Variables.Set_PtrByType(type));
+
+                    connector.Add(new BasicEmitStore(setBlock));
+
+                    using (ExpressionBlock())
+                    {
+                        Block listBlock = AddBlock(Blocks.Variables.ListByType(type));
+
+                        Connect(BasicEmitStore.COut(listBlock, listBlock.Type.Terminals["Element"]), BasicEmitStore.CIn(setBlock, setBlock.Type.Terminals["Variable"]));
+
+                        using (ExpressionBlock())
+                        {
+                            lastElementStore ??= EmitExpression(arrayVariable);
+
+                            Connect(lastElementStore, BasicEmitStore.CIn(listBlock, listBlock.Type.Terminals["Variable"]));
+
+                            lastElementStore = BasicEmitStore.COut(listBlock, listBlock.Type.Terminals["Element"]);
+
+                            Connect(i == 0 ? EmitExpression(startIndex) : EmitLiteralExpression(1f), BasicEmitStore.CIn(listBlock, listBlock.Type.Terminals["Index"]));
+                        }
+
+                        Connect(EmitExpression(segment.Elements[i]), BasicEmitStore.CIn(setBlock, setBlock.Type.Terminals["Value"]));
+                    }
+                }
+            }
+
+            return connector.Store;
+        }
         #endregion
 
         #region CodePlacer and BlockBuilder redirects

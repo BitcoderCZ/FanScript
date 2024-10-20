@@ -50,5 +50,7 @@ namespace FanScript.Compiler.Emit
         object?[]? ValidateConstants(ReadOnlyMemory<BoundExpression> expressions, bool mustBeConstant);
 
         void WriteComment(string text);
+
+        EmitStore EmitSetArraySegment(BoundArraySegmentExpression segment, BoundExpression arrayVariable, BoundExpression startIndex);
     }
 }

@@ -112,7 +112,7 @@ namespace FanScript.Compiler.Binding.Rewriters
         protected override BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)
         {
             if (node.Expression is BoundArraySegmentExpression expression)
-                return lowerArraySegment(expression, node.Variable);
+                return lowerArraySegmentAssignment(expression, node.Variable);
 
             return base.RewriteAssignmentStatement(node);
         }
@@ -317,7 +317,7 @@ namespace FanScript.Compiler.Binding.Rewriters
             return result;
         }
 
-        private BoundStatement lowerArraySegment(BoundArraySegmentExpression expression, VariableSymbol arrayVariable, int startIndex = 0)
+        private BoundStatement lowerArraySegmentAssignment(BoundArraySegmentExpression expression, VariableSymbol arrayVariable, float startIndex = 0f)
         {
             BoundArraySegmentExpression node = (BoundArraySegmentExpression)RewriteArraySegmentExpression(expression);
 
@@ -325,30 +325,22 @@ namespace FanScript.Compiler.Binding.Rewriters
             //
             // ---->
             //
-            // set(x, 0, a)
-            // set(x, 1, b)
-            // set(x, 2, c)
-            // ...
+            // setRange(x, 0, [a, b, c, ...])
 
-            ImmutableArray<BoundStatement>.Builder builder = ImmutableArray.CreateBuilder<BoundStatement>(node.Elements.Length);
-
-            TypeSymbol elementType = arrayVariable.Type.InnerType!;
-
-            float index = 0f;
-            foreach (BoundExpression element in node.Elements)
-            {
-                ImmutableArray<BoundExpression> arguments = [
-                    new BoundVariableExpression(node.Syntax, arrayVariable),
-                    Literal(node.Syntax, index++),
-                    element,
-                ];
-
-                builder.Add(new BoundExpressionStatement(node.Syntax, new BoundCallExpression(node.Syntax, BuiltinFunctions.Array_Set, new BoundArgumentClause(node.Syntax, [0, 0, 0], arguments), TypeSymbol.Void, elementType)));
-            }
-
-            BoundBlockStatement result = new BoundBlockStatement(
+            BoundBlockStatement result = Block(
                 node.Syntax,
-                builder.ToImmutable()
+                new BoundCallStatement(
+                    node.Syntax,
+                    BuiltinFunctions.Array_SetRange,
+                    new BoundArgumentClause(
+                        node.Syntax,
+                        [0, 0, 0],
+                        [Variable(node.Syntax, arrayVariable), Literal(node.Syntax, startIndex), expression]
+                    ),
+                    TypeSymbol.Void,
+                    null,
+                    null
+                )
             );
 
             return result;

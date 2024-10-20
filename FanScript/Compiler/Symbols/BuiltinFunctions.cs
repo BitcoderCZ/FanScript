@@ -2187,6 +2187,14 @@ namespace FanScript.Compiler.Symbols
                 new ParameterSymbol("index", TypeSymbol.Float),
             ], TypeSymbol.Generic, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
                 {
+                    var indexArg = call.Arguments[1];
+
+                    // optimize for when index is 0
+                    if (indexArg.ConstantValue is not null && (float)indexArg.ConstantValue.GetValueOrDefault(TypeSymbol.Float) == 0f)
+                    {
+                        return context.EmitExpression(call.Arguments[0]);
+                    }
+
                     Block list = context.AddBlock(Blocks.Variables.ListByType(call.GenericType!.ToWireType()));
 
                     using (context.ExpressionBlock())
@@ -2228,6 +2236,18 @@ namespace FanScript.Compiler.Symbols
                 new ParameterSymbol("value", TypeSymbol.Generic),
             ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
                 {
+                    var indexArg = call.Arguments[1];
+
+                    // optimize for when index is 0
+                    if (indexArg.ConstantValue is not null && (float)indexArg.ConstantValue.GetValueOrDefault(TypeSymbol.Float) == 0f)
+                    {
+                        return context.EmitSetExpression(call.Arguments[0], () =>
+                        {
+                            using (context.ExpressionBlock())
+                                return context.EmitExpression(call.Arguments[2]);
+                        });
+                    }
+
                     Block setPtr = context.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));
 
                     using (context.ExpressionBlock())
@@ -2276,43 +2296,13 @@ namespace FanScript.Compiler.Symbols
                 new ParameterSymbol("value", TypeSymbol.ArraySegment),
             ], TypeSymbol.Void, TypeSymbol.BuiltInNonGenericTypes, (call, context) =>
             {
-                object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(1..2), true);
-                if (constants is null)
-                    return NopEmitStore.Instance;
-
-                EmitStore firstStore = null!;
-                EmitStore lastStore = null!;
-
+                var array = call.Arguments[0];
+                var index = call.Arguments[1];
                 var segment = (BoundArraySegmentExpression)call.Arguments[2];
 
                 Debug.Assert(segment.Elements.Length > 0);
 
-                float offset = (float?)constants[0] ?? 0f;
-
-                for (int i = 0; i < segment.Elements.Length; i++)
-                {
-                    EmitStore store = ((BuiltinFunctionSymbol)Array_Set)
-                        .Emit(
-                            new BoundCallExpression(
-                                call.Syntax,
-                                Array_Set,
-                                new BoundArgumentClause(call.ArgumentClause.Syntax, [0, 0, 0],
-                                    [
-                                        call.Arguments[0],
-                                        new BoundLiteralExpression(call.Syntax, i + offset),
-                                        segment.Elements[i],
-                                    ]),
-                                TypeSymbol.Void,
-                                call.GenericType
-                            ),
-                            context
-                        );
-
-                    firstStore ??= store;
-                    lastStore = store;
-                }
-
-                return new MultiEmitStore(firstStore, lastStore);
+                return context.EmitSetArraySegment(segment, array, index);
             })
             {
                 IsMethod = true,
