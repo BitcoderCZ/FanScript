@@ -54,14 +54,18 @@ namespace FanScript.Cli
 
         static int runVerb<T>(Func<T, int> action, T arg, string name)
         {
+#if !DEBUG
             try
             {
-                return action(arg);
+#endif
+            return action(arg);
+#if !DEBUG
             }
             catch (Exception ex)
             {
                 return Log.Error("An Exception occured", ErrorCode.UnknownError, ex);
             }
+#endif
         }
 
         static int runBuild(BuildOptions opts)

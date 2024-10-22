@@ -324,9 +324,9 @@ namespace FanScript.Compiler.Syntax
             return new VariableDeclarationStatementSyntax(syntaxTree, modifiers ?? ImmutableArray<SyntaxToken>.Empty, typeClause, identifier, assignment);
         }
 
-        private StatementSyntax ParseAssignmentStatement(ExpressionSyntax? destination = null)
+        private StatementSyntax ParseAssignmentStatement()
         {
-            destination ??= ParseExpression();
+            ExpressionSyntax destination = ParseExpression();
             SyntaxToken operatorToken = NextToken();
             ExpressionSyntax right = ParseExpression();
             return new AssignmentStatementSyntax(syntaxTree, destination, operatorToken, right);
@@ -442,25 +442,8 @@ namespace FanScript.Compiler.Syntax
         {
             ExpressionSyntax expression = ParseExpression();
 
-            // handle assignment
-            switch (Current.Kind)
-            {
-                case SyntaxKind.EqualsToken:
-                case SyntaxKind.PlusEqualsToken:
-                case SyntaxKind.MinusEqualsToken:
-                case SyntaxKind.StarEqualsToken:
-                case SyntaxKind.SlashEqualsToken:
-                case SyntaxKind.PercentEqualsToken:
-                    {
-                        switch (expression.Kind)
-                        {
-                            case SyntaxKind.NameExpression:
-                            case SyntaxKind.PropertyExpression when ((PropertyExpressionSyntax)expression).Expression.Kind == SyntaxKind.NameExpression:
-                                return ParseAssignmentStatement(expression);
-                        }
-                    }
-                    break;
-            }
+            if (expression is AssignmentExpressionSyntax assignment)
+                return new AssignmentStatementSyntax(syntaxTree, assignment.Destination, assignment.AssignmentToken, assignment.Expression);
 
             return new ExpressionStatementSyntax(syntaxTree, expression);
         }
@@ -501,11 +484,46 @@ namespace FanScript.Compiler.Syntax
         {
             ExpressionSyntax expression = ParsePrimaryExpressionInternal();
 
+            // handle properties
             while (Current.Kind == SyntaxKind.DotToken)
             {
                 SyntaxToken dotToken = MatchToken(SyntaxKind.DotToken);
                 ExpressionSyntax nameOrCall = ParseNameOrCallExpressions();
                 expression = new PropertyExpressionSyntax(syntaxTree, expression, dotToken, nameOrCall);
+            }
+
+            // handle assignment
+            // a = b = c = 5
+            // a = (b = (c = 5))
+
+            Stack<(ExpressionSyntax, SyntaxToken)> assignmentStack = new();
+
+            while (Current.Kind switch
+            {
+                SyntaxKind.EqualsToken => true,
+                SyntaxKind.PlusEqualsToken => true,
+                SyntaxKind.MinusEqualsToken => true,
+                SyntaxKind.StarEqualsToken => true,
+                SyntaxKind.SlashEqualsToken => true,
+                SyntaxKind.PercentEqualsToken => true,
+                _ => false,
+            } && expression switch
+            {
+                NameExpressionSyntax => true,
+                PropertyExpressionSyntax prop when prop.Expression.Kind == SyntaxKind.NameExpression => true,
+                _ => false,
+            })
+            {
+                assignmentStack.Push((expression, MatchToken(SyntaxKind.EqualsToken, SyntaxKind.PlusEqualsToken, SyntaxKind.MinusEqualsToken, SyntaxKind.StarEqualsToken, SyntaxKind.SlashEqualsToken, SyntaxKind.PercentEqualsToken)));
+
+                expression = ParseExpression();
+            }
+
+            while (assignmentStack.Count > 0)
+            {
+                var (destination, assignmentToken) = assignmentStack.Pop();
+
+                expression = new AssignmentExpressionSyntax(syntaxTree, destination, assignmentToken, expression);
             }
 
             return expression;

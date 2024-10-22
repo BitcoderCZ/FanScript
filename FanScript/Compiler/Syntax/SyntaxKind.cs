@@ -69,6 +69,7 @@
         PropertyExpression,
         VariableDeclarationExpression,
         ArraySegmentExpression,
+        AssignmentExpression,
 
         Parameter,
         TypeClause,

@@ -52,6 +52,9 @@ namespace FanScript.Compiler.Binding
         public static BoundAssignmentStatement Assignment(SyntaxNode syntax, VariableSymbol variable, BoundExpression expression)
             => new BoundAssignmentStatement(syntax, variable, expression);
 
+        public static BoundAssignmentExpression AssignmentExpression(SyntaxNode syntax, VariableSymbol variable, BoundExpression expression)
+            => new BoundAssignmentExpression(syntax, variable, expression);
+
         public static BoundBinaryExpression Binary(SyntaxNode syntax, BoundExpression left, SyntaxKind kind, BoundExpression right)
         {
             BoundBinaryOperator op = BoundBinaryOperator.Bind(kind, left.Type, right.Type)!;

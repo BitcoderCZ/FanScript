@@ -36,6 +36,8 @@
         NopExpression,
         PostfixExpression,
         PrefixExpression,
+        AssignmentExpression,
+        CompoundAssignmentExpression,
 
         EventCondition,
 

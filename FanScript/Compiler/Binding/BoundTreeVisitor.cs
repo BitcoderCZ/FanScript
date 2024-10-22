@@ -211,6 +211,12 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.ArraySegmentExpression:
                     VisitArraySegmentExpression((BoundArraySegmentExpression)node);
                     break;
+                case BoundNodeKind.AssignmentExpression:
+                    VisitAssignmentExpression((BoundAssignmentExpression)node);
+                    break;
+                case BoundNodeKind.CompoundAssignmentExpression:
+                    VisitCompoundAssignmentExpression((BoundCompoundAssignmentExpression)node);
+                    break;
                 default:
                     throw new Exception($"Unexpected node: {node.Kind}");
             }
@@ -266,6 +272,16 @@ namespace FanScript.Compiler.Binding
         {
             for (var i = 0; i < node.Elements.Length; i++)
                 VisitExpression(node.Elements[i]);
+        }
+
+        protected virtual void VisitAssignmentExpression(BoundAssignmentExpression node)
+        {
+            VisitExpression(node.Expression);
+        }
+
+        protected virtual void VisitCompoundAssignmentExpression(BoundCompoundAssignmentExpression node)
+        {
+            VisitExpression(node.Expression);
         }
 
         #region Helper functions

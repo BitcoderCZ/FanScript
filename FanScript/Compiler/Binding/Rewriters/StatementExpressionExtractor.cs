@@ -305,6 +305,8 @@ namespace FanScript.Compiler.Binding.Rewriters
                     return RewritePrefixExpression((BoundPrefixExpression)node);
                 case BoundNodeKind.ArraySegmentExpression:
                     return RewriteArraySegmentExpression((BoundArraySegmentExpression)node);
+                case BoundNodeKind.AssignmentExpression:
+                    return RewriteAssignmentExpression((BoundAssignmentExpression)node);
                 default:
                     throw new Exception($"Unexpected node: {node.Kind}");
             }
@@ -403,7 +405,9 @@ namespace FanScript.Compiler.Binding.Rewriters
                 var temp = state.GetTempVar(node.Function.Type, true);
 
                 return new ExpressionResult(
-                    before.Concat([new BoundCallStatement(node.Syntax, node.Function, argumentClause, node.ReturnType, node.GenericType, temp)]).ToImmutableArray(),
+                    (before.IsDefault ? Enumerable.Empty<BoundStatement>() : before).Concat([
+                        new BoundCallStatement(node.Syntax, node.Function, argumentClause, node.ReturnType, node.GenericType, temp)
+                    ]).ToImmutableArray(),
                     Variable(node.Syntax, temp),
                     after
                 );
@@ -475,6 +479,19 @@ namespace FanScript.Compiler.Binding.Rewriters
             var (before, after, expressions) = ExpressionResult.Resolve(state, builder.DrainToImmutable().AsSpan());
 
             return new ExpressionResult(before, new BoundArraySegmentExpression(node.Syntax, node.ElementType, expressions.ToImmutableArray()), after);
+        }
+
+        private ExpressionResult RewriteAssignmentExpression(BoundAssignmentExpression node)
+        {
+            ExpressionResult expression = RewriteExpression(node.Expression);
+
+            return new ExpressionResult(
+                (expression.Before.IsDefault ? Enumerable.Empty<BoundStatement>() : expression.Before).Concat([
+                    Assignment(node.Syntax, node.Variable, expression.Expression)
+                ]).ToImmutableArray(),
+                Variable(node.Syntax, node.Variable),
+                expression.After
+            );
         }
 
         #region Helper functions

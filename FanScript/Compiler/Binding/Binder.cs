@@ -462,70 +462,17 @@ namespace FanScript.Compiler.Binding
 
         private BoundStatement BindAssignmentStatement(AssignmentStatementSyntax syntax)
         {
-            BoundExpression boundExpression = BindExpression(syntax.Expression);
+            var item = BindAssignment(syntax.Destination, syntax.AssignmentToken, syntax.Expression);
 
-            VariableSymbol? variable;
-            switch (syntax.Destination)
-            {
-                case NameExpressionSyntax name:
-                    {
-                        variable = BindVariableReference(name.IdentifierToken);
-                        if (variable is null)
-                            return BindErrorStatement(syntax);
+            if (item is null)
+                return BindErrorStatement(syntax);
 
-                        if (variable.IsReadOnly && variable.Initialized)
-                            diagnostics.ReportCannotAssignReadOnlyVariable(syntax.AssignmentToken.Location, variable.Name);
-                        else if (variable.Modifiers.HasFlag(Modifiers.Constant) && boundExpression.ConstantValue is null)
-                            diagnostics.ReportValueMustBeConstant(syntax.Expression.Location);
+            var (variable, op, expression) = item.Value;
 
-                        variable.Initialize(boundExpression.ConstantValue);
-                    }
-                    break;
-                case PropertyExpressionSyntax prop:
-                    {
-                        var property = BindProperty(prop);
-
-                        if (property is null)
-                            return BindErrorStatement(syntax);
-
-                        if (property.IsReadOnly)
-                            diagnostics.ReportCannotAssignReadOnlyProperty(syntax.AssignmentToken.Location, property.Name);
-
-                        variable = property;
-                    }
-                    break;
-                default:
-                    throw new InvalidDataException($"Unknown {nameof(ExpressionSyntax)} '{syntax.Destination.GetType()}' in assignment.");
-            }
-
-            if (syntax.AssignmentToken.Kind != SyntaxKind.EqualsToken)
-            {
-                SyntaxKind equivalentOperatorTokenKind = SyntaxFacts.GetBinaryOperatorOfAssignmentOperator(syntax.AssignmentToken.Kind);
-                BoundBinaryOperator? boundOperator = BoundBinaryOperator.Bind(equivalentOperatorTokenKind, variable.Type, boundExpression.Type);
-
-                if (boundOperator is null)
-                {
-                    diagnostics.ReportUndefinedBinaryOperator(syntax.AssignmentToken.Location, syntax.AssignmentToken.Text, variable.Type, boundExpression.Type);
-                    return BindErrorStatement(syntax);
-                }
-
-                BoundExpression convertedExpression = bindConversion(boundOperator.RightType);
-
-                return new BoundCompoundAssignmentStatement(syntax, variable, boundOperator, convertedExpression);
-            }
+            if (op is null)
+                return new BoundAssignmentStatement(syntax, variable, expression);
             else
-            {
-                BoundExpression convertedExpression = bindConversion(variable.Type);
-                return new BoundAssignmentStatement(syntax, variable, convertedExpression);
-            }
-
-            BoundExpression bindConversion(TypeSymbol targetType)
-            {
-                if (boundExpression.Type.NonGenericEquals(TypeSymbol.ArraySegment) && targetType.NonGenericEquals(TypeSymbol.Array) && boundExpression.Type.InnerType == targetType.InnerType)
-                    return boundExpression;
-                else
-                    return BindConversion(syntax.Expression.Location, boundExpression, targetType);
-            }
+                return new BoundCompoundAssignmentStatement(syntax, variable, op, expression);
         }
 
         private BoundStatement BindIfStatement(IfStatementSyntax syntax)
@@ -865,6 +812,8 @@ namespace FanScript.Compiler.Binding
                     return BindPropertyExpression((PropertyExpressionSyntax)syntax);
                 case SyntaxKind.ArraySegmentExpression:
                     return BindArraySegmentExpression((ArraySegmentExpressionSyntax)syntax);
+                case SyntaxKind.AssignmentExpression:
+                    return BindAssignmentExpression((AssignmentExpressionSyntax)syntax);
                 default:
                     throw new Exception($"Unexpected syntax {syntax.Kind}");
             }
@@ -1178,6 +1127,21 @@ namespace FanScript.Compiler.Binding
             return new BoundArraySegmentExpression(syntax, type, boundElements.ToImmutable());
         }
 
+        private BoundExpression BindAssignmentExpression(AssignmentExpressionSyntax syntax)
+        {
+            var item = BindAssignment(syntax.Destination, syntax.AssignmentToken, syntax.Expression);
+
+            if (item is null)
+                return new BoundErrorExpression(syntax);
+
+            var (variable, op, expression) = item.Value;
+
+            if (op is null)
+                return new BoundAssignmentExpression(syntax, variable, expression);
+            else
+                return new BoundCompoundAssignmentExpression(syntax, variable, op, expression);
+        }
+
         #region Helper Methods
         private BoundExpression BindConversion(ExpressionSyntax syntax, TypeSymbol type, bool allowExplicit = false, Context? context = null)
         {
@@ -1444,6 +1408,74 @@ namespace FanScript.Compiler.Binding
             }
 
             return new PropertySymbol(property, baseEx);
+        }
+
+        private (VariableSymbol, BoundBinaryOperator?, BoundExpression)? BindAssignment(ExpressionSyntax destination, SyntaxToken assignmentToken, ExpressionSyntax expression)
+        {
+            BoundExpression boundExpression = BindExpression(expression);
+
+            VariableSymbol? variable;
+            switch (destination)
+            {
+                case NameExpressionSyntax name:
+                    {
+                        variable = BindVariableReference(name.IdentifierToken);
+                        if (variable is null)
+                            return null;
+
+                        if (variable.IsReadOnly && variable.Initialized)
+                            diagnostics.ReportCannotAssignReadOnlyVariable(assignmentToken.Location, variable.Name);
+                        else if (variable.Modifiers.HasFlag(Modifiers.Constant) && boundExpression.ConstantValue is null)
+                            diagnostics.ReportValueMustBeConstant(expression.Location);
+
+                        variable.Initialize(boundExpression.ConstantValue);
+                    }
+                    break;
+                case PropertyExpressionSyntax prop:
+                    {
+                        var property = BindProperty(prop);
+
+                        if (property is null)
+                            return null;
+
+                        if (property.IsReadOnly)
+                            diagnostics.ReportCannotAssignReadOnlyProperty(assignmentToken.Location, property.Name);
+
+                        variable = property;
+                    }
+                    break;
+                default:
+                    throw new InvalidDataException($"Unknown {nameof(ExpressionSyntax)} '{destination.GetType()}' in assignment.");
+            }
+
+            if (assignmentToken.Kind != SyntaxKind.EqualsToken)
+            {
+                SyntaxKind equivalentOperatorTokenKind = SyntaxFacts.GetBinaryOperatorOfAssignmentOperator(assignmentToken.Kind);
+                BoundBinaryOperator? boundOperator = BoundBinaryOperator.Bind(equivalentOperatorTokenKind, variable.Type, boundExpression.Type);
+
+                if (boundOperator is null)
+                {
+                    diagnostics.ReportUndefinedBinaryOperator(assignmentToken.Location, assignmentToken.Text, variable.Type, boundExpression.Type);
+                    return null;
+                }
+
+                BoundExpression convertedExpression = bindConversion(boundOperator.RightType);
+
+                return (variable, boundOperator, convertedExpression);
+            }
+            else
+            {
+                BoundExpression convertedExpression = bindConversion(variable.Type);
+                return (variable, null, convertedExpression);
+            }
+
+            BoundExpression bindConversion(TypeSymbol targetType)
+            {
+                if (boundExpression.Type.NonGenericEquals(TypeSymbol.ArraySegment) && targetType.NonGenericEquals(TypeSymbol.Array) && boundExpression.Type.InnerType == targetType.InnerType)
+                    return boundExpression;
+                else
+                    return BindConversion(expression.Location, boundExpression, targetType);
+            }
         }
         #endregion
 

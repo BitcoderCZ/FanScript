@@ -317,6 +317,30 @@ namespace FanScript.Compiler.Binding.Rewriters
             return result;
         }
 
+        protected override BoundExpression RewriteCompoundAssignmentExpression(BoundCompoundAssignmentExpression node)
+        {
+            BoundCompoundAssignmentExpression newNode = (BoundCompoundAssignmentExpression)base.RewriteCompoundAssignmentExpression(node);
+
+            // a <op>= b
+            //
+            // ---->
+            //
+            // a = (a <op> b)
+
+            BoundAssignmentExpression result = AssignmentExpression(
+                newNode.Syntax,
+                newNode.Variable,
+                Binary(
+                    newNode.Syntax,
+                    Variable(newNode.Syntax, newNode.Variable),
+                    newNode.Op,
+                    newNode.Expression
+                )
+            );
+
+            return result;
+        }
+
         private BoundStatement lowerArraySegmentAssignment(BoundArraySegmentExpression expression, VariableSymbol arrayVariable, float startIndex = 0f)
         {
             BoundArraySegmentExpression node = (BoundArraySegmentExpression)RewriteArraySegmentExpression(expression);

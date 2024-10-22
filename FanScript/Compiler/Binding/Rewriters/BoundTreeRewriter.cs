@@ -262,6 +262,10 @@ namespace FanScript.Compiler.Binding.Rewriters
                     return RewritePrefixExpression((BoundPrefixExpression)node);
                 case BoundNodeKind.ArraySegmentExpression:
                     return RewriteArraySegmentExpression((BoundArraySegmentExpression)node);
+                case BoundNodeKind.AssignmentExpression:
+                    return RewriteAssignmentExpression((BoundAssignmentExpression)node);
+                case BoundNodeKind.CompoundAssignmentExpression:
+                    return RewriteCompoundAssignmentExpression((BoundCompoundAssignmentExpression)node);
                 default:
                     throw new Exception($"Unexpected node: {node.Kind}");
             }
@@ -385,6 +389,24 @@ namespace FanScript.Compiler.Binding.Rewriters
                 return node;
 
             return new BoundArraySegmentExpression(node.Syntax, node.ElementType, builder.ToImmutable());
+        }
+
+        protected virtual BoundExpression RewriteAssignmentExpression(BoundAssignmentExpression node)
+        {
+            BoundExpression expression = RewriteExpression(node.Expression);
+            if (expression == node.Expression)
+                return node;
+
+            return new BoundAssignmentExpression(node.Syntax, node.Variable, expression);
+        }
+
+        protected virtual BoundExpression RewriteCompoundAssignmentExpression(BoundCompoundAssignmentExpression node)
+        {
+            BoundExpression expression = RewriteExpression(node.Expression);
+            if (expression == node.Expression)
+                return node;
+
+            return new BoundCompoundAssignmentExpression(node.Syntax, node.Variable, node.Op, expression);
         }
 
         #region Helper functions

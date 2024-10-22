@@ -114,6 +114,12 @@ namespace FanScript.Compiler.Binding
                 case BoundNodeKind.ArraySegmentExpression:
                     WriteArraySegmentExpression((BoundArraySegmentExpression)node, writer);
                     break;
+                case BoundNodeKind.AssignmentExpression:
+                    WriteAssignmentExpression((BoundAssignmentExpression)node, writer);
+                    break;
+                case BoundNodeKind.CompoundAssignmentExpression:
+                    WriteCompoundAssignmentExpression((BoundCompoundAssignmentExpression)node, writer);
+                    break;
                 case BoundNodeKind.EventCondition:
                     WriteEventCondition((BoundEventCondition)node, writer);
                     break;
@@ -547,6 +553,25 @@ namespace FanScript.Compiler.Binding
             }
 
             writer.WritePunctuation(SyntaxKind.CloseSquareToken);
+        }
+
+        private static void WriteAssignmentExpression(BoundAssignmentExpression node, IndentedTextWriter writer)
+        {
+            WriteVariable(node.Variable, writer);
+            writer.WriteSpace();
+            writer.WritePunctuation(SyntaxKind.EqualsToken);
+            writer.WriteSpace();
+            node.Expression.WriteTo(writer);
+        }
+
+        private static void WriteCompoundAssignmentExpression(BoundCompoundAssignmentExpression node, IndentedTextWriter writer)
+        {
+            WriteVariable(node.Variable, writer);
+            writer.WriteSpace();
+            writer.WritePunctuation(node.Op.SyntaxKind);
+            writer.WritePunctuation(SyntaxKind.EqualsToken);
+            writer.WriteSpace();
+            node.Expression.WriteTo(writer);
         }
 
         private static void WriteEventCondition(BoundEventCondition node, IndentedTextWriter writer)
