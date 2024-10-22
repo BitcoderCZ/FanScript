@@ -97,8 +97,7 @@ namespace FanScript.LangServer.Handlers
                     }
                     break;
                 case VariableDeclarationStatementSyntax variableDeclarationStatement when node == variableDeclarationStatement.IdentifierToken:
-                case AssignableVariableClauseSyntax variableClause when node == variableClause.IdentifierToken:
-                case AssignablePropertyClauseSyntax propertyClause when node == propertyClause.VariableToken:
+                case AssignmentStatementSyntax assignment when node == assignment.Destination:
                     {
                         if (scope is null || node is not SyntaxToken token)
                             break;
@@ -110,20 +109,6 @@ namespace FanScript.LangServer.Handlers
 
                         if (varSymbol is not null)
                             return getHoverForVariable(varSymbol, node.Location);
-                    }
-                    break;
-                case AssignablePropertyClauseSyntax propertyClause when node == propertyClause.IdentifierToken:
-                    {
-                        if (scope is null)
-                            break;
-
-                        PropertySymbol? prop = resolveProperty(new PropertyExpressionSyntax(tree, new NameExpressionSyntax(tree, propertyClause.VariableToken), propertyClause.DotToken, new NameExpressionSyntax(tree, propertyClause.IdentifierToken)), scope
-                              .GetAllVariables()
-                              .Concat(compilation.GetVariables().Where(var => var.IsGlobal))
-                              .ToArray(), out _) as PropertySymbol;
-
-                        if (prop is not null)
-                            return getHoverForProperty(prop, node.Location);
                     }
                     break;
                 case CallExpressionSyntax call when node == call.Identifier:

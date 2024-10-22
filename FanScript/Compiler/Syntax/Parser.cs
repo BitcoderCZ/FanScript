@@ -219,17 +219,6 @@ namespace FanScript.Compiler.Syntax
                 case SyntaxKind.PlusPlusToken:
                 case SyntaxKind.MinusMinusToken:
                     return ParsePrefixStatement();
-                case SyntaxKind.IdentifierToken when IsAssignableClauseNow(out int nextTokenIndex) && Peek(nextTokenIndex).Kind switch
-                {
-                    SyntaxKind.EqualsToken => true,
-                    SyntaxKind.PlusEqualsToken => true,
-                    SyntaxKind.MinusEqualsToken => true,
-                    SyntaxKind.StarEqualsToken => true,
-                    SyntaxKind.SlashEqualsToken => true,
-                    SyntaxKind.PercentEqualsToken => true,
-                    _ => false,
-                }:
-                    return ParseAssignmentStatement();
                 case SyntaxKind.KeywordIf:
                     return ParseIfStatement();
                 case SyntaxKind.KeywordWhile:
@@ -329,18 +318,18 @@ namespace FanScript.Compiler.Syntax
                 SyntaxToken equals = MatchToken(SyntaxKind.EqualsToken);
                 ExpressionSyntax initializer = ParseExpression();
 
-                assignment = new AssignmentStatementSyntax(syntaxTree, new AssignableVariableClauseSyntax(syntaxTree, identifier), equals, initializer);
+                assignment = new AssignmentStatementSyntax(syntaxTree, new NameExpressionSyntax(syntaxTree, identifier), equals, initializer);
             }
 
             return new VariableDeclarationStatementSyntax(syntaxTree, modifiers ?? ImmutableArray<SyntaxToken>.Empty, typeClause, identifier, assignment);
         }
 
-        private StatementSyntax ParseAssignmentStatement()
+        private StatementSyntax ParseAssignmentStatement(ExpressionSyntax? destination = null)
         {
-            AssignableClauseSyntax assignableClause = ParseAssignableClause();
+            destination ??= ParseExpression();
             SyntaxToken operatorToken = NextToken();
             ExpressionSyntax right = ParseExpression();
-            return new AssignmentStatementSyntax(syntaxTree, assignableClause, operatorToken, right);
+            return new AssignmentStatementSyntax(syntaxTree, destination, operatorToken, right);
         }
 
         private StatementSyntax ParseIfStatement()
@@ -449,9 +438,32 @@ namespace FanScript.Compiler.Syntax
             return ParseVariableDeclarationStatement(ParseModifiers());
         }
 
-        // TODO: handle assignment here (something like properties are parsed)
-        private ExpressionStatementSyntax ParseExpressionStatement()
-            => new ExpressionStatementSyntax(syntaxTree, ParseExpression());
+        private StatementSyntax ParseExpressionStatement()
+        {
+            ExpressionSyntax expression = ParseExpression();
+
+            // handle assignment
+            switch (Current.Kind)
+            {
+                case SyntaxKind.EqualsToken:
+                case SyntaxKind.PlusEqualsToken:
+                case SyntaxKind.MinusEqualsToken:
+                case SyntaxKind.StarEqualsToken:
+                case SyntaxKind.SlashEqualsToken:
+                case SyntaxKind.PercentEqualsToken:
+                    {
+                        switch (expression.Kind)
+                        {
+                            case SyntaxKind.NameExpression:
+                            case SyntaxKind.PropertyExpression when ((PropertyExpressionSyntax)expression).Expression.Kind == SyntaxKind.NameExpression:
+                                return ParseAssignmentStatement(expression);
+                        }
+                    }
+                    break;
+            }
+
+            return new ExpressionStatementSyntax(syntaxTree, expression);
+        }
 
         private ExpressionSyntax ParseExpression()
         {
@@ -765,39 +777,6 @@ namespace FanScript.Compiler.Syntax
             }
             else
                 return new TypeClauseSyntax(syntaxTree, typeToken);
-        }
-
-        private bool IsAssignableClauseNow(out int nextTokenIndex)
-        {
-            nextTokenIndex = -1;
-
-            if (Peek(0).Kind == SyntaxKind.IdentifierToken)
-            {
-                if (Peek(1).Kind == SyntaxKind.DotToken && Peek(2).Kind == SyntaxKind.IdentifierToken)
-                {
-                    nextTokenIndex = 3;
-                    return true;
-                }
-                else
-                {
-                    nextTokenIndex = 1;
-                    return true;
-                }
-            }
-            else
-                return false;
-        }
-        private AssignableClauseSyntax ParseAssignableClause()
-        {
-            SyntaxToken identifier0 = MatchToken(SyntaxKind.IdentifierToken);
-            if (Current.Kind == SyntaxKind.DotToken)
-            {
-                SyntaxToken dotToken = MatchToken(SyntaxKind.DotToken);
-                SyntaxToken identifier1 = MatchToken(SyntaxKind.IdentifierToken);
-                return new AssignablePropertyClauseSyntax(syntaxTree, identifier0, dotToken, identifier1);
-            }
-
-            return new AssignableVariableClauseSyntax(syntaxTree, identifier0);
         }
 
         private bool AreModifiersNow(out int nextTokenIndex)

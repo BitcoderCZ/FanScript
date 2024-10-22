@@ -399,8 +399,6 @@ namespace FanScript.LangServer.Handlers
                         }
                     }
                     break;
-                case AssignableVariableClauseSyntax:
-                    return CurrentRecomendations.NewIdentifier;
                 case CallExpressionSyntax call:
                     {
                         if (node == call.Identifier)

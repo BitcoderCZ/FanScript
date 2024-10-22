@@ -143,12 +143,13 @@ namespace FanScript.Tests
         public void InvokeFunctionArguments_NoInfiniteLoop()
         {
             var text = @"
-                inspect(1$[$[=]$]$$[)]$
+                inspect(1$[$[=]$]$$[$[)]$]$
             ";
 
             var diagnostics = """
                 Unexpected token <EqualsToken>, expected <CloseParenthesisToken>.
                 Unexpected token <EqualsToken>, expected <IdentifierToken>.
+                Unexpected token <CloseParenthesisToken>, expected <IdentifierToken>.
                 Unexpected token <CloseParenthesisToken>, expected <IdentifierToken>.
                 """;
 
@@ -159,7 +160,7 @@ namespace FanScript.Tests
         public void FunctionParameters_NoInfiniteLoop()
         {
             var text = @"
-                func foo(float numb$[$[$[=]$]$]$$[)]$
+                func foo(float numb$[$[$[=]$]$]$$[$[)]$]$
                 {
                     inspect(numb)
                 }$[]$
@@ -169,6 +170,7 @@ namespace FanScript.Tests
                 Unexpected token <EqualsToken>, expected <CloseParenthesisToken>.
                 Unexpected token <EqualsToken>, expected <OpenBraceToken>.
                 Unexpected token <EqualsToken>, expected <IdentifierToken>.
+                Unexpected token <CloseParenthesisToken>, expected <IdentifierToken>.
                 Unexpected token <CloseParenthesisToken>, expected <IdentifierToken>.
                 Unexpected token <EndOfFileToken>, expected <CloseBraceToken>.
             ";

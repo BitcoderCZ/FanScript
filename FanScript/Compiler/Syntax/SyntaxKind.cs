@@ -74,7 +74,6 @@
         TypeClause,
         ArgumentClause,
         ElseClause,
-        AssignableClause,
         ModifierClause,
 
         FloatToken,

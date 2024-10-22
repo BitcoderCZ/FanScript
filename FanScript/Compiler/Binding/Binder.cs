@@ -465,11 +465,11 @@ namespace FanScript.Compiler.Binding
             BoundExpression boundExpression = BindExpression(syntax.Expression);
 
             VariableSymbol? variable;
-            switch (syntax.AssignableClause)
+            switch (syntax.Destination)
             {
-                case AssignableVariableClauseSyntax varClause:
+                case NameExpressionSyntax name:
                     {
-                        variable = BindVariableReference(varClause.IdentifierToken);
+                        variable = BindVariableReference(name.IdentifierToken);
                         if (variable is null)
                             return BindErrorStatement(syntax);
 
@@ -481,28 +481,21 @@ namespace FanScript.Compiler.Binding
                         variable.Initialize(boundExpression.ConstantValue);
                     }
                     break;
-                case AssignablePropertyClauseSyntax propertyClause:
+                case PropertyExpressionSyntax prop:
                     {
-                        VariableSymbol? baseVariable = BindVariableReference(propertyClause.VariableToken);
-                        if (baseVariable is null)
-                            return BindErrorStatement(syntax);
-
-                        PropertyDefinitionSymbol? property = baseVariable.Type.GetProperty(propertyClause.IdentifierToken.Text);
+                        var property = BindProperty(prop);
 
                         if (property is null)
-                        {
-                            diagnostics.ReportUndefinedProperty(propertyClause.IdentifierToken.Location, baseVariable.Type, propertyClause.IdentifierToken.Text);
                             return BindErrorStatement(syntax);
-                        }
 
                         if (property.IsReadOnly)
                             diagnostics.ReportCannotAssignReadOnlyProperty(syntax.AssignmentToken.Location, property.Name);
 
-                        variable = new PropertySymbol(property, new BoundVariableExpression(propertyClause.VariableToken, baseVariable));
+                        variable = property;
                     }
                     break;
                 default:
-                    throw new InvalidDataException($"Unknown {nameof(AssignableClauseSyntax)} '{syntax.AssignableClause.GetType()}'");
+                    throw new InvalidDataException($"Unknown {nameof(ExpressionSyntax)} '{syntax.Destination.GetType()}' in assignment.");
             }
 
             if (syntax.AssignmentToken.Kind != SyntaxKind.EqualsToken)
@@ -1136,33 +1129,28 @@ namespace FanScript.Compiler.Binding
 
         private BoundExpression BindPropertyExpression(PropertyExpressionSyntax syntax)
         {
-            BoundExpression baseEx = BindExpression(syntax.BaseExpression);
-
             switch (syntax.Expression.Kind)
             {
                 case SyntaxKind.NameExpression:
                     {
-                        NameExpressionSyntax nameEx = (NameExpressionSyntax)syntax.Expression;
-
-                        PropertyDefinitionSymbol? property = baseEx.Type.GetProperty(nameEx.IdentifierToken.Text);
-                        if (property is null)
-                        {
-                            diagnostics.ReportUndefinedProperty(nameEx.IdentifierToken.Location, baseEx.Type, nameEx.IdentifierToken.Text);
+                        PropertySymbol? prop = BindProperty(syntax);
+                        if (prop is null)
                             return new BoundErrorExpression(syntax);
-                        }
-
-                        return new BoundVariableExpression(syntax, new PropertySymbol(property, baseEx));
+                        else
+                            return new BoundVariableExpression(syntax, prop);
                     }
                 case SyntaxKind.CallExpression:
-                    return BindCallExpression((CallExpressionSyntax)syntax.Expression, new Context()
                     {
-                        MethodObject = syntax.BaseExpression,
-                    });
+                        BoundExpression baseEx = BindExpression(syntax.BaseExpression);
+                        return BindCallExpression((CallExpressionSyntax)syntax.Expression, new Context()
+                        {
+                            MethodObject = syntax.BaseExpression,
+                        });
+                    }
                 default:
                     Debug.Fail($"Invalid property expression: '{syntax.Expression.Kind}'");
                     return new BoundErrorExpression(syntax);
             }
-
         }
 
         private BoundExpression BindArraySegmentExpression(ArraySegmentExpressionSyntax syntax)
@@ -1439,6 +1427,23 @@ namespace FanScript.Compiler.Binding
             }
 
             return modifiers;
+        }
+
+        private PropertySymbol? BindProperty(PropertyExpressionSyntax syntax)
+        {
+            if (syntax.Expression is not NameExpressionSyntax nameEx)
+                return null;
+
+            BoundExpression baseEx = BindExpression(syntax.BaseExpression);
+
+            PropertyDefinitionSymbol? property = baseEx.Type.GetProperty(nameEx.IdentifierToken.Text);
+            if (property is null)
+            {
+                diagnostics.ReportUndefinedProperty(nameEx.IdentifierToken.Location, baseEx.Type, nameEx.IdentifierToken.Text);
+                return null;
+            }
+
+            return new PropertySymbol(property, baseEx);
         }
         #endregion
 
