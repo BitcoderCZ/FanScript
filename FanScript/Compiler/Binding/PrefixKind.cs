@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Syntax;
+﻿using FanScript.Compiler.Exceptions;
+using FanScript.Compiler.Syntax;
 
 namespace FanScript.Compiler.Binding
 {
@@ -15,7 +16,7 @@ namespace FanScript.Compiler.Binding
             {
                 PrefixKind.Increment => "++",
                 PrefixKind.Decrement => "--",
-                _ => throw new InvalidDataException($"Unknown {nameof(PrefixKind)} '{kind}'"),
+                _ => throw new UnknownEnumValueException<PrefixKind>(kind),
             };
 
         public static SyntaxKind ToBinaryOp(this PrefixKind kind)
@@ -23,7 +24,7 @@ namespace FanScript.Compiler.Binding
             {
                 PrefixKind.Increment => SyntaxKind.PlusToken,
                 PrefixKind.Decrement => SyntaxKind.MinusToken,
-                _ => throw new InvalidDataException($"Unknown {nameof(PrefixKind)} '{kind}'"),
+                _ => throw new UnknownEnumValueException<PrefixKind>(kind),
             };
     }
 }

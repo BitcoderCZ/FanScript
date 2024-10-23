@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using FanScript.Compiler.Exceptions;
+using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
@@ -19,112 +20,112 @@ namespace FanScript.Compiler.Binding
 
         public static void WriteTo(this BoundNode node, IndentedTextWriter writer)
         {
-            switch (node.Kind)
+            switch (node)
             {
-                case BoundNodeKind.BlockStatement:
-                    WriteBlockStatement((BoundBlockStatement)node, writer);
+                case BoundBlockStatement blockStatement:
+                    WriteBlockStatement(blockStatement, writer);
                     break;
-                case BoundNodeKind.EventStatement:
-                    WriteEventStatement((BoundEventStatement)node, writer);
+                case BoundEventStatement eventStatement:
+                    WriteEventStatement(eventStatement, writer);
                     break;
-                case BoundNodeKind.NopStatement:
-                    WriteNopStatement((BoundNopStatement)node, writer);
+                case BoundNopStatement nopStatement:
+                    WriteNopStatement(nopStatement, writer);
                     break;
-                case BoundNodeKind.PostfixStatement:
-                    WritePostfixStatement((BoundPostfixStatement)node, writer);
+                case BoundPostfixStatement postfixStatement:
+                    WritePostfixStatement(postfixStatement, writer);
                     break;
-                case BoundNodeKind.PrefixStatement:
-                    WritePrefixStatement((BoundPrefixStatement)node, writer);
+                case BoundPrefixStatement prefixStatement:
+                    WritePrefixStatement(prefixStatement, writer);
                     break;
-                case BoundNodeKind.VariableDeclarationStatement:
-                    WriteVariableDeclaration((BoundVariableDeclarationStatement)node, writer);
+                case BoundVariableDeclarationStatement variableDeclarationStatement:
+                    WriteVariableDeclaration(variableDeclarationStatement, writer);
                     break;
-                case BoundNodeKind.AssignmentStatement:
-                    WriteAssignmentStatement((BoundAssignmentStatement)node, writer);
+                case BoundAssignmentStatement assignmentStatement:
+                    WriteAssignmentStatement(assignmentStatement, writer);
                     break;
-                case BoundNodeKind.CompoundAssignmentStatement:
-                    WriteCompoundAssignmentStatement((BoundCompoundAssignmentStatement)node, writer);
+                case BoundCompoundAssignmentStatement compoundAssignmentStatement:
+                    WriteCompoundAssignmentStatement(compoundAssignmentStatement, writer);
                     break;
-                case BoundNodeKind.IfStatement:
-                    WriteIfStatement((BoundIfStatement)node, writer);
+                case BoundIfStatement ifStatement:
+                    WriteIfStatement(ifStatement, writer);
                     break;
-                case BoundNodeKind.WhileStatement:
-                    WriteWhileStatement((BoundWhileStatement)node, writer);
+                case BoundWhileStatement whileStatement:
+                    WriteWhileStatement(whileStatement, writer);
                     break;
-                case BoundNodeKind.DoWhileStatement:
-                    WriteDoWhileStatement((BoundDoWhileStatement)node, writer);
+                case BoundDoWhileStatement doWhileStatement:
+                    WriteDoWhileStatement(doWhileStatement, writer);
                     break;
                 //case BoundNodeKind.ForStatement:
                 //    WriteForStatement((BoundForStatement)node, writer);
                 //    break;
-                case BoundNodeKind.LabelStatement:
-                    WriteLabelStatement((BoundLabelStatement)node, writer);
+                case BoundLabelStatement labelStatement:
+                    WriteLabelStatement(labelStatement, writer);
                     break;
-                case BoundNodeKind.GotoStatement:
-                    WriteGotoStatement((BoundGotoStatement)node, writer);
+                case BoundGotoStatement gotoStatement:
+                    WriteGotoStatement(gotoStatement, writer);
                     break;
-                case BoundNodeKind.RollbackGotoStatement:
-                    WriteRollbackGotoStatement((BoundRollbackGotoStatement)node, writer);
+                case BoundRollbackGotoStatement rollbackGotoStatement:
+                    WriteRollbackGotoStatement(rollbackGotoStatement, writer);
                     break;
-                case BoundNodeKind.ConditionalGotoStatement:
-                    WriteConditionalGotoStatement((BoundConditionalGotoStatement)node, writer);
+                case BoundConditionalGotoStatement conditionalGotoStatement:
+                    WriteConditionalGotoStatement(conditionalGotoStatement, writer);
                     break;
-                case BoundNodeKind.ReturnStatement:
-                    WriteReturnStatement((BoundReturnStatement)node, writer);
+                case BoundReturnStatement returnStatement:
+                    WriteReturnStatement(returnStatement, writer);
                     break;
-                case BoundNodeKind.EmitterHint:
-                    WriteEmitterHint((BoundEmitterHint)node, writer);
+                case BoundEmitterHintStatement emitterHintStatement:
+                    WriteEmitterHint(emitterHintStatement, writer);
                     break;
-                case BoundNodeKind.CallStatement:
-                    WriteCallStatement((BoundCallStatement)node, writer);
+                case BoundCallStatement callStatement:
+                    WriteCallStatement(callStatement, writer);
                     break;
-                case BoundNodeKind.ExpressionStatement:
-                    WriteExpressionStatement((BoundExpressionStatement)node, writer);
+                case BoundExpressionStatement expressionStatement:
+                    WriteExpressionStatement(expressionStatement, writer);
                     break;
-                case BoundNodeKind.ErrorExpression:
-                    WriteErrorExpression((BoundErrorExpression)node, writer);
+                case BoundErrorExpression errorExpression:
+                    WriteErrorExpression(errorExpression, writer);
                     break;
-                case BoundNodeKind.LiteralExpression:
-                    WriteLiteralExpression((BoundLiteralExpression)node, writer);
+                case BoundLiteralExpression literalExpression:
+                    WriteLiteralExpression(literalExpression, writer);
                     break;
-                case BoundNodeKind.VariableExpression:
-                    WriteVariableExpression((BoundVariableExpression)node, writer);
+                case BoundVariableExpression variableExpression:
+                    WriteVariableExpression(variableExpression, writer);
                     break;
-                case BoundNodeKind.UnaryExpression:
-                    WriteUnaryExpression((BoundUnaryExpression)node, writer);
+                case BoundUnaryExpression unaryExpression:
+                    WriteUnaryExpression(unaryExpression, writer);
                     break;
-                case BoundNodeKind.BinaryExpression:
-                    WriteBinaryExpression((BoundBinaryExpression)node, writer);
+                case BoundBinaryExpression binaryExpression:
+                    WriteBinaryExpression(binaryExpression, writer);
                     break;
-                case BoundNodeKind.CallExpression:
+                case BoundCallExpression callExpression:
                     WriteCallExpression((BoundCallExpression)node, writer);
                     break;
-                case BoundNodeKind.ConversionExpression:
-                    WriteConversionExpression((BoundConversionExpression)node, writer);
+                case BoundConversionExpression conversionExpression:
+                    WriteConversionExpression(conversionExpression, writer);
                     break;
-                case BoundNodeKind.ConstructorExpression:
-                    WriteConstructorExpression((BoundConstructorExpression)node, writer);
+                case BoundConstructorExpression constructorExpression:
+                    WriteConstructorExpression(constructorExpression, writer);
                     break;
-                case BoundNodeKind.PostfixExpression:
-                    WritePostfixExpression((BoundPostfixExpression)node, writer);
+                case BoundPostfixExpression postfixExpression:
+                    WritePostfixExpression(postfixExpression, writer);
                     break;
-                case BoundNodeKind.PrefixExpression:
-                    WritePrefixExpression((BoundPrefixExpression)node, writer);
+                case BoundPrefixExpression prefixExpression:
+                    WritePrefixExpression(prefixExpression, writer);
                     break;
-                case BoundNodeKind.ArraySegmentExpression:
-                    WriteArraySegmentExpression((BoundArraySegmentExpression)node, writer);
+                case BoundArraySegmentExpression arraySegmentExpression:
+                    WriteArraySegmentExpression(arraySegmentExpression, writer);
                     break;
-                case BoundNodeKind.AssignmentExpression:
-                    WriteAssignmentExpression((BoundAssignmentExpression)node, writer);
+                case BoundAssignmentExpression assignmentExpression:
+                    WriteAssignmentExpression(assignmentExpression, writer);
                     break;
-                case BoundNodeKind.CompoundAssignmentExpression:
-                    WriteCompoundAssignmentExpression((BoundCompoundAssignmentExpression)node, writer);
+                case BoundCompoundAssignmentExpression compoundAssignmentExpression:
+                    WriteCompoundAssignmentExpression(compoundAssignmentExpression, writer);
                     break;
-                case BoundNodeKind.EventCondition:
-                    WriteEventCondition((BoundEventCondition)node, writer);
+                case BoundEventCondition eventCondition:
+                    WriteEventCondition(eventCondition, writer);
                     break;
                 default:
-                    throw new Exception($"Unexpected node {node.Kind}");
+                    throw new UnexpectedBoundNodeException(node);
             }
         }
 
@@ -368,11 +369,11 @@ namespace FanScript.Compiler.Binding
             writer.WriteLine();
         }
 
-        private static void WriteEmitterHint(BoundEmitterHint node, IndentedTextWriter writer)
+        private static void WriteEmitterHint(BoundEmitterHintStatement node, IndentedTextWriter writer)
         {
             switch (node.Hint)
             {
-                case BoundEmitterHint.HintKind.StatementBlockEnd:
+                case BoundEmitterHintStatement.HintKind.StatementBlockEnd:
                     //writer.Indent--;
                     break;
             }
@@ -382,7 +383,7 @@ namespace FanScript.Compiler.Binding
 
             switch (node.Hint)
             {
-                case BoundEmitterHint.HintKind.StatementBlockStart:
+                case BoundEmitterHintStatement.HintKind.StatementBlockStart:
                     //writer.Indent++;
                     break;
             }

@@ -2,14 +2,14 @@
 
 namespace FanScript.Compiler.Binding
 {
-    internal sealed class BoundEmitterHint : BoundStatement
+    internal sealed class BoundEmitterHintStatement : BoundStatement
     {
-        public BoundEmitterHint(SyntaxNode syntax, HintKind hint) : base(syntax)
+        public BoundEmitterHintStatement(SyntaxNode syntax, HintKind hint) : base(syntax)
         {
             Hint = hint;
         }
 
-        public override BoundNodeKind Kind => BoundNodeKind.EmitterHint;
+        public override BoundNodeKind Kind => BoundNodeKind.EmitterHintStatement;
 
         public HintKind Hint { get; }
 

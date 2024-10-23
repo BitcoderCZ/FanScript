@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Syntax;
+﻿using FanScript.Compiler.Exceptions;
+using FanScript.Compiler.Syntax;
 
 namespace FanScript.Compiler.Binding
 {
@@ -15,7 +16,7 @@ namespace FanScript.Compiler.Binding
             {
                 PostfixKind.Increment => "++",
                 PostfixKind.Decrement => "--",
-                _ => throw new InvalidDataException($"Unknown {nameof(PostfixKind)} '{kind}'"),
+                _ => throw new UnknownEnumValueException<PostfixKind>(kind),
             };
 
         public static SyntaxKind ToBinaryOp(this PostfixKind kind)
@@ -23,7 +24,7 @@ namespace FanScript.Compiler.Binding
             {
                 PostfixKind.Increment => SyntaxKind.PlusToken,
                 PostfixKind.Decrement => SyntaxKind.MinusToken,
-                _ => throw new InvalidDataException($"Unknown {nameof(PostfixKind)} '{kind}'"),
+                _ => throw new UnknownEnumValueException<PostfixKind>(kind),
             };
     }
 }

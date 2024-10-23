@@ -1,4 +1,5 @@
 ﻿using FanScript.Compiler.Emit;
+using FanScript.Compiler.Exceptions;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
@@ -213,58 +214,59 @@ namespace FanScript.Compiler.Diagnostics
 
         public void ReportUnreachableCode(TextLocation location)
           => ReportWarning(location, $"Unreachable code detected.");
+        // TODO: this needs all the added statements/expressions (right?)
         public void ReportUnreachableCode(SyntaxNode node)
         {
-            switch (node.Kind)
+            switch (node)
             {
-                case SyntaxKind.BlockStatement:
-                    StatementSyntax? firstStatement = ((BlockStatementSyntax)node).Statements.FirstOrDefault();
+                case BlockStatementSyntax blockStatement:
+                    StatementSyntax? firstStatement = blockStatement.Statements.FirstOrDefault();
                     // Report just for non empty blocks.
                     if (firstStatement is not null)
                         ReportUnreachableCode(firstStatement);
                     return;
-                case SyntaxKind.VariableDeclarationStatement:
-                    ReportUnreachableCode(((VariableDeclarationStatementSyntax)node).TypeClause.Location);
+                case VariableDeclarationStatementSyntax variableDeclarationStatement:
+                    ReportUnreachableCode(variableDeclarationStatement.TypeClause.Location);
                     return;
-                case SyntaxKind.IfStatement:
-                    ReportUnreachableCode(((IfStatementSyntax)node).IfKeyword.Location);
+                case IfStatementSyntax ifStatement:
+                    ReportUnreachableCode(ifStatement.IfKeyword.Location);
                     return;
-                case SyntaxKind.WhileStatement:
-                    ReportUnreachableCode(((WhileStatementSyntax)node).WhileKeyword.Location);
+                case WhileStatementSyntax whileStatement:
+                    ReportUnreachableCode(whileStatement.WhileKeyword.Location);
                     return;
-                case SyntaxKind.DoWhileStatement:
-                    ReportUnreachableCode(((DoWhileStatementSyntax)node).DoKeyword.Location);
+                case DoWhileStatementSyntax doWhileStatement:
+                    ReportUnreachableCode(doWhileStatement.DoKeyword.Location);
                     return;
                 //case SyntaxKind.ForStatement:
                 //    ReportUnreachableCode(((ForStatementSyntax)node).Keyword.Location);
                 //    return;
-                case SyntaxKind.BreakStatement:
-                    ReportUnreachableCode(((BreakStatementSyntax)node).Keyword.Location);
+                case BreakStatementSyntax breakStatement:
+                    ReportUnreachableCode(breakStatement.Keyword.Location);
                     return;
-                case SyntaxKind.ContinueStatement:
-                    ReportUnreachableCode(((ContinueStatementSyntax)node).Keyword.Location);
+                case ContinueStatementSyntax continueStatement:
+                    ReportUnreachableCode(continueStatement.Keyword.Location);
                     return;
-                case SyntaxKind.ReturnStatement:
-                    ReportUnreachableCode(((ReturnStatementSyntax)node).ReturnKeyword.Location);
+                case ReturnStatementSyntax returnStatement:
+                    ReportUnreachableCode(returnStatement.ReturnKeyword.Location);
                     return;
-                case SyntaxKind.AssignmentStatement:
+                case AssignmentStatementSyntax:
                     ReportUnreachableCode(node.Location);
                     return;
-                case SyntaxKind.CallStatement:
-                    ReportUnreachableCode(((CallStatementSyntax)node).Identifier.Location);
+                case CallStatementSyntax callStatement:
+                    ReportUnreachableCode(callStatement.Identifier.Location);
                     return;
-                case SyntaxKind.ExpressionStatement:
-                    ExpressionSyntax expression = ((ExpressionStatementSyntax)node).Expression;
+                case ExpressionStatementSyntax expressionStatement:
+                    ExpressionSyntax expression = expressionStatement.Expression;
                     ReportUnreachableCode(expression);
                     return;
-                case SyntaxKind.NameExpression:
-                    ReportUnreachableCode(((NameExpressionSyntax)node).IdentifierToken.Location);
+                case NameExpressionSyntax nameExpression:
+                    ReportUnreachableCode(nameExpression.IdentifierToken.Location);
                     break;
-                case SyntaxKind.CallExpression:
-                    ReportUnreachableCode(((CallExpressionSyntax)node).Identifier.Location);
+                case CallExpressionSyntax callExpression:
+                    ReportUnreachableCode(callExpression.Identifier.Location);
                     return;
                 default:
-                    throw new Exception($"Unexpected syntax {node.Kind}");
+                    throw new UnexpectedSyntaxException(node);
             }
         }
 

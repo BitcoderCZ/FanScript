@@ -79,7 +79,7 @@ namespace FanScript.Compiler.Binding.Rewriters
 
             ImmutableArray<BoundStatement>.Builder builder = node.Statements.ToBuilder();
             for (int i = builder.Count - 1; i >= 0; i--)
-                if (!reachableStatements.Contains(builder[i]) && builder[i] is not BoundEmitterHint)
+                if (!reachableStatements.Contains(builder[i]) && builder[i] is not BoundEmitterHintStatement)
                     builder.RemoveAt(i);
 
             return new BoundBlockStatement(node.Syntax, builder.ToImmutable());
@@ -134,9 +134,9 @@ namespace FanScript.Compiler.Binding.Rewriters
                 BoundBlockStatement result = Block(
                     node.Syntax,
                     GotoFalse(node.Syntax, endLabel, node.Condition),
-                    Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),
+                    Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockStart),
                     node.ThenStatement,
-                    Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd),
+                    Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockEnd),
                     Label(node.Syntax, endLabel)
                 );
 
@@ -163,9 +163,9 @@ namespace FanScript.Compiler.Binding.Rewriters
                 BoundBlockStatement result = Block(
                     node.Syntax,
                     GotoFalse(node.Syntax, elseLabel, node.Condition),
-                    Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),
+                    Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockStart),
                     node.ThenStatement,
-                    Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd),
+                    Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockEnd),
                     Goto(node.Syntax, endLabel),
                     Label(node.Syntax, elseLabel),
                     getElse(),
@@ -181,9 +181,9 @@ namespace FanScript.Compiler.Binding.Rewriters
                     else
                         return Block(
                             node.Syntax,
-                            Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),
+                            Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockStart),
                             node.ElseStatement!,
-                            Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd)
+                            Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockEnd)
                         );
                 }
             }
@@ -214,7 +214,7 @@ namespace FanScript.Compiler.Binding.Rewriters
                 Label(newNode.Syntax, onTrueLabel),
                 // Hint(newNode.Syntax, BoundEmitterHint.HintKind.StatementBlockStart), might need to be sooner if there are ref variables, so let emitter handle it
                 newNode.Block,
-                Hint(newNode.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd),
+                Hint(newNode.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockEnd),
                 RollbackGoto(newNode.Syntax, endLabel),
                 Label(newNode.Syntax, endLabel)
             );
@@ -239,9 +239,9 @@ namespace FanScript.Compiler.Binding.Rewriters
                 node.Syntax,
                 Label(node.Syntax, node.ContinueLabel),
                 GotoFalse(node.Syntax, node.BreakLabel, node.Condition),
-                Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),
+                Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockStart),
                 node.Body,
-                Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd),
+                Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockEnd),
                 Goto(node.Syntax, node.ContinueLabel),
                 Label(node.Syntax, node.BreakLabel)
             );
@@ -267,9 +267,9 @@ namespace FanScript.Compiler.Binding.Rewriters
             BoundBlockStatement result = Block(
                 node.Syntax,
                 Label(node.Syntax, bodyLabel),
-                Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockStart),
+                Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockStart),
                 node.Body,
-                Hint(node.Syntax, BoundEmitterHint.HintKind.StatementBlockEnd),
+                Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockEnd),
                 Label(node.Syntax, node.ContinueLabel),
                 GotoTrue(node.Syntax, bodyLabel, node.Condition),
                 Label(node.Syntax, node.BreakLabel)

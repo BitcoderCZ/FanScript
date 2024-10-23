@@ -21,6 +21,7 @@
         PrefixStatement,
         CallStatement,
         ExpressionStatement,
+        EmitterHintStatement,
 
         // Expressions
         ErrorExpression,
@@ -40,7 +41,5 @@
         CompoundAssignmentExpression,
 
         EventCondition,
-
-        EmitterHint,
     }
 }

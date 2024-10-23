@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Binding.Rewriters;
 using FanScript.Compiler.Diagnostics;
+using FanScript.Compiler.Exceptions;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
@@ -7,7 +8,6 @@ using FanScript.Compiler.Text;
 using FanScript.FCInfo;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("FanScript.LangServer")]
@@ -287,10 +287,10 @@ namespace FanScript.Compiler.Binding
 
             if (result is BoundExpressionStatement es)
             {
-                bool isAllowedExpression = es.Expression.Kind switch
+                bool isAllowedExpression = es.Expression switch
                 {
-                    BoundNodeKind.ErrorExpression => true,
-                    BoundNodeKind.CallExpression when es.Expression.Type == TypeSymbol.Void => true, // methods
+                    BoundErrorExpression => true,
+                    BoundCallExpression when es.Expression.Type == TypeSymbol.Void => true, // methods
                     _ => false,
                 };
 
@@ -305,43 +305,27 @@ namespace FanScript.Compiler.Binding
         {
             spanProcessed(syntax.Span);
 
-            switch (syntax.Kind)
+            return syntax switch
             {
-                case SyntaxKind.BlockStatement:
-                    return BindBlockStatement((BlockStatementSyntax)syntax);
-                case SyntaxKind.EventStatement:
-                    return BindEventStatement((EventStatementSyntax)syntax);
-                case SyntaxKind.PostfixStatement:
-                    return BindPostfixStatement((PostfixStatementSyntax)syntax);
-                case SyntaxKind.PrefixStatement:
-                    return BindPrefixStatement((PrefixStatementSyntax)syntax);
-                case SyntaxKind.VariableDeclarationStatement:
-                    return BindVariableDeclarationStatement((VariableDeclarationStatementSyntax)syntax);
-                case SyntaxKind.AssignmentStatement:
-                    return BindAssignmentStatement((AssignmentStatementSyntax)syntax);
-                case SyntaxKind.IfStatement:
-                    return BindIfStatement((IfStatementSyntax)syntax);
-                case SyntaxKind.WhileStatement:
-                    return BindWhileStatement((WhileStatementSyntax)syntax);
-                case SyntaxKind.DoWhileStatement:
-                    return BindDoWhileStatement((DoWhileStatementSyntax)syntax);
-                //case SyntaxKind.ForStatement:
-                //    return BindForStatement((ForStatementSyntax)syntax);
-                case SyntaxKind.BreakStatement:
-                    return BindBreakStatement((BreakStatementSyntax)syntax);
-                case SyntaxKind.ContinueStatement:
-                    return BindContinueStatement((ContinueStatementSyntax)syntax);
-                case SyntaxKind.ReturnStatement:
-                    return BindReturnStatement((ReturnStatementSyntax)syntax);
-                case SyntaxKind.BuildCommandStatement:
-                    return BindBuildCommandStatement((BuildCommandStatementSyntax)syntax);
-                case SyntaxKind.CallStatement:
-                    return BindCallStatement((CallStatementSyntax)syntax);
-                case SyntaxKind.ExpressionStatement:
-                    return BindExpressionStatement((ExpressionStatementSyntax)syntax);
-                default:
-                    throw new Exception($"Unexpected syntax {syntax.Kind}");
-            }
+                BlockStatementSyntax blockStatement => BindBlockStatement(blockStatement),
+                EventStatementSyntax eventStatement => BindEventStatement(eventStatement),
+                PostfixStatementSyntax postfixStatement => BindPostfixStatement(postfixStatement),
+                PrefixStatementSyntax prefixStatement => BindPrefixStatement(prefixStatement),
+                VariableDeclarationStatementSyntax variableDeclarationStatement => BindVariableDeclarationStatement(variableDeclarationStatement),
+                AssignmentStatementSyntax assignmentStatement => BindAssignmentStatement(assignmentStatement),
+                IfStatementSyntax ifStatement => BindIfStatement(ifStatement),
+                WhileStatementSyntax whileStatement => BindWhileStatement(whileStatement),
+                DoWhileStatementSyntax doWhileStatement => BindDoWhileStatement(doWhileStatement),
+                //ForStatementSyntax forStatement => BindForStatement(forStatement),
+                BreakStatementSyntax breakStatement => BindBreakStatement(breakStatement),
+                ContinueStatementSyntax continueStatement => BindContinueStatement(continueStatement),
+                ReturnStatementSyntax returnStatement => BindReturnStatement(returnStatement),
+                BuildCommandStatementSyntax buildCommandStatement => BindBuildCommandStatement(buildCommandStatement),
+                CallStatementSyntax callStatement => BindCallStatement(callStatement),
+                ExpressionStatementSyntax expressionStatement => BindExpressionStatement(expressionStatement),
+
+                _ => throw new UnexpectedSyntaxException(syntax),
+            };
         }
 
         private BoundStatement BindBlockStatement(BlockStatementSyntax syntax)
@@ -608,21 +592,21 @@ namespace FanScript.Compiler.Binding
                 return BindErrorStatement(syntax);
             }
 
-            BoundEmitterHint.HintKind kind;
+            BoundEmitterHintStatement.HintKind kind;
 
             switch (command)
             {
                 case BuildCommand.Highlight:
-                    kind = BoundEmitterHint.HintKind.HighlightStart;
+                    kind = BoundEmitterHintStatement.HintKind.HighlightStart;
                     break;
                 case BuildCommand.EndHighlight:
-                    kind = BoundEmitterHint.HintKind.HighlightEnd;
+                    kind = BoundEmitterHintStatement.HintKind.HighlightEnd;
                     break;
                 default:
-                    throw new Exception($"Unknown {nameof(BuildCommand)} '{command}'.");
+                    throw new UnknownEnumValueException<BuildCommand>(command);
             }
 
-            return new BoundEmitterHint(syntax, kind);
+            return new BoundEmitterHintStatement(syntax, kind);
         }
 
         private BoundStatement BindCallStatement(CallStatementSyntax syntax)
@@ -786,43 +770,28 @@ namespace FanScript.Compiler.Binding
         {
             spanProcessed(syntax.Span);
 
-            switch (syntax.Kind)
+            return syntax switch
             {
-                case SyntaxKind.ParenthesizedExpression:
-                    return BindParenthesizedExpression((ParenthesizedExpressionSyntax)syntax);
-                case SyntaxKind.LiteralExpression:
-                    return BindLiteralExpression((LiteralExpressionSyntax)syntax);
-                case SyntaxKind.NameExpression:
-                    return BindNameExpression((NameExpressionSyntax)syntax, context);
-                case SyntaxKind.VariableDeclarationExpression:
-                    return BindVariableDeclarationExpression((VariableDeclarationExpressionSyntax)syntax);
-                case SyntaxKind.UnaryExpression:
-                    return BindUnaryExpression((UnaryExpressionSyntax)syntax);
-                case SyntaxKind.BinaryExpression:
-                    return BindBinaryExpression((BinaryExpressionSyntax)syntax);
-                case SyntaxKind.CallExpression:
-                    return BindCallExpression((CallExpressionSyntax)syntax, context);
-                case SyntaxKind.ConstructorExpression:
-                    return BindConstructorExpression((ConstructorExpressionSyntax)syntax);
-                case SyntaxKind.PostfixExpression:
-                    return BindPostfixExpression((PostfixExpressionSyntax)syntax);
-                case SyntaxKind.PrefixExpression:
-                    return BindPrefixExpression((PrefixExpressionSyntax)syntax);
-                case SyntaxKind.PropertyExpression:
-                    return BindPropertyExpression((PropertyExpressionSyntax)syntax);
-                case SyntaxKind.ArraySegmentExpression:
-                    return BindArraySegmentExpression((ArraySegmentExpressionSyntax)syntax);
-                case SyntaxKind.AssignmentExpression:
-                    return BindAssignmentExpression((AssignmentExpressionSyntax)syntax);
-                default:
-                    throw new Exception($"Unexpected syntax {syntax.Kind}");
-            }
+                ParenthesizedExpressionSyntax parenthesizedExpression => BindParenthesizedExpression(parenthesizedExpression),
+                LiteralExpressionSyntax literalExpression => BindLiteralExpression(literalExpression),
+                NameExpressionSyntax nameExpression => BindNameExpression(nameExpression, context),
+                VariableDeclarationExpressionSyntax variableDeclarationExpression => BindVariableDeclarationExpression(variableDeclarationExpression),
+                UnaryExpressionSyntax unaryExpression => BindUnaryExpression(unaryExpression),
+                BinaryExpressionSyntax binaryExpression => BindBinaryExpression(binaryExpression),
+                CallExpressionSyntax callExpression => BindCallExpression(callExpression, context),
+                ConstructorExpressionSyntax constructorExpression => BindConstructorExpression(constructorExpression),
+                PostfixExpressionSyntax postfixExpression => BindPostfixExpression(postfixExpression),
+                PrefixExpressionSyntax prefixExpression => BindPrefixExpression(prefixExpression),
+                PropertyExpressionSyntax propertyExpression => BindPropertyExpression(propertyExpression),
+                ArraySegmentExpressionSyntax arraySegmentExpression => BindArraySegmentExpression(arraySegmentExpression),
+                AssignmentExpressionSyntax assignmentExpression => BindAssignmentExpression(assignmentExpression),
+
+                _ => throw new UnexpectedSyntaxException(syntax),
+            };
         }
 
         private BoundExpression BindParenthesizedExpression(ParenthesizedExpressionSyntax syntax)
-        {
-            return BindExpression(syntax.Expression);
-        }
+            => BindExpression(syntax.Expression);
 
         private BoundExpression BindLiteralExpression(LiteralExpressionSyntax syntax)
         {
@@ -1078,9 +1047,9 @@ namespace FanScript.Compiler.Binding
 
         private BoundExpression BindPropertyExpression(PropertyExpressionSyntax syntax)
         {
-            switch (syntax.Expression.Kind)
+            switch (syntax.Expression)
             {
-                case SyntaxKind.NameExpression:
+                case NameExpressionSyntax:
                     {
                         PropertySymbol? prop = BindProperty(syntax);
                         if (prop is null)
@@ -1088,17 +1057,16 @@ namespace FanScript.Compiler.Binding
                         else
                             return new BoundVariableExpression(syntax, prop);
                     }
-                case SyntaxKind.CallExpression:
+                case CallExpressionSyntax callExpression:
                     {
                         BoundExpression baseEx = BindExpression(syntax.BaseExpression);
-                        return BindCallExpression((CallExpressionSyntax)syntax.Expression, new Context()
+                        return BindCallExpression(callExpression, new Context()
                         {
                             MethodObject = syntax.BaseExpression,
                         });
                     }
                 default:
-                    Debug.Fail($"Invalid property expression: '{syntax.Expression.Kind}'");
-                    return new BoundErrorExpression(syntax);
+                    throw new UnexpectedSyntaxException(syntax.Expression);
             }
         }
 
@@ -1445,7 +1413,7 @@ namespace FanScript.Compiler.Binding
                     }
                     break;
                 default:
-                    throw new InvalidDataException($"Unknown {nameof(ExpressionSyntax)} '{destination.GetType()}' in assignment.");
+                    throw new UnexpectedSyntaxException(destination);
             }
 
             if (assignmentToken.Kind != SyntaxKind.EqualsToken)

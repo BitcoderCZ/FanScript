@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Symbols.Variables;
+﻿using FanScript.Compiler.Exceptions;
+using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
 
@@ -8,23 +9,22 @@ namespace FanScript.Compiler.Symbols
     {
         public static void WriteTo(Symbol symbol, TextWriter writer)
         {
-            switch (symbol.Kind)
+            switch (symbol)
             {
-                case SymbolKind.Function:
-                    WriteFunctionTo((FunctionSymbol)symbol, writer);
+                case FunctionSymbol functionSymbol:
+                    WriteFunctionTo(functionSymbol, writer);
                     break;
-                case SymbolKind.BasicVariable:
-                case SymbolKind.NullVariable:
-                    WriteVariableTo((VariableSymbol)symbol, writer);
+                case ParameterSymbol parameterSymbol:
+                    WriteParameterTo(parameterSymbol, writer);
                     break;
-                case SymbolKind.Parameter:
-                    WriteParameterTo((ParameterSymbol)symbol, writer);
+                case VariableSymbol variableSymbol:
+                    WriteVariableTo(variableSymbol, writer);
                     break;
-                case SymbolKind.Type:
-                    WriteTypeTo((TypeSymbol)symbol, writer);
+                case TypeSymbol typeSymbol:
+                    WriteTypeTo(typeSymbol, writer);
                     break;
                 default:
-                    throw new Exception($"Unexpected symbol: {symbol.Kind}");
+                    throw new UnexpectedSymbolException(symbol);
             }
         }
 

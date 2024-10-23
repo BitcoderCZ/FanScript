@@ -11,6 +11,7 @@ namespace FanScript.Compiler.Binding
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.GotoStatement;
+
         public BoundLabel Label { get; }
     }
 }

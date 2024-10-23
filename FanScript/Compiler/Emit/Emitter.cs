@@ -1,6 +1,7 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Emit.Utils;
+using FanScript.Compiler.Exceptions;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.FCInfo;
@@ -143,23 +144,24 @@ namespace FanScript.Compiler.Emit
         {
             EmitStore store = statement switch
             {
-                BoundBlockStatement => emitBlockStatement((BoundBlockStatement)statement),
-                BoundVariableDeclarationStatement declaration when declaration.OptionalAssignment is not null => EmitStatement(declaration.OptionalAssignment),
+                BoundBlockStatement blockStatement => emitBlockStatement(blockStatement),
+                BoundVariableDeclarationStatement variableDeclarationStatement when variableDeclarationStatement.OptionalAssignment is not null => EmitStatement(variableDeclarationStatement.OptionalAssignment),
                 BoundVariableDeclarationStatement => NopEmitStore.Instance,
-                BoundAssignmentStatement => emitAssigmentStatement((BoundAssignmentStatement)statement),
-                BoundPostfixStatement => emitPostfixStatement((BoundPostfixStatement)statement),
-                BoundPrefixStatement => emitPrefixStatement((BoundPrefixStatement)statement),
-                BoundGotoStatement => emitGotoStatement((BoundGotoStatement)statement),
-                BoundConditionalGotoStatement conditionalGoto when conditionalGoto.Condition is BoundEventCondition condition => emitEventStatement(condition.EventType, condition.ArgumentClause?.Arguments, conditionalGoto.Label),
-                BoundConditionalGotoStatement => emitConditionalGotoStatement((BoundConditionalGotoStatement)statement),
-                BoundLabelStatement => emitLabelStatement((BoundLabelStatement)statement),
-                BoundReturnStatement => emitReturnStatement((BoundReturnStatement)statement),
-                BoundEmitterHint => emitHint((BoundEmitterHint)statement),
-                BoundCallStatement => emitCallStatement((BoundCallStatement)statement),
-                BoundExpressionStatement => emitExpressionStatement(((BoundExpressionStatement)statement)),
+                BoundAssignmentStatement assignmentStatement => emitAssigmentStatement(assignmentStatement),
+                BoundPostfixStatement postfixStatement => emitPostfixStatement(postfixStatement),
+                BoundPrefixStatement prefixStatement => emitPrefixStatement(prefixStatement),
+                BoundGotoStatement gotoStatement => emitGotoStatement(gotoStatement),
+                BoundRollbackGotoStatement rollbackGotoStatement => emitRollbackGotoStatement(rollbackGotoStatement),
+                BoundConditionalGotoStatement conditionalGotoStatement when conditionalGotoStatement.Condition is BoundEventCondition condition => emitEventStatement(condition.EventType, condition.ArgumentClause?.Arguments, conditionalGotoStatement.Label),
+                BoundConditionalGotoStatement conditionalGotoStatement => emitConditionalGotoStatement(conditionalGotoStatement),
+                BoundLabelStatement labelStatement => emitLabelStatement(labelStatement),
+                BoundReturnStatement returnStatement => emitReturnStatement(returnStatement),
+                BoundEmitterHintStatement emitterHintStatement => emitHint(emitterHintStatement),
+                BoundCallStatement callStatement => emitCallStatement(callStatement),
+                BoundExpressionStatement expressionStatement => emitExpressionStatement(expressionStatement),
                 BoundNopStatement => NopEmitStore.Instance,
 
-                _ => throw new Exception($"Unknown statement '{statement}'."),
+                _ => throw new UnexpectedBoundNodeException(statement),
             };
 
             return store;
@@ -221,7 +223,7 @@ namespace FanScript.Compiler.Emit
                     def = Blocks.Control.Loop;
                     break;
                 default:
-                    throw new Exception($"Unknown {typeof(EventType)}: {type}");
+                    throw new UnknownEnumValueException<EventType>(type);
             }
 
             Block block = AddBlock(def);
@@ -329,7 +331,7 @@ namespace FanScript.Compiler.Emit
                     def = Blocks.Variables.MinusMinusFloat;
                     break;
                 default:
-                    throw new InvalidDataException($"Unknown {nameof(PostfixKind)} '{statement.PostfixKind}'");
+                    throw new UnknownEnumValueException<PostfixKind>(statement.PostfixKind);
             }
 
             Block block = AddBlock(def);
@@ -356,7 +358,7 @@ namespace FanScript.Compiler.Emit
                     def = Blocks.Variables.MinusMinusFloat;
                     break;
                 default:
-                    throw new InvalidDataException($"Unknown {nameof(PrefixKind)} '{statement.PrefixKind}'");
+                    throw new UnknownEnumValueException<PrefixKind>(statement.PrefixKind);
             }
 
             Block block = AddBlock(def);
@@ -372,10 +374,10 @@ namespace FanScript.Compiler.Emit
         }
 
         private EmitStore emitGotoStatement(BoundGotoStatement statement)
-        {
-            if (statement is BoundRollbackGotoStatement) return new RollbackEmitStore();
-            else return new GotoEmitStore(statement.Label.Name);
-        }
+            => new GotoEmitStore(statement.Label.Name);
+
+        private EmitStore emitRollbackGotoStatement(BoundRollbackGotoStatement statement)
+            => RollbackEmitStore.Instance;
 
         private EmitStore emitConditionalGotoStatement(BoundConditionalGotoStatement statement)
         {
@@ -410,24 +412,24 @@ namespace FanScript.Compiler.Emit
             return emitSetVariable(ReservedCompilerVariableSymbol.CreateFunctionRes(currentFunciton), statement.Expression);
         }
 
-        private EmitStore emitHint(BoundEmitterHint statement)
+        private EmitStore emitHint(BoundEmitterHintStatement statement)
         {
             switch (statement.Hint)
             {
-                case BoundEmitterHint.HintKind.StatementBlockStart:
+                case BoundEmitterHintStatement.HintKind.StatementBlockStart:
                     enterStatementBlock();
                     break;
-                case BoundEmitterHint.HintKind.StatementBlockEnd:
+                case BoundEmitterHintStatement.HintKind.StatementBlockEnd:
                     exitStatementBlock();
                     break;
-                case BoundEmitterHint.HintKind.HighlightStart:
+                case BoundEmitterHintStatement.HintKind.HighlightStart:
                     placer.EnterHighlight();
                     break;
-                case BoundEmitterHint.HintKind.HighlightEnd:
+                case BoundEmitterHintStatement.HintKind.HighlightEnd:
                     placer.ExitHightlight();
                     break;
                 default:
-                    throw new InvalidDataException($"Unknown emitter hint: '{statement.Hint}'");
+                    throw new UnknownEnumValueException<BoundEmitterHintStatement.HintKind>(statement.Hint);
             }
 
             return NopEmitStore.Instance;
@@ -510,14 +512,14 @@ namespace FanScript.Compiler.Emit
         {
             EmitStore store = expression switch
             {
-                BoundLiteralExpression => emitLiteralExpression((BoundLiteralExpression)expression),
-                BoundConstructorExpression => emitConstructorExpression((BoundConstructorExpression)expression),
-                BoundUnaryExpression => emitUnaryExpression((BoundUnaryExpression)expression),
-                BoundBinaryExpression => emitBinaryExpression((BoundBinaryExpression)expression),
-                BoundVariableExpression => emitVariableExpression((BoundVariableExpression)expression),
-                BoundCallExpression => emitCallExpression((BoundCallExpression)expression),
+                BoundLiteralExpression literalExpression => emitLiteralExpression(literalExpression),
+                BoundConstructorExpression constructorExpression => emitConstructorExpression(constructorExpression),
+                BoundUnaryExpression unaryExpression => emitUnaryExpression(unaryExpression),
+                BoundBinaryExpression binaryExpression => emitBinaryExpression(binaryExpression),
+                BoundVariableExpression variableExpression => emitVariableExpression(variableExpression),
+                BoundCallExpression callExpression => emitCallExpression(callExpression),
 
-                _ => throw new Exception($"Unknown expression: '{expression.GetType()}'."),
+                _ => throw new UnexpectedBoundNodeException(expression),
             };
 
             return store;
@@ -614,7 +616,7 @@ namespace FanScript.Compiler.Emit
                         return BasicEmitStore.COut(block, block.Type.Terminals["Not Tru"]);
                     }
                 default:
-                    throw new Exception($"Unsuported BoundUnaryOperatorKind: '{expression.Op.Kind}'.");
+                    throw new UnknownEnumValueException<BoundUnaryOperatorKind>(expression.Op.Kind);
             }
         }
 
@@ -666,7 +668,7 @@ namespace FanScript.Compiler.Emit
                     op = Blocks.Math.Greater;
                     break;
                 default:
-                    throw new Exception($"Unexpected BoundBinaryOperatorKind: '{expression.Op.Kind}'.");
+                    throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind);
             }
 
             if (expression.Op.Kind == BoundBinaryOperatorKind.NotEquals
@@ -730,7 +732,7 @@ namespace FanScript.Compiler.Emit
                     else if (expression.Left.Type == TypeSymbol.Vector3 && expression.Right.Type == TypeSymbol.Rotation)
                         defOp = Blocks.Math.Rotate_Vector;
                     else
-                        throw new Exception($"Unexpected BoundBinaryOperatorKind: '{expression.Op.Kind}'.");
+                        throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind);
                     break;
                 case BoundBinaryOperatorKind.Division:
                 case BoundBinaryOperatorKind.Modulo:
@@ -739,13 +741,13 @@ namespace FanScript.Compiler.Emit
                     if (expression.Left.Type == TypeSymbol.Vector3)
                         defOp = Blocks.Math.Equals_Vector;
                     else
-                        throw new Exception($"Unexpected BoundBinaryOperatorKind: '{expression.Op.Kind}'.");
+                        throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind);
                     // rotation doesn't have equals???
                     break;
                 case BoundBinaryOperatorKind.NotEquals:
                     break; // supported, but not one block
                 default:
-                    throw new Exception($"Unexpected BoundBinaryOperatorKind: '{expression.Op.Kind}'.");
+                    throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind);
             }
 
             if (defOp is null)
@@ -765,7 +767,7 @@ namespace FanScript.Compiler.Emit
                             if (expression.Left.Type == TypeSymbol.Vector3)
                                 defOp = Blocks.Math.Equals_Vector;
                             else
-                                throw new Exception($"Unexpected BoundBinaryOperatorKind: '{expression.Op.Kind}'.");
+                                throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind);
 
                             Block not = AddBlock(Blocks.Math.Not);
                             using (ExpressionBlock())
@@ -788,7 +790,7 @@ namespace FanScript.Compiler.Emit
                             return BasicEmitStore.COut(not, not.Type.Terminals["Not Tru"]);
                         }
                     default:
-                        throw new Exception($"Unexpected BoundBinaryOperatorKind: '{expression.Op.Kind}'.");
+                        throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind);
                 }
             }
             else

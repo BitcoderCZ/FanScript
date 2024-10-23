@@ -1,4 +1,6 @@
-﻿namespace FanScript.Compiler.Syntax
+﻿using FanScript.Compiler.Exceptions;
+
+namespace FanScript.Compiler.Syntax
 {
     public static class SyntaxFacts
     {
@@ -276,7 +278,7 @@
                 case SyntaxKind.PercentEqualsToken:
                     return SyntaxKind.PercentToken;
                 default:
-                    throw new Exception($"Unexpected syntax: '{kind}'");
+                    throw new UnknownEnumValueException<SyntaxKind>(kind);
             }
         }
     }

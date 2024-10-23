@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Symbols.Variables;
+﻿using FanScript.Compiler.Exceptions;
+using FanScript.Compiler.Symbols.Variables;
 
 namespace FanScript.Compiler.Binding
 {
@@ -6,70 +7,70 @@ namespace FanScript.Compiler.Binding
     {
         protected virtual void Visit(BoundStatement node)
         {
-            switch (node.Kind)
+            switch (node)
             {
-                case BoundNodeKind.BlockStatement:
-                    VisitBlockStatement((BoundBlockStatement)node);
+                case BoundBlockStatement blockStatement:
+                    VisitBlockStatement(blockStatement);
                     break;
-                case BoundNodeKind.EventStatement:
-                    VisitEventStatement((BoundEventStatement)node);
+                case BoundEventStatement eventStatement:
+                    VisitEventStatement(eventStatement);
                     break;
-                case BoundNodeKind.NopStatement:
-                    VisitNopStatement((BoundNopStatement)node);
+                case BoundNopStatement nopStatement:
+                    VisitNopStatement(nopStatement);
                     break;
-                case BoundNodeKind.PostfixStatement:
-                    VisitPostfixStatement((BoundPostfixStatement)node);
+                case BoundPostfixStatement postfixStatement:
+                    VisitPostfixStatement(postfixStatement);
                     break;
-                case BoundNodeKind.PrefixStatement:
-                    VisitPrefixStatement((BoundPrefixStatement)node);
+                case BoundPrefixStatement prefixStatement:
+                    VisitPrefixStatement(prefixStatement);
                     break;
-                case BoundNodeKind.VariableDeclarationStatement:
-                    VisitVariableDeclaration((BoundVariableDeclarationStatement)node);
+                case BoundVariableDeclarationStatement variableDeclarationStatement:
+                    VisitVariableDeclaration(variableDeclarationStatement);
                     break;
-                case BoundNodeKind.AssignmentStatement:
-                    VisitAssignmentStatement((BoundAssignmentStatement)node);
+                case BoundAssignmentStatement assignmentStatement:
+                    VisitAssignmentStatement(assignmentStatement);
                     break;
-                case BoundNodeKind.CompoundAssignmentStatement:
-                    VisitCompoundAssignmentStatement((BoundCompoundAssignmentStatement)node);
+                case BoundCompoundAssignmentStatement compoundAssignmentStatement:
+                    VisitCompoundAssignmentStatement(compoundAssignmentStatement);
                     break;
-                case BoundNodeKind.IfStatement:
-                    VisitIfStatement((BoundIfStatement)node);
+                case BoundIfStatement ifStatement:
+                    VisitIfStatement(ifStatement);
                     break;
-                case BoundNodeKind.WhileStatement:
-                    VisitWhileStatement((BoundWhileStatement)node);
+                case BoundWhileStatement whileStatement:
+                    VisitWhileStatement(whileStatement);
                     break;
-                case BoundNodeKind.DoWhileStatement:
-                    VisitDoWhileStatement((BoundDoWhileStatement)node);
+                case BoundDoWhileStatement doWhileStatement:
+                    VisitDoWhileStatement(doWhileStatement);
                     break;
                 //case BoundNodeKind.ForStatement:
                 //    VisitForStatement((BoundForStatement)node);
                 //    break;
-                case BoundNodeKind.LabelStatement:
-                    VisitLabelStatement((BoundLabelStatement)node);
+                case BoundLabelStatement labelStatement:
+                    VisitLabelStatement(labelStatement);
                     break;
-                case BoundNodeKind.GotoStatement:
+                case BoundGotoStatement gotoStatement:
                     VisitGotoStatement((BoundGotoStatement)node);
                     break;
-                case BoundNodeKind.RollbackGotoStatement:
-                    VisitRollbackGotoStatement((BoundRollbackGotoStatement)node);
+                case BoundRollbackGotoStatement rollbackGotoStatement:
+                    VisitRollbackGotoStatement(rollbackGotoStatement);
                     break;
-                case BoundNodeKind.ConditionalGotoStatement:
-                    VisitConditionalGotoStatement((BoundConditionalGotoStatement)node);
+                case BoundConditionalGotoStatement conditionalGotoStatement:
+                    VisitConditionalGotoStatement(conditionalGotoStatement);
                     break;
-                case BoundNodeKind.ReturnStatement:
-                    VisitReturnStatement((BoundReturnStatement)node);
+                case BoundReturnStatement returnStatement:
+                    VisitReturnStatement(returnStatement);
                     break;
-                case BoundNodeKind.EmitterHint:
-                    VisitEmitterHint((BoundEmitterHint)node);
+                case BoundEmitterHintStatement emitterHintStatement:
+                    VisitEmitterHint(emitterHintStatement);
                     break;
-                case BoundNodeKind.CallStatement:
-                    VisitCallStatement((BoundCallStatement)node);
+                case BoundCallStatement callStatement:
+                    VisitCallStatement(callStatement);
                     break;
-                case BoundNodeKind.ExpressionStatement:
-                    VisitExpressionStatement((BoundExpressionStatement)node);
+                case BoundExpressionStatement expressionStatement:
+                    VisitExpressionStatement(expressionStatement);
                     break;
                 default:
-                    throw new Exception($"Unexpected node: {node.Kind}");
+                    throw new UnexpectedBoundNodeException(node);
             }
         }
 
@@ -161,7 +162,7 @@ namespace FanScript.Compiler.Binding
                 VisitExpression(node.Expression);
         }
 
-        protected virtual void VisitEmitterHint(BoundEmitterHint node)
+        protected virtual void VisitEmitterHint(BoundEmitterHintStatement node)
         { }
 
         protected virtual void VisitCallStatement(BoundCallStatement node)
@@ -176,49 +177,49 @@ namespace FanScript.Compiler.Binding
 
         public virtual void VisitExpression(BoundExpression node)
         {
-            switch (node.Kind)
+            switch (node)
             {
-                case BoundNodeKind.ErrorExpression:
-                    VisitErrorExpression((BoundErrorExpression)node);
+                case BoundErrorExpression errorExpression:
+                    VisitErrorExpression(errorExpression);
                     break;
-                case BoundNodeKind.LiteralExpression:
+                case BoundLiteralExpression literalExpression:
                     VisitLiteralExpression((BoundLiteralExpression)node);
                     break;
-                case BoundNodeKind.VariableExpression:
-                    VisitVariableExpression((BoundVariableExpression)node);
+                case BoundVariableExpression variableExpression:
+                    VisitVariableExpression(variableExpression);
                     break;
-                case BoundNodeKind.UnaryExpression:
-                    VisitUnaryExpression((BoundUnaryExpression)node);
+                case BoundUnaryExpression unaryExpression:
+                    VisitUnaryExpression(unaryExpression);
                     break;
-                case BoundNodeKind.BinaryExpression:
-                    VisitBinaryExpression((BoundBinaryExpression)node);
+                case BoundBinaryExpression binaryExpression:
+                    VisitBinaryExpression(binaryExpression);
                     break;
-                case BoundNodeKind.CallExpression:
-                    VisitCallExpression((BoundCallExpression)node);
+                case BoundCallExpression callExpression:
+                    VisitCallExpression(callExpression);
                     break;
-                case BoundNodeKind.ConversionExpression:
-                    VisitConversionExpression((BoundConversionExpression)node);
+                case BoundConversionExpression conversionExpression:
+                    VisitConversionExpression(conversionExpression);
                     break;
-                case BoundNodeKind.ConstructorExpression:
-                    VisitConstructorExpression((BoundConstructorExpression)node);
+                case BoundConstructorExpression constructorExpression:
+                    VisitConstructorExpression(constructorExpression);
                     break;
-                case BoundNodeKind.PostfixExpression:
-                    VisitPostfixExpression((BoundPostfixExpression)node);
+                case BoundPostfixExpression postfixExpression:
+                    VisitPostfixExpression(postfixExpression);
                     break;
-                case BoundNodeKind.PrefixExpression:
-                    VisitPrefixExpression((BoundPrefixExpression)node);
+                case BoundPrefixExpression prefixExpression:
+                    VisitPrefixExpression(prefixExpression);
                     break;
-                case BoundNodeKind.ArraySegmentExpression:
-                    VisitArraySegmentExpression((BoundArraySegmentExpression)node);
+                case BoundArraySegmentExpression arraySegmentExpression:
+                    VisitArraySegmentExpression(arraySegmentExpression);
                     break;
-                case BoundNodeKind.AssignmentExpression:
-                    VisitAssignmentExpression((BoundAssignmentExpression)node);
+                case BoundAssignmentExpression assignmentExpression:
+                    VisitAssignmentExpression(assignmentExpression);
                     break;
-                case BoundNodeKind.CompoundAssignmentExpression:
-                    VisitCompoundAssignmentExpression((BoundCompoundAssignmentExpression)node);
+                case BoundCompoundAssignmentExpression compoundAssignmentExpression:
+                    VisitCompoundAssignmentExpression(compoundAssignmentExpression);
                     break;
                 default:
-                    throw new Exception($"Unexpected node: {node.Kind}");
+                    throw new UnexpectedBoundNodeException(node);
             }
         }
 

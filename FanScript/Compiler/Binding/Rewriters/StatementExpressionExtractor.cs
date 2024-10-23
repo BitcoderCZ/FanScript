@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using FanScript.Compiler.Exceptions;
+using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Utils;
 using System.Collections.Immutable;
@@ -28,51 +29,28 @@ namespace FanScript.Compiler.Binding.Rewriters
         {
             state.ResetVarCount();
 
-            switch (node.Kind)
+            return node switch
             {
-                case BoundNodeKind.BlockStatement:
-                    return RewriteBlockStatement((BoundBlockStatement)node);
-                case BoundNodeKind.EventStatement:
-                    return RewriteEventStatement((BoundEventStatement)node);
-                case BoundNodeKind.NopStatement:
-                    return RewriteNopStatement((BoundNopStatement)node);
-                case BoundNodeKind.PostfixStatement:
-                    return RewritePostfixStatement((BoundPostfixStatement)node);
-                case BoundNodeKind.PrefixStatement:
-                    return RewritePrefixStatement((BoundPrefixStatement)node);
-                case BoundNodeKind.VariableDeclarationStatement:
-                    return RewriteVariableDeclaration((BoundVariableDeclarationStatement)node);
-                case BoundNodeKind.AssignmentStatement:
-                    return RewriteAssignmentStatement((BoundAssignmentStatement)node);
-                case BoundNodeKind.CompoundAssignmentStatement:
-                    return RewriteCompoundAssignmentStatement((BoundCompoundAssignmentStatement)node);
-                case BoundNodeKind.IfStatement:
-                    return RewriteIfStatement((BoundIfStatement)node);
-                //case BoundNodeKind.WhileStatement:
-                //    return RewriteWhileStatement((BoundWhileStatement)node);
-                //case BoundNodeKind.DoWhileStatement:
-                //    return RewriteDoWhileStatement((BoundDoWhileStatement)node);
-                //case BoundNodeKind.ForStatement:
-                //    return RewriteForStatement((BoundForStatement)node);
-                case BoundNodeKind.LabelStatement:
-                    return RewriteLabelStatement((BoundLabelStatement)node);
-                case BoundNodeKind.GotoStatement:
-                    return RewriteGotoStatement((BoundGotoStatement)node);
-                case BoundNodeKind.RollbackGotoStatement:
-                    return RewriteRollbackGotoStatement((BoundRollbackGotoStatement)node);
-                case BoundNodeKind.ConditionalGotoStatement:
-                    return RewriteConditionalGotoStatement((BoundConditionalGotoStatement)node);
-                case BoundNodeKind.ReturnStatement:
-                    return RewriteReturnStatement((BoundReturnStatement)node);
-                case BoundNodeKind.EmitterHint:
-                    return RewriteEmitterHint((BoundEmitterHint)node);
-                case BoundNodeKind.CallStatement:
-                    return RewriteCallStatement((BoundCallStatement)node);
-                case BoundNodeKind.ExpressionStatement:
-                    return RewriteExpressionStatement((BoundExpressionStatement)node);
-                default:
-                    throw new Exception($"Unexpected node: {node.Kind}");
-            }
+                BoundBlockStatement blockStatement => RewriteBlockStatement(blockStatement),
+                BoundEventStatement eventStatement => RewriteEventStatement(eventStatement),
+                BoundNopStatement nopStatement => RewriteNopStatement(nopStatement),
+                BoundPostfixStatement postfixStatement => RewritePostfixStatement(postfixStatement),
+                BoundPrefixStatement prefixStatement => RewritePrefixStatement(prefixStatement),
+                BoundVariableDeclarationStatement variableDeclarationStatement => RewriteVariableDeclaration(variableDeclarationStatement),
+                BoundAssignmentStatement assignmentStatement => RewriteAssignmentStatement(assignmentStatement),
+                BoundCompoundAssignmentStatement compoundAssignmentStatement => RewriteCompoundAssignmentStatement(compoundAssignmentStatement),
+                BoundIfStatement ifStatement => RewriteIfStatement(ifStatement),
+                BoundLabelStatement labelStatement => RewriteLabelStatement(labelStatement),
+                BoundGotoStatement gotoStatement => RewriteGotoStatement(gotoStatement),
+                BoundRollbackGotoStatement rollbackGotoStatement => RewriteRollbackGotoStatement(rollbackGotoStatement),
+                BoundConditionalGotoStatement conditionalGotoStatement => RewriteConditionalGotoStatement(conditionalGotoStatement),
+                BoundReturnStatement returnStatement => RewriteReturnStatement(returnStatement),
+                BoundEmitterHintStatement emitterHint => RewriteEmitterHint(emitterHint),
+                BoundCallStatement callStatement => RewriteCallStatement(callStatement),
+                BoundExpressionStatement expressionStatement => RewriteExpressionStatement(expressionStatement),
+
+                _ => throw new UnexpectedBoundNodeException(node),
+            };
         }
 
         private BoundStatement RewriteBlockStatement(BoundBlockStatement node)
@@ -257,7 +235,7 @@ namespace FanScript.Compiler.Binding.Rewriters
             return HandleBeforeAfterWithTemp(expression, newEx => new BoundReturnStatement(node.Syntax, newEx));
         }
 
-        private BoundStatement RewriteEmitterHint(BoundEmitterHint node)
+        private BoundStatement RewriteEmitterHint(BoundEmitterHintStatement node)
             => node;
 
         private BoundStatement RewriteCallStatement(BoundCallStatement node)
@@ -281,35 +259,23 @@ namespace FanScript.Compiler.Binding.Rewriters
 
         private ExpressionResult RewriteExpression(BoundExpression node)
         {
-            switch (node.Kind)
+            return node switch
             {
-                case BoundNodeKind.ErrorExpression:
-                    return RewriteErrorExpression((BoundErrorExpression)node);
-                case BoundNodeKind.LiteralExpression:
-                    return RewriteLiteralExpression((BoundLiteralExpression)node);
-                case BoundNodeKind.VariableExpression:
-                    return RewriteVariableExpression((BoundVariableExpression)node);
-                case BoundNodeKind.UnaryExpression:
-                    return RewriteUnaryExpression((BoundUnaryExpression)node);
-                case BoundNodeKind.BinaryExpression:
-                    return RewriteBinaryExpression((BoundBinaryExpression)node);
-                case BoundNodeKind.CallExpression:
-                    return RewriteCallExpression((BoundCallExpression)node);
-                case BoundNodeKind.ConversionExpression:
-                    return RewriteConversionExpression((BoundConversionExpression)node);
-                case BoundNodeKind.ConstructorExpression:
-                    return RewriteConstructorExpression((BoundConstructorExpression)node);
-                case BoundNodeKind.PostfixExpression:
-                    return RewritePostfixExpression((BoundPostfixExpression)node);
-                case BoundNodeKind.PrefixExpression:
-                    return RewritePrefixExpression((BoundPrefixExpression)node);
-                case BoundNodeKind.ArraySegmentExpression:
-                    return RewriteArraySegmentExpression((BoundArraySegmentExpression)node);
-                case BoundNodeKind.AssignmentExpression:
-                    return RewriteAssignmentExpression((BoundAssignmentExpression)node);
-                default:
-                    throw new Exception($"Unexpected node: {node.Kind}");
-            }
+                BoundErrorExpression errorExpression => RewriteErrorExpression(errorExpression),
+                BoundLiteralExpression literalExpression => RewriteLiteralExpression(literalExpression),
+                BoundVariableExpression variableExpression => RewriteVariableExpression(variableExpression),
+                BoundUnaryExpression unaryExpression => RewriteUnaryExpression(unaryExpression),
+                BoundBinaryExpression binaryExpression => RewriteBinaryExpression(binaryExpression),
+                BoundCallExpression callExpression => RewriteCallExpression(callExpression),
+                BoundConversionExpression conversionExpression => RewriteConversionExpression(conversionExpression),
+                BoundConstructorExpression constructorExpression => RewriteConstructorExpression(constructorExpression),
+                BoundPostfixExpression postfixExpression => RewritePostfixExpression(postfixExpression),
+                BoundPrefixExpression prefixExpression => RewritePrefixExpression(prefixExpression),
+                BoundArraySegmentExpression arraySegmentExpression => RewriteArraySegmentExpression(arraySegmentExpression),
+                BoundAssignmentExpression assignmentExpression => RewriteAssignmentExpression(assignmentExpression),
+
+                _ => throw new UnexpectedBoundNodeException(node),
+            };
         }
 
         private ExpressionResult RewriteErrorExpression(BoundErrorExpression node)

@@ -145,12 +145,19 @@ namespace FanScript.Compiler.Emit
     /// </summary>
     internal class RollbackEmitStore : EmitStore
     {
+        public static readonly RollbackEmitStore Instance = new RollbackEmitStore();
+
         public ConnectTarget In => new NopConnectTarget();
         public IEnumerable<ConnectTarget> Out => Enumerable.Empty<ConnectTarget>();
+
+        protected RollbackEmitStore()
+        {
+        }
     }
 
     internal sealed class ReturnEmitStore : RollbackEmitStore
     {
+        public static new readonly ReturnEmitStore Instance = new ReturnEmitStore();
     }
 
     internal sealed class AbsoluteEmitStore : EmitStore

@@ -98,8 +98,8 @@ namespace FanScript.Compiler.Binding
             return new BoundLiteralExpression(syntax, literal);
         }
 
-        public static BoundEmitterHint Hint(SyntaxNode syntax, BoundEmitterHint.HintKind hint)
-            => new BoundEmitterHint(syntax, hint);
+        public static BoundEmitterHintStatement Hint(SyntaxNode syntax, BoundEmitterHintStatement.HintKind hint)
+            => new BoundEmitterHintStatement(syntax, hint);
 
         public static BoundPostfixStatement PostfixStatement(SyntaxNode syntax, VariableSymbol variable, PostfixKind kind)
             => new BoundPostfixStatement(syntax, variable, kind);

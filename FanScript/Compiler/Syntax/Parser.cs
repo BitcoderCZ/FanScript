@@ -526,46 +526,24 @@ namespace FanScript.Compiler.Syntax
 
         private ExpressionSyntax ParsePrimaryExpressionInternal()
         {
-            switch (Current.Kind)
+            return Current.Kind switch
             {
-                case SyntaxKind.OpenParenthesisToken:
-                    return ParseParenthesizedExpression();
-
-                case SyntaxKind.KeywordNull:
-                    return ParseNullLiteral();
-
-                case SyntaxKind.KeywordFalse:
-                case SyntaxKind.KeywordTrue:
-                    return ParseBooleanLiteral();
-
-                case SyntaxKind.FloatToken:
-                    return ParseNumberLiteral();
-
-                case SyntaxKind.StringToken:
-                    return ParseStringLiteral();
-
-                case SyntaxKind.IdentifierToken when (Current.Text == TypeSymbol.Vector3.Name || Current.Text == TypeSymbol.Rotation.Name):
-                    return ParseVectorConstructorExpresion();
-
-                case SyntaxKind.IdentifierToken when Peek(1).Kind switch
+                SyntaxKind.OpenParenthesisToken => ParseParenthesizedExpression(),
+                SyntaxKind.KeywordNull => ParseNullLiteral(),
+                SyntaxKind.KeywordFalse or SyntaxKind.KeywordTrue => ParseBooleanLiteral(),
+                SyntaxKind.FloatToken => ParseNumberLiteral(),
+                SyntaxKind.StringToken => ParseStringLiteral(),
+                SyntaxKind.IdentifierToken when (Current.Text == TypeSymbol.Vector3.Name || Current.Text == TypeSymbol.Rotation.Name) => ParseVectorConstructorExpresion(),
+                SyntaxKind.IdentifierToken when Peek(1).Kind switch
                 {
                     SyntaxKind.PlusPlusToken => true,
                     SyntaxKind.MinusMinusToken => true,
                     _ => false,
-                }:
-                    return ParsePostfixExpression();
-
-                case SyntaxKind.PlusPlusToken:
-                case SyntaxKind.MinusMinusToken:
-                    return ParsePrefixExpression();
-
-                case SyntaxKind.OpenSquareToken:
-                    return ParseArraySegmentExpression();
-
-                case SyntaxKind.IdentifierToken:
-                default:
-                    return ParseNameOrCallExpressions();
-            }
+                } => ParsePostfixExpression(),
+                SyntaxKind.PlusPlusToken or SyntaxKind.MinusMinusToken => ParsePrefixExpression(),
+                SyntaxKind.OpenSquareToken => ParseArraySegmentExpression(),
+                _ => ParseNameOrCallExpressions(),
+            };
         }
 
         private ExpressionSyntax ParseParenthesizedExpression()

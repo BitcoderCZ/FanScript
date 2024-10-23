@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using FanScript.Compiler.Exceptions;
+using FanScript.Compiler.Symbols;
 using System.CodeDom.Compiler;
 
 namespace FanScript.Compiler.Binding
@@ -86,27 +87,27 @@ namespace FanScript.Compiler.Binding
             {
                 foreach (var statement in block.Statements)
                 {
-                    switch (statement.Kind)
+                    switch (statement)
                     {
-                        case BoundNodeKind.LabelStatement:
+                        case BoundLabelStatement:
                             startBlock();
                             statements.Add(statement);
                             break;
-                        case BoundNodeKind.GotoStatement:
-                        case BoundNodeKind.RollbackGotoStatement:
-                        case BoundNodeKind.ConditionalGotoStatement:
-                        case BoundNodeKind.ReturnStatement:
+                        case BoundGotoStatement:
+                        case BoundRollbackGotoStatement:
+                        case BoundConditionalGotoStatement:
+                        case BoundReturnStatement:
                             statements.Add(statement);
                             startBlock();
                             break;
-                        case BoundNodeKind.NopStatement:
-                        case BoundNodeKind.EmitterHint:
-                        case BoundNodeKind.VariableDeclarationStatement:
-                        case BoundNodeKind.AssignmentStatement:
-                        case BoundNodeKind.PostfixStatement:
-                        case BoundNodeKind.PrefixStatement:
-                        case BoundNodeKind.CallStatement:
-                        case BoundNodeKind.ExpressionStatement:
+                        case BoundNopStatement:
+                        case BoundEmitterHintStatement:
+                        case BoundVariableDeclarationStatement:
+                        case BoundAssignmentStatement:
+                        case BoundPostfixStatement:
+                        case BoundPrefixStatement:
+                        case BoundCallStatement:
+                        case BoundExpressionStatement:
                             statements.Add(statement);
                             break;
                         default:
@@ -169,49 +170,58 @@ namespace FanScript.Compiler.Binding
                     foreach (BoundStatement statement in current.Statements)
                     {
                         bool isLastStatementInBlock = statement == current.Statements.Last();
-                        switch (statement.Kind)
+                        switch (statement)
                         {
-                            case BoundNodeKind.GotoStatement:
-                            case BoundNodeKind.RollbackGotoStatement:
-                                BoundGotoStatement gs = (BoundGotoStatement)statement;
-                                BasicBlock toBlock = blockFromLabel[gs.Label];
-                                connect(current, toBlock);
-                                break;
-                            case BoundNodeKind.ConditionalGotoStatement:
-                                BoundConditionalGotoStatement cgs = (BoundConditionalGotoStatement)statement;
-                                BasicBlock thenBlock = blockFromLabel[cgs.Label];
-                                BasicBlock elseBlock = next;
-
-                                if (cgs.Condition is BoundEventCondition)
+                            case BoundGotoStatement gotoStatement:
                                 {
-                                    connect(current, thenBlock, null);
-                                    connect(current, elseBlock, null);
-                                    break;
+                                    BasicBlock toBlock = blockFromLabel[gotoStatement.Label];
+                                    connect(current, toBlock);
                                 }
-
-                                BoundExpression negatedCondition = Negate(cgs.Condition);
-                                BoundExpression thenCondition = cgs.JumpIfTrue ? cgs.Condition : negatedCondition;
-                                BoundExpression elseCondition = cgs.JumpIfTrue ? negatedCondition : cgs.Condition;
-                                connect(current, thenBlock, thenCondition);
-                                connect(current, elseBlock, elseCondition);
                                 break;
-                            case BoundNodeKind.ReturnStatement:
+                            case BoundRollbackGotoStatement rollbackGotoStatement:
+                                {
+                                    BasicBlock toBlock = blockFromLabel[rollbackGotoStatement.Label];
+                                    connect(current, toBlock);
+                                }
+                                break;
+                            case BoundConditionalGotoStatement conditionalGotoStatement:
+                                {
+                                    BasicBlock thenBlock = blockFromLabel[conditionalGotoStatement.Label];
+                                    BasicBlock elseBlock = next;
+
+                                    if (conditionalGotoStatement.Condition is BoundEventCondition)
+                                    {
+                                        connect(current, thenBlock, null);
+                                        connect(current, elseBlock, null);
+                                        break;
+                                    }
+
+                                    BoundExpression negatedCondition = Negate(conditionalGotoStatement.Condition);
+                                    BoundExpression thenCondition = conditionalGotoStatement.JumpIfTrue ? conditionalGotoStatement.Condition : negatedCondition;
+                                    BoundExpression elseCondition = conditionalGotoStatement.JumpIfTrue ? negatedCondition : conditionalGotoStatement.Condition;
+                                    connect(current, thenBlock, thenCondition);
+                                    connect(current, elseBlock, elseCondition);
+                                }
+                                break;
+                            case BoundReturnStatement:
                                 connect(current, end);
                                 break;
-                            case BoundNodeKind.NopStatement:
-                            case BoundNodeKind.EmitterHint:
-                            case BoundNodeKind.VariableDeclarationStatement:
-                            case BoundNodeKind.AssignmentStatement:
-                            case BoundNodeKind.PostfixStatement:
-                            case BoundNodeKind.PrefixStatement:
-                            case BoundNodeKind.LabelStatement:
-                            case BoundNodeKind.CallStatement:
-                            case BoundNodeKind.ExpressionStatement:
-                                if (isLastStatementInBlock)
-                                    connect(current, next);
+                            case BoundNopStatement:
+                            case BoundEmitterHintStatement:
+                            case BoundVariableDeclarationStatement:
+                            case BoundAssignmentStatement:
+                            case BoundPostfixStatement:
+                            case BoundPrefixStatement:
+                            case BoundLabelStatement:
+                            case BoundCallStatement:
+                            case BoundExpressionStatement:
+                                {
+                                    if (isLastStatementInBlock)
+                                        connect(current, next);
+                                }
                                 break;
                             default:
-                                throw new Exception($"Unexpected statement: {statement.Kind}");
+                                throw new UnexpectedBoundNodeException(statement);
                         }
                     }
                 }
