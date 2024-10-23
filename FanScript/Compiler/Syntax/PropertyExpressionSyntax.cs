@@ -1,6 +1,6 @@
 ﻿namespace FanScript.Compiler.Syntax
 {
-    public sealed partial class PropertyExpressionSyntax : ExpressionSyntax
+    public sealed partial class PropertyExpressionSyntax : AssignableExpressionSyntax
     {
         internal PropertyExpressionSyntax(SyntaxTree syntaxTree, ExpressionSyntax baseExpression, SyntaxToken dotToken, ExpressionSyntax expression) : base(syntaxTree)
         {

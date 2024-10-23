@@ -1410,7 +1410,7 @@ namespace FanScript.Compiler.Binding
             return new PropertySymbol(property, baseEx);
         }
 
-        private (VariableSymbol, BoundBinaryOperator?, BoundExpression)? BindAssignment(ExpressionSyntax destination, SyntaxToken assignmentToken, ExpressionSyntax expression)
+        private (VariableSymbol, BoundBinaryOperator?, BoundExpression)? BindAssignment(AssignableExpressionSyntax destination, SyntaxToken assignmentToken, ExpressionSyntax expression)
         {
             BoundExpression boundExpression = BindExpression(expression);
 

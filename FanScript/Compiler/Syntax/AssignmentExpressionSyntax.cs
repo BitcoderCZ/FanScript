@@ -2,7 +2,7 @@
 {
     public sealed partial class AssignmentExpressionSyntax : ExpressionSyntax
     {
-        internal AssignmentExpressionSyntax(SyntaxTree syntaxTree, ExpressionSyntax destination, SyntaxToken assignmentToken, ExpressionSyntax expression)
+        internal AssignmentExpressionSyntax(SyntaxTree syntaxTree, AssignableExpressionSyntax destination, SyntaxToken assignmentToken, ExpressionSyntax expression)
             : base(syntaxTree)
         {
             Destination = destination;
@@ -11,7 +11,7 @@
         }
 
         public override SyntaxKind Kind => SyntaxKind.AssignmentExpression;
-        public ExpressionSyntax Destination { get; }
+        public AssignableExpressionSyntax Destination { get; }
         public SyntaxToken AssignmentToken { get; }
         public ExpressionSyntax Expression { get; }
     }

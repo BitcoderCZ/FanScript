@@ -1,6 +1,6 @@
 ﻿namespace FanScript.Compiler.Syntax
 {
-    public sealed partial class NameExpressionSyntax : ExpressionSyntax
+    public sealed partial class NameExpressionSyntax : AssignableExpressionSyntax
     {
         internal NameExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken)
             : base(syntaxTree)

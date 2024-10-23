@@ -324,14 +324,6 @@ namespace FanScript.Compiler.Syntax
             return new VariableDeclarationStatementSyntax(syntaxTree, modifiers ?? ImmutableArray<SyntaxToken>.Empty, typeClause, identifier, assignment);
         }
 
-        private StatementSyntax ParseAssignmentStatement()
-        {
-            ExpressionSyntax destination = ParseExpression();
-            SyntaxToken operatorToken = NextToken();
-            ExpressionSyntax right = ParseExpression();
-            return new AssignmentStatementSyntax(syntaxTree, destination, operatorToken, right);
-        }
-
         private StatementSyntax ParseIfStatement()
         {
             SyntaxToken keyword = MatchToken(SyntaxKind.KeywordIf);
@@ -496,7 +488,10 @@ namespace FanScript.Compiler.Syntax
             // a = b = c = 5
             // a = (b = (c = 5))
 
-            Stack<(ExpressionSyntax, SyntaxToken)> assignmentStack = new();
+            if (expression is not AssignableExpressionSyntax assignableExpression)
+                return expression;
+
+            Stack<(AssignableExpressionSyntax, SyntaxToken)> assignmentStack = new();
 
             while (Current.Kind switch
             {
@@ -507,16 +502,16 @@ namespace FanScript.Compiler.Syntax
                 SyntaxKind.SlashEqualsToken => true,
                 SyntaxKind.PercentEqualsToken => true,
                 _ => false,
-            } && expression switch
+            } && (assignableExpression is not PropertyExpressionSyntax prop || prop.Expression.Kind == SyntaxKind.NameExpression))
             {
-                NameExpressionSyntax => true,
-                PropertyExpressionSyntax prop when prop.Expression.Kind == SyntaxKind.NameExpression => true,
-                _ => false,
-            })
-            {
-                assignmentStack.Push((expression, MatchToken(SyntaxKind.EqualsToken, SyntaxKind.PlusEqualsToken, SyntaxKind.MinusEqualsToken, SyntaxKind.StarEqualsToken, SyntaxKind.SlashEqualsToken, SyntaxKind.PercentEqualsToken)));
+                assignmentStack.Push((assignableExpression, MatchToken(SyntaxKind.EqualsToken, SyntaxKind.PlusEqualsToken, SyntaxKind.MinusEqualsToken, SyntaxKind.StarEqualsToken, SyntaxKind.SlashEqualsToken, SyntaxKind.PercentEqualsToken)));
 
                 expression = ParseExpression();
+
+                if (expression is not AssignableExpressionSyntax)
+                    break;
+
+                assignableExpression = (AssignableExpressionSyntax)expression;
             }
 
             while (assignmentStack.Count > 0)
