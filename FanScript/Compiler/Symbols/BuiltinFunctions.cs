@@ -206,25 +206,25 @@ namespace FanScript.Compiler.Symbols
             [FunctionDoc(
                 ParameterInfos = [
                     """
-                    Time to win (in frames), must be constant.
+                    Time to win (in frames).
                     """
                 ]
             )]
             public static readonly FunctionSymbol Win
                 = new BuiltinFunctionSymbol(gameNamespace, "win", [
-                    new ParameterSymbol("DELAY", TypeSymbol.Float),
+                    new ParameterSymbol("DELAY", Modifiers.Constant, TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.Win, constantTypes: [typeof(byte)]));
 
             [FunctionDoc(
                 ParameterInfos = [
                     """
-                    Time to lose (in frames), must be constant.
+                    Time to lose (in frames).
                     """
                 ]
             )]
             public static readonly FunctionSymbol Lose
                 = new BuiltinFunctionSymbol(gameNamespace, "lose", [
-                    new ParameterSymbol("DELAY", TypeSymbol.Float),
+                    new ParameterSymbol("DELAY", Modifiers.Constant, TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.Lose, constantTypes: [typeof(byte)]));
 
             [FunctionDoc(
@@ -239,7 +239,7 @@ namespace FanScript.Compiler.Symbols
                     The new amount of coins.
                     """,
                     """
-                    How players are ranked, one of <link type="con">RANKING</>, must be constant.
+                    How players are ranked, one of <link type="con">RANKING</>.
                     """
                 ]
             )]
@@ -247,7 +247,7 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol(gameNamespace, "setScore", [
                     new ParameterSymbol("score", TypeSymbol.Float),
                     new ParameterSymbol("coins", TypeSymbol.Float),
-                    new ParameterSymbol("RANKING", TypeSymbol.Float),
+                    new ParameterSymbol("RANKING", Modifiers.Constant, TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.SetScore, constantTypes: [typeof(byte)]));
 
             [FunctionDoc(
@@ -277,7 +277,7 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("position", TypeSymbol.Vector3),
                     new ParameterSymbol("rotation", TypeSymbol.Rotation),
                     new ParameterSymbol("range", TypeSymbol.Float),
-                    new ParameterSymbol("PERSPECTIVE", TypeSymbol.Bool),
+                    new ParameterSymbol("PERSPECTIVE", Modifiers.Constant, TypeSymbol.Bool),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.SetCamera, constantTypes: [typeof(byte)]));
 
             [FunctionDoc(
@@ -388,7 +388,7 @@ namespace FanScript.Compiler.Symbols
                 """,
                 ParameterInfos = [
                     """
-                    The name of this section, will be shown as a header above the items, must be constant.
+                    The name of this section, will be shown as a header above the items.
                     """
                 ],
                 Related = [
@@ -399,7 +399,7 @@ namespace FanScript.Compiler.Symbols
             )]
             public static readonly FunctionSymbol ShopSection
                 = new BuiltinFunctionSymbol(gameNamespace, "shopSection", [
-                    new ParameterSymbol("NAME", TypeSymbol.String),
+                    new ParameterSymbol("NAME", Modifiers.Constant, TypeSymbol.String),
                 ], TypeSymbol.Void, (call, context) =>
                 {
                     object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), true);
@@ -426,13 +426,13 @@ namespace FanScript.Compiler.Symbols
                     Which object to display for the item.
                     """,
                     """
-                    Name of the item, must be constant.
+                    Name of the item.
                     """,
                     """
-                    Maximum number of times the item can be bought, can be 2-100 or one of <link type="con">MAX_ITEMS</>, must be constant.
+                    Maximum number of times the item can be bought, can be 2-100 or one of <link type="con">MAX_ITEMS</>.
                     """,
                     """
-                    Specifies what the initial price is and how it increases, one of <link type="con">PRICE_INCREASE</>, must be constant.
+                    Specifies what the initial price is and how it increases, one of <link type="con">PRICE_INCREASE</>.
                     """
                 ],
                 Related = [
@@ -445,9 +445,9 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol(gameNamespace, "menuItem", [
                     new ParameterSymbol("variable", Modifiers.Ref, TypeSymbol.Float),
                     new ParameterSymbol("picture", TypeSymbol.Object),
-                    new ParameterSymbol("NAME", TypeSymbol.String),
-                    new ParameterSymbol("MAX_ITEMS", TypeSymbol.Float),
-                    new ParameterSymbol("PRICE_INCREASE", TypeSymbol.Float),
+                    new ParameterSymbol("NAME", Modifiers.Constant, TypeSymbol.String),
+                    new ParameterSymbol("MAX_ITEMS", Modifiers.Constant, TypeSymbol.Float),
+                    new ParameterSymbol("PRICE_INCREASE", Modifiers.Constant, TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) => emitAX0(call, context, Blocks.Game.MenuItem, constantTypes: [typeof(string), typeof(byte), typeof(byte)]));
         }
 
@@ -457,14 +457,14 @@ namespace FanScript.Compiler.Symbols
 
             [FunctionDoc(
                 Info = """
-                Returns the object at <link type="param">position</>.
+                Returns the object at <link type="param">POSITION</>.
                 """,
                 ReturnValueInfo = """
-                The object at <link type="param">position</>.
+                The object at <link type="param">POSITION</>.
                 """,
                 ParameterInfos = [
                     """
-                    Position of the object, must be constant.
+                    Position of the object.
                     """
                 ],
                 Related = [
@@ -475,7 +475,7 @@ namespace FanScript.Compiler.Symbols
             )]
             public static readonly FunctionSymbol GetObject
               = new BuiltinFunctionSymbol(objectNamespace, "getObject", [
-                  new ParameterSymbol("position", TypeSymbol.Vector3),
+                  new ParameterSymbol("POSITION", Modifiers.Constant, TypeSymbol.Vector3),
               ], TypeSymbol.Object, (call, context) =>
               {
                   BoundConstant? constant = call.Arguments[0].ConstantValue;
@@ -510,13 +510,13 @@ namespace FanScript.Compiler.Symbols
                 """,
                 ParameterInfos = [
                     """
-                    X position of the object, must be constant.
+                    X position of the object.
                     """,
                     """
-                    Y position of the object, must be constant.
+                    Y position of the object.
                     """,
                     """
-                    Z position of the object, must be constant.
+                    Z position of the object.
                     """
                 ],
                 Related = [
@@ -527,9 +527,9 @@ namespace FanScript.Compiler.Symbols
             )]
             public static readonly FunctionSymbol GetObject2
               = new BuiltinFunctionSymbol(objectNamespace, "getObject", [
-                  new ParameterSymbol("x", TypeSymbol.Float),
-                  new ParameterSymbol("y", TypeSymbol.Float),
-                  new ParameterSymbol("z", TypeSymbol.Float),
+                  new ParameterSymbol("X", Modifiers.Constant, TypeSymbol.Float),
+                  new ParameterSymbol("Y", Modifiers.Constant, TypeSymbol.Float),
+                  new ParameterSymbol("Z", Modifiers.Constant, TypeSymbol.Float),
               ], TypeSymbol.Object, (call, context) =>
               {
                   object?[]? args = context.ValidateConstants(call.Arguments.AsMemory(), true);
@@ -820,10 +820,10 @@ namespace FanScript.Compiler.Symbols
                     The channel at which the sound is playing (0 - 9, or -1 if all other channels are used).
                     """,
                     """
-                    If the sound should loop, must be constant.
+                    If the sound should loop.
                     """,
                     """
-                    Which sound to play, one of <link type="con">SOUND</>, must be constant.
+                    Which sound to play, one of <link type="con">SOUND</>.
                     """
                 ],
                 Related = [
@@ -841,8 +841,8 @@ namespace FanScript.Compiler.Symbols
                     new ParameterSymbol("volume", TypeSymbol.Float),
                     new ParameterSymbol("pitch", TypeSymbol.Float),
                     new ParameterSymbol("channel", Modifiers.Out, TypeSymbol.Float),
-                    new ParameterSymbol("LOOP", TypeSymbol.Bool),
-                    new ParameterSymbol("SOUND", TypeSymbol.Float),
+                    new ParameterSymbol("LOOP", Modifiers.Constant, TypeSymbol.Bool),
+                    new ParameterSymbol("SOUND", Modifiers.Constant, TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) =>
               {
                   object?[]? values = context.ValidateConstants(call.Arguments.AsMemory(^2..), true);
@@ -1396,7 +1396,7 @@ namespace FanScript.Compiler.Symbols
                     The direction which the joystick is held.
                     """,
                     """
-                    One of <link type="con">JOYSTICK_TYPE</>, must be constant.
+                    One of <link type="con">JOYSTICK_TYPE</>.
                     """
                 ]
             )]
@@ -1404,7 +1404,7 @@ namespace FanScript.Compiler.Symbols
                 = new BuiltinFunctionSymbol(controlNamespace, "joystick",
                 [
                     new ParameterSymbol("joyDir", Modifiers.Out, TypeSymbol.Vector3),
-                    new ParameterSymbol("JOYSTICK_TYPE", TypeSymbol.Float),
+                    new ParameterSymbol("JOYSTICK_TYPE", Modifiers.Constant, TypeSymbol.Float),
                 ], TypeSymbol.Void, (call, context) =>
                 {
                     object?[]? values = context.ValidateConstants(call.Arguments.AsMemory(Range.StartAt(1)), true);
@@ -2360,7 +2360,7 @@ namespace FanScript.Compiler.Symbols
             """,
             ParameterInfos = [
                 """
-                The text of the comment, must be constant.
+                The text of the comment.
                 """
             ],
             Examples = """
@@ -2373,7 +2373,7 @@ namespace FanScript.Compiler.Symbols
         public static readonly FunctionSymbol FcComment
             = new BuiltinFunctionSymbol(builtinNamespace, "fcComment",
             [
-                new ParameterSymbol("TEXT", TypeSymbol.String)
+                new ParameterSymbol("TEXT", Modifiers.Constant, TypeSymbol.String)
             ], TypeSymbol.Void, (call, context) =>
             {
                 object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), true);
@@ -2394,7 +2394,7 @@ namespace FanScript.Compiler.Symbols
             """,
             ParameterInfos = [
                 """
-                Id of the block, one of <link type="con">BLOCK</>, must be constant.
+                Id of the block, one of <link type="con">BLOCK</>.
                 """
             ],
             Remarks = [
@@ -2414,7 +2414,7 @@ namespace FanScript.Compiler.Symbols
         public static readonly FunctionSymbol GetBlockById
             = new BuiltinFunctionSymbol(builtinNamespace, "getBlockById",
             [
-                new ParameterSymbol("BLOCK", TypeSymbol.Float)
+                new ParameterSymbol("BLOCK", Modifiers.Constant, TypeSymbol.Float)
             ], TypeSymbol.Object, (call, context) =>
             {
                 object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), true);
