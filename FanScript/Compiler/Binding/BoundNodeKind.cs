@@ -14,7 +14,7 @@
         DoWhileStatement,
         ReturnStatement,
         GotoStatement,
-        RollbackGotoStatement,
+        EventGotoStatement,
         ConditionalGotoStatement,
         LabelStatement,
         PostfixStatement,
@@ -22,7 +22,6 @@
         CallStatement,
         ExpressionStatement,
         EmitterHintStatement,
-        EventGotoStatement,
 
         // Expressions
         ErrorExpression,

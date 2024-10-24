@@ -25,7 +25,6 @@ namespace FanScript.Compiler.Binding.Rewriters
                 //    return RewriteForStatement((BoundForStatement)node);
                 BoundLabelStatement labelStatement => RewriteLabelStatement(labelStatement),
                 BoundGotoStatement gotoStatement => RewriteGotoStatement(gotoStatement),
-                BoundRollbackGotoStatement rollbackGotoStatement => RewriteRollbackGotoStatement(rollbackGotoStatement),
                 BoundEventGotoStatement eventGotoStatement => RewriteEventGotoStatement(eventGotoStatement),
                 BoundConditionalGotoStatement conditionalGotoStatement => RewriteConditionalGotoStatement(conditionalGotoStatement),
                 BoundReturnStatement returnStatement => RewriteReturnStatement(returnStatement),
@@ -152,9 +151,6 @@ namespace FanScript.Compiler.Binding.Rewriters
             => node;
 
         protected virtual BoundStatement RewriteGotoStatement(BoundGotoStatement node)
-            => node;
-
-        protected virtual BoundStatement RewriteRollbackGotoStatement(BoundRollbackGotoStatement node)
             => node;
 
         protected virtual BoundStatement RewriteEventGotoStatement(BoundEventGotoStatement node)

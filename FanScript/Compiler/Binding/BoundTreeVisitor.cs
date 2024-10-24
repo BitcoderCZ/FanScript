@@ -51,9 +51,6 @@ namespace FanScript.Compiler.Binding
                 case BoundGotoStatement gotoStatement:
                     VisitGotoStatement((BoundGotoStatement)node);
                     break;
-                case BoundRollbackGotoStatement rollbackGotoStatement:
-                    VisitRollbackGotoStatement(rollbackGotoStatement);
-                    break;
                 case BoundEventGotoStatement eventGotoStatement:
                     VistiEventGotoStatement(eventGotoStatement);
                     break;
@@ -143,9 +140,6 @@ namespace FanScript.Compiler.Binding
         { }
 
         protected virtual void VisitGotoStatement(BoundGotoStatement node)
-        { }
-
-        protected virtual void VisitRollbackGotoStatement(BoundRollbackGotoStatement node)
         { }
 
         protected virtual void VistiEventGotoStatement(BoundEventGotoStatement node)

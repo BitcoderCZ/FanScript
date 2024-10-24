@@ -64,9 +64,6 @@ namespace FanScript.Compiler.Binding
                 case BoundGotoStatement gotoStatement:
                     WriteGotoStatement(gotoStatement, writer);
                     break;
-                case BoundRollbackGotoStatement rollbackGotoStatement:
-                    WriteRollbackGotoStatement(rollbackGotoStatement, writer);
-                    break;
                 case BoundEventGotoStatement eventGotoStatement:
                     WriteEventGotoStatement(eventGotoStatement, writer);
                     break;
@@ -333,16 +330,12 @@ namespace FanScript.Compiler.Binding
             writer.WriteKeyword("goto"); // There is no SyntaxKind for goto
             writer.WriteSpace();
             writer.WriteIdentifier(node.Label.Name);
-            writer.WriteLine();
-        }
+            if (node.IsRollback)
+            {
+                writer.WriteSpace();
+                writer.WriteKeyword("[rollback]");
+            }
 
-        private static void WriteRollbackGotoStatement(BoundRollbackGotoStatement node, IndentedTextWriter writer)
-        {
-            writer.WriteKeyword("goto"); // There is no SyntaxKind for goto
-            writer.WriteSpace();
-            writer.WriteIdentifier(node.Label.Name);
-            writer.WriteSpace();
-            writer.WriteKeyword("[rollback]");
             writer.WriteLine();
         }
 

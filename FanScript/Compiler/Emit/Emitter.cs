@@ -151,7 +151,6 @@ namespace FanScript.Compiler.Emit
                 BoundPostfixStatement postfixStatement => emitPostfixStatement(postfixStatement),
                 BoundPrefixStatement prefixStatement => emitPrefixStatement(prefixStatement),
                 BoundGotoStatement gotoStatement => emitGotoStatement(gotoStatement),
-                BoundRollbackGotoStatement rollbackGotoStatement => emitRollbackGotoStatement(rollbackGotoStatement),
                 BoundEventGotoStatement eventGotoStatement => emitEventGotoStatement(eventGotoStatement),
                 BoundConditionalGotoStatement conditionalGotoStatement => emitConditionalGotoStatement(conditionalGotoStatement),
                 BoundLabelStatement labelStatement => emitLabelStatement(labelStatement),
@@ -251,10 +250,12 @@ namespace FanScript.Compiler.Emit
         }
 
         private EmitStore emitGotoStatement(BoundGotoStatement statement)
-            => new GotoEmitStore(statement.Label.Name);
-
-        private EmitStore emitRollbackGotoStatement(BoundRollbackGotoStatement statement)
-            => RollbackEmitStore.Instance;
+        {
+            if (statement.IsRollback)
+                return RollbackEmitStore.Instance;
+            else
+                return new GotoEmitStore(statement.Label.Name);
+        }
 
         private EmitStore emitEventGotoStatement(BoundEventGotoStatement statement)
         {

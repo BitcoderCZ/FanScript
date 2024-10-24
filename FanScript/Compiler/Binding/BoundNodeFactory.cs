@@ -32,10 +32,10 @@ namespace FanScript.Compiler.Binding
             => new BoundWhileStatement(syntax, condition, body, breakLabel, continueLabel);
 
         public static BoundGotoStatement Goto(SyntaxNode syntax, BoundLabel label)
-            => new BoundGotoStatement(syntax, label);
+            => new BoundGotoStatement(syntax, label, false);
 
-        public static BoundRollbackGotoStatement RollbackGoto(SyntaxNode syntax, BoundLabel label)
-            => new BoundRollbackGotoStatement(syntax, label);
+        public static BoundGotoStatement RollbackGoto(SyntaxNode syntax, BoundLabel label)
+            => new BoundGotoStatement(syntax, label, true);
 
         public static BoundEventGotoStatement EventGoto(SyntaxNode syntax, BoundLabel label, EventType eventType, BoundArgumentClause? argumentClause)
             => new BoundEventGotoStatement(syntax, label, eventType, argumentClause);
