@@ -26,6 +26,7 @@ namespace FanScript.Compiler.Binding.Rewriters
                 BoundLabelStatement labelStatement => RewriteLabelStatement(labelStatement),
                 BoundGotoStatement gotoStatement => RewriteGotoStatement(gotoStatement),
                 BoundRollbackGotoStatement rollbackGotoStatement => RewriteRollbackGotoStatement(rollbackGotoStatement),
+                BoundEventGotoStatement eventGotoStatement => RewriteEventGotoStatement(eventGotoStatement),
                 BoundConditionalGotoStatement conditionalGotoStatement => RewriteConditionalGotoStatement(conditionalGotoStatement),
                 BoundReturnStatement returnStatement => RewriteReturnStatement(returnStatement),
                 BoundEmitterHintStatement emitterHintStatement => RewriteEmitterHint(emitterHintStatement),
@@ -156,30 +157,26 @@ namespace FanScript.Compiler.Binding.Rewriters
         protected virtual BoundStatement RewriteRollbackGotoStatement(BoundRollbackGotoStatement node)
             => node;
 
+        protected virtual BoundStatement RewriteEventGotoStatement(BoundEventGotoStatement node)
+        {
+            if (node.ArgumentClause is null)
+                return node;
+
+            BoundArgumentClause clase = RewriteArgumentClause(node.ArgumentClause);
+
+            if (clase == node.ArgumentClause)
+                return node;
+
+            return new BoundEventGotoStatement(
+                node.Syntax,
+                node.Label,
+                node.EventType,
+                clase
+            );
+        }
+
         protected virtual BoundStatement RewriteConditionalGotoStatement(BoundConditionalGotoStatement node)
         {
-            if (node.Condition is BoundEventCondition eventCondition)
-            {
-                if (eventCondition.ArgumentClause is null)
-                    return node;
-
-                BoundArgumentClause clase = RewriteArgumentClause(eventCondition.ArgumentClause);
-
-                if (clase == eventCondition.ArgumentClause)
-                    return node;
-
-                return new BoundConditionalGotoStatement(
-                    node.Syntax,
-                    node.Label,
-                    new BoundEventCondition(
-                        eventCondition.Syntax,
-                        eventCondition.EventType,
-                        clase
-                    ),
-                    node.JumpIfTrue
-                );
-            }
-
             BoundExpression condition = RewriteExpression(node.Condition);
             if (condition == node.Condition)
                 return node;

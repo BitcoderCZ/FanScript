@@ -95,6 +95,7 @@ namespace FanScript.Compiler.Binding
                             break;
                         case BoundGotoStatement:
                         case BoundRollbackGotoStatement:
+                        case BoundEventGotoStatement:
                         case BoundConditionalGotoStatement:
                         case BoundReturnStatement:
                             statements.Add(statement);
@@ -111,7 +112,7 @@ namespace FanScript.Compiler.Binding
                             statements.Add(statement);
                             break;
                         default:
-                            throw new Exception($"Unexpected statement: {statement.Kind}");
+                            throw new UnexpectedBoundNodeException(statement);
                     }
                 }
 
@@ -184,17 +185,18 @@ namespace FanScript.Compiler.Binding
                                     connect(current, toBlock);
                                 }
                                 break;
+                            case BoundEventGotoStatement eventGotoStatement:
+                                {
+                                    BasicBlock thenBlock = blockFromLabel[eventGotoStatement.Label];
+                                    BasicBlock elseBlock = next;
+                                    connect(current, thenBlock, null);
+                                    connect(current, elseBlock, null);
+                                }
+                                break;
                             case BoundConditionalGotoStatement conditionalGotoStatement:
                                 {
                                     BasicBlock thenBlock = blockFromLabel[conditionalGotoStatement.Label];
                                     BasicBlock elseBlock = next;
-
-                                    if (conditionalGotoStatement.Condition is BoundEventCondition)
-                                    {
-                                        connect(current, thenBlock, null);
-                                        connect(current, elseBlock, null);
-                                        break;
-                                    }
 
                                     BoundExpression negatedCondition = Negate(conditionalGotoStatement.Condition);
                                     BoundExpression thenCondition = conditionalGotoStatement.JumpIfTrue ? conditionalGotoStatement.Condition : negatedCondition;

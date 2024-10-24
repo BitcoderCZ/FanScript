@@ -152,7 +152,7 @@ namespace FanScript.Compiler.Emit
                 BoundPrefixStatement prefixStatement => emitPrefixStatement(prefixStatement),
                 BoundGotoStatement gotoStatement => emitGotoStatement(gotoStatement),
                 BoundRollbackGotoStatement rollbackGotoStatement => emitRollbackGotoStatement(rollbackGotoStatement),
-                BoundConditionalGotoStatement conditionalGotoStatement when conditionalGotoStatement.Condition is BoundEventCondition condition => emitEventStatement(condition.EventType, condition.ArgumentClause?.Arguments, conditionalGotoStatement.Label),
+                BoundEventGotoStatement eventGotoStatement => emitEventGotoStatement(eventGotoStatement),
                 BoundConditionalGotoStatement conditionalGotoStatement => emitConditionalGotoStatement(conditionalGotoStatement),
                 BoundLabelStatement labelStatement => emitLabelStatement(labelStatement),
                 BoundReturnStatement returnStatement => emitReturnStatement(returnStatement),
@@ -191,129 +191,6 @@ namespace FanScript.Compiler.Emit
                 exitStatementBlock();
 
             return connector.Store;
-        }
-
-        private EmitStore emitEventStatement(EventType type, ImmutableArray<BoundExpression>? arguments, BoundLabel onTrueLabel)
-        {
-            BlockDef def;
-            switch (type)
-            {
-                case EventType.Play:
-                    def = Blocks.Control.PlaySensor;
-                    break;
-                case EventType.LateUpdate:
-                    def = Blocks.Control.LateUpdate;
-                    break;
-                case EventType.BoxArt:
-                    def = Blocks.Control.BoxArtSensor;
-                    break;
-                case EventType.Touch:
-                    def = Blocks.Control.TouchSensor;
-                    break;
-                case EventType.Swipe:
-                    def = Blocks.Control.SwipeSensor;
-                    break;
-                case EventType.Button:
-                    def = Blocks.Control.Button;
-                    break;
-                case EventType.Collision:
-                    def = Blocks.Control.Collision;
-                    break;
-                case EventType.Loop:
-                    def = Blocks.Control.Loop;
-                    break;
-                default:
-                    throw new UnknownEnumValueException<EventType>(type);
-            }
-
-            Block block = AddBlock(def);
-
-            enterStatementBlock();
-
-            switch (type)
-            {
-                case EventType.Touch:
-                    {
-                        object?[]? values = ValidateConstants(arguments!.Value.AsMemory(2..), true);
-                        if (values is null)
-                            break;
-
-                        for (int i = 0; i < values.Length; i++)
-                            SetBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
-
-                        connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(..2)));
-                        return new BasicEmitStore(block);
-                    }
-                case EventType.Swipe:
-                    {
-                        connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan()));
-                        return new BasicEmitStore(block);
-                    }
-                case EventType.Button:
-                    {
-                        object?[]? values = ValidateConstants(arguments!.Value.AsMemory(), true);
-                        if (values is null)
-                            break;
-
-                        for (int i = 0; i < values.Length; i++)
-                            SetBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
-                    }
-                    break;
-                case EventType.Collision:
-                    {
-                        connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(1..), arguments!.Value.AsMemory(..1)));
-                        return new BasicEmitStore(block);
-                    }
-                case EventType.Loop:
-                    {
-                        connectToLabel(onTrueLabel.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(2..), arguments!.Value.AsMemory(..2)));
-                        return new BasicEmitStore(block);
-                    }
-            }
-
-            connectToLabel(onTrueLabel.Name, BasicEmitStore.COut(block, block.Type.TerminalArray[^2]));
-
-            return new BasicEmitStore(block);
-
-            EmitStore placeAndConnectRefArgs(ReadOnlySpan<BoundExpression> outArguments, ReadOnlyMemory<BoundExpression>? arguments = null)
-            {
-                arguments ??= ReadOnlyMemory<BoundExpression>.Empty;
-
-                EmitStore lastStore = BasicEmitStore.COut(block, block.Type.TerminalArray[Index.FromEnd(2 + arguments.Value.Length)]);
-
-                if (arguments.Value.Length != 0)
-                {
-                    exitStatementBlock();
-
-                    using (ExpressionBlock())
-                    {
-                        var argumentsSpan = arguments.Value.Span;
-
-                        for (int i = 0; i < argumentsSpan.Length; i++)
-                        {
-                            EmitStore store = EmitExpression(argumentsSpan[i]);
-
-                            Connect(store, BasicEmitStore.CIn(block, block.Type.TerminalArray[Index.FromEnd(i + 2)]));
-                        }
-                    }
-
-                    enterStatementBlock();
-                }
-
-                for (int i = 0; i < outArguments.Length; i++)
-                {
-                    VariableSymbol variable = ((BoundVariableExpression)outArguments[i]).Variable;
-
-                    EmitStore varStore = EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.TerminalArray[Index.FromEnd(i + arguments.Value.Length + 3)]));
-
-                    Connect(lastStore, varStore);
-
-                    if (varStore is not NopEmitStore)
-                        lastStore = varStore;
-                }
-
-                return lastStore;
-            }
         }
 
         private EmitStore emitAssigmentStatement(BoundAssignmentStatement statement)
@@ -378,6 +255,131 @@ namespace FanScript.Compiler.Emit
 
         private EmitStore emitRollbackGotoStatement(BoundRollbackGotoStatement statement)
             => RollbackEmitStore.Instance;
+
+        private EmitStore emitEventGotoStatement(BoundEventGotoStatement statement)
+        {
+            BlockDef def;
+            switch (statement.EventType)
+            {
+                case EventType.Play:
+                    def = Blocks.Control.PlaySensor;
+                    break;
+                case EventType.LateUpdate:
+                    def = Blocks.Control.LateUpdate;
+                    break;
+                case EventType.BoxArt:
+                    def = Blocks.Control.BoxArtSensor;
+                    break;
+                case EventType.Touch:
+                    def = Blocks.Control.TouchSensor;
+                    break;
+                case EventType.Swipe:
+                    def = Blocks.Control.SwipeSensor;
+                    break;
+                case EventType.Button:
+                    def = Blocks.Control.Button;
+                    break;
+                case EventType.Collision:
+                    def = Blocks.Control.Collision;
+                    break;
+                case EventType.Loop:
+                    def = Blocks.Control.Loop;
+                    break;
+                default:
+                    throw new UnknownEnumValueException<EventType>(statement.EventType);
+            }
+
+            Block block = AddBlock(def);
+
+            ImmutableArray<BoundExpression>? arguments = statement.ArgumentClause?.Arguments;
+
+            enterStatementBlock();
+
+            switch (statement.EventType)
+            {
+                case EventType.Touch:
+                    {
+                        object?[]? values = ValidateConstants(arguments!.Value.AsMemory(2..), true);
+                        if (values is null)
+                            break;
+
+                        for (int i = 0; i < values.Length; i++)
+                            SetBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
+
+                        connectToLabel(statement.Label.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(..2)));
+                        return new BasicEmitStore(block);
+                    }
+                case EventType.Swipe:
+                    {
+                        connectToLabel(statement.Label.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan()));
+                        return new BasicEmitStore(block);
+                    }
+                case EventType.Button:
+                    {
+                        object?[]? values = ValidateConstants(arguments!.Value.AsMemory(), true);
+                        if (values is null)
+                            break;
+
+                        for (int i = 0; i < values.Length; i++)
+                            SetBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
+                    }
+                    break;
+                case EventType.Collision:
+                    {
+                        connectToLabel(statement.Label.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(1..), arguments!.Value.AsMemory(..1)));
+                        return new BasicEmitStore(block);
+                    }
+                case EventType.Loop:
+                    {
+                        connectToLabel(statement.Label.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(2..), arguments!.Value.AsMemory(..2)));
+                        return new BasicEmitStore(block);
+                    }
+            }
+
+            connectToLabel(statement.Label.Name, BasicEmitStore.COut(block, block.Type.TerminalArray[^2]));
+
+            return new BasicEmitStore(block);
+
+            EmitStore placeAndConnectRefArgs(ReadOnlySpan<BoundExpression> outArguments, ReadOnlyMemory<BoundExpression>? arguments = null)
+            {
+                arguments ??= ReadOnlyMemory<BoundExpression>.Empty;
+
+                EmitStore lastStore = BasicEmitStore.COut(block, block.Type.TerminalArray[Index.FromEnd(2 + arguments.Value.Length)]);
+
+                if (arguments.Value.Length != 0)
+                {
+                    exitStatementBlock();
+
+                    using (ExpressionBlock())
+                    {
+                        var argumentsSpan = arguments.Value.Span;
+
+                        for (int i = 0; i < argumentsSpan.Length; i++)
+                        {
+                            EmitStore store = EmitExpression(argumentsSpan[i]);
+
+                            Connect(store, BasicEmitStore.CIn(block, block.Type.TerminalArray[Index.FromEnd(i + 2)]));
+                        }
+                    }
+
+                    enterStatementBlock();
+                }
+
+                for (int i = 0; i < outArguments.Length; i++)
+                {
+                    VariableSymbol variable = ((BoundVariableExpression)outArguments[i]).Variable;
+
+                    EmitStore varStore = EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.TerminalArray[Index.FromEnd(i + arguments.Value.Length + 3)]));
+
+                    Connect(lastStore, varStore);
+
+                    if (varStore is not NopEmitStore)
+                        lastStore = varStore;
+                }
+
+                return lastStore;
+            }
+        }
 
         private EmitStore emitConditionalGotoStatement(BoundConditionalGotoStatement statement)
         {

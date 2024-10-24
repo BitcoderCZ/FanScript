@@ -22,6 +22,7 @@
         CallStatement,
         ExpressionStatement,
         EmitterHintStatement,
+        EventGotoStatement,
 
         // Expressions
         ErrorExpression,
@@ -39,7 +40,5 @@
         PrefixExpression,
         AssignmentExpression,
         CompoundAssignmentExpression,
-
-        EventCondition,
     }
 }

@@ -198,20 +198,20 @@ namespace FanScript.Compiler.Binding.Rewriters
             //
             // ----->
             //
-            // gotoTrue <special condition (play sensor, late update, ...) (handeled by emiter)> onTrue
+            // gotoTrue <special condition (play sensor, late update, ...) (handeled by emiter)> onSpecialLabel
             // goto end
-            // onTrue:
+            // onSpecialLabel:
             // <body>
             // goto end [rollback] // special goto that doesn't *really* "goto" but for the purposes of ControlFlowGraph does, neccesary because once body is finished the goto end will execute anyway bacause of how the special block blocks work (exec body, exec after)
             // end:
 
-            BoundLabel onTrueLabel = GenerateLabel("onSpecial");
+            BoundLabel onSpecialLabel = GenerateLabel("onSpecial");
             BoundLabel endLabel = GenerateLabel("end");
             BoundBlockStatement result = Block(
                 newNode.Syntax,
-                GotoTrue(newNode.Syntax, onTrueLabel, new BoundEventCondition(newNode.Syntax, newNode.Type, newNode.ArgumentClause)),
+                EventGoto(newNode.Syntax, onSpecialLabel, newNode.Type, newNode.ArgumentClause),
                 Goto(newNode.Syntax, endLabel),
-                Label(newNode.Syntax, onTrueLabel),
+                Label(newNode.Syntax, onSpecialLabel),
                 // Hint(newNode.Syntax, BoundEmitterHint.HintKind.StatementBlockStart), might need to be sooner if there are ref variables, so let emitter handle it
                 newNode.Block,
                 Hint(newNode.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockEnd),

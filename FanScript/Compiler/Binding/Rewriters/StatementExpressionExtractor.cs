@@ -43,6 +43,7 @@ namespace FanScript.Compiler.Binding.Rewriters
                 BoundLabelStatement labelStatement => RewriteLabelStatement(labelStatement),
                 BoundGotoStatement gotoStatement => RewriteGotoStatement(gotoStatement),
                 BoundRollbackGotoStatement rollbackGotoStatement => RewriteRollbackGotoStatement(rollbackGotoStatement),
+                BoundEventGotoStatement eventGotoStatement => RewriteEventGotoStatement(eventGotoStatement),
                 BoundConditionalGotoStatement conditionalGotoStatement => RewriteConditionalGotoStatement(conditionalGotoStatement),
                 BoundReturnStatement returnStatement => RewriteReturnStatement(returnStatement),
                 BoundEmitterHintStatement emitterHint => RewriteEmitterHint(emitterHint),
@@ -147,36 +148,6 @@ namespace FanScript.Compiler.Binding.Rewriters
             return HandleBeforeAfterWithTemp(condition, newEx => new BoundIfStatement(node.Syntax, newEx, thenStatement, elseStatement));
         }
 
-        //private BoundStatement RewriteWhileStatement(BoundWhileStatement node)
-        //{
-        //    ExpressionResult condition = RewriteExpression(node.Condition);
-        //    BoundStatement body = RewriteStatement(node.Body);
-        //    if (condition.IsSameAs(node.Condition) && body == node.Body)
-        //        return node;
-
-        //    if (!condition.Any)
-        //        return new BoundWhileStatement(node.Syntax, condition.Expression, body, node.BreakLabel, node.ContinueLabel);
-
-        //    // TODO: how?? both before and after need to be run every iteration, or just.. don't support these, this should be ran after lowerer anyways...
-
-        //    return new BoundWhileStatement(node.Syntax, condition, body, node.BreakLabel, node.ContinueLabel);
-        //}
-
-        //private BoundStatement RewriteDoWhileStatement(BoundDoWhileStatement node)
-        //{
-        //    BoundStatement body = RewriteStatement(node.Body);
-        //    ExpressionResult condition = RewriteExpression(node.Condition);
-        //    if (body == node.Body && condition.IsSameAs(node.Condition))
-        //        return node;
-
-        //    if (!condition.Any)
-        //        return new BoundDoWhileStatement(node.Syntax, body, condition.Expression, node.BreakLabel, node.ContinueLabel);
-
-        //    // TODO: how?? both before and after need to be run every iteration, or just.. don't support these, this should be ran after lowerer anyways...
-
-        //    return new BoundDoWhileStatement(node.Syntax, body, condition, node.BreakLabel, node.ContinueLabel);
-        //}
-
         private BoundStatement RewriteLabelStatement(BoundLabelStatement node)
             => node;
 
@@ -186,30 +157,25 @@ namespace FanScript.Compiler.Binding.Rewriters
         private BoundStatement RewriteRollbackGotoStatement(BoundRollbackGotoStatement node)
             => node;
 
+        private BoundStatement RewriteEventGotoStatement(BoundEventGotoStatement node)
+        {
+            if (node.ArgumentClause is null)
+                return node;
+
+            var (before, clause) = RewriteArgumentClauseBeforeOnly(node.ArgumentClause);
+
+            if (clause == node.ArgumentClause)
+                return node;
+
+            return HandleBeforeAfter(
+                before,
+                new BoundEventGotoStatement(node.Syntax, node.Label, node.EventType, clause),
+                ImmutableArray<BoundStatement>.Empty
+            );
+        }
+
         private BoundStatement RewriteConditionalGotoStatement(BoundConditionalGotoStatement node)
         {
-            if (node.Condition is BoundEventCondition eventCondition)
-            {
-                if (eventCondition.ArgumentClause is null)
-                    return node;
-
-                var (before, clause) = RewriteArgumentClauseBeforeOnly(eventCondition.ArgumentClause);
-
-                if (clause == eventCondition.ArgumentClause)
-                    return node;
-
-                return HandleBeforeAfter(
-                    before,
-                    new BoundConditionalGotoStatement(node.Syntax, node.Label,
-                        new BoundEventCondition(
-                            eventCondition.Syntax,
-                            eventCondition.EventType,
-                            clause
-                        ), node.JumpIfTrue),
-                    ImmutableArray<BoundStatement>.Empty
-                );
-            }
-
             ExpressionResult condition = RewriteExpression(node.Condition);
             if (condition.IsSameAs(node.Condition))
                 return node;

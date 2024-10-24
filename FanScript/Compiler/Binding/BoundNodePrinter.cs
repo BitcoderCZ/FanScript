@@ -67,6 +67,9 @@ namespace FanScript.Compiler.Binding
                 case BoundRollbackGotoStatement rollbackGotoStatement:
                     WriteRollbackGotoStatement(rollbackGotoStatement, writer);
                     break;
+                case BoundEventGotoStatement eventGotoStatement:
+                    WriteEventGotoStatement(eventGotoStatement, writer);
+                    break;
                 case BoundConditionalGotoStatement conditionalGotoStatement:
                     WriteConditionalGotoStatement(conditionalGotoStatement, writer);
                     break;
@@ -120,9 +123,6 @@ namespace FanScript.Compiler.Binding
                     break;
                 case BoundCompoundAssignmentExpression compoundAssignmentExpression:
                     WriteCompoundAssignmentExpression(compoundAssignmentExpression, writer);
-                    break;
-                case BoundEventCondition eventCondition:
-                    WriteEventCondition(eventCondition, writer);
                     break;
                 default:
                     throw new UnexpectedBoundNodeException(node);
@@ -343,6 +343,21 @@ namespace FanScript.Compiler.Binding
             writer.WriteIdentifier(node.Label.Name);
             writer.WriteSpace();
             writer.WriteKeyword("[rollback]");
+            writer.WriteLine();
+        }
+
+        private static void WriteEventGotoStatement(BoundEventGotoStatement node, IndentedTextWriter writer)
+        {
+            writer.WriteKeyword("goto"); // There is no SyntaxKind for goto
+            writer.WriteSpace();
+            writer.WriteIdentifier(node.Label.Name);
+            writer.WriteSpace();
+            writer.WriteKeyword("if");
+            writer.WriteSpace();
+            writer.WriteIdentifier(node.EventType.ToString());
+            if (node.ArgumentClause is not null)
+                WriteArgumentClause(node.ArgumentClause, writer);
+
             writer.WriteLine();
         }
 
@@ -573,13 +588,6 @@ namespace FanScript.Compiler.Binding
             writer.WritePunctuation(SyntaxKind.EqualsToken);
             writer.WriteSpace();
             node.Expression.WriteTo(writer);
-        }
-
-        private static void WriteEventCondition(BoundEventCondition node, IndentedTextWriter writer)
-        {
-            writer.WriteIdentifier(node.EventType.ToString());
-            if (node.ArgumentClause is not null)
-                WriteArgumentClause(node.ArgumentClause, writer);
         }
 
         #region Helper functions
