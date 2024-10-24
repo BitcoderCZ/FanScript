@@ -94,7 +94,6 @@ namespace FanScript.Compiler.Binding
                             statements.Add(statement);
                             break;
                         case BoundGotoStatement:
-                        case BoundRollbackGotoStatement:
                         case BoundEventGotoStatement:
                         case BoundConditionalGotoStatement:
                         case BoundReturnStatement:
@@ -176,12 +175,6 @@ namespace FanScript.Compiler.Binding
                             case BoundGotoStatement gotoStatement:
                                 {
                                     BasicBlock toBlock = blockFromLabel[gotoStatement.Label];
-                                    connect(current, toBlock);
-                                }
-                                break;
-                            case BoundRollbackGotoStatement rollbackGotoStatement:
-                                {
-                                    BasicBlock toBlock = blockFromLabel[rollbackGotoStatement.Label];
                                     connect(current, toBlock);
                                 }
                                 break;

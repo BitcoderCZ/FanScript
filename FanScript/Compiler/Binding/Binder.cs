@@ -525,7 +525,7 @@ namespace FanScript.Compiler.Binding
             }
 
             BoundLabel breakLabel = loopStack.Peek().BreakLabel;
-            return new BoundGotoStatement(syntax, breakLabel);
+            return new BoundGotoStatement(syntax, breakLabel, false);
         }
 
         private BoundStatement BindContinueStatement(ContinueStatementSyntax syntax)
@@ -542,7 +542,7 @@ namespace FanScript.Compiler.Binding
             }
 
             BoundLabel continueLabel = loopStack.Peek().ContinueLabel;
-            return new BoundGotoStatement(syntax, continueLabel);
+            return new BoundGotoStatement(syntax, continueLabel, false);
         }
 
         private BoundStatement BindReturnStatement(ReturnStatementSyntax syntax)
@@ -703,43 +703,6 @@ namespace FanScript.Compiler.Binding
                 else if (type.IsGenericDefinition) return TypeSymbol.CreateGenericInstance(type, genericType ?? TypeSymbol.Error);
                 else return type;
             }
-        }
-
-        private TypeSymbol BindTypeClause(TypeClauseSyntax? syntax)
-        {
-            if (syntax is null)
-                return TypeSymbol.Error;
-
-            TypeSymbol? type = LookupType(syntax.TypeToken.Text);
-            if (type is null)
-            {
-                diagnostics.ReportUndefinedType(syntax.Location, syntax.TypeToken.Text);
-                type = TypeSymbol.Error;
-            }
-
-            if (syntax.HasGenericParameter)
-            {
-                if (type.IsGenericDefinition)
-                {
-                    TypeSymbol? innerType = BindTypeClause(syntax.InnerType);
-                    if (innerType is null)
-                        return TypeSymbol.Error;
-                    else
-                        return TypeSymbol.CreateGenericInstance(type, innerType);
-                }
-                else
-                {
-                    diagnostics.ReportNotAGenericType(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.LessToken.Span.Start, syntax.GreaterToken.Span.End)));
-                    return TypeSymbol.Error;
-                }
-            }
-            else if (type.IsGenericDefinition)
-            {
-                diagnostics.ReportTypeMustHaveGenericParameter(syntax.Location);
-                return TypeSymbol.Error;
-            }
-
-            return type;
         }
 
         private BoundStatement BindExpressionStatement(ExpressionStatementSyntax syntax)
@@ -1189,6 +1152,43 @@ namespace FanScript.Compiler.Binding
             }
         }
 
+        private TypeSymbol BindTypeClause(TypeClauseSyntax? syntax)
+        {
+            if (syntax is null)
+                return TypeSymbol.Error;
+
+            TypeSymbol? type = LookupType(syntax.TypeToken.Text);
+            if (type is null)
+            {
+                diagnostics.ReportUndefinedType(syntax.Location, syntax.TypeToken.Text);
+                type = TypeSymbol.Error;
+            }
+
+            if (syntax.HasGenericParameter)
+            {
+                if (type.IsGenericDefinition)
+                {
+                    TypeSymbol? innerType = BindTypeClause(syntax.InnerType);
+                    if (innerType is null)
+                        return TypeSymbol.Error;
+                    else
+                        return TypeSymbol.CreateGenericInstance(type, innerType);
+                }
+                else
+                {
+                    diagnostics.ReportNotAGenericType(new TextLocation(syntax.SyntaxTree.Text, TextSpan.FromBounds(syntax.LessToken.Span.Start, syntax.GreaterToken.Span.End)));
+                    return TypeSymbol.Error;
+                }
+            }
+            else if (type.IsGenericDefinition)
+            {
+                diagnostics.ReportTypeMustHaveGenericParameter(syntax.Location);
+                return TypeSymbol.Error;
+            }
+
+            return type;
+        }
+
         private TypeSymbol? LookupType(string name)
         {
             TypeSymbol type = TypeSymbol.GetType(name);
@@ -1357,6 +1357,8 @@ namespace FanScript.Compiler.Binding
                     diagnostics.ReportDuplicateModifier(token.Location, modifier);
                     modifiersAndTokens.RemoveAt(i--);
                 }
+                else
+                    modifiers |= modifier;
             }
 
             return new BoundModifierClause(modifierClause, modifiersAndTokens.ToImmutableArray());
