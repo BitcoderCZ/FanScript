@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace FanScript.Compiler.Syntax
+﻿namespace FanScript.Compiler.Syntax
 {
     public sealed partial class FunctionDeclarationSyntax : MemberSyntax
     {

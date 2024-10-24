@@ -126,6 +126,8 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             public int StartPos { get; private set; }
             public int CurrentPos { get; protected set; }
 
+            public int Height { get; protected set; }
+
             protected BlockDef? LastPlacedBlockType;
 
             /// <summary>
@@ -179,6 +181,8 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                 else
                     CurrentPos -= blockDef.Size.Y - 1;
 
+                Height = Math.Max(Height, blockDef.Size.Y);
+
                 LastPlacedBlockType = blockDef;
 
                 Block block = new Block(new Vector3I(0, 0, CurrentPos), blockDef);
@@ -186,7 +190,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                 return block;
             }
 
-            protected int CalculatePosOfNextChild(int blockZOffset)
+            protected int CalculatePosOfNextChild()
                 => CurrentPos + (LastPlacedBlockType is null ? 0 : LastPlacedBlockType.Size.Y - 1);
 
             protected void IncrementXOffsetOfStatementParent()
@@ -221,7 +225,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             public override StatementCodeBlock CreateStatementChild()
             {
-                StatementCodeBlock child = new StatementCodeBlock(Placer, CalculatePosOfNextChild(blockZOffset), this, 1);
+                StatementCodeBlock child = new StatementCodeBlock(Placer, CalculatePosOfNextChild(), this, 1);
                 Children.Add(child);
                 return child;
             }
@@ -237,7 +241,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                         IncrementXOffsetOfStatementParent();
                 }
 
-                ExpressionCodeBlock child = new ExpressionCodeBlock(Placer, CalculatePosOfNextChild(ExpressionCodeBlock.BlockZOffset), this, -1);
+                ExpressionCodeBlock child = new ExpressionCodeBlock(Placer, CalculatePosOfNextChild(), this, -1);
                 Children.Add(child);
                 return child;
             }
@@ -267,7 +271,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                         IncrementXOffsetOfStatementParent();
                 }
 
-                ExpressionCodeBlock child = new ExpressionCodeBlock(Placer, CalculatePosOfNextChild(blockZOffset), this, -1);
+                ExpressionCodeBlock child = new ExpressionCodeBlock(Placer, CalculatePosOfNextChild(), this, -1);
                 Children.Add(child);
                 return child;
 
@@ -309,6 +313,8 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
                     List<int> positions = new();
 
+                    ListMultiValueDictionary<int, CodeBlock> layers = new();
+
                     foreach (var item in list)
                     {
                         if (item.BlockCount == 0)
@@ -330,10 +336,35 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                             positions.Add(item.CurrentPos);
                         }
 
-                        foreach (var itemBlock in item.Blocks)
+                        layers.Add(yPos, item);
+                    }
+
+                    (int YPos, int Height)[] layerToInfo = new (int YPos, int Height)[layers.Count];
+
+                    foreach (var (layer, layerList) in layers)
+                    {
+                        int maxHeight = layerList.Max(block => block.Height);
+
+                        if (layer == 0)
+                            layerToInfo[layer] = (0, maxHeight);
+                        else
                         {
-                            itemBlock.Pos.X = blockXOffset * item.LayerPos;
-                            itemBlock.Pos.Y = yPos;
+                            var (lastY, lastheight) = layerToInfo[layer - 1];
+                            layerToInfo[layer] = (lastY + lastheight, maxHeight);
+                        }
+                    }
+
+                    foreach (var (layer, layerList) in layers)
+                    {
+                        int yPos = layerToInfo[layer].YPos;
+
+                        foreach (CodeBlock cb in layerList)
+                        {
+                            foreach (var itemBlock in cb.Blocks)
+                            {
+                                itemBlock.Pos.X = blockXOffset * cb.LayerPos;
+                                itemBlock.Pos.Y = yPos;
+                            }
                         }
                     }
                 }

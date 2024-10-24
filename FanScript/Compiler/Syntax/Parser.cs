@@ -696,7 +696,7 @@ namespace FanScript.Compiler.Syntax
                         nodesAndSeparators.Add(new ModifiersWExpressionSyntax(
                             syntaxTree,
                             new ModifierClauseSyntax(
-                                syntaxTree, 
+                                syntaxTree,
                                 modifiers.Modifiers
                                     .Where(token => !ModifiersE.FromKind(token.Kind).GetTargets().Contains(ModifierTarget.Variable))
                                     .ToImmutableArray()

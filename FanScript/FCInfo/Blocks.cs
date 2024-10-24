@@ -1,6 +1,5 @@
 ﻿using FanScript.Compiler;
 using MathUtils.Vectors;
-using Newtonsoft.Json.Linq;
 
 namespace FanScript.FCInfo
 {
@@ -375,14 +374,5 @@ namespace FanScript.FCInfo
             public static readonly BlockDef PlusPlusFloat = new BlockDef("Increase Number", 556, BlockType.Active, new Vector2I(2, 1), new Terminal(WireType.Void, TerminalType.Out, "After"), new Terminal(WireType.Float, TerminalType.In, "Variable"), new Terminal(WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef MinusMinusFloat = new BlockDef("Decrease Number", 558, BlockType.Active, new Vector2I(2, 1), new Terminal(WireType.Void, TerminalType.Out, "After"), new Terminal(WireType.Float, TerminalType.In, "Variable"), new Terminal(WireType.Void, TerminalType.In, "Before"));
         }
-
-        // used by terminals.json
-#pragma warning disable CS0649
-        private class TerminalInfo
-        {
-            public ushort Id;
-            public JObject[] Positions = null!;
-        }
-#pragma warning restore CS0649
     }
 }

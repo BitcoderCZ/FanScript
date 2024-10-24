@@ -13,21 +13,42 @@ namespace FanScript.FCInfo
         public readonly string Name;
         public readonly ushort Id;
         public readonly BlockType Type;
-        public readonly Vector2I Size;
+        public readonly Vector3I Size;
 
-        public bool IsGroup => Size != Vector2I.One;
+        public bool IsGroup => Size != Vector3I.One;
 
         public Terminal Before => Type == BlockType.Active ? TerminalArray[^1] : throw new InvalidOperationException("Only active blocks have Before and After");
         public readonly ImmutableArray<Terminal> TerminalArray;
         public readonly Indexable<string, Terminal> Terminals;
         public Terminal After => Type == BlockType.Active ? TerminalArray[0] : throw new InvalidOperationException("Only active blocks have Before and After");
 
-        public BlockDef(string name, ushort id, BlockType type, Vector2I size, params Terminal[] terminals)
+        public BlockDef(string name, ushort id, BlockType type, Vector3I size, params Terminal[] terminals)
         {
             Name = name;
             Id = id;
             Type = type;
             Size = size;
+
+            TerminalArray = terminals is null ? ImmutableArray<Terminal>.Empty : terminals.ToImmutableArray();
+
+            initTerminals();
+
+            Terminals = new Indexable<string, Terminal>(termName =>
+            {
+                for (int i = 0; i < TerminalArray.Length; i++)
+                    if (TerminalArray[i].Name == termName)
+                        return TerminalArray[i];
+
+                throw new KeyNotFoundException($"Terminal '{termName}' wasn't found.");
+            });
+        }
+
+        public BlockDef(string name, ushort id, BlockType type, Vector2I size, params Terminal[] terminals)
+        {
+            Name = name;
+            Id = id;
+            Type = type;
+            Size = new Vector3I(size.X, 1, size.Y);
 
             TerminalArray = terminals is null ? ImmutableArray<Terminal>.Empty : terminals.ToImmutableArray();
 

@@ -8,7 +8,7 @@ namespace FanScript.Compiler.Syntax
            : base(syntaxTree)
         {
             ModifierClause = new ModifierClauseSyntax(
-                syntaxTree, 
+                syntaxTree,
                 modifierClause.Modifiers
                     .Where(token => ModifiersE.FromKind(token.Kind).GetTargets().Contains(ModifierTarget.Variable))
                     .ToImmutableArray()
