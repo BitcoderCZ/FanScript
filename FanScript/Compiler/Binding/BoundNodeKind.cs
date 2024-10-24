@@ -33,12 +33,15 @@
         CallExpression,
         ConversionExpression,
         ConstructorExpression,
-        ArgumentClause,
         ArraySegmentExpression,
         NopExpression,
         PostfixExpression,
         PrefixExpression,
         AssignmentExpression,
         CompoundAssignmentExpression,
+
+        // Clauses
+        ArgumentClause,
+        ModifierClause,
     }
 }

@@ -198,7 +198,7 @@ namespace FanScript.Compiler.Binding
 
             foreach (ParameterSyntax parameterSyntax in syntax.Parameters)
             {
-                Modifiers paramMods = BindModifiers(parameterSyntax.Modifiers, ModifierTarget.Parameter);
+                Modifiers paramMods = BindModifierClause(parameterSyntax.Modifiers, ModifierTarget.Parameter).Enum;
                 TypeSymbol paramType = BindTypeClause(parameterSyntax.TypeClause);
                 string paramName = parameterSyntax.Identifier.Text;
 
@@ -211,7 +211,7 @@ namespace FanScript.Compiler.Binding
                     parameters.Add(new ParameterSymbol(paramName, paramMods, paramType));
             }
 
-            Modifiers modifiers = BindModifiers(syntax.Modifiers, ModifierTarget.Function);
+            Modifiers modifiers = BindModifierClause(syntax.Modifiers, ModifierTarget.Function).Enum;
 
             TypeSymbol type = syntax.TypeClause is null ? TypeSymbol.Void : BindTypeClause(syntax.TypeClause);
 
@@ -434,7 +434,7 @@ namespace FanScript.Compiler.Binding
             TypeSymbol? type = BindTypeClause(syntax.TypeClause);
 
             TypeSymbol? variableType = type;
-            VariableSymbol variable = BindVariableDeclaration(syntax.IdentifierToken, syntax.Modifiers, variableType);
+            VariableSymbol variable = BindVariableDeclaration(syntax.IdentifierToken, syntax.ModifierClause, variableType);
 
             if (variable.IsReadOnly && syntax.OptionalAssignment is null)
                 diagnostics.ReportVariableNotInitialized(syntax.IdentifierToken.Location);
@@ -615,10 +615,10 @@ namespace FanScript.Compiler.Binding
 
             ImmutableArray<BoundExpression>.Builder boundArguments = ImmutableArray.CreateBuilder<BoundExpression>(arguments.Count);
 
-            foreach (ModifierClauseSyntax argument in arguments)
+            foreach (ModifiersWExpressionSyntax argument in arguments)
                 boundArguments.Add(BindExpression(argument.Expression, context: new Context()
                 {
-                    OutArgument = argument.Modifiers.Any(token => token.Kind == SyntaxKind.OutModifier)
+                    OutArgument = argument.ModifierClause.Modifiers.Any(token => token.Kind == SyntaxKind.OutModifier)
                 }));
 
             FunctionSymbol? function = scope.TryLookupFunction(syntax.Identifier.Text, boundArguments.Select(arg => arg.Type!).ToList(), false);
@@ -820,7 +820,7 @@ namespace FanScript.Compiler.Binding
             TypeSymbol? type = BindTypeClause(syntax.TypeClause);
 
             TypeSymbol? variableType = type;
-            VariableSymbol variable = BindVariableDeclaration(syntax.IdentifierToken, syntax.Modifiers, variableType);
+            VariableSymbol variable = BindVariableDeclaration(syntax.IdentifierToken, syntax.ModifierClause, variableType);
 
             if (variable.Modifiers.HasFlag(Modifiers.Constant))
                 diagnostics.ReportVariableNotInitialized(syntax.IdentifierToken.Location);
@@ -872,9 +872,9 @@ namespace FanScript.Compiler.Binding
             var arguments = syntax.Arguments;
             if (context.MethodObject is not null)
             {
-                arguments = new SeparatedSyntaxList<ModifierClauseSyntax>(
+                arguments = new SeparatedSyntaxList<ModifiersWExpressionSyntax>(
                     new SyntaxNode[] {
-                        new ModifierClauseSyntax(context.MethodObject.SyntaxTree, [], context.MethodObject),
+                        new ModifiersWExpressionSyntax(context.MethodObject.SyntaxTree, new ModifierClauseSyntax(syntax.SyntaxTree, []), context.MethodObject),
                         new SyntaxToken(context.MethodObject.SyntaxTree, SyntaxKind.CommaToken, context.MethodObject.Span.Start, null, null, [], []),
                     }.Concat(arguments.GetWithSeparators())
                     .ToImmutableArray()
@@ -883,10 +883,10 @@ namespace FanScript.Compiler.Binding
 
             ImmutableArray<BoundExpression>.Builder boundArguments = ImmutableArray.CreateBuilder<BoundExpression>(arguments.Count);
 
-            foreach (ModifierClauseSyntax argument in arguments)
+            foreach (ModifiersWExpressionSyntax argument in arguments)
                 boundArguments.Add(BindExpression(argument.Expression, context: new Context()
                 {
-                    OutArgument = argument.Modifiers.Any(token => token.Kind == SyntaxKind.OutModifier)
+                    OutArgument = argument.ModifierClause.Modifiers.Any(token => token.Kind == SyntaxKind.OutModifier)
                 }));
 
             FunctionSymbol? function = scope.TryLookupFunction(syntax.Identifier.Text, boundArguments.Select(arg => arg.Type!).ToList(), context.MethodObject is not null);
@@ -1138,7 +1138,7 @@ namespace FanScript.Compiler.Binding
             return new BoundConversionExpression(expression.Syntax, type, expression);
         }
 
-        private VariableSymbol BindVariableDeclaration(SyntaxToken identifier, ImmutableArray<SyntaxToken> modifierArray, TypeSymbol type)
+        private VariableSymbol BindVariableDeclaration(SyntaxToken identifier, ModifierClauseSyntax modifierClause, TypeSymbol type)
         {
             string name = identifier.Text ?? "?";
             bool declare = !identifier.IsMissing;
@@ -1148,9 +1148,9 @@ namespace FanScript.Compiler.Binding
 
             Modifiers validModifiers = ModifiersE.GetValidModifiersFor(ModifierTarget.Variable, type);
 
-            Modifiers modifiers = BindModifiers(modifierArray, ModifierTarget.Variable, item =>
+            BoundModifierClause modifiers = BindModifierClause(modifierClause, ModifierTarget.Variable, item =>
             {
-                var (modifier, token) = item;
+                var (token, modifier) = item;
 
                 bool valid = validModifiers.HasFlag(modifier);
                 if (!valid)
@@ -1159,11 +1159,11 @@ namespace FanScript.Compiler.Binding
                 return valid;
             });
 
-            VariableSymbol variable = new BasicVariableSymbol(name, modifiers, type);
+            VariableSymbol variable = new BasicVariableSymbol(name, modifiers.Enum, type);
 
             if (declare && !scope.TryDeclareVariable(variable))
                 diagnostics.ReportSymbolAlreadyDeclared(identifier.Location, name);
-            else if (name.Length > FancadeConstants.MaxVariableNameLength && !modifiers.HasFlag(Modifiers.Constant))
+            else if (name.Length > FancadeConstants.MaxVariableNameLength && !modifiers.Enum.HasFlag(Modifiers.Constant))
                 diagnostics.ReportVariableNameTooLong(identifier.Location, name);
 
             return variable;
@@ -1205,10 +1205,10 @@ namespace FanScript.Compiler.Binding
             {
                 boundArguments = ImmutableArray.CreateBuilder<BoundExpression>(syntax.Arguments.Count);
 
-                foreach (ModifierClauseSyntax argument in syntax.Arguments)
+                foreach (ModifiersWExpressionSyntax argument in syntax.Arguments)
                     boundArguments.Add(BindExpression(argument.Expression, context: new Context()
                     {
-                        OutArgument = argument.Modifiers.Any(token => token.Kind == SyntaxKind.OutModifier)
+                        OutArgument = argument.ModifierClause.Modifiers.Any(token => token.Kind == SyntaxKind.OutModifier)
                     }));
             }
 
@@ -1241,9 +1241,9 @@ namespace FanScript.Compiler.Binding
                 BoundExpression argument = boundArguments[i];
                 ParameterSymbol parameter = parameters[i];
 
-                Modifiers argMods = BindModifiers(syntax.Arguments[i].Modifiers, ModifierTarget.Argument, item =>
+                BoundModifierClause argMods = BindModifierClause(syntax.Arguments[i].ModifierClause, ModifierTarget.Argument, item =>
                 {
-                    var (modifier, token) = item;
+                    var (token, modifier) = item;
 
                     bool valid = modifier == Modifiers.Ref ? parameter.Modifiers.HasFlag(Modifiers.Ref) : true &&
                         modifier == Modifiers.Out ? parameter.Modifiers.HasFlag(Modifiers.Out) : true;
@@ -1254,13 +1254,13 @@ namespace FanScript.Compiler.Binding
                     return valid;
                 });
 
-                argModifiersBuilder.Add(argMods);
+                argModifiersBuilder.Add(argMods.Enum);
 
-                if (parameter.Modifiers.HasFlag(Modifiers.Ref) && !argMods.HasFlag(Modifiers.Ref))
+                if (parameter.Modifiers.HasFlag(Modifiers.Ref) && !argMods.Enum.HasFlag(Modifiers.Ref))
                     diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Ref);
-                else if (parameter.Modifiers.HasFlag(Modifiers.Out) && !argMods.HasFlag(Modifiers.Out))
+                else if (parameter.Modifiers.HasFlag(Modifiers.Out) && !argMods.Enum.HasFlag(Modifiers.Out))
                     diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Out);
-                else if (argMods.MakesTargetReference(out Modifiers? makesRefMod) && (argument is not BoundVariableExpression variable ||
+                else if (argMods.Enum.MakesTargetReference(out Modifiers? makesRefMod) && (argument is not BoundVariableExpression variable ||
                     (variable.Variable.IsReadOnly && argument.Syntax.Kind != SyntaxKind.VariableDeclarationExpression && variable.Variable is not NullVariableSymbol)))
                     diagnostics.ReportByRefArgMustBeVariable(argumentLocation, makesRefMod.Value);
                 else if (parameter.Modifiers.HasFlag(Modifiers.Constant) && argument.ConstantValue is null)
@@ -1272,14 +1272,14 @@ namespace FanScript.Compiler.Binding
             return new BoundArgumentClause(syntax, argModifiersBuilder.ToImmutable(), boundArguments.ToImmutable());
         }
 
-        private Modifiers BindModifiers(IEnumerable<SyntaxToken> tokens, ModifierTarget target, Func<(Modifiers, SyntaxToken), bool>? checkModifier = null)
+        private BoundModifierClause BindModifierClause(ModifierClauseSyntax modifierClause, ModifierTarget target, Func<(SyntaxToken, Modifiers), bool>? checkModifier = null)
         {
-            if (!tokens.Any())
-                return 0;
+            if (!modifierClause.Modifiers.Any())
+                return new BoundModifierClause(modifierClause, ImmutableArray<(SyntaxToken, Modifiers)>.Empty);
 
             checkModifier ??= item => true;
 
-            List<(Modifiers Modifier, SyntaxToken Token)> modifiersAndTokens = tokens
+            List<(SyntaxToken Token, Modifiers Modifier)> modifiersAndTokens = modifierClause.Modifiers
                 .Where(token =>
                 {
                     // remove tokens that aren't modifiers
@@ -1290,11 +1290,11 @@ namespace FanScript.Compiler.Binding
 
                     return isModifier;
                 })
-                .Select(token => (ModifiersE.FromKind(token.Kind), token))
+                .Select(token => (token, ModifiersE.FromKind(token.Kind)))
                 .Where(item =>
                 {
                     // remove modifiers not valid for this target
-                    var (modifier, token) = item;
+                    var (token, modifier) = item;
                     bool valid = modifier.GetTargets().Contains(target);
 
                     if (!valid)
@@ -1305,14 +1305,14 @@ namespace FanScript.Compiler.Binding
                 .Where(checkModifier)
                 .ToList();
 
-            IEnumerable<Modifiers> modsEnumerable = modifiersAndTokens.Select(item => item.Modifier);
+            IEnumerable<Modifiers> boundMods = modifiersAndTokens.Select(item => item.Modifier);
 
             // remove conflicting modifiers
             for (int i = 0; i < modifiersAndTokens.Count; i++)
             {
                 Modifiers? conflict = null;
                 foreach (var possibleConflict in modifiersAndTokens[i].Modifier.GetConflictingModifiers())
-                    if (modsEnumerable.Contains(possibleConflict))
+                    if (boundMods.Contains(possibleConflict))
                     {
                         conflict = possibleConflict;
                         break;
@@ -1322,13 +1322,12 @@ namespace FanScript.Compiler.Binding
                 {
                     diagnostics.ReportConflictingModifiers(modifiersAndTokens[i].Token.Location, conflict.Value, modifiersAndTokens[i].Modifier);
 
-                    modifiersAndTokens.RemoveAt(i);
-                    i--;
+                    modifiersAndTokens.RemoveAt(i--);
                 }
             }
 
             // find missing required
-            foreach (var (mod, token) in modifiersAndTokens)
+            foreach (var (token, mod) in modifiersAndTokens)
             {
                 var required = mod.GetRequiredModifiers();
 
@@ -1347,18 +1346,20 @@ namespace FanScript.Compiler.Binding
                     diagnostics.ReportMissignRequiredModifiers(token.Location, mod, required);
             }
 
-            // construct the enum
             Modifiers modifiers = 0;
 
-            foreach (var (modifier, token) in modifiersAndTokens)
+            for (int i = 0; i < modifiersAndTokens.Count; i++)
             {
+                var (token, modifier) = modifiersAndTokens[i];
+
                 if (modifiers.HasFlag(modifier))
+                {
                     diagnostics.ReportDuplicateModifier(token.Location, modifier);
-                else
-                    modifiers |= modifier;
+                    modifiersAndTokens.RemoveAt(i--);
+                }
             }
 
-            return modifiers;
+            return new BoundModifierClause(modifierClause, modifiersAndTokens.ToImmutableArray());
         }
 
         private PropertySymbol? BindProperty(PropertyExpressionSyntax syntax)

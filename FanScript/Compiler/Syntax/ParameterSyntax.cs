@@ -4,7 +4,7 @@ namespace FanScript.Compiler.Syntax
 {
     public sealed partial class ParameterSyntax : SyntaxNode
     {
-        internal ParameterSyntax(SyntaxTree syntaxTree, ImmutableArray<SyntaxToken> modifiers, TypeClauseSyntax typeClause, SyntaxToken identifier)
+        internal ParameterSyntax(SyntaxTree syntaxTree, ModifierClauseSyntax modifiers, TypeClauseSyntax typeClause, SyntaxToken identifier)
             : base(syntaxTree)
         {
             Modifiers = modifiers;
@@ -14,7 +14,7 @@ namespace FanScript.Compiler.Syntax
 
         public override SyntaxKind Kind => SyntaxKind.Parameter;
 
-        public ImmutableArray<SyntaxToken> Modifiers { get; }
+        public ModifierClauseSyntax Modifiers { get; }
         public TypeClauseSyntax TypeClause { get; }
         public SyntaxToken Identifier { get; }
     }

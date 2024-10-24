@@ -31,7 +31,7 @@ namespace FanScript.Compiler.Syntax
         public SyntaxToken? GreaterThanToken { get; }
         public ArgumentClauseSyntax ArgumentClause { get; }
 
-        public SeparatedSyntaxList<ModifierClauseSyntax> Arguments => ArgumentClause.Arguments;
+        public SeparatedSyntaxList<ModifiersWExpressionSyntax> Arguments => ArgumentClause.Arguments;
 
         public override IEnumerable<SyntaxNode> GetChildren()
         {

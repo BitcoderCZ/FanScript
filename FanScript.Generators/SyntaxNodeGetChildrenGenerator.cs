@@ -34,6 +34,7 @@ namespace FanScript.Generators
             var immutableArrayType = compilation.GetTypeByMetadataName("System.Collections.Immutable.ImmutableArray`1");
             var separatedSyntaxListType = compilation.GetTypeByMetadataName("FanScript.Compiler.Syntax.SeparatedSyntaxList`1");
             var syntaxNodeType = compilation.GetTypeByMetadataName("FanScript.Compiler.Syntax.SyntaxNode");
+            var modifierClauseSyntaxType = compilation.GetTypeByMetadataName("FanScript.Compiler.Syntax.ModifierClauseSyntax");
 
             if (immutableArrayType == null || separatedSyntaxListType == null || syntaxNodeType == null)
                 return;
@@ -68,7 +69,14 @@ namespace FanScript.Generators
                             {
                                 if (property.Type is INamedTypeSymbol propertyType)
                                 {
-                                    if (IsDerivedFrom(propertyType, syntaxNodeType))
+                                    if (SymbolEqualityComparer.Default.Equals(propertyType.OriginalDefinition, modifierClauseSyntaxType))
+                                    {
+                                        indentedTextWriter.WriteLine($"foreach (var child in {property.Name}.Modifiers)");
+                                        indentedTextWriter.WriteLine($"{indentString}yield return child;");
+
+                                        processedProperties.Add(property.Name);
+                                    }
+                                    else if (IsDerivedFrom(propertyType, syntaxNodeType))
                                     {
                                         var canBeNull = property.NullableAnnotation == NullableAnnotation.Annotated;
                                         if (canBeNull)

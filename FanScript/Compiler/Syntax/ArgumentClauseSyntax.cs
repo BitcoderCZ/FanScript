@@ -2,7 +2,7 @@
 {
     public sealed partial class ArgumentClauseSyntax : SyntaxNode
     {
-        internal ArgumentClauseSyntax(SyntaxTree syntaxTree, SyntaxToken openParenthesisToken, SeparatedSyntaxList<ModifierClauseSyntax> arguments, SyntaxToken closeParenthesisToken)
+        internal ArgumentClauseSyntax(SyntaxTree syntaxTree, SyntaxToken openParenthesisToken, SeparatedSyntaxList<ModifiersWExpressionSyntax> arguments, SyntaxToken closeParenthesisToken)
             : base(syntaxTree)
         {
             OpenParenthesisToken = openParenthesisToken;
@@ -13,7 +13,7 @@
         public override SyntaxKind Kind => SyntaxKind.ArgumentClause;
 
         public SyntaxToken OpenParenthesisToken { get; }
-        public SeparatedSyntaxList<ModifierClauseSyntax> Arguments { get; }
+        public SeparatedSyntaxList<ModifiersWExpressionSyntax> Arguments { get; }
         public SyntaxToken CloseParenthesisToken { get; }
     }
 }

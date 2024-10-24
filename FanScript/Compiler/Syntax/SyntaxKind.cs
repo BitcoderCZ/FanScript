@@ -70,6 +70,7 @@
         VariableDeclarationExpression,
         ArraySegmentExpression,
         AssignmentExpression,
+        ModifiersWExpressionSyntax,
 
         Parameter,
         TypeClause,
