@@ -503,10 +503,10 @@ namespace FanScript.Compiler.Symbols
 
             [FunctionDoc(
                 Info = """
-                Returns the object at (<link type="param">x</>, <link type="param">y</>, <link type="param">z</>).
+                Returns the object at (<link type="param">X</>, <link type="param">Y</>, <link type="param">Z</>).
                 """,
                 ReturnValueInfo = """
-                The object at (<link type="param">x</>, <link type="param">y</>, <link type="param">z</>).
+                The object at (<link type="param">X</>, <link type="param">Y</>, <link type="param">Z</>).
                 """,
                 ParameterInfos = [
                     """

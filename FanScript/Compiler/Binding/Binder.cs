@@ -354,7 +354,6 @@ namespace FanScript.Compiler.Binding
             ImmutableArray<ParameterSymbol> parameters = type
                 .GetInfo()
                 .Parameters
-                .Select(param => param.ToParameter())
                 .ToImmutableArray();
 
             enterScope();
@@ -1260,10 +1259,10 @@ namespace FanScript.Compiler.Binding
                     diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Ref);
                 else if (parameter.Modifiers.HasFlag(Modifiers.Out) && !argMods.Enum.HasFlag(Modifiers.Out))
                     diagnostics.ReportArgumentMustHaveModifier(argumentLocation, parameter.Name, Modifiers.Out);
-                else if (argMods.Enum.MakesTargetReference(out Modifiers? makesRefMod) && (argument is not BoundVariableExpression variable ||
+                if (argMods.Enum.MakesTargetReference(out Modifiers? makesRefMod) && (argument is not BoundVariableExpression variable ||
                     (variable.Variable.IsReadOnly && argument.Syntax.Kind != SyntaxKind.VariableDeclarationExpression && variable.Variable is not NullVariableSymbol)))
                     diagnostics.ReportByRefArgMustBeVariable(argumentLocation, makesRefMod.Value);
-                else if (parameter.Modifiers.HasFlag(Modifiers.Constant) && argument.ConstantValue is null)
+                if (parameter.Modifiers.HasFlag(Modifiers.Constant) && argument.ConstantValue is null)
                     diagnostics.ReportValueMustBeConstant(argument.Syntax.Location);
 
                 boundArguments[i] = BindConversion(argumentLocation, argument, parameter.Type);

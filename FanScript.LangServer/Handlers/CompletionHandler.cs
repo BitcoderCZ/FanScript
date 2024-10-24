@@ -73,7 +73,7 @@ namespace FanScript.LangServer.Handlers
                             builder.Append(' ');
                         }
 
-                        if (param.IsConstant)
+                        if (param.Modifiers.HasFlag(Modifiers.Constant))
                             builder.Append(param.Name);
                     }
 

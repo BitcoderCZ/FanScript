@@ -166,27 +166,27 @@ namespace FanScript.Compiler
             new EventTypeInfo(EventType.LateUpdate, []),
             new EventTypeInfo(EventType.BoxArt, []),
             new EventTypeInfo(EventType.Touch, [
-                new EventTypeParam("screenX", Modifiers.Out, TypeSymbol.Float),
-                new EventTypeParam("screenY", Modifiers.Out, TypeSymbol.Float),
-                new EventTypeParam("TOUCH_STATE", 0, TypeSymbol.Float, true),
-                new EventTypeParam("TOUCH_FINGER", 0, TypeSymbol.Float, true),
+                new ParameterSymbol("screenX", Modifiers.Out, TypeSymbol.Float),
+                new ParameterSymbol("screenY", Modifiers.Out, TypeSymbol.Float),
+                new ParameterSymbol("TOUCH_STATE", Modifiers.Constant, TypeSymbol.Float),
+                new ParameterSymbol("TOUCH_FINGER", Modifiers.Constant, TypeSymbol.Float),
             ]),
             new EventTypeInfo(EventType.Swipe, [
-                new EventTypeParam("direction", Modifiers.Out, TypeSymbol.Vector3),
+                new ParameterSymbol("direction", Modifiers.Out, TypeSymbol.Vector3),
             ]),
             new EventTypeInfo(EventType.Button, [
-                new EventTypeParam("BUTTON_TYPE", 0, TypeSymbol.Float, true),
+                new ParameterSymbol("BUTTON_TYPE", Modifiers.Constant, TypeSymbol.Float),
             ]),
             new EventTypeInfo(EventType.Collision, [
-                new EventTypeParam("object1", 0, TypeSymbol.Object),
-                new EventTypeParam("object2", Modifiers.Out, TypeSymbol.Object),
-                new EventTypeParam("impulse", Modifiers.Out, TypeSymbol.Float),
-                new EventTypeParam("normal", Modifiers.Out, TypeSymbol.Vector3),
+                new ParameterSymbol("object1", 0, TypeSymbol.Object),
+                new ParameterSymbol("object2", Modifiers.Out, TypeSymbol.Object),
+                new ParameterSymbol("impulse", Modifiers.Out, TypeSymbol.Float),
+                new ParameterSymbol("normal", Modifiers.Out, TypeSymbol.Vector3),
             ]),
             new EventTypeInfo(EventType.Loop, [
-                new EventTypeParam("start", 0, TypeSymbol.Float),
-                new EventTypeParam("stop", 0, TypeSymbol.Float),
-                new EventTypeParam("counter", Modifiers.Out, TypeSymbol.Float),
+                new ParameterSymbol("start", 0, TypeSymbol.Float),
+                new ParameterSymbol("stop", 0, TypeSymbol.Float),
+                new ParameterSymbol("counter", Modifiers.Out, TypeSymbol.Float),
             ]),
         };
 
@@ -200,7 +200,7 @@ namespace FanScript.Compiler
         }
     }
 
-    public record EventTypeInfo(EventType Type, ImmutableArray<EventTypeParam> Parameters)
+    public record EventTypeInfo(EventType Type, ImmutableArray<ParameterSymbol> Parameters)
     {
         public override string ToString()
         {
@@ -231,11 +231,5 @@ namespace FanScript.Compiler
                 .Append(')')
                 .ToString();
         }
-    }
-
-    public record EventTypeParam(string Name, Modifiers Modifiers, TypeSymbol Type, bool IsConstant = false)
-    {
-        public ParameterSymbol ToParameter()
-            => new ParameterSymbol(Name, Modifiers, Type);
     }
 }
