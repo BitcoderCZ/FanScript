@@ -7,12 +7,14 @@ using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("FanScript.DocumentationGenerator")]
 namespace FanScript.Compiler.Symbols
 {
+
     internal static class BuiltinFunctions
     {
         private static Namespace builtinNamespace = new Namespace("builtin");
@@ -23,7 +25,7 @@ namespace FanScript.Compiler.Symbols
         {
             FunctionToDoc = typeof(BuiltinFunctions)
                 .GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Static)
-                .SelectMany(type => type
+                .SelectMany(([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type type) => type
                     .GetFields(BindingFlags.Public | BindingFlags.Static)
                     .Where(f => f.FieldType == typeof(FunctionSymbol))
                     .Select(f =>
@@ -91,7 +93,9 @@ namespace FanScript.Compiler.Symbols
                         else
                         {
                             Debug.Assert(type.IsValueType);
+#pragma warning disable IL2062 // The parameter of method has a DynamicallyAccessedMembersAttribute, but the value passed to it can not be statically analyzed.
                             val = RuntimeHelpers.GetUninitializedObject(type);
+#pragma warning restore IL2062
                         }
                     }
                     else
@@ -2731,7 +2735,7 @@ namespace FanScript.Compiler.Symbols
         internal static IEnumerable<FunctionSymbol> GetAll()
             => functionsCache ??= typeof(BuiltinFunctions)
             .GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Static)
-            .SelectMany(type => type
+            .SelectMany(([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] Type type) => type
                 .GetFields(BindingFlags.Public | BindingFlags.Static)
                 .Where(f => f.FieldType == typeof(FunctionSymbol))
                 .Select(f => (FunctionSymbol)f.GetValue(null)!)

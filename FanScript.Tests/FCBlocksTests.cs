@@ -6,6 +6,7 @@ using FanScript.Compiler.Emit.Utils;
 using FanScript.FCInfo;
 using MathUtils.Vectors;
 using System.Collections.Frozen;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 
 namespace FanScript.Tests
@@ -142,7 +143,7 @@ namespace FanScript.Tests
                 Enumerable.Concat(
                     typeof(Blocks).GetFields(bindingFlags),
                     typeof(Blocks).GetNestedTypes(bindingFlags)
-                        .Aggregate(new List<FieldInfo>(), (list, type) =>
+                        .Aggregate(new List<FieldInfo>(), (list, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] type) =>
                         {
                             list.AddRange(type.GetFields(bindingFlags));
                             return list;

@@ -7,6 +7,11 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <AssemblyVersion>$(Version)</AssemblyVersion>
+    <FileVersion>$(Version)</FileVersion>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <TreatWarningsAsErrors>True</TreatWarningsAsErrors>
   </PropertyGroup>
@@ -16,29 +21,27 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Melanchall.DryWetMidi" Version="7.2.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="TextCopy" Version="6.2.1" />
   </ItemGroup>
 
   <ItemGroup>
     <Reference Include="FancadeLoaderLib">
-      <HintPath>..\FancadeLoaderLib.dll</HintPath>
+      <HintPath>..\Dlls\FancadeLoaderLib.dll</HintPath>
     </Reference>
     <Reference Include="FancadeLoaderLib.Editing">
-      <HintPath>..\FancadeLoaderLib.Editing.dll</HintPath>
+      <HintPath>..\Dlls\FancadeLoaderLib.Editing.dll</HintPath>
     </Reference>
     <Reference Include="MathUtils">
-      <HintPath>..\MathUtils.dll</HintPath>
+      <HintPath>..\Dlls\MathUtils.dll</HintPath>
     </Reference>
     <Reference Include="zlib.net">
-      <HintPath>..\zlib.net.dll</HintPath>
+      <HintPath>..\Dlls\zlib.net.dll</HintPath>
     </Reference>
   </ItemGroup>
 
     <ItemGroup>
 		<ProjectReference Include="..\FanScript.Generators\FanScript.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-		<ProjectReference Include="..\FanScript.Midi\FanScript.Midi.csproj" />
     </ItemGroup>
 
     <ItemGroup>

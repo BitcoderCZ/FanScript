@@ -30,10 +30,10 @@
 
   <ItemGroup>
     <Reference Include="FancadeLoaderLib">
-      <HintPath>..\FancadeLoaderLib.dll</HintPath>
+      <HintPath>..\Dlls\FancadeLoaderLib.dll</HintPath>
     </Reference>
     <Reference Include="MathUtils">
-      <HintPath>..\MathUtils.dll</HintPath>
+      <HintPath>..\Dlls\MathUtils.dll</HintPath>
     </Reference>
   </ItemGroup>
 

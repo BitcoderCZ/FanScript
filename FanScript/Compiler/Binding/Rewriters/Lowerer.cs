@@ -362,7 +362,7 @@ namespace FanScript.Compiler.Binding.Rewriters
                         [Variable(node.Syntax, arrayVariable), Literal(node.Syntax, startIndex), expression]
                     ),
                     TypeSymbol.Void,
-                    null,
+                    node.ElementType,
                     null
                 )
             );
