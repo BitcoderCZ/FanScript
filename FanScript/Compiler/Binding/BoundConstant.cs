@@ -1,4 +1,5 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using FanScript.Compiler.Exceptions;
+using FanScript.Compiler.Symbols;
 using MathUtils.Vectors;
 
 namespace FanScript.Compiler.Binding
@@ -39,7 +40,7 @@ namespace FanScript.Compiler.Binding
                 else if (type == TypeSymbol.Rotation)
                     return new Rotation(Vector3F.Zero);
                 else
-                    throw new InvalidDataException($"Unknown type: '{type}'");
+                    throw new UnexpectedSymbolException(type);
             }
         }
     }

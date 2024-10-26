@@ -41,4 +41,10 @@
 		<ProjectReference Include="..\FanScript.Midi\FanScript.Midi.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="stockPrefabs.fcppl">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

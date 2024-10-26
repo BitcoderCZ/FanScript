@@ -630,7 +630,7 @@ namespace FanScript.Compiler.Emit
             else if (expression.Type == TypeSymbol.Vector3 || expression.Type == TypeSymbol.Rotation)
                 return emitBinaryExpression_VecOrRot(expression);
             else
-                throw new InvalidDataException($"Unknown TypeSymbol '{expression.Type}'");
+                throw new UnexpectedSymbolException(expression.Type);
         }
         private EmitStore emitBinaryExpression_FloatOrBool(BoundBinaryExpression expression)
         {

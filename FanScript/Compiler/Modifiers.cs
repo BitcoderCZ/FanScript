@@ -3,6 +3,7 @@ using FanScript.Compiler.Syntax;
 using FanScript.Documentation.Attributes;
 using System.Collections.Frozen;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
@@ -171,7 +172,7 @@ namespace FanScript.Compiler
                 SyntaxKind.GlobalModifier => Modifiers.Global,
                 SyntaxKind.SavedModifier => Modifiers.Saved,
                 SyntaxKind.InlineModifier => Modifiers.Inline,
-                _ => throw new InvalidDataException($"SyntaxKind '{kind}' isn't a modifier"),
+                _ => throw new InvalidEnumArgumentException(nameof(kind), (int)kind, typeof(SyntaxKind)),
             };
 
         public static Modifiers Colaps(this IEnumerable<Modifiers> enumerable)

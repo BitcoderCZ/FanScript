@@ -1,5 +1,6 @@
 ﻿using FancadeLoaderLib;
 using FancadeLoaderLib.Editing.Utils;
+using FancadeLoaderLib.Partial;
 using MathUtils.Vectors;
 
 /*
@@ -38,13 +39,13 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 
             Block[] blocks = PreBuild(startPos, false);
 
-            PrefabList stockPrefabs;
-            using (FcBinaryReader reader = new FcBinaryReader("baseBlocks.fcbl")) // fcbl - Fancade block list
-                stockPrefabs = PrefabList.Load(reader);
+            PartialPrefabList stockPrefabs;
+            using (FcBinaryReader reader = new FcBinaryReader("stockPrefabs.fcppl")) // fcppl - Fancade partial prefab list
+                stockPrefabs = PartialPrefabList.Load(reader);
 
             Prefab prefab = game.Prefabs[prefabIndex];
 
-            Dictionary<ushort, PrefabGroup> groupCache = new Dictionary<ushort, PrefabGroup>();
+            Dictionary<ushort, PartialPrefabGroup> groupCache = new();
 
             for (int i = 0; i < blocks.Length; i++)
             {

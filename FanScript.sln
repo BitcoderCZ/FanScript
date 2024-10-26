@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FanScript.Generators", "Fan
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FanScript.Cli", "FanScript.Cli\FanScript.Cli.csproj", "{F6FD8705-1271-4792-AA60-E20546980D6F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FanScript.Midi", "FanScript.Midi\FanScript.Midi.csproj", "{9121436C-B9D9-4993-BB56-256B05C51BAA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FanScript.Midi", "FanScript.Midi\FanScript.Midi.csproj", "{9121436C-B9D9-4993-BB56-256B05C51BAA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
