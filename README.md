@@ -9,7 +9,7 @@ Documentation can be found [here](https://github.com/BitcoderCZ/FanScript-Docume
 
 ## VSCode Extension
 To run the extension:
-- run `npm install` in the VSCodeExtension folder
+- install [vscode](https://code.visualstudio.com/download) (duh) and [node](https://nodejs.org/en/download/package-manager)
 - run `npm install` in the VSCodeExtension/client folder
 - open vscode
 - open folder, select VSCodeExtension

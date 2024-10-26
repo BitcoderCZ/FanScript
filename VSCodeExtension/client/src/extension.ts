@@ -4,6 +4,7 @@
  * ------------------------------------------------------------------------------------------ */
 
 import * as path from 'path';
+import * as os from 'os';
 import { workspace, ExtensionContext } from 'vscode';
 
 import {
@@ -16,7 +17,7 @@ import {
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-	const serverExecutable = path.join(context.extensionPath, 'FanScript.LangServer.exe');
+	const serverExecutable = path.join(context.extensionPath, os.platform() === 'win32' ? 'FanScript.LangServer.exe' : 'FanScript.LangServer');
 
     // Configure the server options to use stdio
     const serverOptions: ServerOptions = {
