@@ -65,17 +65,11 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
             StatementCodeBlock statement = statements.Pop();
 
-            if (statements.Count == 1)
-            {
-                if (statement.Parent!.Parent is not null)
-                    throw new Exception("Parent not null.");
-
-                // if this is child of the top statement, process and assign x and y position to blocks
-                LayerStack.Process(statement, BlockXOffset);
-            }
-            else if (statements.Count == 0 && statement.AllBlocks.Any())
+            if (statements.Count == 0 && statement.AllBlocks.Any())
             {
                 // end of function
+                LayerStack.Process(statement, BlockXOffset);
+
                 Builder.AddBlockSegments(statement.AllBlocks);
             }
         }
@@ -177,9 +171,9 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             public Block PlaceBlock(BlockDef blockDef)
             {
                 if (BlockCount != 0)
-                    CurrentPos -= blockDef.Size.Y + blockZOffset;
+                    CurrentPos -= blockDef.Size.Z + blockZOffset;
                 else
-                    CurrentPos -= blockDef.Size.Y - 1;
+                    CurrentPos -= blockDef.Size.Z - 1;
 
                 Height = Math.Max(Height, blockDef.Size.Y);
 
@@ -191,7 +185,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             }
 
             protected int CalculatePosOfNextChild()
-                => CurrentPos + (LastPlacedBlockType is null ? 0 : LastPlacedBlockType.Size.Y - 1);
+                => CurrentPos + (LastPlacedBlockType is null ? 0 : LastPlacedBlockType.Size.Z - 1);
 
             protected void IncrementXOffsetOfStatementParent()
             {
@@ -249,8 +243,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
 
         protected class ExpressionCodeBlock : CodeBlock
         {
-            public static readonly int BlockZOffset = 0;
-            protected override int blockZOffset => BlockZOffset;
+            protected override int blockZOffset => 0;
 
             public ExpressionCodeBlock(GroundCodePlacer placer, int pos, CodeBlock parent, int layerOffset)
                 : base(placer, pos, parent, layerOffset)
@@ -309,7 +302,7 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                 foreach (var (_, list) in xToBlocks)
                 {
                     // sort in descending order - blocks start and zero and go down
-                    list.Sort((a, b) => b.StartPos.CompareTo(a.StartPos));
+                    list.Sort((a, b) => b.StartZ.CompareTo(a.StartZ));
 
                     List<int> positions = new();
 
@@ -323,12 +316,14 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                         int yPos = -1;
 
                         for (int j = 0; j < positions.Count; j++)
+                        {
                             if (positions[j] > item.StartZ)
                             {
                                 positions[j] = item.CurrentPos;
                                 yPos = j;
                                 break;
                             }
+                        }
 
                         if (yPos == -1)
                         {

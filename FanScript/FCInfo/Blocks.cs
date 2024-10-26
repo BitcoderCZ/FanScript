@@ -101,7 +101,7 @@ namespace FanScript.FCInfo
         {
             public static BlockDef EqualsByType(WireType type)
             {
-                switch (type)
+                switch (type.ToNormal())
                 {
                     case WireType.Float:
                         return Equals_Number;
@@ -117,7 +117,7 @@ namespace FanScript.FCInfo
             }
             public static BlockDef BreakByType(WireType type)
             {
-                switch (type)
+                switch (type.ToNormal())
                 {
                     case WireType.Vec3:
                         return Break_Vector;
@@ -129,7 +129,7 @@ namespace FanScript.FCInfo
             }
             public static BlockDef MakeByType(WireType type)
             {
-                switch (type)
+                switch (type.ToNormal())
                 {
                     case WireType.Vec3:
                         return Make_Vector;
@@ -223,7 +223,7 @@ namespace FanScript.FCInfo
             }
             public static BlockDef InspectByType(WireType type)
             {
-                switch (type)
+                switch (type.ToNormal())
                 {
                     case WireType.Float:
                         return Inspect_Number;
@@ -259,7 +259,7 @@ namespace FanScript.FCInfo
         {
             public static BlockDef VariableByType(WireType type)
             {
-                switch (type)
+                switch (type.ToNormal())
                 {
                     case WireType.Float:
                         return Variable_Num;
@@ -279,7 +279,7 @@ namespace FanScript.FCInfo
             }
             public static BlockDef Set_VariableByType(WireType type)
             {
-                switch (type)
+                switch (type.ToNormal())
                 {
                     case WireType.Float:
                         return Set_Variable_Num;
@@ -299,7 +299,7 @@ namespace FanScript.FCInfo
             }
             public static BlockDef ListByType(WireType type)
             {
-                switch (type)
+                switch (type.ToNormal())
                 {
                     case WireType.Float:
                         return List_Num;
@@ -319,7 +319,7 @@ namespace FanScript.FCInfo
             }
             public static BlockDef Set_PtrByType(WireType type)
             {
-                switch (type)
+                switch (type.ToNormal())
                 {
                     case WireType.Float:
                         return Set_Ptr_Num;

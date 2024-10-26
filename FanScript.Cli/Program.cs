@@ -58,7 +58,7 @@ namespace FanScript.Cli
             try
             {
 #endif
-                return action(arg);
+            return action(arg);
 #if !DEBUG
             }
             catch (Exception ex)

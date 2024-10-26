@@ -2,6 +2,7 @@
 using FanScript.Compiler.Emit;
 using FanScript.Compiler.Emit.BlockPlacers;
 using FanScript.Compiler.Emit.CodeBuilders;
+using FanScript.Compiler.Emit.Utils;
 using FanScript.FCInfo;
 using MathUtils.Vectors;
 using System.Collections.Frozen;
@@ -34,16 +35,13 @@ namespace FanScript.Tests
 
             using (placer.StatementBlock())
             {
-                Block? lastBlock = null;
+                EmitConnector connector = new EmitConnector(builder.Connect);
 
                 foreach (var def in active)
                 {
                     Block block = placeAndConnectAllTerminals(def);
 
-                    if (lastBlock is not null)
-                        builder.Connect(new BlockConnectTarget(lastBlock, lastBlock.Type.After), new BlockConnectTarget(block, block.Type.Before));
-
-                    lastBlock = block;
+                    connector.Add(new BasicEmitStore(block));
                 }
 
                 foreach (var def in pasive)
@@ -65,22 +63,20 @@ namespace FanScript.Tests
 
                 (Block, Terminal)[] connectToTerminals = new (Block, Terminal)[terminals.Length];
 
-                using (placer.StatementBlock())
+                Block block = placer.PlaceBlock(def);
+
+                using (placer.ExpressionBlock())
                 {
-                    for (int i = 0; i < terminals.Length; i++)
+                    for (int i = terminals.Length - 1; i >= 0; i--)
                     {
                         Terminal terminal = terminals[i];
 
                         WireType type = terminal.WireType;
-                        if (type != WireType.Void)
-                            type = (WireType)((int)type & (int.MaxValue ^ 1)); // xPtr => x
 
                         var (_def, _terminal) = terminalDict[(terminal.Type, type)];
                         connectToTerminals[i] = (placer.PlaceBlock(_def), _terminal);
                     }
                 }
-
-                Block block = placer.PlaceBlock(def);
 
                 for (int i = 0; i < connectToTerminals.Length; i++)
                 {
@@ -106,33 +102,33 @@ namespace FanScript.Tests
 
             IEnumerable<KeyValuePair<(TerminalType, WireType), (BlockDef, Terminal)>> generateTerminalDict()
             {
-                foreach (var _type in Enum.GetValues<WireType>())
+                foreach (var type in Enum.GetValues<WireType>())
                 {
-                    if (_type == WireType.Error ||
-                        (_type != WireType.Void && (int)_type % 2 == 1))
+                    if (type == WireType.Error)
                         continue;
 
-                    BlockDef def = _type == WireType.Void ? Blocks.Variables.Set_Variable_Num : Blocks.Variables.VariableByType(_type);
+                    BlockDef def = type == WireType.Void ? Blocks.Variables.Set_Variable_Num : Blocks.Variables.VariableByType(type);
 
-                    var type = (WireType)((int)_type | 1);
+                    WireType ptrType = type.ToPointer();
 
-                    var terminal = def.TerminalArray.First(term => term.Type == TerminalType.Out && term.WireType == type);
+                    var terminal = def.TerminalArray.First(term => term.Type == TerminalType.Out && term.WireType == ptrType);
 
-                    yield return new KeyValuePair<(TerminalType, WireType), (BlockDef, Terminal)>((TerminalType.In, _type), (def, terminal));
+                    yield return new KeyValuePair<(TerminalType, WireType), (BlockDef, Terminal)>((TerminalType.In, type), (def, terminal));
                 }
 
                 // this *could* be names "type", but for some fuckinf reason if it is, it's always WireType.Error
-                foreach (var _type in Enum.GetValues<WireType>())
+                foreach (var type in Enum.GetValues<WireType>())
                 {
-                    if (_type == WireType.Error ||
-                        (_type != WireType.Void && (int)_type % 2 == 1))
+                    if (type == WireType.Error)
                         continue;
 
-                    BlockDef def = _type == WireType.Void ? Blocks.Variables.Set_Variable_Num : Blocks.Variables.Set_VariableByType(_type);
+                    BlockDef def = type == WireType.Void ? Blocks.Variables.Set_Variable_Num : Blocks.Variables.Set_VariableByType(type);
 
-                    var terminal = def.TerminalArray.First(term => term.Type == TerminalType.In && term.WireType == _type);
+                    WireType nonPtrType = type.ToNormal();
 
-                    yield return new KeyValuePair<(TerminalType, WireType), (BlockDef, Terminal)>((TerminalType.Out, _type), (def, terminal));
+                    var terminal = def.TerminalArray.First(term => term.Type == TerminalType.In && term.WireType == nonPtrType);
+
+                    yield return new KeyValuePair<(TerminalType, WireType), (BlockDef, Terminal)>((TerminalType.Out, type), (def, terminal));
                 }
             }
         }

@@ -81,8 +81,8 @@ namespace FanScript.FCInfo
             }
 
             // if a block has less/more in/out terminals, one of the sides will start higher
-            countIn = Size.Y - countIn;
-            countOut = Size.Y - countOut;
+            countIn = Size.Z - countIn;
+            countOut = Size.Z - countOut;
 
             int outXPos = Size.X * 8 - 2;
 
@@ -99,7 +99,7 @@ namespace FanScript.FCInfo
             if (Type == BlockType.Active)
             {
                 After.Init(0, new Vector3I(3, 1, 0));
-                Before.Init(TerminalArray.Length - 1, new Vector3I(3, 1, Size.Y * 8 - 2));
+                Before.Init(TerminalArray.Length - 1, new Vector3I(3, 1, Size.Z * 8 - 2));
             }
         }
 

@@ -160,7 +160,7 @@ namespace FanScript.Compiler.Emit
                     BlockDef type = Blocks[i].Type;
 
                     min = Vector3I.Min(Blocks[i].Pos, min);
-                    max = Vector3I.Max(Blocks[i].Pos + new Vector3I(type.Size.X, 1, type.Size.Y), max);
+                    max = Vector3I.Max(Blocks[i].Pos + type.Size, max);
                 }
 
                 MinPos = min;
