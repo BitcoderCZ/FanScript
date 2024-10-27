@@ -23,9 +23,10 @@ namespace FanScript.Compiler
         /// Only use with validated values!
         /// </summary>
         /// <param name="value"></param>
-        private Namespace(string value)
+        private Namespace(string value, int length)
         {
             Value = value;
+            Length = length;
         }
 
         public Namespace Slice(int index)
@@ -45,11 +46,16 @@ namespace FanScript.Compiler
 
             val = val.Slice(startIndex + 1);
 
-            int endIndex = val.IndexOf('/', length - 1);
+            int endIndex;
+            if (length == 1)
+                endIndex = val.Length;
+            else
+                endIndex = val.IndexOf('/', length - 1);
+
             if (endIndex == -1)
                 throw new ArgumentOutOfRangeException(nameof(index));
 
-            return new Namespace(new string(val.Slice(0, endIndex)));
+            return new Namespace(new string(val.Slice(0, endIndex)), length);
         }
 
         public Namespace CapitalizeFirst()
@@ -59,13 +65,13 @@ namespace FanScript.Compiler
             for (int i = 0; i < split.Length; i++)
                 split[i] = split[i].ToUpperFirst();
 
-            return new Namespace(string.Join('/', split));
+            return new Namespace(string.Join('/', split), Length);
         }
 
         public static Namespace operator +(Namespace a, string b)
-            => new Namespace(a.Value + "/" + b.ToLowerInvariant());
+            => new Namespace(a.Value + "/" + b.ToLowerInvariant(), a.Length + 1 + b.AsSpan().Count('/'));
         public static Namespace operator +(Namespace a, Namespace b)
-            => new Namespace(a.Value + "/" + b);
+            => new Namespace(a.Value + "/" + b, a.Length + b.Length);
 
         public static bool operator ==(Namespace a, Namespace b)
             => a.Value == b.Value;
