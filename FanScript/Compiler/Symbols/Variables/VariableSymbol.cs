@@ -29,7 +29,7 @@ namespace FanScript.Compiler.Symbols.Variables
                     preChar = "$";
 
                 string name = getNameForResult();
-                return string.Concat(preChar, name.AsSpan(0, Math.Min(name.Length, FancadeConstants.MaxVariableNameLength - preChar.Length)));
+                return string.Concat(preChar, Modifiers.HasFlag(Modifiers.Constant) ? name : name.AsSpan(0, Math.Min(name.Length, FancadeConstants.MaxVariableNameLength - preChar.Length)));
             }
         }
         protected virtual string getNameForResult()
