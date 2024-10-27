@@ -159,10 +159,10 @@ namespace FanScript.Cli
 
                         game.TrimPrefabs();
 
-                        using (FileStream fs = File.OpenWrite("658B97B57E427478"))
+                        using (FileStream fs = File.OpenWrite("GAME.fcg"))
                             game.SaveCompressed(fs);
 
-                        Log.Info($"Built code to file '{Path.GetFullPath("658B97B57E427478")}'");
+                        Log.Info($"Built code to file '{Path.GetFullPath("GAME.fcg")}'");
                     }
                     break;
                 default:
