@@ -3,7 +3,7 @@ Param (
 	[string]$version
 )
 
-$profiles = 'win-x64', 'win-arm64', 'linux-x64', 'linux-arm64'
+$profiles = 'win-x64', 'win-arm64', 'linux-x64', 'linux-arm64', 'framework-dependent'
 
 Function Publish-Proj
 {
