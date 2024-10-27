@@ -5,6 +5,9 @@ Param (
 
 $publishDir = './bin/Publish'
 
+Write-Host Cleaning
+Remove-Item -Path $publishDir -Recurse -Force
+
 foreach ($profile in $profiles) {
 	Write-Host "Publishing $profile"
 	if ($profile -eq 'framework-dependent') {

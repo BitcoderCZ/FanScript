@@ -29,6 +29,9 @@ Publish-Proj 'FanScript.LangServer'
 
 $publishDir = 'Publish'
 
+Write-Host Cleaning
+Remove-Item -Path $publishDir -Recurse -Force
+
 Write-Host 'Copying files'
 
 New-Item -Path . -Name $publishDir -ItemType "directory" -Force > $null
