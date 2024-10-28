@@ -8,6 +8,7 @@ using FanScript.Compiler.Syntax;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using TextCopy;
+
 #if DEBUG
 using System.Diagnostics;
 #endif
@@ -37,6 +38,21 @@ namespace FanScript.Cli
 
             [Option("showCompiled", Default = false, Required = false, HelpText = "If the compiled code should be displayed.")]
             public bool ShowCompiledCode { get; set; }
+
+            // builder options
+            [Option("inGameFile", Default = null, Required = false, HelpText = "(Only used with GameFileBuilder) Path to the game file that will be used by GameFile builder, this file will not be overwriten. If not supplied, a new game is created.")]
+            public string? InGameFile { get; set; }
+
+            [Option("useExistingPrefab", Default = false, Required = false, HelpText = "(Only used with GameFileBuilder) If true an existing prefab from InGameFile will be used (prefabIndex) otherwise a new prefab wiil be created (prefabName, prefabType).")]
+            public bool UseExistingPrefab { get; set; }
+
+            [Option("prefabName", SetName = "gfb_new", Default = "New Block", Required = false, HelpText = "(Only used with GameFileBuilder) Name of the new prefab, in which code will get placed.")]
+            public string PrefabName { get; set; }
+            [Option("prefabType", SetName = "gfb_new", Default = PrefabType.Script, Required = false, HelpText = $"(Only used with GameFileBuilder) Type of the new prefab, in which code will get placed. Values: {nameof(PrefabType.Normal)}, {nameof(PrefabType.Physics)}, {nameof(PrefabType.Script)}, {nameof(PrefabType.Level)}.")]
+            public PrefabType PrefabType { get; set; }
+
+            [Option("prefabIndex", SetName = "gfb_existing", Default = (ushort)0, Required = false, HelpText = "(Only used with GameFileBuilder)Index of the custom prefab that code will get placed in. NOT the prefab's id, but it's index as a custom prefab - the first custom prefab would be id 597 and INDEX 0.")]
+            public ushort PrefabIndex { get; set; }
         }
 #pragma warning restore CS8618 
 
@@ -155,7 +171,13 @@ namespace FanScript.Cli
                     break;
                 case CodeBuilderEnum.GameFile:
                     {
-                        Game game = (Game)builder.Build(pos);
+                        GameFileBlockBuilder.Args args;
+                        if (opts.UseExistingPrefab)
+                            args = new(opts.InGameFile, opts.PrefabIndex);
+                        else
+                            args = new(opts.InGameFile, opts.PrefabName, opts.PrefabType);
+
+                        Game game = (Game)builder.Build(pos, args);
 
                         game.TrimPrefabs();
 

@@ -1,4 +1,7 @@
-﻿using FanScript.Compiler.Binding;
+﻿using FancadeLoaderLib.Editing.Utils;
+using FancadeLoaderLib.Partial;
+using FancadeLoaderLib.Raw;
+using FanScript.Compiler.Binding;
 using FanScript.Compiler.Emit;
 using FanScript.Compiler.Emit.Utils;
 using FanScript.Compiler.Symbols.Variables;
@@ -2429,8 +2432,25 @@ namespace FanScript.Compiler.Symbols
                 float _id = (constants[0] as float?) ?? 0f;
                 ushort id = (ushort)System.Math.Clamp((int)_id, ushort.MinValue, ushort.MaxValue);
 
-                // TODO: somehow calculate the size, for now just use the largest stock one
-                Block block = context.AddBlock(new BlockDef(string.Empty, id, BlockType.NonScript, new Vector2I(2, 4)));
+                BlockDef def;
+                if (id < RawGame.CurrentNumbStockPrefabs)
+                {
+                    var groupEnumerable = StockPrefabs.Instance.List.GetGroup(id);
+
+                    if (groupEnumerable.Any())
+                    {
+                        PartialPrefabGroup group = new PartialPrefabGroup(groupEnumerable);
+                        PartialPrefab mainPrefab = group[Vector3B.Zero];
+
+                        def = new BlockDef(mainPrefab.Name, id, BlockType.NonScript, group.Size, []);
+                    }
+                    else
+                        def = new BlockDef(string.Empty, id, BlockType.NonScript, new Vector2I(1, 1));
+                }
+                else
+                    def = new BlockDef(string.Empty, id, BlockType.NonScript, new Vector2I(1, 1));
+
+                Block block = context.AddBlock(def);
 
                 if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
                 {

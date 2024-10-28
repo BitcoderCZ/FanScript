@@ -41,7 +41,7 @@ namespace FanScript.Compiler.Emit
         public virtual void SetBlockValue(Block block, int valueIndex, object value)
             => values.Add(new ValueRecord(block, valueIndex, value));
 
-        public abstract object Build(Vector3I posToBuildAt, params object[] args);
+        public abstract object Build(Vector3I posToBuildAt, IArgs? args = null);
 
         protected Block[] PreBuild(Vector3I posToBuildAt, bool sortByPos)
         {
@@ -56,7 +56,7 @@ namespace FanScript.Compiler.Emit
             for (int i = 0; i < segments.Count; i++)
             {
                 totalBlockCount += segments[i].Blocks.Length;
-                segmentSizes[i] = segments[i].Size + new Vector3I(2, 0, 2); // margin
+                segmentSizes[i] = segments[i].Size + new Vector3I(2, 1, 2); // margin
             }
 
             Vector3I[] segmentPositions = BinPacker.Compute(segmentSizes);
@@ -166,6 +166,10 @@ namespace FanScript.Compiler.Emit
                 MinPos = min;
                 MaxPos = max - Vector3I.One;
             }
+        }
+
+        public interface IArgs
+        {
         }
     }
 }

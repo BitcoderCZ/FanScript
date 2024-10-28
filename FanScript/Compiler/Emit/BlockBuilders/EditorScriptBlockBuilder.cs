@@ -125,26 +125,23 @@ namespace FanScript.Compiler.Emit.CodeBuilders
         /// 
         /// </summary>
         /// <param name="startPos"></param>
-        /// <param name="args">0: [optional] <see cref="Compression"/></param>
+        /// <param name="_args">Must be null or <see cref="Args"/></param>
         /// <returns>The editor script (js) to build the code</returns>
         /// <exception cref="Exception"></exception>
-        public override object Build(Vector3I startPos, params object[] args)
+        public override string Build(Vector3I startPos, IArgs? _args)
         {
+            Args args = (_args as Args) ?? Args.Default;
+
             Block[] blocks = PreBuild(startPos, sortByPos: true); // sortByPos is requred because of a bug that sometimes deletes objects if they are placed from +Z to -Z, even if they aren't overlaping
 
-            Compression compression = Compression.Base64;
-
-            if (args.Length > 0 && args[0] is Compression comp)
-                compression = comp;
-
-            switch (compression)
+            switch (args.Compression)
             {
                 case Compression.None:
                     return buildNormal(blocks);
                 case Compression.Base64:
                     return buildBase64(blocks);
                 default:
-                    throw new Exception($"Unsuported compression: {compression}");
+                    throw new Exception($"Unsuported compression: {args.Compression}");
             }
         }
 
@@ -313,6 +310,18 @@ namespace FanScript.Compiler.Emit.CodeBuilders
         {
             None,
             Base64,
+        }
+
+        public sealed class Args : IArgs
+        {
+            public static readonly Args Default = new Args(Compression.Base64);
+
+            public readonly Compression Compression;
+
+            public Args(Compression compression)
+            {
+                Compression = compression;
+            }
         }
     }
 }

@@ -1,7 +1,9 @@
 ﻿using FancadeLoaderLib;
 using FancadeLoaderLib.Editing.Utils;
 using FancadeLoaderLib.Partial;
+using FanScript.Utils;
 using MathUtils.Vectors;
+using System.Diagnostics.CodeAnalysis;
 
 /*
 log("Block id: " + getBlock(0, 0, 0));
@@ -24,26 +26,56 @@ namespace FanScript.Compiler.Emit.CodeBuilders
         /// 
         /// </summary>
         /// <param name="startPos"></param>
-        /// <param name="args">In any order - [optional] <see cref="Game"/> (Game to write to), [optional] <see langword="int"/> (Index of level to write to)</param>
+        /// <param name="_args">Must be null or <see cref="Args"/></param>
         /// <returns>The <see cref="Game"/> object that was written to</returns>
         /// <exception cref="InvalidDataException"></exception>
-        public override object Build(Vector3I startPos, params object[] args)
+        public override Game Build(Vector3I startPos, IArgs? _args)
         {
-            Game game = (args?.FirstOrDefault(arg => arg is Game) as Game) ?? new Game("My game");
-            int prefabIndex = (args?.FirstOrDefault(arg => arg is int) as int?) ?? 0;
+            Args args = (_args as Args) ?? Args.Default;
 
-            if (!game.Prefabs.Any())
-                game.Prefabs.Add(Prefab.CreateLevel("Level 1"));
+            Game game;
+            if (string.IsNullOrEmpty(args.InGameFile))
+                game = new Game("FanScript");
+            else
+            {
+                using (FileStream fs = File.OpenRead(args.InGameFile))
+                    game = Game.LoadCompressed(fs);
+            }
 
-            prefabIndex = Math.Clamp(prefabIndex, 0, game.Prefabs.Count - 1);
+            Prefab prefab;
+            if (args.CreateNewPrefab)
+            {
+                if (args.PrefabType == PrefabType.Level)
+                {
+                    prefab = Prefab.CreateLevel(args.PrefabName);
+
+                    int index = 0;
+
+                    while (index < game.Prefabs.Count && game.Prefabs[index].Type == PrefabType.Level)
+                        index++;
+
+                    game.Prefabs.Insert(index, prefab);
+                }
+                else
+                {
+                    prefab = Prefab.CreateBlock(args.PrefabName);
+                    prefab.Type = args.PrefabType.Value;
+                    prefab.Voxels = BlockVoxelsGenerator.CreateScript(Vector2I.One).First().Value;
+
+                    game.Prefabs.Add(prefab);
+                }
+            }
+            else
+            {
+                if (args.PrefabIndex < 0 || args.PrefabIndex >= game.Prefabs.Count)
+                    throw new IndexOutOfRangeException($"PrefabIndex must be greater or equal to 0 and smaller than the number of prefabs ({game.Prefabs.Count}).");
+
+                prefab = game.Prefabs[args.PrefabIndex.Value];
+            }
 
             Block[] blocks = PreBuild(startPos, false);
 
-            PartialPrefabList stockPrefabs;
-            using (FcBinaryReader reader = new FcBinaryReader("stockPrefabs.fcppl")) // fcppl - Fancade partial prefab list
-                stockPrefabs = PartialPrefabList.Load(reader);
-
-            Prefab prefab = game.Prefabs[prefabIndex];
+            PartialPrefabList stockPrefabs = StockPrefabs.Instance.List;
 
             Dictionary<ushort, PartialPrefabGroup> groupCache = new();
 
@@ -98,6 +130,41 @@ namespace FanScript.Compiler.Emit.CodeBuilders
             }
 
             return game;
+        }
+
+        public sealed class Args : IArgs
+        {
+            public static readonly Args Default = new Args(null, "New Block", FancadeLoaderLib.PrefabType.Script);
+
+            public readonly string? InGameFile;
+
+            [MemberNotNullWhen(true, nameof(PrefabName), nameof(PrefabType))]
+            [MemberNotNullWhen(false, nameof(PrefabIndex))]
+            public bool CreateNewPrefab { get; private set; }
+
+            public readonly string? PrefabName;
+            public readonly PrefabType? PrefabType;
+
+            public readonly ushort? PrefabIndex;
+
+            public Args(string? inGameFile, string prefabName, PrefabType prefabType)
+            {
+                InGameFile = inGameFile;
+
+                CreateNewPrefab = true;
+
+                PrefabName = prefabName;
+                PrefabType = prefabType;
+            }
+
+            public Args(string? inGameFile, ushort prefabIndex)
+            {
+                InGameFile = inGameFile;
+
+                CreateNewPrefab = false;
+
+                PrefabIndex = prefabIndex;
+            }
         }
     }
 }
