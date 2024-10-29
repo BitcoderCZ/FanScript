@@ -1,6 +1,7 @@
 ﻿using FancadeLoaderLib;
 using FancadeLoaderLib.Editing.Utils;
 using FancadeLoaderLib.Partial;
+using FanScript.Compiler.Emit.BlockBuilders;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Diagnostics.CodeAnalysis;
@@ -16,12 +17,8 @@ for (var i = 0; i < 10; i++) {
 
 namespace FanScript.Compiler.Emit.CodeBuilders
 {
-    public class GameFileBlockBuilder : BlockBuilder
+    public class GameFileBlockBuilder : BlockBuilder, IConnectToBlocksBuilder
     {
-        public override BuildPlatformInfo PlatformInfo =>
-            BuildPlatformInfo.CanGetBlocks |
-            BuildPlatformInfo.CanCreateCustomBlocks;
-
         /// <summary>
         /// 
         /// </summary>

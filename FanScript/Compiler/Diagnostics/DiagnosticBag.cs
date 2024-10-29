@@ -270,13 +270,13 @@ namespace FanScript.Compiler.Diagnostics
             }
         }
 
-        public void ReportOpeationNotSupportedOnPlatform(TextLocation location, BuildPlatformInfo platformInfo)
+        public void ReportOpeationNotSupportedOnBuilder(TextLocation location, BuilderUnsupportedOperation unsupportedOperation)
         {
-            string msg = platformInfo switch
+            string msg = unsupportedOperation switch
             {
-                BuildPlatformInfo.CanGetBlocks => $"Current {nameof(BlockBuilder)} cannot connect object wires to blocks, you will have to connect it manually.",
-                BuildPlatformInfo.CanCreateCustomBlocks => $"Current {nameof(BlockBuilder)} cannot create custom blocks.",
-                _ => $"Unknown operation not supported by current {nameof(BlockBuilder)}.",
+                BuilderUnsupportedOperation.ConnectToBlock => $"Current {nameof(BlockBuilder)} cannot connect object wires to blocks, you will have to connect it manually.",
+                BuilderUnsupportedOperation.CreateCustomBlocks => $"Current {nameof(BlockBuilder)} cannot create custom blocks.",
+                _ => throw new UnknownEnumValueException<BuilderUnsupportedOperation>(unsupportedOperation),
             };
 
             ReportWarning(location, msg);

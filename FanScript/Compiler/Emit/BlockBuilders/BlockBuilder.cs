@@ -7,8 +7,6 @@ namespace FanScript.Compiler.Emit
 {
     public abstract class BlockBuilder
     {
-        public abstract BuildPlatformInfo PlatformInfo { get; }
-
         protected List<BlockSegment> segments = new();
         protected List<Block> highlightedBlocks = new();
         protected List<ConnectionRecord> connections = new();

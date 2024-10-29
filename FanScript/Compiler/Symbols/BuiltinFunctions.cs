@@ -3,6 +3,7 @@ using FancadeLoaderLib.Partial;
 using FancadeLoaderLib.Raw;
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Emit;
+using FanScript.Compiler.Emit.BlockBuilders;
 using FanScript.Compiler.Emit.Utils;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Documentation.Attributes;
@@ -494,9 +495,9 @@ namespace FanScript.Compiler.Symbols
 
                   Vector3I pos = (Vector3I)((Vector3F)constant.GetValueOrDefault(TypeSymbol.Vector3)); // unbox, then cast
 
-                  if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
+                  if (context.Builder is not IConnectToBlocksBuilder)
                   {
-                      context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
+                      context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
 
                       using (context.ExpressionBlock())
                           context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
@@ -545,9 +546,9 @@ namespace FanScript.Compiler.Symbols
 
                   Vector3I pos = new Vector3I((int)((float?)args[0] ?? 0f), (int)((float?)args[1] ?? 0f), (int)((float?)args[2] ?? 0f)); // unbox, then cast
 
-                  if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
+                  if (context.Builder is not IConnectToBlocksBuilder)
                   {
-                      context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
+                      context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
 
                       using (context.ExpressionBlock())
                           context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
@@ -2452,9 +2453,9 @@ namespace FanScript.Compiler.Symbols
 
                 Block block = context.AddBlock(def);
 
-                if (!context.Builder.PlatformInfo.HasFlag(BuildPlatformInfo.CanGetBlocks))
+                if (context.Builder is not IConnectToBlocksBuilder)
                 {
-                    context.Diagnostics.ReportOpeationNotSupportedOnPlatform(call.Syntax.Location, BuildPlatformInfo.CanGetBlocks);
+                    context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
                     return NopEmitStore.Instance;
                 }
 

@@ -37,6 +37,7 @@ namespace FanScript.Compiler.Emit
             Terminal = terminal;
         }
     }
+
     internal sealed class BlockVoxelConnectTarget : ConnectTarget
     {
         public Vector3I Pos => Block.Pos;
