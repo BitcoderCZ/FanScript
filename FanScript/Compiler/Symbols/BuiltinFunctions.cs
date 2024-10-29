@@ -1972,7 +1972,7 @@ namespace FanScript.Compiler.Symbols
 
             [FunctionDoc(
                 Info = """
-                Gets a ray going from ($plink screenX;, $plink screenY;).
+                Gets a ray going from (<link type="param">screenX</>, <link type="param">screenY</>).
                 """,
                 ParameterInfos = [
                     """

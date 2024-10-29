@@ -4,6 +4,7 @@ using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
+using FanScript.Documentation.Attributes;
 using FanScript.LangServer.Utils;
 using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
@@ -62,6 +63,21 @@ namespace FanScript.LangServer.Handlers
                     scope = funcScope.GetScopeAt(requestSpan.Start);
                     break;
                 }
+            }
+
+            if (node is SyntaxToken sToken)
+            {
+                if (sToken.Kind.IsModifier())
+                    return getHoverForModifier(ModifiersE.FromKind(sToken.Kind), sToken.Location);
+
+                TypeSymbol? type;
+                if (sToken.Text == TypeSymbol.Null.Name)
+                    type = TypeSymbol.Null;
+                else
+                    type = TypeSymbol.GetType(sToken.Text);
+
+                if (type != TypeSymbol.Error)
+                    return getHoverForType(type, sToken.Location);
             }
 
             switch (node.Parent)
@@ -150,16 +166,19 @@ namespace FanScript.LangServer.Handlers
                             break;
 
                         var info = type.GetInfo();
+                        var doc = DocUtils.GetAttribute<EventType, EventDocAttribute>(type);
+
+                        string val = info.ToString();
+
+                        if (!string.IsNullOrEmpty(doc.Info))
+                            val += " - " + doc.Info;
 
                         return new Hover()
                         {
                             Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
                             {
                                 Kind = MarkupKind.Markdown,
-                                Value = "#### " + info.ToString()/* +
-                                    (string.IsNullOrEmpty(info.Description) ?
-                                        string.Empty :
-                                        "\n" + info.Description)*/
+                                Value = val
                             }),
                             Range = node.Location.ToRange(),
                         };
@@ -179,6 +198,25 @@ namespace FanScript.LangServer.Handlers
                             return getHoverForVariable(varSymbol, node.Location);
                     }
                     break;
+                case BuildCommandStatementSyntax bc when node == bc.Identifier:
+                    {
+                        BuildCommand? command = BuildCommandE.Parse(bc.Identifier.Text);
+
+                        if (command is null)
+                            break;
+
+                        var doc = DocUtils.GetAttribute<BuildCommand, BuildCommandDocAttribute>(command.Value);
+
+                        return new Hover()
+                        {
+                            Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+                            {
+                                Kind = MarkupKind.PlainText,
+                                Value = DocUtils.ParseAndBuild(doc.Info, null),
+                            }),
+                            Range = node.Location.ToRange(),
+                        };
+                    }
             }
 
             return null;
@@ -224,8 +262,43 @@ namespace FanScript.LangServer.Handlers
                 return null;
             }
 
-            Hover getHoverForVariable(VariableSymbol variable, TextLocation location)
+            Hover? getHoverForVariable(VariableSymbol variable, TextLocation location)
             {
+                if (variable.Modifiers.HasFlag(Modifiers.Constant) && variable.Modifiers.HasFlag(Modifiers.Global))
+                {
+                    foreach (var group in Constants.Groups)
+                    {
+                        if (variable.Name.StartsWith(group.Name, StringComparison.Ordinal))
+                        {
+                            for (int i = 0; i < group.Values.Length; i++)
+                            {
+                                if (variable.Name == group.Name + "_" + group.Values[i].Name)
+                                {
+                                    var doc = Constants.ConstantToDoc[group];
+
+                                    string info = doc.Info is null ? string.Empty : DocUtils.ParseAndBuild(doc.Info, null);
+
+                                    if (doc.ValueInfos is not null && !string.IsNullOrEmpty(doc.ValueInfos[i]))
+                                        info += "\n" + DocUtils.ParseAndBuild(doc.ValueInfos[i], null);
+
+                                    if (info.Length == 0)
+                                        return null;
+
+                                    return new Hover()
+                                    {
+                                        Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+                                        {
+                                            Kind = MarkupKind.PlainText,
+                                            Value = info,
+                                        }),
+                                        Range = location.ToRange(),
+                                    };
+                                }
+                            }
+                        }
+                    }
+                }
+
                 return new Hover()
                 {
                     Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
@@ -277,6 +350,34 @@ namespace FanScript.LangServer.Handlers
                 return new Hover()
                 {
                     Contents = new MarkedStringsOrMarkupContent(results),
+                    Range = location.ToRange(),
+                };
+            }
+            Hover getHoverForModifier(Modifiers mod, TextLocation location)
+            {
+                ModifierDocAttribute doc = DocUtils.GetAttribute<Modifiers, ModifierDocAttribute>(mod);
+
+                return new Hover()
+                {
+                    Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+                    {
+                        Kind = MarkupKind.PlainText,
+                        Value = DocUtils.ParseAndBuild(doc.Info, null),
+                    }),
+                    Range = location.ToRange(),
+                };
+            }
+            Hover getHoverForType(TypeSymbol type, TextLocation location)
+            {
+                TypeDocAttribute doc = TypeSymbol.TypeToDoc[type];
+
+                return new Hover()
+                {
+                    Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+                    {
+                        Kind = MarkupKind.PlainText,
+                        Value = DocUtils.ParseAndBuild(doc.Info, null),
+                    }),
                     Range = location.ToRange(),
                 };
             }
@@ -332,14 +433,32 @@ namespace FanScript.LangServer.Handlers
         }
         private static string functionInfo(FunctionSymbol function)
         {
+            FunctionDocAttribute? doc;
+            if (function is BuiltinFunctionSymbol)
+                doc = BuiltinFunctions.FunctionToDoc[function];
+            else
+                doc = new FunctionDocAttribute();
+
             StringBuilder builder = new StringBuilder();
 
             builder.Append(function.ToString());
+
+            if (!string.IsNullOrEmpty(doc.Info))
+            {
+                builder.Append(" - ");
+                builder.Append(DocUtils.ParseAndBuild(doc.Info, function));
+            }
 
             return builder.ToString();
         }
         private static string methodInfo(TypeSymbol baseType, FunctionSymbol method)
         {
+            FunctionDocAttribute? doc;
+            if (method is BuiltinFunctionSymbol)
+                doc = BuiltinFunctions.FunctionToDoc[method];
+            else
+                doc = new FunctionDocAttribute();
+
             StringBuilder builder = new StringBuilder();
             using StringWriter writer = new StringWriter(builder);
 
@@ -355,6 +474,12 @@ namespace FanScript.LangServer.Handlers
             builder.Append(method.Name);
 
             SymbolPrinter.WriteFunctionTo(method, writer, true, true);
+
+            if (!string.IsNullOrEmpty(doc.Info))
+            {
+                builder.Append(" - ");
+                builder.Append(DocUtils.ParseAndBuild(doc.Info, method));
+            }
 
             return builder.ToString();
         }
