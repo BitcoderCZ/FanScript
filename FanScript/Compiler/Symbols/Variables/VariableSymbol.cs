@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.FCInfo;
+using System.Diagnostics;
 
 namespace FanScript.Compiler.Symbols.Variables
 {
@@ -8,6 +9,8 @@ namespace FanScript.Compiler.Symbols.Variables
         internal VariableSymbol(string name, Modifiers modifiers, TypeSymbol type)
             : base(name)
         {
+            Debug.Assert(!modifiers.HasFlag(Modifiers.Global) || !modifiers.HasFlag(Modifiers.Saved)); // cant have both global and saved
+
             Modifiers = modifiers;
             Type = type;
         }

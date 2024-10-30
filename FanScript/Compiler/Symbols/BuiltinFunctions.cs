@@ -1450,11 +1450,16 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Pow
-                = new BuiltinFunctionSymbol(mathNamespace, "pow",
+                = new ConstantFunctionSymbol(mathNamespace, "pow",
                 [
                     new ParameterSymbol("base", TypeSymbol.Float),
                     new ParameterSymbol("exponent", TypeSymbol.Float),
-                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Power));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Power), (args) =>
+                {
+                    return [
+                         MathF.Pow((float)args[0].GetValueOrDefault(TypeSymbol.Float), (float)args[1].GetValueOrDefault(TypeSymbol.Float))
+                    ];
+                });
 
             [FunctionDoc(
                 Info = """
@@ -1509,11 +1514,16 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Min
-                = new BuiltinFunctionSymbol(mathNamespace, "min",
+                = new ConstantFunctionSymbol(mathNamespace, "min",
                 [
                     new ParameterSymbol("num1", TypeSymbol.Float),
                     new ParameterSymbol("num2", TypeSymbol.Float),
-                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Min));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Min), (args) =>
+                {
+                    return [
+                         System.Math.Min((float)args[0].GetValueOrDefault(TypeSymbol.Float), (float)args[1].GetValueOrDefault(TypeSymbol.Float))
+                    ];
+                });
 
             [FunctionDoc(
                 Info = """
@@ -1524,11 +1534,16 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Max
-                = new BuiltinFunctionSymbol(mathNamespace, "max",
+                = new ConstantFunctionSymbol(mathNamespace, "max",
                 [
                     new ParameterSymbol("num1", TypeSymbol.Float),
                     new ParameterSymbol("num2", TypeSymbol.Float),
-                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Max));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Max), (args) =>
+                {
+                    return [
+                         System.Math.Max((float)args[0].GetValueOrDefault(TypeSymbol.Float), (float)args[1].GetValueOrDefault(TypeSymbol.Float))
+                    ];
+                });
 
             [FunctionDoc(
                 Info = """
@@ -1549,10 +1564,15 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol Sin
-                = new BuiltinFunctionSymbol(mathNamespace, "sin",
+                = new ConstantFunctionSymbol(mathNamespace, "sin",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
-                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Sin));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Sin), (args) =>
+                {
+                    return [
+                         (float)System.Math.Sin(System.Math.PI * (float)args[0].GetValueOrDefault(TypeSymbol.Float) / 180.0) // num is in degrees
+                    ];
+                });
 
             [FunctionDoc(
                 Info = """
@@ -1573,10 +1593,15 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol Cos
-                = new BuiltinFunctionSymbol(mathNamespace, "cos",
+                = new ConstantFunctionSymbol(mathNamespace, "cos",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
-                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Cos));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Cos), (args) =>
+                {
+                    return [
+                         (float)System.Math.Cos(System.Math.PI * (float)args[0].GetValueOrDefault(TypeSymbol.Float) / 180.0) // num is in degrees
+                    ];
+                });
 
             [FunctionDoc(
                 Info = """
@@ -1587,10 +1612,15 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Round
-                = new BuiltinFunctionSymbol(mathNamespace, "round",
+                = new ConstantFunctionSymbol(mathNamespace, "round",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
-                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Round));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Round), (args) =>
+                {
+                    return [
+                         MathF.Round((float)args[0].GetValueOrDefault(TypeSymbol.Float))
+                    ];
+                });
 
             [FunctionDoc(
                 Info = """
@@ -1601,10 +1631,15 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Floor
-                = new BuiltinFunctionSymbol(mathNamespace, "floor",
+                = new ConstantFunctionSymbol(mathNamespace, "floor",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
-                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Floor));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Floor), (args) =>
+                {
+                    return [
+                         MathF.Floor((float)args[0].GetValueOrDefault(TypeSymbol.Float))
+                    ];
+                });
 
             [FunctionDoc(
                 Info = """
@@ -1615,10 +1650,15 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Ceiling
-                = new BuiltinFunctionSymbol(mathNamespace, "ceiling",
+                = new ConstantFunctionSymbol(mathNamespace, "ceiling",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
-                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Ceiling));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Ceiling), (args) =>
+                {
+                    return [
+                         MathF.Ceiling((float)args[0].GetValueOrDefault(TypeSymbol.Float))
+                    ];
+                });
 
             [FunctionDoc(
                 Info = """
@@ -1629,10 +1669,15 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Abs
-                = new BuiltinFunctionSymbol(mathNamespace, "abs",
+                = new ConstantFunctionSymbol(mathNamespace, "abs",
                 [
                     new ParameterSymbol("num", TypeSymbol.Float),
-                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Absolute));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Absolute), (args) =>
+                {
+                    return [
+                         MathF.Abs((float)args[0].GetValueOrDefault(TypeSymbol.Float))
+                    ];
+                });
 
             [FunctionDoc(
                 Info = """
@@ -1640,11 +1685,16 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Log
-                = new BuiltinFunctionSymbol(mathNamespace, "log",
+                = new ConstantFunctionSymbol(mathNamespace, "log",
                 [
                     new ParameterSymbol("number", TypeSymbol.Float),
                     new ParameterSymbol("base", TypeSymbol.Float),
-                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Logarithm));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Logarithm), (args) =>
+                {
+                    return [
+                         MathF.Log((float)args[0].GetValueOrDefault(TypeSymbol.Float), (float)args[1].GetValueOrDefault(TypeSymbol.Float))
+                    ];
+                });
 
             [FunctionDoc(
                 Info = """
@@ -1655,10 +1705,15 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol Normalize
-                = new BuiltinFunctionSymbol(mathNamespace, "normalize",
+                = new ConstantFunctionSymbol(mathNamespace, "normalize",
                 [
                     new ParameterSymbol("vector", TypeSymbol.Vector3),
-                ], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Math.Normalize));
+                ], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Math.Normalize), (args) =>
+                {
+                    return [
+                        ((Vector3F)args[0].GetValueOrDefault(TypeSymbol.Vector3)).Normalized()
+                    ];
+                });
 
             [FunctionDoc(
                 Info = """
@@ -1677,11 +1732,16 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol DotProduct
-                = new BuiltinFunctionSymbol(mathNamespace, "dot",
+                = new ConstantFunctionSymbol(mathNamespace, "dot",
                 [
                     new ParameterSymbol("vector1", TypeSymbol.Vector3),
                     new ParameterSymbol("vector2", TypeSymbol.Vector3),
-                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.DotProduct));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.DotProduct), (args) =>
+                {
+                    return [
+                         Vector3F.Dot((Vector3F)args[0].GetValueOrDefault(TypeSymbol.Vector3), (Vector3F)args[1].GetValueOrDefault(TypeSymbol.Vector3))
+                    ];
+                });
 
             [FunctionDoc(
                 Info = """
@@ -1700,11 +1760,16 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol CrossProduct
-                = new BuiltinFunctionSymbol(mathNamespace, "cross",
+                = new ConstantFunctionSymbol(mathNamespace, "cross",
                 [
                     new ParameterSymbol("vector1", TypeSymbol.Vector3),
                     new ParameterSymbol("vector2", TypeSymbol.Vector3),
-                ], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Math.CrossProduct));
+                ], TypeSymbol.Vector3, (call, context) => emitX1(call, context, Blocks.Math.CrossProduct), (args) =>
+                {
+                    return [
+                         Vector3F.Cross((Vector3F)args[0].GetValueOrDefault(TypeSymbol.Vector3), (Vector3F)args[1].GetValueOrDefault(TypeSymbol.Vector3))
+                    ];
+                });
 
             [FunctionDoc(
                 Info = """
@@ -1723,11 +1788,16 @@ namespace FanScript.Compiler.Symbols
                 ]
             )]
             public static readonly FunctionSymbol Distance
-                = new BuiltinFunctionSymbol(mathNamespace, "dist",
+                = new ConstantFunctionSymbol(mathNamespace, "dist",
                 [
                     new ParameterSymbol("vector1", TypeSymbol.Vector3),
                     new ParameterSymbol("vector2", TypeSymbol.Vector3),
-                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Distance));
+                ], TypeSymbol.Float, (call, context) => emitX1(call, context, Blocks.Math.Distance), (args) =>
+                {
+                    return [
+                         (float)Vector3F.Distance((Vector3F)args[0].GetValueOrDefault(TypeSymbol.Vector3), (Vector3F)args[1].GetValueOrDefault(TypeSymbol.Vector3))
+                    ];
+                });
 
             [FunctionDoc(
                 Info = """
@@ -1807,7 +1877,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol LerpFloat
-                = new BuiltinFunctionSymbol(mathNamespace, "lerp",
+                = new ConstantFunctionSymbol(mathNamespace, "lerp",
                 [
                     new ParameterSymbol("from", TypeSymbol.Float),
                     new ParameterSymbol("to", TypeSymbol.Float),
@@ -1855,6 +1925,15 @@ namespace FanScript.Compiler.Symbols
                     }
 
                     return BasicEmitStore.COut(add, add.Type.Terminals["Num1 + Num2"]);
+                }, (args) =>
+                {
+                    float from = (float)args[0].GetValueOrDefault(TypeSymbol.Float);
+                    float to = (float)args[1].GetValueOrDefault(TypeSymbol.Float);
+                    float amount = (float)args[2].GetValueOrDefault(TypeSymbol.Float);
+
+                    return [
+                        from + amount * (to - from)
+                    ];
                 });
 
             [FunctionDoc(
@@ -1893,7 +1972,7 @@ namespace FanScript.Compiler.Symbols
                 """
             )]
             public static readonly FunctionSymbol LerpVec
-                = new BuiltinFunctionSymbol(mathNamespace, "lerp",
+                = new ConstantFunctionSymbol(mathNamespace, "lerp",
                 [
                     new ParameterSymbol("from", TypeSymbol.Vector3),
                     new ParameterSymbol("to", TypeSymbol.Vector3),
@@ -1941,6 +2020,15 @@ namespace FanScript.Compiler.Symbols
                     }
 
                     return BasicEmitStore.COut(add, add.Type.Terminals["Vec1 + Vec2"]);
+                }, (args) =>
+                {
+                    Vector3F from = (Vector3F)args[0].GetValueOrDefault(TypeSymbol.Vector3);
+                    Vector3F to = (Vector3F)args[1].GetValueOrDefault(TypeSymbol.Vector3);
+                    float amount = (float)args[2].GetValueOrDefault(TypeSymbol.Float);
+
+                    return [
+                        from + (to - from) * amount
+                    ];
                 });
 
             [FunctionDoc(

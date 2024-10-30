@@ -5,7 +5,7 @@ using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Symbols
 {
-    internal sealed class BuiltinFunctionSymbol : FunctionSymbol
+    internal class BuiltinFunctionSymbol : FunctionSymbol
     {
         internal BuiltinFunctionSymbol(Namespace @namespace, string name, ImmutableArray<ParameterSymbol> parameters, TypeSymbol type, Func<BoundCallExpression, IEmitContext, EmitStore> emit) : base(@namespace, 0, type, name, parameters)
         {

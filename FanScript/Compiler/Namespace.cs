@@ -5,6 +5,8 @@ namespace FanScript.Compiler
 {
     public readonly struct Namespace
     {
+        public const char Separator = '.';
+
         public readonly string Value;
         public readonly int Length;
 
@@ -15,8 +17,8 @@ namespace FanScript.Compiler
             else if (value.Contains(" ".AsSpan(), StringComparison.Ordinal))
                 throw new ArgumentException($"{nameof(value)} contains invalid characters.");
 
-            Value = new string(value.Trim('/')).ToLowerInvariant();
-            Length = Value.AsSpan().Count('/') + 1;
+            Value = new string(value.Trim(Separator)).ToLowerInvariant();
+            Length = Value.AsSpan().Count(Separator) + 1;
         }
 
         /// <summary>
@@ -40,7 +42,7 @@ namespace FanScript.Compiler
 
             ReadOnlySpan<char> val = Value.AsSpan();
 
-            int startIndex = val.IndexOf('/', index);
+            int startIndex = val.IndexOf(Separator, index);
             if (startIndex == -1)
                 throw new ArgumentOutOfRangeException(nameof(index));
 
@@ -50,7 +52,7 @@ namespace FanScript.Compiler
             if (length == 1)
                 endIndex = val.Length;
             else
-                endIndex = val.IndexOf('/', length - 1);
+                endIndex = val.IndexOf(Separator, length - 1);
 
             if (endIndex == -1)
                 throw new ArgumentOutOfRangeException(nameof(index));
@@ -60,18 +62,18 @@ namespace FanScript.Compiler
 
         public Namespace CapitalizeFirst()
         {
-            string[] split = Value.Split('/');
+            string[] split = Value.Split(Separator);
 
             for (int i = 0; i < split.Length; i++)
                 split[i] = split[i].ToUpperFirst();
 
-            return new Namespace(string.Join('/', split), Length);
+            return new Namespace(string.Join(Separator, split), Length);
         }
 
         public static Namespace operator +(Namespace a, string b)
-            => new Namespace(a.Value + "/" + b.ToLowerInvariant(), a.Length + 1 + b.AsSpan().Count('/'));
+            => new Namespace(a.Value + Separator + b.ToLowerInvariant(), a.Length + 1 + b.AsSpan().Count(Separator));
         public static Namespace operator +(Namespace a, Namespace b)
-            => new Namespace(a.Value + "/" + b, a.Length + b.Length);
+            => new Namespace(a.Value + Separator + b, a.Length + b.Length);
 
         public static bool operator ==(Namespace a, Namespace b)
             => a.Value == b.Value;

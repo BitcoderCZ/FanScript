@@ -341,6 +341,57 @@ namespace FanScript.Compiler.Binding.Rewriters
             return result;
         }
 
+        protected override BoundStatement RewriteCallStatement(BoundCallStatement node)
+        {
+            if (node.Function is not ConstantFunctionSymbol conFunc)
+                return base.RewriteCallStatement(node);
+
+            BoundCallStatement newNode = (BoundCallStatement)base.RewriteCallStatement(node);
+
+            if (newNode.ResultVariable is null)
+                return newNode;
+
+            BoundConstant[] constants = new BoundConstant[conFunc.Parameters.Length];
+            for (int i = 0; i < newNode.Function.Parameters.Length; i++)
+            {
+                if (newNode.Function.Parameters[i].Modifiers.MakesTargetReference(out _))
+                    throw new NotImplementedException($"ref and out parameters aren't yet implemented for {nameof(ConstantFunctionSymbol)}.");
+
+                if (newNode.Arguments[i].ConstantValue is null)
+                    return newNode;
+
+                constants[i] = newNode.Arguments[i].ConstantValue!;
+            }
+
+            return Assignment(
+                newNode.Syntax,
+                newNode.ResultVariable,
+                Literal(newNode.Syntax, conFunc.ConstantEmit(constants)[0])
+            );
+        }
+
+        protected override BoundExpression RewriteCallExpression(BoundCallExpression node)
+        {
+            if (node.Function is not ConstantFunctionSymbol conFunc)
+                return base.RewriteCallExpression(node);
+
+            BoundCallExpression newNode = (BoundCallExpression)base.RewriteCallExpression(node);
+
+            BoundConstant[] constants = new BoundConstant[conFunc.Parameters.Length];
+            for (int i = 0; i < newNode.Function.Parameters.Length; i++)
+            {
+                if (newNode.Function.Parameters[i].Modifiers.MakesTargetReference(out _))
+                    throw new NotImplementedException($"ref and out parameters aren't yet implemented for {nameof(ConstantFunctionSymbol)}.");
+
+                if (newNode.Arguments[i].ConstantValue is null)
+                    return newNode;
+
+                constants[i] = newNode.Arguments[i].ConstantValue!;
+            }
+
+            return Literal(newNode.Syntax, conFunc.ConstantEmit(constants)[0]);
+        }
+
         private BoundStatement lowerArraySegmentAssignment(BoundArraySegmentExpression expression, VariableSymbol arrayVariable, float startIndex = 0f)
         {
             BoundArraySegmentExpression node = (BoundArraySegmentExpression)RewriteArraySegmentExpression(expression);
