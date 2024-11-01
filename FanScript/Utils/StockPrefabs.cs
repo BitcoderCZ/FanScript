@@ -12,7 +12,8 @@ namespace FanScript.Utils
 
         private StockPrefabs()
         {
-            using (FcBinaryReader reader = new FcBinaryReader("stockPrefabs.fcppl")) // fcppl - Fancade partial prefab list
+            using (Stream stream = ResourceUtils.OpenResource("stockPrefabs.fcppl")) // fcppl - Fancade partial prefab list
+            using (FcBinaryReader reader = new FcBinaryReader(stream))
                 List = PartialPrefabList.Load(reader);
         }
     }

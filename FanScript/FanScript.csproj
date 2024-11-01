@@ -22,6 +22,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="stockPrefabs.fcppl" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="stockPrefabs.fcppl">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="TextCopy" Version="6.2.1" />
   </ItemGroup>
@@ -43,12 +53,6 @@
 
     <ItemGroup>
 		<ProjectReference Include="..\FanScript.Generators\FanScript.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <None Update="stockPrefabs.fcppl">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      </None>
     </ItemGroup>
 
 </Project>
