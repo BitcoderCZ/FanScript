@@ -1,98 +1,100 @@
-﻿using FanScript.Compiler.Diagnostics;
-using FanScript.Compiler.Syntax;
-using FanScript.Compiler.Text;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
+using FanScript.Compiler.Diagnostics;
+using FanScript.Compiler.Syntax;
+using FanScript.Compiler.Text;
 
 namespace FanScript.Compiler.Lexing
 {
     public sealed class Lexer
     {
-        private static readonly HashSet<char> allowedChars = new HashSet<char>();
+        private static readonly HashSet<char> AllowedChars = [];
 
-        private readonly DiagnosticBag diagnostics = new DiagnosticBag();
-        private readonly SyntaxTree syntaxTree;
-        private readonly SourceText text;
-        private int position;
+        private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
+        private readonly SyntaxTree _syntaxTree;
+        private readonly SourceText _text;
+        private readonly ImmutableArray<SyntaxTrivia>.Builder _triviaBuilder = ImmutableArray.CreateBuilder<SyntaxTrivia>();
 
-        private int start;
-        private SyntaxKind kind;
-        private object? value;
-        private ImmutableArray<SyntaxTrivia>.Builder triviaBuilder = ImmutableArray.CreateBuilder<SyntaxTrivia>();
+        private int _position;
+        private int _start;
+        private SyntaxKind _kind;
+        private object? _value;
 
         static Lexer()
         {
             for (char c = '0'; c <= '9'; c++)
-                allowedChars.Add(c);
-            for (char c = 'a'; c <= 'f'; c++)
-                allowedChars.Add(c);
-            for (char c = 'A'; c <= 'F'; c++)
-                allowedChars.Add(c);
+            {
+                AllowedChars.Add(c);
+            }
 
-            allowedChars.Add('.');
-            allowedChars.Add('_');
-            allowedChars.Add('x');
-            allowedChars.Add('X');
+            for (char c = 'a'; c <= 'f'; c++)
+            {
+                AllowedChars.Add(c);
+            }
+
+            for (char c = 'A'; c <= 'F'; c++)
+            {
+                AllowedChars.Add(c);
+            }
+
+            AllowedChars.Add('.');
+            AllowedChars.Add('_');
+            AllowedChars.Add('x');
+            AllowedChars.Add('X');
         }
 
         public Lexer(SyntaxTree syntaxTree)
         {
-            this.syntaxTree = syntaxTree;
-            text = syntaxTree.Text;
+            _syntaxTree = syntaxTree;
+            _text = syntaxTree.Text;
         }
 
-        public DiagnosticBag Diagnostics => diagnostics;
+        public DiagnosticBag Diagnostics => _diagnostics;
 
         private char Current => Peek(0);
 
         private char Lookahead => Peek(1);
 
-        private char Peek(int offset)
-        {
-            var index = position + offset;
-
-            if (index >= text.Length)
-                return '\0';
-
-            return text[index];
-        }
-
         public SyntaxToken Lex()
         {
             ReadTrivia(leading: true);
 
-            ImmutableArray<SyntaxTrivia> leadingTrivia = triviaBuilder.ToImmutable();
-            int tokenStart = position;
+            ImmutableArray<SyntaxTrivia> leadingTrivia = _triviaBuilder.ToImmutable();
+            int tokenStart = _position;
 
             ReadToken();
 
-            SyntaxKind tokenKind = kind;
-            object? tokenValue = value;
-            int tokenLength = position - start;
+            SyntaxKind tokenKind = _kind;
+            object? tokenValue = _value;
+            int tokenLength = _position - _start;
 
             ReadTrivia(leading: false);
 
-            ImmutableArray<SyntaxTrivia> trailingTrivia = triviaBuilder.ToImmutable();
+            ImmutableArray<SyntaxTrivia> trailingTrivia = _triviaBuilder.ToImmutable();
 
-            string? tokenText = SyntaxFacts.GetText(tokenKind);
-            if (tokenText is null)
-                tokenText = text.ToString(tokenStart, tokenLength);
+            string? tokenText = SyntaxFacts.GetText(tokenKind) ?? _text.ToString(tokenStart, tokenLength);
+            return new SyntaxToken(_syntaxTree, tokenKind, tokenStart, tokenText, tokenValue, leadingTrivia, trailingTrivia);
+        }
 
-            return new SyntaxToken(syntaxTree, tokenKind, tokenStart, tokenText, tokenValue, leadingTrivia, trailingTrivia);
+        private char Peek(int offset)
+        {
+            int index = _position + offset;
+
+            return index >= _text.Length ? '\0' : _text[index];
         }
 
         private void ReadTrivia(bool leading)
         {
-            triviaBuilder.Clear();
+            _triviaBuilder.Clear();
 
             bool done = false;
 
             while (!done)
             {
-                start = position;
-                kind = SyntaxKind.BadToken;
-                value = null;
+                _start = _position;
+                _kind = SyntaxKind.BadToken;
+                _value = null;
 
                 switch (Current)
                 {
@@ -101,16 +103,26 @@ namespace FanScript.Compiler.Lexing
                         break;
                     case '/':
                         if (Lookahead == '/')
+                        {
                             ReadSingleLineComment();
+                        }
                         else if (Lookahead == '*')
+                        {
                             ReadMultiLineComment();
+                        }
                         else
+                        {
                             done = true;
+                        }
+
                         break;
                     case '\n':
                     case '\r':
                         if (!leading)
+                        {
                             done = true;
+                        }
+
                         ReadLineBreak();
                         break;
                     case ' ':
@@ -119,17 +131,22 @@ namespace FanScript.Compiler.Lexing
                         break;
                     default:
                         if (char.IsWhiteSpace(Current))
+                        {
                             ReadWhiteSpace();
+                        }
                         else
+                        {
                             done = true;
+                        }
+
                         break;
                 }
 
-                int length = position - start;
+                int length = _position - _start;
                 if (length > 0)
                 {
-                    SyntaxTrivia trivia = new SyntaxTrivia(syntaxTree, kind, start, text.ToString(start, length));
-                    triviaBuilder.Add(trivia);
+                    SyntaxTrivia trivia = new SyntaxTrivia(_syntaxTree, _kind, _start, _text.ToString(_start, length));
+                    _triviaBuilder.Add(trivia);
                 }
             }
         }
@@ -137,11 +154,15 @@ namespace FanScript.Compiler.Lexing
         private void ReadLineBreak()
         {
             if (Current == '\r' && Lookahead == '\n')
-                position += 2;
+            {
+                _position += 2;
+            }
             else
-                position++;
+            {
+                _position++;
+            }
 
-            kind = SyntaxKind.LineBreakTrivia;
+            _kind = SyntaxKind.LineBreakTrivia;
         }
 
         private void ReadWhiteSpace()
@@ -158,23 +179,25 @@ namespace FanScript.Compiler.Lexing
                         done = true;
                         break;
                     default:
+                        if (!char.IsWhiteSpace(Current))
                         {
-                            if (!char.IsWhiteSpace(Current))
-                                done = true;
-                            else
-                                position++;
+                            done = true;
                         }
+                        else
+                        {
+                            _position++;
+                        }
+
                         break;
                 }
             }
 
-            kind = SyntaxKind.WhitespaceTrivia;
+            _kind = SyntaxKind.WhitespaceTrivia;
         }
-
 
         private void ReadSingleLineComment()
         {
-            position += 2;
+            _position += 2;
             bool done = false;
 
             while (!done)
@@ -187,17 +210,17 @@ namespace FanScript.Compiler.Lexing
                         done = true;
                         break;
                     default:
-                        position++;
+                        _position++;
                         break;
                 }
             }
 
-            kind = SyntaxKind.SingleLineCommentTrivia;
+            _kind = SyntaxKind.SingleLineCommentTrivia;
         }
 
         private void ReadMultiLineComment()
         {
-            position += 2;
+            _position += 2;
             bool done = false;
 
             while (!done)
@@ -205,212 +228,238 @@ namespace FanScript.Compiler.Lexing
                 switch (Current)
                 {
                     case '\0':
-                        TextLocation location = new TextLocation(text, new TextSpan(start, 2));
-                        diagnostics.ReportUnterminatedMultiLineComment(location);
+                        TextLocation location = new TextLocation(_text, new TextSpan(_start, 2));
+                        _diagnostics.ReportUnterminatedMultiLineComment(location);
                         done = true;
                         break;
                     case '*':
                         if (Lookahead == '/')
                         {
-                            position++;
+                            _position++;
                             done = true;
                         }
-                        position++;
+
+                        _position++;
                         break;
                     default:
-                        position++;
+                        _position++;
                         break;
                 }
             }
 
-            kind = SyntaxKind.MultiLineCommentTrivia;
+            _kind = SyntaxKind.MultiLineCommentTrivia;
         }
 
         private void ReadToken()
         {
-            start = position;
-            kind = SyntaxKind.BadToken;
-            value = null;
+            _start = _position;
+            _kind = SyntaxKind.BadToken;
+            _value = null;
 
             switch (Current)
             {
                 case '\0':
-                    kind = SyntaxKind.EndOfFileToken;
+                    _kind = SyntaxKind.EndOfFileToken;
                     break;
                 case '+':
-                    position++;
+                    _position++;
                     if (Current == '+')
                     {
-                        kind = SyntaxKind.PlusPlusToken;
-                        position++;
+                        _kind = SyntaxKind.PlusPlusToken;
+                        _position++;
                     }
                     else if (Current == '=')
                     {
-                        kind = SyntaxKind.PlusEqualsToken;
-                        position++;
+                        _kind = SyntaxKind.PlusEqualsToken;
+                        _position++;
                     }
                     else
-                        kind = SyntaxKind.PlusToken;
+                    {
+                        _kind = SyntaxKind.PlusToken;
+                    }
+
                     break;
                 case '-':
-                    position++;
+                    _position++;
                     if (Current == '-')
                     {
-                        kind = SyntaxKind.MinusMinusToken;
-                        position++;
+                        _kind = SyntaxKind.MinusMinusToken;
+                        _position++;
                     }
                     else if (Current == '=')
                     {
-                        kind = SyntaxKind.MinusEqualsToken;
-                        position++;
+                        _kind = SyntaxKind.MinusEqualsToken;
+                        _position++;
                     }
                     else
-                        kind = SyntaxKind.MinusToken;
+                    {
+                        _kind = SyntaxKind.MinusToken;
+                    }
+
                     break;
                 case '*':
-                    position++;
+                    _position++;
                     if (Current != '=')
-                        kind = SyntaxKind.StarToken;
+                    {
+                        _kind = SyntaxKind.StarToken;
+                    }
                     else
                     {
-                        kind = SyntaxKind.StarEqualsToken;
-                        position++;
+                        _kind = SyntaxKind.StarEqualsToken;
+                        _position++;
                     }
+
                     break;
                 case '/':
-                    position++;
+                    _position++;
                     if (Current != '=')
-                        kind = SyntaxKind.SlashToken;
+                    {
+                        _kind = SyntaxKind.SlashToken;
+                    }
                     else
                     {
-                        kind = SyntaxKind.SlashEqualsToken;
-                        position++;
+                        _kind = SyntaxKind.SlashEqualsToken;
+                        _position++;
                     }
+
                     break;
                 case '%':
-                    position++;
+                    _position++;
                     if (Current != '=')
-                        kind = SyntaxKind.PercentToken;
+                    {
+                        _kind = SyntaxKind.PercentToken;
+                    }
                     else
                     {
-                        kind = SyntaxKind.PercentEqualsToken;
-                        position++;
+                        _kind = SyntaxKind.PercentEqualsToken;
+                        _position++;
                     }
+
                     break;
                 case '(':
-                    kind = SyntaxKind.OpenParenthesisToken;
-                    position++;
+                    _kind = SyntaxKind.OpenParenthesisToken;
+                    _position++;
                     break;
                 case ')':
-                    kind = SyntaxKind.CloseParenthesisToken;
-                    position++;
+                    _kind = SyntaxKind.CloseParenthesisToken;
+                    _position++;
                     break;
                 case '[':
-                    kind = SyntaxKind.OpenSquareToken;
-                    position++;
+                    _kind = SyntaxKind.OpenSquareToken;
+                    _position++;
                     break;
                 case ']':
-                    kind = SyntaxKind.CloseSquareToken;
-                    position++;
+                    _kind = SyntaxKind.CloseSquareToken;
+                    _position++;
                     break;
                 case '{':
-                    kind = SyntaxKind.OpenBraceToken;
-                    position++;
+                    _kind = SyntaxKind.OpenBraceToken;
+                    _position++;
                     break;
                 case '}':
-                    kind = SyntaxKind.CloseBraceToken;
-                    position++;
+                    _kind = SyntaxKind.CloseBraceToken;
+                    _position++;
                     break;
                 case ':':
-                    kind = SyntaxKind.ColonToken;
-                    position++;
+                    _kind = SyntaxKind.ColonToken;
+                    _position++;
                     break;
                 case ';':
-                    kind = SyntaxKind.SemicolonToken;
-                    position++;
+                    _kind = SyntaxKind.SemicolonToken;
+                    _position++;
                     break;
                 case ',':
-                    kind = SyntaxKind.CommaToken;
-                    position++;
+                    _kind = SyntaxKind.CommaToken;
+                    _position++;
                     break;
                 case '#':
-                    kind = SyntaxKind.HashtagToken;
-                    position++;
+                    _kind = SyntaxKind.HashtagToken;
+                    _position++;
                     break;
                 case '&':
-                    position++;
+                    _position++;
                     if (Current != '&')
-                        diagnostics.ReportBadCharacter(new TextLocation(text, new TextSpan(position, 1)), Current);
+                    {
+                        _diagnostics.ReportBadCharacter(new TextLocation(_text, new TextSpan(_position, 1)), Current);
+                    }
                     else
                     {
-                        kind = SyntaxKind.AmpersandAmpersandToken;
-                        position++;
+                        _kind = SyntaxKind.AmpersandAmpersandToken;
+                        _position++;
                     }
+
                     break;
                 case '|':
-                    position++;
+                    _position++;
                     if (Current != '|')
-                        diagnostics.ReportBadCharacter(new TextLocation(text, new TextSpan(position, 1)), Current);
+                    {
+                        _diagnostics.ReportBadCharacter(new TextLocation(_text, new TextSpan(_position, 1)), Current);
+                    }
                     else
                     {
-                        kind = SyntaxKind.PipePipeToken;
-                        position++;
+                        _kind = SyntaxKind.PipePipeToken;
+                        _position++;
                     }
+
                     break;
                 case '=':
-                    position++;
+                    _position++;
                     if (Current != '=')
                     {
-                        kind = SyntaxKind.EqualsToken;
+                        _kind = SyntaxKind.EqualsToken;
                     }
                     else
                     {
-                        kind = SyntaxKind.EqualsEqualsToken;
-                        position++;
+                        _kind = SyntaxKind.EqualsEqualsToken;
+                        _position++;
                     }
+
                     break;
                 case '!':
-                    position++;
+                    _position++;
                     if (Current != '=')
                     {
-                        kind = SyntaxKind.BangToken;
+                        _kind = SyntaxKind.BangToken;
                     }
                     else
                     {
-                        kind = SyntaxKind.BangEqualsToken;
-                        position++;
+                        _kind = SyntaxKind.BangEqualsToken;
+                        _position++;
                     }
+
                     break;
                 case '<':
-                    position++;
+                    _position++;
                     if (Current != '=')
                     {
-                        kind = SyntaxKind.LessToken;
+                        _kind = SyntaxKind.LessToken;
                     }
                     else
                     {
-                        kind = SyntaxKind.LessOrEqualsToken;
-                        position++;
+                        _kind = SyntaxKind.LessOrEqualsToken;
+                        _position++;
                     }
+
                     break;
                 case '>':
-                    position++;
+                    _position++;
                     if (Current != '=')
                     {
-                        kind = SyntaxKind.GreaterToken;
+                        _kind = SyntaxKind.GreaterToken;
                     }
                     else
                     {
-                        kind = SyntaxKind.GreaterOrEqualsToken;
-                        position++;
+                        _kind = SyntaxKind.GreaterOrEqualsToken;
+                        _position++;
                     }
+
                     break;
                 case '.' when !char.IsDigit(Peek(1)):
-                    kind = SyntaxKind.DotToken;
-                    position++;
+                    _kind = SyntaxKind.DotToken;
+                    _position++;
                     break;
                 case '"':
-                    readString();
+                    ReadString();
                     break;
                 case '.':
                 case '0':
@@ -423,29 +472,32 @@ namespace FanScript.Compiler.Lexing
                 case '7':
                 case '8':
                 case '9':
-                    readNumber();
+                    ReadNumber();
                     break;
                 case '_':
-                    readIdentifierOrKeyword();
+                    ReadIdentifierOrKeyword();
                     break;
                 default:
                     if (char.IsLetter(Current))
-                        readIdentifierOrKeyword();
+                    {
+                        ReadIdentifierOrKeyword();
+                    }
                     else
                     {
-                        TextSpan span = new TextSpan(position, 1);
-                        TextLocation location = new TextLocation(text, span);
-                        diagnostics.ReportBadCharacter(location, Current);
-                        position++;
+                        TextSpan span = new TextSpan(_position, 1);
+                        TextLocation location = new TextLocation(_text, span);
+                        _diagnostics.ReportBadCharacter(location, Current);
+                        _position++;
                     }
+
                     break;
             }
         }
 
-        private void readString()
+        private void ReadString()
         {
             // Skip the current quote
-            position++;
+            _position++;
 
             var sb = new StringBuilder();
             bool done = false;
@@ -457,89 +509,109 @@ namespace FanScript.Compiler.Lexing
                     case '\0':
                     case '\r':
                     case '\n':
-                        var span = new TextSpan(start, 1);
-                        var location = new TextLocation(text, span);
-                        diagnostics.ReportUnterminatedString(location);
+                        var span = new TextSpan(_start, 1);
+                        var location = new TextLocation(_text, span);
+                        _diagnostics.ReportUnterminatedString(location);
                         done = true;
                         break;
                     case '\\':
                         if (Lookahead == '"' || Lookahead == '\\')
+                        {
                             sb.Append(Lookahead);
+                        }
                         else if (Lookahead == 'n')
+                        {
                             sb.Append('\n');
+                        }
                         else
-                            diagnostics.ReportInvalidEscapeSequance(new TextLocation(text,
-                                new TextSpan(position, 2)), "\\" + Lookahead);
+                        {
+                            _diagnostics.ReportInvalidEscapeSequance(new TextLocation(_text, new TextSpan(_position, 2)), "\\" + Lookahead);
+                        }
 
-                        position += 2;
+                        _position += 2;
                         break;
                     case '"':
-                        position++;
+                        _position++;
                         done = true;
                         break;
                     default:
                         sb.Append(Current);
-                        position++;
+                        _position++;
                         break;
                 }
             }
 
-            kind = SyntaxKind.StringToken;
-            value = sb.ToString();
+            _kind = SyntaxKind.StringToken;
+            _value = sb.ToString();
         }
 
-        private void readNumber()
+        private void ReadNumber()
         {
+            while (AllowedChars.Contains(Current))
+            {
+                _position++;
+            }
 
-            while (allowedChars.Contains(Current))
-                position++;
-
-            int length = position - start;
-            string text = this.text.ToString(start, length);
+            int length = _position - _start;
+            string text = _text.ToString(_start, length);
 
             float value = 0f;
 
             if (text.EndsWith("_"))
-                reportInvalid();
+            {
+                ReportInvalid();
+            }
             else
             {
                 text = text.Replace("_", string.Empty);
 
                 if (text.StartsWith("0b", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    if (uint.TryParse(text.Substring(2), NumberStyles.BinaryNumber, CultureInfo.InvariantCulture, out uint numb))
+                    if (uint.TryParse(text.AsSpan(2), NumberStyles.BinaryNumber, CultureInfo.InvariantCulture, out uint numb))
+                    {
                         value = numb;
+                    }
                     else
-                        reportInvalid();
+                    {
+                        ReportInvalid();
+                    }
                 }
                 else if (text.StartsWith("0x", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    if (uint.TryParse(text.Substring(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint numb))
+                    if (uint.TryParse(text.AsSpan(2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out uint numb))
+                    {
                         value = numb;
+                    }
                     else
-                        reportInvalid();
+                    {
+                        ReportInvalid();
+                    }
                 }
                 else if (!float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out value))
-                    reportInvalid();
+                {
+                    ReportInvalid();
+                }
             }
 
-            this.value = value;
-            kind = SyntaxKind.FloatToken;
+            _value = value;
+            _kind = SyntaxKind.FloatToken;
 
-            void reportInvalid()
+            void ReportInvalid()
             {
-                TextSpan span = new TextSpan(start, length);
-                TextLocation location = new TextLocation(this.text, span);
-                diagnostics.ReportInvalidNumber(location, text);
+                TextSpan span = new TextSpan(_start, length);
+                TextLocation location = new TextLocation(_text, span);
+                _diagnostics.ReportInvalidNumber(location, text);
             }
         }
 
-        private void readIdentifierOrKeyword()
+        private void ReadIdentifierOrKeyword()
         {
             while (char.IsLetterOrDigit(Current) || Current == '_')
-                position++;
+            {
+                _position++;
+            }
 
-            kind = SyntaxFacts.GetKeywordKind(text.ToString(start, position - start));
+            _kind = SyntaxFacts.GetKeywordKind(_text.ToString(_start, _position - _start));
         }
     }
 }

@@ -5,6 +5,6 @@
         NonScript,
         Active,
         Pasive,
-        Value
+        Value,
     }
 }

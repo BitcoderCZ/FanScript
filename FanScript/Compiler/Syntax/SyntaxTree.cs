@@ -1,17 +1,13 @@
-﻿using FanScript.Compiler.Diagnostics;
+﻿using System.Collections.Immutable;
+using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Lexing;
 using FanScript.Compiler.Text;
-using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Syntax
 {
     public sealed class SyntaxTree
     {
-        private Dictionary<SyntaxNode, SyntaxNode?>? parents;
-
-        private delegate void ParseHandler(SyntaxTree syntaxTree,
-                                           out CompilationUnitSyntax root,
-                                           out ImmutableArray<Diagnostic> diagnostics);
+        private Dictionary<SyntaxNode, SyntaxNode?>? _parents;
 
         private SyntaxTree(SourceText text, ParseHandler handler)
         {
@@ -23,19 +19,16 @@ namespace FanScript.Compiler.Syntax
             Root = root;
         }
 
+        private delegate void ParseHandler(SyntaxTree syntaxTree, out CompilationUnitSyntax root, out ImmutableArray<Diagnostic> diagnostics);
+
         public SourceText Text { get; }
+
         public ImmutableArray<Diagnostic> Diagnostics { get; }
+
         public CompilationUnitSyntax Root { get; }
 
         public static SyntaxTree Load(string file)
             => Parse(SourceText.From(File.ReadAllText(file), file));
-
-        private static void Parse(SyntaxTree syntaxTree, out CompilationUnitSyntax root, out ImmutableArray<Diagnostic> diagnostics)
-        {
-            Parser parser = new Parser(syntaxTree);
-            root = parser.ParseCompilationUnit();
-            diagnostics = parser.Diagnostics.ToImmutableArray();
-        }
 
         public static SyntaxTree Parse(string text)
             => Parse(SourceText.From(text));
@@ -54,7 +47,7 @@ namespace FanScript.Compiler.Syntax
 
         public static ImmutableArray<SyntaxToken> ParseTokens(SourceText text, out ImmutableArray<Diagnostic> diagnostics, bool includeEndOfFile = false)
         {
-            List<SyntaxToken> tokens = new List<SyntaxToken>();
+            List<SyntaxToken> tokens = [];
 
             void ParseTokens(SyntaxTree st, out CompilationUnitSyntax root, out ImmutableArray<Diagnostic> d)
             {
@@ -64,45 +57,54 @@ namespace FanScript.Compiler.Syntax
                     SyntaxToken token = lexer.Lex();
 
                     if (token.Kind != SyntaxKind.EndOfFileToken || includeEndOfFile)
+                    {
                         tokens.Add(token);
+                    }
 
                     if (token.Kind == SyntaxKind.EndOfFileToken)
                     {
-                        root = new CompilationUnitSyntax(st, ImmutableArray<MemberSyntax>.Empty, token);
+                        root = new CompilationUnitSyntax(st, [], token);
                         break;
                     }
                 }
 
-                d = lexer.Diagnostics.ToImmutableArray();
+                d = [.. lexer.Diagnostics];
             }
 
             SyntaxTree syntaxTree = new SyntaxTree(text, ParseTokens);
-            diagnostics = syntaxTree.Diagnostics.ToImmutableArray();
-            return tokens.ToImmutableArray();
+            diagnostics = syntaxTree.Diagnostics;
+            return [.. tokens];
         }
 
         internal SyntaxNode? GetParent(SyntaxNode syntaxNode)
         {
-            if (parents is null)
+            if (_parents is null)
             {
                 Dictionary<SyntaxNode, SyntaxNode?> newParents = CreateParentsDictionary(Root);
-                Interlocked.CompareExchange(ref parents, newParents, null);
+                Interlocked.CompareExchange(ref _parents, newParents, null);
             }
 
-            return parents[syntaxNode];
+            return _parents[syntaxNode];
         }
 
-        private Dictionary<SyntaxNode, SyntaxNode?> CreateParentsDictionary(CompilationUnitSyntax root)
+        private static void Parse(SyntaxTree syntaxTree, out CompilationUnitSyntax root, out ImmutableArray<Diagnostic> diagnostics)
+        {
+            Parser parser = new Parser(syntaxTree);
+            root = parser.ParseCompilationUnit();
+            diagnostics = [.. parser.Diagnostics];
+        }
+
+        private static Dictionary<SyntaxNode, SyntaxNode?> CreateParentsDictionary(CompilationUnitSyntax root)
         {
             Dictionary<SyntaxNode, SyntaxNode?> result = new Dictionary<SyntaxNode, SyntaxNode?>
             {
-                { root, null }
+                { root, null },
             };
             CreateParentsDictionary(result, root);
             return result;
         }
 
-        private void CreateParentsDictionary(Dictionary<SyntaxNode, SyntaxNode?> result, SyntaxNode node)
+        private static void CreateParentsDictionary(Dictionary<SyntaxNode, SyntaxNode?> result, SyntaxNode node)
         {
             foreach (SyntaxNode child in node.GetChildren())
             {

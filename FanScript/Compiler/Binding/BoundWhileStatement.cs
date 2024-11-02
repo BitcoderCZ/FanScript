@@ -12,7 +12,9 @@ namespace FanScript.Compiler.Binding
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.WhileStatement;
+
         public BoundExpression Condition { get; }
+
         public BoundStatement Body { get; }
     }
 }

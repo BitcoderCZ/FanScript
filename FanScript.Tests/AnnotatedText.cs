@@ -56,10 +56,9 @@ namespace FanScript.Tests
                 }
             }
 
-            if (startStack.Count != 0)
-                throw new ArgumentException("Missing ']$' in text", nameof(text));
-
-            return new AnnotatedText(textBuilder.ToString(), spanBuilder.ToImmutable());
+            return startStack.Count != 0
+                ? throw new ArgumentException("Missing ']$' in text", nameof(text))
+                : new AnnotatedText(textBuilder.ToString(), spanBuilder.ToImmutable());
         }
 
         private static string Unindent(string text)
@@ -96,16 +95,16 @@ namespace FanScript.Tests
                 if (lines[i].Length == 0)
                     continue;
 
-                lines[i] = lines[i].Substring(minIndentation);
+                lines[i] = lines[i][minIndentation..];
             }
 
             while (lines.Count > 0 && lines[0].Length == 0)
                 lines.RemoveAt(0);
 
-            while (lines.Count > 0 && lines[lines.Count - 1].Length == 0)
+            while (lines.Count > 0 && lines[^1].Length == 0)
                 lines.RemoveAt(lines.Count - 1);
 
-            return lines.ToArray();
+            return [.. lines];
         }
     }
 }

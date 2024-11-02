@@ -11,6 +11,7 @@ namespace FanScript.Documentation.DocElements
         }
 
         public ImmutableArray<DocArg> Arguments { get; }
+
         public virtual DocElement? Value { get; }
     }
 }

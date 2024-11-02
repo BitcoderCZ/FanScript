@@ -9,6 +9,7 @@ namespace FanScript.Compiler.Binding
         Decrement,
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:File name should match first type name", Justification = "It does, but enums aren't detected for some reason")]
     public static class PrefixKindE
     {
         public static string ToSyntaxString(this PrefixKind kind)

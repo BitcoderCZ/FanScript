@@ -10,10 +10,7 @@ namespace FanScript.Utils
 
             Stream? stream = assembly.GetManifestResourceStream("FanScript." + name);
 
-            if (stream is null)
-                throw new FileNotFoundException($"Resource \"FanScript.{name}\" wasn't found.");
-
-            return stream;
+            return stream is null ? throw new FileNotFoundException($"Resource \"FanScript.{name}\" wasn't found.") : stream;
         }
     }
 }

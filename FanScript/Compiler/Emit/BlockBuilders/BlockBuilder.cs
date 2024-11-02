@@ -1,16 +1,20 @@
-﻿using FanScript.FCInfo;
+﻿using System.Collections.Immutable;
+using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
-using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Emit
 {
     public abstract class BlockBuilder
     {
-        protected List<BlockSegment> segments = new();
-        protected List<Block> highlightedBlocks = new();
-        protected List<ConnectionRecord> connections = new();
-        protected List<ValueRecord> values = new();
+        protected List<BlockSegment> segments = [];
+        protected List<Block> highlightedBlocks = [];
+        protected List<ConnectionRecord> connections = [];
+        protected List<ValueRecord> values = [];
+
+        public interface IArgs
+        {
+        }
 
         public virtual void AddBlockSegments(IEnumerable<Block> blocks)
         {
@@ -18,22 +22,11 @@ namespace FanScript.Compiler.Emit
 
             segments.Add(segment);
         }
+
         public virtual void AddHighlightedBlock(Block block)
             => highlightedBlocks.Add(block);
 
-        internal void Connect(EmitStore? from, EmitStore to)
-        {
-            if (from is NopEmitStore || to is NopEmitStore)
-                return;
-
-            if (to.In is null)
-                return;
-
-            if (from?.Out is not null)
-                foreach (var target in from.Out)
-                    Connect(target, to.In);
-        }
-        public virtual void Connect(ConnectTarget from, ConnectTarget to)
+        public virtual void Connect(IConnectTarget from, IConnectTarget to)
             => connections.Add(new ConnectionRecord(from, to));
 
         public virtual void SetBlockValue(Block block, int valueIndex, object value)
@@ -41,12 +34,44 @@ namespace FanScript.Compiler.Emit
 
         public abstract object Build(Vector3I posToBuildAt, IArgs? args = null);
 
+        public virtual void Clear()
+        {
+            segments.Clear();
+            connections.Clear();
+            values.Clear();
+        }
+
+        internal void Connect(IEmitStore? from, IEmitStore to)
+        {
+            if (from is NopEmitStore || to is NopEmitStore)
+            {
+                return;
+            }
+
+            if (to.In is null)
+            {
+                return;
+            }
+
+            if (from?.Out is not null)
+            {
+                foreach (var target in from.Out)
+                {
+                    Connect(target, to.In);
+                }
+            }
+        }
+
         protected Block[] PreBuild(Vector3I posToBuildAt, bool sortByPos)
         {
             if (posToBuildAt.X < 0 || posToBuildAt.Y < 0 || posToBuildAt.Z < 0)
+            {
                 throw new ArgumentOutOfRangeException(nameof(posToBuildAt), $"{nameof(posToBuildAt)} must be >= 0");
+            }
             else if (segments.Count == 0)
-                return Array.Empty<Block>();
+            {
+                return [];
+            }
 
             int totalBlockCount = highlightedBlocks.Count;
             Vector3I[] segmentSizes = new Vector3I[segments.Count];
@@ -88,10 +113,7 @@ namespace FanScript.Compiler.Emit
                 Array.Sort(blocks, (a, b) =>
                 {
                     int comp = a.Pos.Z.CompareTo(b.Pos.Z);
-                    if (comp == 0)
-                        return a.Pos.X.CompareTo(b.Pos.X);
-                    else
-                        return comp;
+                    return comp == 0 ? a.Pos.X.CompareTo(b.Pos.X) : comp;
                 });
             }
 
@@ -101,14 +123,7 @@ namespace FanScript.Compiler.Emit
         protected virtual Vector3I ChooseSubPos(Vector3I pos)
             => new Vector3I(7, 3, 3);
 
-        public virtual void Clear()
-        {
-            segments.Clear();
-            connections.Clear();
-            values.Clear();
-        }
-
-        protected readonly record struct ConnectionRecord(ConnectTarget From, ConnectTarget To)
+        protected readonly record struct ConnectionRecord(IConnectTarget From, IConnectTarget To)
         {
         }
 
@@ -120,35 +135,42 @@ namespace FanScript.Compiler.Emit
         {
             public readonly ImmutableArray<Block> Blocks;
 
-            public Vector3I MinPos { get; private set; }
-            public Vector3I MaxPos { get; private set; }
-
-            public Vector3I Size => (MaxPos - MinPos) + Vector3I.One;
-
             public BlockSegment(IEnumerable<Block> blocks)
             {
                 ArgumentNullException.ThrowIfNull(blocks);
 
                 Blocks = blocks.ToImmutableArray();
                 if (Blocks.Length == 0)
+                {
                     throw new ArgumentOutOfRangeException(nameof(blocks), $"{nameof(blocks)} cannot be empty.");
+                }
 
-                calculateMinMax();
+                CalculateMinMax();
             }
+
+            public Vector3I MinPos { get; private set; }
+
+            public Vector3I MaxPos { get; private set; }
+
+            public Vector3I Size => (MaxPos - MinPos) + Vector3I.One;
 
             public void Move(Vector3I move)
             {
                 if (move == Vector3I.Zero)
+                {
                     return;
+                }
 
                 for (int i = 0; i < Blocks.Length; i++)
+                {
                     Blocks[i].Pos += move;
+                }
 
                 MinPos += move;
                 MaxPos += move;
             }
 
-            private void calculateMinMax()
+            private void CalculateMinMax()
             {
                 Vector3I min = new Vector3I(int.MaxValue, int.MaxValue, int.MaxValue);
                 Vector3I max = new Vector3I(int.MinValue, int.MinValue, int.MinValue);
@@ -164,10 +186,6 @@ namespace FanScript.Compiler.Emit
                 MinPos = min;
                 MaxPos = max - Vector3I.One;
             }
-        }
-
-        public interface IArgs
-        {
         }
     }
 }

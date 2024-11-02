@@ -1,7 +1,7 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using System.Diagnostics;
+using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Utils;
-using System.Diagnostics;
 using static FanScript.Compiler.Binding.BoundNodeFactory;
 
 namespace FanScript.Compiler.Binding.Rewriters
@@ -11,16 +11,18 @@ namespace FanScript.Compiler.Binding.Rewriters
     /// </summary>
     internal sealed class BoundTreeVariableRenamer : BoundTreeRewriter
     {
-        private readonly FunctionSymbol function;
-        private readonly Dictionary<VariableSymbol, VariableSymbol> renamedDict = new();
-        private Counter varCount = new Counter(0);
+        private readonly FunctionSymbol _function;
+        private readonly Dictionary<VariableSymbol, VariableSymbol> _renamedDict = [];
+        private Counter _varCount = new Counter(0);
 
         public BoundTreeVariableRenamer(FunctionSymbol function, Continuation? continuation = null)
         {
-            this.function = function;
+            _function = function;
 
             if (continuation is not null)
-                varCount = continuation.Value.LastCount;
+            {
+                _varCount = continuation.Value.LastCount;
+            }
         }
 
         public static BoundBlockStatement RenameVariables(BoundBlockStatement statement, FunctionSymbol function, ref Continuation? continuation)
@@ -28,55 +30,54 @@ namespace FanScript.Compiler.Binding.Rewriters
             BoundTreeVariableRenamer renamer = new BoundTreeVariableRenamer(function, continuation);
             BoundStatement res = renamer.RewriteBlockStatement(statement);
 
-            continuation = new Continuation(renamer.varCount);
+            continuation = new Continuation(renamer._varCount);
 
             return res is BoundBlockStatement blockRes ? blockRes : new BoundBlockStatement(statement.Syntax, [statement]);
         }
+
         protected override BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)
-        {
-            if (node.Variable is BasicVariableSymbol)
-                return Assignment(node.Syntax, getRenamedVar(node.Variable), RewriteExpression(node.Expression));
-            else
-                return base.RewriteAssignmentStatement(node);
-        }
+            => node.Variable is BasicVariableSymbol
+                ? Assignment(node.Syntax, GetRenamedVar(node.Variable), RewriteExpression(node.Expression))
+                : base.RewriteAssignmentStatement(node);
 
         protected override BoundExpression RewriteVariableExpression(BoundVariableExpression node)
-        {
-            if (node.Variable is BasicVariableSymbol)
-                return Variable(node.Syntax, getRenamedVar(node.Variable));
-            else
-                return base.RewriteVariableExpression(node);
-        }
+            => node.Variable is BasicVariableSymbol
+                ? Variable(node.Syntax, GetRenamedVar(node.Variable))
+                : base.RewriteVariableExpression(node);
 
-        private VariableSymbol getRenamedVar(VariableSymbol variable)
+        private VariableSymbol GetRenamedVar(VariableSymbol variable)
         {
             if (variable.IsGlobal || variable is ParameterSymbol)
+            {
                 return variable;
-            else if (renamedDict.TryGetValue(variable, out var renamed))
+            }
+            else if (_renamedDict.TryGetValue(variable, out var renamed))
+            {
                 return renamed;
+            }
             else
             {
                 if (variable is ParameterSymbol param)
                 {
-                    int paramIndex = function.Parameters.IndexOf(param);
+                    int paramIndex = _function.Parameters.IndexOf(param);
 
-                    Debug.Assert(paramIndex >= 0);
+                    Debug.Assert(paramIndex >= 0, $"A {nameof(ParameterSymbol)} must be a parameter of {nameof(_function)}.");
 
-                    renamed = ReservedCompilerVariableSymbol.CreateParam(function, paramIndex);
+                    renamed = ReservedCompilerVariableSymbol.CreateParam(_function, paramIndex);
                 }
                 else
                 {
-                    renamed = new CompilerVariableSymbol(varCount.ToString(), variable.Modifiers, variable.Type);
-                    varCount++;
+                    renamed = new CompilerVariableSymbol(_varCount.ToString(), variable.Modifiers, variable.Type);
+                    _varCount++;
                 }
 
-                renamedDict.Add(variable, renamed);
+                _renamedDict.Add(variable, renamed);
 
                 return renamed;
             }
         }
 
-        public struct Continuation
+        public readonly struct Continuation
         {
             public readonly Counter LastCount;
 

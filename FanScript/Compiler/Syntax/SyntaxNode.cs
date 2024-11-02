@@ -5,7 +5,6 @@ namespace FanScript.Compiler.Syntax
     public abstract class SyntaxNode
     {
         // TODO: consider caching GetChildren
-
         private protected SyntaxNode(SyntaxTree syntaxTree)
         {
             SyntaxTree = syntaxTree;
@@ -50,24 +49,31 @@ namespace FanScript.Compiler.Syntax
         }
 
         public IEnumerable<SyntaxNode> Ancestors()
-        {
-            return AncestorsAndSelf().Skip(1);
-        }
+            => AncestorsAndSelf().Skip(1);
 
         public abstract IEnumerable<SyntaxNode> GetChildren();
 
         public SyntaxToken GetLastToken()
         {
             if (this is SyntaxToken token)
+            {
                 return token;
+            }
 
             // A syntax node should always contain at least 1 token.
             return GetChildren().Last().GetLastToken();
         }
 
         public void WriteTo(TextWriter writer)
+            => PrettyPrint(writer, this);
+
+        public override string ToString()
         {
-            PrettyPrint(writer, this);
+            using (var writer = new StringWriter())
+            {
+                WriteTo(writer);
+                return writer.ToString();
+            }
         }
 
         private static void PrettyPrint(TextWriter writer, SyntaxNode node, string indent = "", bool isLast = true)
@@ -80,13 +86,17 @@ namespace FanScript.Compiler.Syntax
                 foreach (var trivia in token.LeadingTrivia)
                 {
                     if (isToConsole)
+                    {
                         Console.ForegroundColor = ConsoleColor.DarkGray;
+                    }
 
                     writer.Write(indent);
                     writer.Write("├──");
 
                     if (isToConsole)
+                    {
                         Console.ForegroundColor = ConsoleColor.DarkGreen;
+                    }
 
                     writer.WriteLine($"L: {trivia.Kind}");
                 }
@@ -96,13 +106,17 @@ namespace FanScript.Compiler.Syntax
             string tokenMarker = !hasTrailingTrivia && isLast ? "└──" : "├──";
 
             if (isToConsole)
+            {
                 Console.ForegroundColor = ConsoleColor.DarkGray;
+            }
 
             writer.Write(indent);
             writer.Write(tokenMarker);
 
             if (isToConsole)
+            {
                 Console.ForegroundColor = node is SyntaxToken ? ConsoleColor.Blue : ConsoleColor.Cyan;
+            }
 
             writer.Write(node.Kind);
 
@@ -113,7 +127,9 @@ namespace FanScript.Compiler.Syntax
             }
 
             if (isToConsole)
+            {
                 Console.ResetColor();
+            }
 
             writer.WriteLine();
 
@@ -125,13 +141,17 @@ namespace FanScript.Compiler.Syntax
                     string triviaMarker = isLast && isLastTrailingTrivia ? "└──" : "├──";
 
                     if (isToConsole)
+                    {
                         Console.ForegroundColor = ConsoleColor.DarkGray;
+                    }
 
                     writer.Write(indent);
                     writer.Write(triviaMarker);
 
                     if (isToConsole)
+                    {
                         Console.ForegroundColor = ConsoleColor.DarkGreen;
+                    }
 
                     writer.WriteLine($"T: {trivia.Kind}");
                 }
@@ -142,15 +162,8 @@ namespace FanScript.Compiler.Syntax
             SyntaxNode? lastChild = node.GetChildren().LastOrDefault();
 
             foreach (var child in node.GetChildren())
-                PrettyPrint(writer, child, indent, child == lastChild);
-        }
-
-        public override string ToString()
-        {
-            using (var writer = new StringWriter())
             {
-                WriteTo(writer);
-                return writer.ToString();
+                PrettyPrint(writer, child, indent, child == lastChild);
             }
         }
     }

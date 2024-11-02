@@ -9,6 +9,7 @@
         }
 
         public override SyntaxKind Kind => SyntaxKind.BreakStatement;
+
         public SyntaxToken Keyword { get; }
     }
 }

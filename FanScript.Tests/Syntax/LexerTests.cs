@@ -163,18 +163,16 @@ namespace FanScript.Tests.Syntax
         }
 
         private static IEnumerable<(SyntaxKind kind, string text)> GetSeparators()
-        {
-            return new[]
-            {
+            => [
                 (SyntaxKind.WhitespaceTrivia, " "),
                 (SyntaxKind.WhitespaceTrivia, "  "),
                 (SyntaxKind.LineBreakTrivia, "\r"),
                 (SyntaxKind.LineBreakTrivia, "\n"),
                 (SyntaxKind.LineBreakTrivia, "\r\n"),
                 (SyntaxKind.MultiLineCommentTrivia, "/**/"),
-            };
-        }
+            ];
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0046:Convert to conditional expression", Justification = "Seperate if statements are more readable in this case")]
         private static bool RequiresSeparator(SyntaxKind t1Kind, SyntaxKind t2Kind)
         {
             bool t1IsKeyword = t1Kind.IsKeyword() || t1Kind.IsModifier();

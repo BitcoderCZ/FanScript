@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler;
 using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
@@ -125,12 +126,10 @@ namespace FanScript.LangServer.Handlers
         }
 
         public override Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)
-        {
-            return new Task<CompletionItem>(() => request, cancellationToken);
-        }
+            => new Task<CompletionItem>(() => request, cancellationToken);
 
         [Flags]
-        enum CurrentRecomendations : ushort
+        private enum CurrentRecomendations : ushort
         {
             Keywords = 1 << 0,
             Modifiers = 1 << 1,
@@ -173,25 +172,17 @@ namespace FanScript.LangServer.Handlers
             else
             {
                 requestSpan = request.Position.ToSpan(tree.Text) - 1;
-                var syntax = tree.FindSyntax(requestSpan.Value);
+                object? syntax = tree.FindSyntax(requestSpan.Value);
 
-                if (syntax is SyntaxNode node)
-                    recomendations = getRecomendations(node, out recomendationsList, out inProp);
-                else if (syntax is SyntaxTrivia trivia)
-                {
-                    switch (trivia.Kind)
-                    {
-                        case SyntaxKind.SingleLineCommentTrivia:
-                        case SyntaxKind.MultiLineCommentTrivia:
-                            recomendations = 0;
-                            break;
-                        default:
-                            recomendations = CurrentRecomendations.UnknownSituation;
-                            break;
-                    }
-                }
-                else
-                    recomendations = CurrentRecomendations.UnknownSituation;
+                recomendations = syntax is SyntaxNode node
+                    ? GetRecomendations(node, out recomendationsList, out inProp)
+                    : syntax is SyntaxTrivia trivia
+                        ? trivia.Kind switch
+                        {
+                            SyntaxKind.SingleLineCommentTrivia or SyntaxKind.MultiLineCommentTrivia => 0,
+                            _ => CurrentRecomendations.UnknownSituation,
+                        }
+                        : CurrentRecomendations.UnknownSituation;
             }
 
             if (recomendations == 0 && recomendationsList is null)
@@ -243,12 +234,14 @@ namespace FanScript.LangServer.Handlers
                     {
                         TextLocation loc = new TextLocation(document.Tree!.Text, scope.Span);
 
-                        variables = scope
-                            .GetAllVariables()
-                            .Concat(compilation.GetVariables().Where(var => var.IsGlobal))
-                            .ToArray();
+                        variables =
+                        [
+                            .. scope.GetAllVariables(),
+                            .. compilation.GetVariables().Where(var => var.IsGlobal),
+                        ];
                     }
                 }
+
                 if (recomendations.HasFlag(CurrentRecomendations.Functions))
                     length += (functions = compilation.GetFunctions().Where(func => !func.IsMethod).ToArray()).Length;
                 if (recomendations.HasFlag(CurrentRecomendations.Methods))
@@ -307,7 +300,7 @@ namespace FanScript.LangServer.Handlers
                         Kind = CompletionItemKind.Function,
                         SortText = fun.Name,
                         FilterText = fun.Name,
-                        InsertText = getInsertText(fun, false),
+                        InsertText = CompletionForFunction(fun, false),
                     })
                 );
             if (methods is not null)
@@ -322,7 +315,7 @@ namespace FanScript.LangServer.Handlers
                         Kind = CompletionItemKind.Function,
                         SortText = fun.Name,
                         FilterText = fun.Name,
-                        InsertText = getInsertText(fun, inProp),
+                        InsertText = CompletionForFunction(fun, inProp),
                     })
                 );
 
@@ -340,14 +333,14 @@ namespace FanScript.LangServer.Handlers
                 TriggerCharacters = new Container<string>(".", "#"),
             };
 
-        private CurrentRecomendations getRecomendations(SyntaxNode node, out List<CompletionItem>? recomendationsList, out bool inProp)
+        private static CurrentRecomendations GetRecomendations(SyntaxNode node, out List<CompletionItem>? recomendationsList, out bool inProp)
         {
             recomendationsList = null;
             inProp = false;
 
-            if (node is not SyntaxToken token)
+            if (node is not SyntaxToken)
             {
-                SyntaxNode? missing = fistMissing(node);
+                SyntaxNode? missing = FistMissing(node);
                 if (missing is not null)
                     node = missing;
                 else
@@ -359,12 +352,12 @@ namespace FanScript.LangServer.Handlers
             if (parent is null)
                 return CurrentRecomendations.UnknownSituation;
 
-            CurrentRecomendations? recomendation = getRecomendationsWithParent(node, parent, out recomendationsList, out inProp);
+            CurrentRecomendations? recomendation = GetRecomendationsWithParent(node, parent, out recomendationsList, out inProp);
 
             return recomendation ?? CurrentRecomendations.UnknownSituation;
         }
 
-        private CurrentRecomendations? getRecomendationsWithParent(SyntaxNode node, SyntaxNode parent, out List<CompletionItem>? recomendationsList, out bool inProp)
+        private static CurrentRecomendations? GetRecomendationsWithParent(SyntaxNode node, SyntaxNode parent, out List<CompletionItem>? recomendationsList, out bool inProp)
         {
             recomendationsList = null;
             inProp = false;
@@ -376,8 +369,9 @@ namespace FanScript.LangServer.Handlers
                 case NameExpressionSyntax:
                     {
                         if (parent.Parent is not null)
-                            return getRecomendationsWithParent(parent, parent.Parent, out recomendationsList, out inProp);
+                            return GetRecomendationsWithParent(parent, parent.Parent, out recomendationsList, out inProp);
                     }
+
                     break;
                 case PropertyExpressionSyntax property:
                     {
@@ -390,7 +384,7 @@ namespace FanScript.LangServer.Handlers
                                 {
                                     list.EnsureCapacity(list.Count + type.Properties.Count);
                                     foreach (var (_, definition) in type.Properties)
-                                        list.Add(completionFor(definition, type));
+                                        list.Add(CompletionForProperty(definition, type));
 
                                     return list;
                                 });
@@ -398,12 +392,14 @@ namespace FanScript.LangServer.Handlers
                             return CurrentRecomendations.Methods;
                         }
                     }
+
                     break;
                 case CallExpressionSyntax call:
                     {
                         if (node == call.Identifier)
                             return CurrentRecomendations.Functions | CurrentRecomendations.Methods;
                     }
+
                     break;
                 case ArgumentClauseSyntax argumentClause:
                     return CurrentRecomendations.InExpression | CurrentRecomendations.Modifiers | CurrentRecomendations.Types;
@@ -412,6 +408,7 @@ namespace FanScript.LangServer.Handlers
                         if (node == @event.Identifier)
                             return CurrentRecomendations.Events;
                     }
+
                     break;
                 case BuildCommandStatementSyntax buildCommand:
                     return CurrentRecomendations.BuildCommand;
@@ -428,7 +425,7 @@ namespace FanScript.LangServer.Handlers
             return null;
         }
 
-        private string getInsertText(FunctionSymbol function, bool inProp)
+        private static string CompletionForFunction(FunctionSymbol function, bool inProp)
         {
             StringBuilder builder = new StringBuilder()
                 .Append(function.Name)
@@ -457,7 +454,7 @@ namespace FanScript.LangServer.Handlers
                 .ToString();
         }
 
-        private CompletionItem completionFor(PropertyDefinitionSymbol definition, TypeSymbol baseType)
+        private static CompletionItem CompletionForProperty(PropertyDefinitionSymbol definition, TypeSymbol baseType)
             => new CompletionItem()
             {
                 Label = definition.Type + " " + baseType + "." + definition.Name,
@@ -467,13 +464,13 @@ namespace FanScript.LangServer.Handlers
                 InsertText = definition.Name,
             };
 
-        private SyntaxNode? fistMissing(SyntaxNode node)
+        private static SyntaxNode? FistMissing(SyntaxNode node)
         {
             foreach (SyntaxNode child in node.GetChildren())
             {
                 if (child is not SyntaxToken token)
                 {
-                    SyntaxNode? res = fistMissing(child);
+                    SyntaxNode? res = FistMissing(child);
                     if (res is not null)
                         return res;
                 }

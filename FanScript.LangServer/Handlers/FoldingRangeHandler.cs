@@ -8,17 +8,8 @@ namespace FanScript.LangServer.Handlers
 {
     internal class FoldingRangeHandler : IFoldingRangeHandler
     {
-        public FoldingRangeRegistrationOptions GetRegistrationOptions() =>
-            new FoldingRangeRegistrationOptions
-            {
-                DocumentSelector = TextDocumentSelector.ForLanguage("fanscript")
-            };
-
-        public Task<Container<FoldingRange>?> Handle(
-            FoldingRangeRequestParam request,
-            CancellationToken cancellationToken
-        ) =>
-            Task.FromResult<Container<FoldingRange>?>(
+        public Task<Container<FoldingRange>?> Handle(FoldingRangeRequestParam request, CancellationToken cancellationToken)
+            => Task.FromResult<Container<FoldingRange>?>(
                 new Container<FoldingRange>(
                     new FoldingRange
                     {

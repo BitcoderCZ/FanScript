@@ -1,11 +1,12 @@
-﻿using FanScript.Compiler;
+﻿using System.Buffers;
+using System.Collections.Immutable;
+using FanScript.Compiler;
 using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Syntax;
 using FanScript.Documentation.DocElements.Links;
 using FanScript.Documentation.Exceptions;
 using FanScript.Utils;
-using System.Buffers;
-using System.Collections.Immutable;
 
 namespace FanScript.Documentation.DocElements
 {
@@ -13,12 +14,12 @@ namespace FanScript.Documentation.DocElements
     {
         public readonly Dictionary<string, Func<ImmutableArray<DocArg>, DocElement?, DocElement>> ElementTypes;
         public readonly HashSet<string> ElementsWithRawValues;
-        public IValidator Validator { get; set; }
 
         public DocElementParser(FunctionSymbol? currentFunction)
             : this(new DefaultValidator(currentFunction))
         {
         }
+
         public DocElementParser(IValidator validator)
         {
             Validator = validator;
@@ -27,40 +28,40 @@ namespace FanScript.Documentation.DocElements
                 ["link"] = Validator.CreateAndValidateLink,
                 ["list"] = (args, value) => new DocList(args, value),
                 ["item"] = (args, value) => new DocList.Item(args, value),
-                ["codeblock"] = (args, _value) =>
+                ["codeblock"] = (args, value) =>
                 {
-                    DocArg _lang = args.FirstOrDefault(arg => arg.Name == "lang");
+                    DocArg langArg = args.FirstOrDefault(arg => arg.Name == "lang");
 
                     string? lang = null;
-                    if (_lang.Name is not null)
+                    if (langArg.Name is not null)
                     {
-                        if (string.IsNullOrEmpty(_lang.Value))
-                            throw new ElementArgValueMissingException("codeblock", "lang");
-                        else
-                            lang = _lang.Value;
+                        lang = string.IsNullOrEmpty(langArg.Value) ? throw new ElementArgValueMissingException("codeblock", "lang") : langArg.Value;
                     }
 
-                    if (_value is not DocString valueStr)
-                        throw new ElementParseException("codeblock", "Value of a code block cannot be empty or not a string.");
-
-                    return new DocCodeBlock(args, valueStr, lang);
+                    return value is not DocString valueStr
+                        ? throw new ElementParseException("codeblock", "Value of a code block cannot be empty or not a string.")
+                        : (DocElement)new DocCodeBlock(args, valueStr, lang);
                 },
                 ["header"] = (args, value) =>
                 {
                     DocArg levelArg = args.FirstOrDefault(arg => arg.Name == "level");
 
                     if (levelArg.Name is null)
+                    {
                         throw new ElementArgValueMissingException("header", "level");
+                    }
 
                     if (!byte.TryParse(levelArg.Value, out byte level))
+                    {
                         throw new ElementParseException("header", $"The level arg must be an int, is: '{levelArg.Value}'.");
-
-
-                    if (value is null)
+                    }
+                    else if (value is null)
+                    {
                         throw new ElementParseException("header", "Value of a header cannot be empty.");
+                    }
 
                     return new DocHeader(args, value, level);
-                }
+                },
             };
             ElementsWithRawValues =
             [
@@ -68,12 +69,21 @@ namespace FanScript.Documentation.DocElements
             ];
         }
 
+        public interface IValidator
+        {
+            DocLink CreateAndValidateLink(ImmutableArray<DocArg> arguments, DocElement? value);
+        }
+
+        public IValidator Validator { get; set; }
+
         public DocElement Parse(ReadOnlySpan<char> text)
         {
             if (text.IsEmpty)
-                return new DocBlock(ImmutableArray<DocElement>.Empty);
+            {
+                return new DocBlock([]);
+            }
 
-            List<DocElement> elements = new();
+            List<DocElement> elements = [];
 
             int index = 0;
 
@@ -82,49 +92,31 @@ namespace FanScript.Documentation.DocElements
                 if (text[index] == '<')
                 {
                     if (index != 0)
-                        elements.Add(new DocString(new string(text.Slice(0, index))));
+                    {
+                        elements.Add(new DocString(new string(text[..index])));
+                    }
 
-                    text = text.Slice(index);
+                    text = text[index..];
                     index = 0;
 
-                    DocElement? element = parseElement(ref text);
+                    DocElement? element = ParseElement(ref text);
                     if (element is not null)
+                    {
                         elements.Add(element);
+                    }
                 }
                 else
+                {
                     index++;
+                }
             }
 
             if (text.Length > 0)
+            {
                 elements.Add(new DocString(new string(text)));
+            }
 
-            if (elements.Count == 1)
-                return elements[0];
-            else
-                return new DocBlock(elements.ToImmutableArray());
-        }
-
-        private DocElement? parseElement(ref ReadOnlySpan<char> text)
-        {
-            var (name, arguments) = parseStartTag(ref text);
-
-            DocElement? value;
-            if (ElementsWithRawValues.Contains(name))
-                value = new DocString(new string(readElementValue(ref text, name)));
-            else
-                value = Parse(readElementValue(ref text, name));
-
-            readEndTag(ref text, name);
-
-            var duplicates = arguments.GetDuplicates();
-
-            if (duplicates.Any())
-                throw new DuplicateElementArgException(name, duplicates.First().Name);
-
-            if (ElementTypes.TryGetValue(name, out var createFunc))
-                return createFunc(arguments, value);
-            else
-                throw new UnknownElementException(name);
+            return elements.Count == 1 ? elements[0] : new DocBlock([.. elements]);
         }
 
         /// <summary>
@@ -134,135 +126,198 @@ namespace FanScript.Documentation.DocElements
         /// <returns></returns>
         /// <exception cref="UnclosedStartTagException"></exception>
         /// <exception cref="InvalidElementArgValueException"></exception>
-        private (string Name, ImmutableArray<DocArg> Arguments) parseStartTag(ref ReadOnlySpan<char> text)
+        private static (string Name, ImmutableArray<DocArg> Arguments) ParseStartTag(ref ReadOnlySpan<char> text)
         {
-            text = text.Slice(1); // skip the '<' char
+            text = text[1..]; // skip the '<' char
 
             int index = 0;
 
             while (index < text.Length && text[index] != ' ' && text[index] != '>')
+            {
                 index++;
+            }
 
-            string elementName = new string(text.Slice(0, index));
+            string elementName = new string(text[..index]);
 
             if (index >= text.Length)
+            {
                 throw new UnclosedStartTagException(elementName);
+            }
             else if (text[index] == '>')
             {
-                text = text.Slice(index + 1);
+                text = text[(index + 1)..];
 
                 return (elementName, ImmutableArray<DocArg>.Empty);
             }
 
-            text = text.Slice(index + 1);
+            text = text[(index + 1)..];
 
-            List<DocArg> arguments = new();
+            List<DocArg> arguments = [];
 
             while (text.Length != 0 && index < text.Length && text[0] != '>')
             {
                 index = 0;
 
                 while (index < text.Length && char.IsWhiteSpace(text[index]))
+                {
                     index++;
+                }
 
                 while (index < text.Length && text[index] != ' ' && text[index] != '=' && text[index] != '>')
+                {
                     index++;
+                }
 
                 if (index >= text.Length)
+                {
                     throw new UnclosedStartTagException(elementName);
+                }
 
-                string argName = new string(text.Slice(0, index));
+                string argName = new string(text[..index]);
 
                 if (text[index++] != '=')
                 {
-                    text = text.Slice(0, index - 1);
+                    text = text[..(index - 1)];
                     arguments.Add(new DocArg(argName, null));
                     continue;
                 }
 
                 if (text[index] != '"')
+                {
                     throw new InvalidElementArgValueException(elementName, argName);
+                }
 
-                text = text.Slice(index + 1);
+                text = text[(index + 1)..];
                 index = 0;
 
                 while (index < text.Length && text[index] != '"')
+                {
                     index++;
+                }
 
                 if (index >= text.Length)
+                {
                     throw new InvalidElementArgValueException(elementName, argName);
+                }
 
-                string argValue = new string(text.Slice(0, index));
+                string argValue = new string(text[..index]);
 
                 arguments.Add(new DocArg(argName, argValue));
 
-                text = text.Slice(index + 1);
+                text = text[(index + 1)..];
             }
 
             if (text.Length == 0 || text[0] != '>')
+            {
                 throw new UnclosedStartTagException(elementName);
+            }
 
-            text = text.Slice(1);
+            text = text[1..];
 
             return (elementName, arguments.ToImmutableArray());
         }
 
-        private bool isStartTag(ReadOnlySpan<char> text)
+        /// <summary>
+        /// Reads the end tag (</>)
+        /// </summary>
+        /// <param name="text"></param>
+        /// <param name="elementName"></param>
+        /// <exception cref="UnclosedEndTagException"></exception>
+        private static void ReadEndTag(ref ReadOnlySpan<char> text, string elementName)
         {
-            text = text.Slice(1); // skip the '<' char
+            if (text.Length < 3 || text[0] != '<' || text[1] != '/' || text[2] != '>')
+            {
+                throw new UnclosedEndTagException(elementName);
+            }
+
+            text = text[3..];
+        }
+
+        private static bool IsStartTag(ReadOnlySpan<char> text)
+        {
+            text = text[1..]; // skip the '<' char
 
             int index = 0;
 
             while (index < text.Length && text[index] != ' ' && text[index] != '>')
+            {
                 index++;
-
-            string elementName = new string(text.Slice(0, index));
+            }
 
             if (index >= text.Length)
+            {
                 return false;
+            }
             else if (text[index] == '>')
+            {
                 return true;
+            }
 
-            text = text.Slice(index + 1);
+            text = text[(index + 1)..];
 
             while (text.Length != 0 && index < text.Length && text[0] != '>')
             {
                 index = 0;
 
                 while (index < text.Length && char.IsWhiteSpace(text[index]))
+                {
                     index++;
+                }
 
                 while (index < text.Length && text[index] != ' ' && text[index] != '=' && text[index] != '>')
+                {
                     index++;
+                }
 
                 if (index >= text.Length)
+                {
                     return false;
+                }
 
                 if (text[index++] != '=')
                 {
-                    text = text.Slice(0, index - 1);
+                    text = text[..(index - 1)];
                     continue;
                 }
 
                 if (text[index] != '"')
+                {
                     return false;
+                }
 
-                text = text.Slice(index + 1);
+                text = text[(index + 1)..];
                 index = 0;
 
                 while (index < text.Length && text[index] != '"')
+                {
                     index++;
+                }
 
                 if (index >= text.Length)
+                {
                     return false;
+                }
 
-                text = text.Slice(index + 1);
+                text = text[(index + 1)..];
             }
 
-            if (text.Length == 0 || text[0] != '>')
-                return false;
+            return text.Length != 0 && text[0] == '>';
+        }
 
-            return true;
+        private DocElement? ParseElement(ref ReadOnlySpan<char> text)
+        {
+            var (name, arguments) = ParseStartTag(ref text);
+
+            DocElement? value = ElementsWithRawValues.Contains(name)
+                ? new DocString(new string(ReadElementValue(ref text, name)))
+                : Parse(ReadElementValue(ref text, name));
+            ReadEndTag(ref text, name);
+
+            var duplicates = arguments.GetDuplicates();
+
+            return duplicates.Any()
+                ? throw new DuplicateElementArgException(name, duplicates.First().Name)
+                : ElementTypes.TryGetValue(name, out var createFunc) ? createFunc(arguments, value) : throw new UnknownElementException(name);
         }
 
         /// <summary>
@@ -272,10 +327,12 @@ namespace FanScript.Documentation.DocElements
         /// <param name="elementName"></param>
         /// <returns></returns>
         /// <exception cref="UnclosedElementException"></exception>
-        private ReadOnlySpan<char> readElementValue(ref ReadOnlySpan<char> text, string elementName)
+        private ReadOnlySpan<char> ReadElementValue(ref ReadOnlySpan<char> text, string elementName)
         {
             if (text.Length == 0 || (text.Length >= 3 && text[0] == '<' && text[1] == '/' && text[2] == '>'))
-                return ReadOnlySpan<char>.Empty;
+            {
+                return [];
+            }
 
             bool rawValue = ElementsWithRawValues.Contains(elementName);
 
@@ -293,40 +350,27 @@ namespace FanScript.Documentation.DocElements
                             break;
                         }
                         else
+                        {
                             depth--;
+                        }
                     }
-                    else if (isStartTag(text.Slice(i - 1)))
+                    else if (IsStartTag(text[(i - 1)..]))
+                    {
                         depth++;
+                    }
                 }
             }
 
             if (i >= text.Length)
+            {
                 throw new UnclosedElementException(elementName);
+            }
 
-            ReadOnlySpan<char> result = text.Slice(0, i);
+            ReadOnlySpan<char> result = text[..i];
 
-            text = text.Slice(i);
+            text = text[i..];
 
             return result;
-        }
-
-        /// <summary>
-        /// Reads the end tag (</>)
-        /// </summary>
-        /// <param name="text"></param>
-        /// <param name="elementName"></param>
-        /// <exception cref="UnclosedEndTagException"></exception>
-        private void readEndTag(ref ReadOnlySpan<char> text, string elementName)
-        {
-            if (text.Length < 3 || text[0] != '<' || text[1] != '/' || text[2] != '>')
-                throw new UnclosedEndTagException(elementName);
-
-            text = text.Slice(3);
-        }
-
-        public interface IValidator
-        {
-            DocLink CreateAndValidateLink(ImmutableArray<DocArg> arguments, DocElement? value);
         }
 
         private readonly struct DefaultValidator : IValidator
@@ -343,48 +387,112 @@ namespace FanScript.Documentation.DocElements
                 DocArg type = arguments.FirstOrDefault(arg => arg.Name == "type");
 
                 if (type.Name is null)
-                    throw new ElementArgMissingException("link", "type");
-                else if (string.IsNullOrEmpty(type.Value))
-                    throw new ElementArgValueMissingException("link", "type");
-                if (value is not DocString valString)
-                    throw new ElementParseException("link", "The value of a link must be a string.");
-
-                switch (type.Value)
                 {
-                    case "url":
-                        return createUrlLink(arguments, valString);
-                    case "func":
-                        return createFunctionLink(arguments, valString);
-                    case "param":
-                        return createParameterLink(arguments, valString);
-                    case "con":
-                        return createConstantLink(arguments, valString);
-                    case "con_value":
-                        return createConstantValueLink(arguments, valString);
-                    case "event":
-                        return createEventLink(arguments, valString);
-                    case "type":
-                        return createTypeLink(arguments, valString);
-                    case "mod":
-                        return createModifierLink(arguments, valString);
-                    case "build_command":
-                        return createBuildCommandLink(arguments, valString);
-                    default:
-                        throw new UnknownLinkTypeException(type.Value);
+                    throw new ElementArgMissingException("link", "type");
                 }
+                else if (string.IsNullOrEmpty(type.Value))
+                {
+                    throw new ElementArgValueMissingException("link", "type");
+                }
+
+#pragma warning disable IDE0046 // Convert to conditional expression
+                if (value is not DocString valString)
+                {
+                    throw new ElementParseException("link", "The value of a link must be a string.");
+                }
+#pragma warning restore IDE0046
+
+                return type.Value switch
+                {
+                    "url" => CreateUrlLink(arguments, valString),
+                    "func" => CreateFunctionLink(arguments, valString),
+                    "param" => CreateParameterLink(arguments, valString),
+                    "con" => CreateConstantLink(arguments, valString),
+                    "con_value" => CreateConstantValueLink(arguments, valString),
+                    "event" => CreateEventLink(arguments, valString),
+                    "type" => CreateTypeLink(arguments, valString),
+                    "mod" => CreateModifierLink(arguments, valString),
+                    "build_command" => CreateBuildCommandLink(arguments, valString),
+                    _ => throw new UnknownLinkTypeException(type.Value),
+                };
             }
 
-            private UrlLink createUrlLink(ImmutableArray<DocArg> args, DocString value)
+            private static UrlLink CreateUrlLink(ImmutableArray<DocArg> args, DocString value)
             {
                 string[] split = value.Text.Split(';', StringSplitOptions.TrimEntries);
 
-                if (split.Length != 2)
-                    throw new ElementParseException("link", "The value of an url link must be in the format: '{display string};{url}'.");
-
-                return new UrlLink(args, value, split[0], split[1]);
+                return split.Length != 2
+                    ? throw new ElementParseException("link", "The value of an url link must be in the format: '{display string};{url}'.")
+                    : new UrlLink(args, value, split[0], split[1]);
             }
 
-            private FunctionLink createFunctionLink(ImmutableArray<DocArg> args, DocString value)
+            private static ConstantLink CreateConstantLink(ImmutableArray<DocArg> args, DocString value)
+            {
+                ConstantGroup? group = Constants.Groups.First(group => group.Name == value.Text);
+
+                return group is null
+                    ? throw new ElementParseException("link", $"Constant \"{value.Text}\" doesn't exist.")
+                    : new ConstantLink(args, value, group);
+            }
+
+            private static ConstantValueLink CreateConstantValueLink(ImmutableArray<DocArg> args, DocString value)
+            {
+                ConstantGroup? group = Constants.Groups.First(group => value.Text.StartsWith(group.Name));
+
+                if (group is null || value.Text.Length < group.Name.Length)
+                {
+                    throw new ElementParseException("link", $"Constant value \"{value.Text}\" doesn't exist.");
+                }
+
+                var valName = value.Text.AsSpan(group.Name.Length + 1);
+
+                Constant? constant = null;
+                foreach (var val in group.Values)
+                {
+                    if (valName.Equals(val.Name, StringComparison.Ordinal))
+                    {
+                        constant = val;
+                        break;
+                    }
+                }
+
+                return constant is null
+                    ? throw new ElementParseException("link", $"Constant value \"{value.Text}\" doesn't exist.")
+                    : new ConstantValueLink(args, value, group, constant);
+            }
+
+            private static EventLink CreateEventLink(ImmutableArray<DocArg> args, DocString value)
+                => Enum.TryParse(value.Text, out EventType eventType)
+                    ? new EventLink(args, value, eventType)
+                    : throw new ElementParseException("link", $"Event \"{value.Text}\" doesn't exist.");
+
+            private static TypeLink CreateTypeLink(ImmutableArray<DocArg> args, DocString value)
+            {
+                TypeSymbol type = TypeSymbol.GetTypeInternal(value.Text);
+
+                return new TypeLink(args, value, type);
+            }
+
+            private static ModifierLink CreateModifierLink(ImmutableArray<DocArg> args, DocString value)
+            {
+                SyntaxKind syntaxKind = SyntaxFacts.GetKeywordKind(value.Text);
+
+                if (syntaxKind == SyntaxKind.IdentifierToken)
+                {
+                    throw new ElementParseException("link", $"Modifier \"{value.Text}\" doesn't exist.");
+                }
+
+                Modifiers modifier = ModifiersE.FromKind(syntaxKind);
+
+                return new ModifierLink(args, value, modifier);
+            }
+
+            private static BuildCommandLink CreateBuildCommandLink(ImmutableArray<DocArg> args, DocString value)
+                => Enum.TryParse(value.Text.ToUpperFirst(), out BuildCommand buildCommand)
+                    ? new BuildCommandLink(args, value, buildCommand)
+                    : throw new ElementParseException("link", $"Build command \"{value.Text}\" doesn't exist.");
+
+            private FunctionLink CreateFunctionLink(ImmutableArray<DocArg> args, DocString value)
             {
                 ReadOnlySpan<char> valSpan = value.Text.AsSpan();
 
@@ -392,7 +500,9 @@ namespace FanScript.Documentation.DocElements
                 int numbRanges = valSpan.Split(ranges, ';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
                 if (numbRanges == 0)
+                {
                     throw new ElementParseException("link", "Empty value.");
+                }
 
                 ReadOnlySpan<char> funcName = valSpan.Slice(ranges[0]);
 
@@ -400,13 +510,17 @@ namespace FanScript.Documentation.DocElements
 
                 TypeSymbol[] paramTypes;
                 if (numbParams == 0)
-                    paramTypes = Array.Empty<TypeSymbol>();
+                {
+                    paramTypes = [];
+                }
                 else
                 {
                     paramTypes = new TypeSymbol[numbParams];
 
                     for (int i = 0; i < numbParams; i++)
+                    {
                         paramTypes[i] = TypeSymbol.GetTypeInternal(valSpan.Slice(ranges[i + 1]));
+                    }
                 }
 
                 foreach (var func in BuiltinFunctions.GetAll())
@@ -422,10 +536,12 @@ namespace FanScript.Documentation.DocElements
                 throw new ElementParseException("link", $"Functions \"{new string(funcName)}\" with parameter types: {string.Join(", ", paramTypes.Select(type => type.Name))}");
             }
 
-            private ParamLink createParameterLink(ImmutableArray<DocArg> args, DocString value)
+            private ParamLink CreateParameterLink(ImmutableArray<DocArg> args, DocString value)
             {
                 if (CurrentFunction is null)
+                {
                     throw new ElementParseException("link", $"Param link cannot be used when {nameof(CurrentFunction)} is null.");
+                }
 
                 string paramName = value.Text;
 
@@ -433,83 +549,11 @@ namespace FanScript.Documentation.DocElements
                     CurrentFunction.Parameters
                         .Select(param => param.Name)
                         .ToArray(),
-                    paramName
-                );
+                    paramName);
 
-                if (paramIndex < 0)
-                    throw new ElementParseException("link", $"Function \"{CurrentFunction.Name}\" doesn't have a parameter \"{paramName}\".");
-
-                return new ParamLink(args, value, CurrentFunction, paramIndex);
-            }
-
-            private ConstantLink createConstantLink(ImmutableArray<DocArg> args, DocString value)
-            {
-                ConstantGroup? group = Constants.Groups.First(group => group.Name == value.Text);
-
-                if (group is null)
-                    throw new ElementParseException("link", $"Constant \"{value.Text}\" doesn't exist.");
-
-                return new ConstantLink(args, value, group);
-            }
-
-            private ConstantValueLink createConstantValueLink(ImmutableArray<DocArg> args, DocString value)
-            {
-                ConstantGroup? group = Constants.Groups.First(group => value.Text.StartsWith(group.Name));
-
-                if (group is null || value.Text.Length < group.Name.Length)
-                    throw new ElementParseException("link", $"Constant value \"{value.Text}\" doesn't exist.");
-
-                string valName = value.Text.Substring(group.Name.Length + 1);
-
-                Constant? constant = null;
-                foreach (var val in group.Values)
-                {
-                    if (val.Name == valName)
-                    {
-                        constant = val;
-                        break;
-                    }
-                }
-
-                if (constant is null)
-                    throw new ElementParseException("link", $"Constant value \"{value.Text}\" doesn't exist.");
-
-                return new ConstantValueLink(args, value, group, constant);
-            }
-
-            private EventLink createEventLink(ImmutableArray<DocArg> args, DocString value)
-            {
-                if (!Enum.TryParse(value.Text, out EventType eventType))
-                    throw new ElementParseException("link", $"Event \"{value.Text}\" doesn't exist.");
-
-                return new EventLink(args, value, eventType);
-            }
-
-            private TypeLink createTypeLink(ImmutableArray<DocArg> args, DocString value)
-            {
-                TypeSymbol type = TypeSymbol.GetTypeInternal(value.Text);
-
-                return new TypeLink(args, value, type);
-            }
-
-            private ModifierLink createModifierLink(ImmutableArray<DocArg> args, DocString value)
-            {
-                SyntaxKind syntaxKind = SyntaxFacts.GetKeywordKind(value.Text);
-
-                if (syntaxKind == SyntaxKind.IdentifierToken)
-                    throw new ElementParseException("link", $"Modifier \"{value.Text}\" doesn't exist.");
-
-                Modifiers modifier = ModifiersE.FromKind(syntaxKind);
-
-                return new ModifierLink(args, value, modifier);
-            }
-
-            private BuildCommandLink createBuildCommandLink(ImmutableArray<DocArg> args, DocString value)
-            {
-                if (!Enum.TryParse(value.Text.ToUpperFirst(), out BuildCommand buildCommand))
-                    throw new ElementParseException("link", $"Build command \"{value.Text}\" doesn't exist.");
-
-                return new BuildCommandLink(args, value, buildCommand);
+                return paramIndex < 0
+                    ? throw new ElementParseException("link", $"Function \"{CurrentFunction.Name}\" doesn't have a parameter \"{paramName}\".")
+                    : new ParamLink(args, value, CurrentFunction, paramIndex);
             }
         }
     }

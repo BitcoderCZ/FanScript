@@ -9,27 +9,27 @@ namespace FanScript.Compiler.Binding
         public BoundLiteralExpression(SyntaxNode syntax, object? value)
             : base(syntax)
         {
-            if (value is null)
-                Type = TypeSymbol.Null;
-            else if (value is bool)
-                Type = TypeSymbol.Bool;
-            else if (value is float)
-                Type = TypeSymbol.Float;
-            else if (value is string)
-                Type = TypeSymbol.String;
-            else if (value is Vector3F)
-                Type = TypeSymbol.Vector3;
-            else if (value is Rotation)
-                Type = TypeSymbol.Rotation;
-            else
-                throw new Exception($"Unexpected literal '{value}' of type {value.GetType()}");
+            Type = value is null
+                ? TypeSymbol.Null
+                : value is bool
+                ? TypeSymbol.Bool
+                : value is float
+                ? TypeSymbol.Float
+                : value is string
+                ? TypeSymbol.String
+                : value is Vector3F
+                ? TypeSymbol.Vector3
+                : value is Rotation ? TypeSymbol.Rotation : throw new Exception($"Unexpected literal '{value}' of type {value.GetType()}");
 
             ConstantValue = new BoundConstant(value);
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.LiteralExpression;
+
         public override TypeSymbol Type { get; }
+
         public object? Value => ConstantValue.Value;
+
         public override BoundConstant ConstantValue { get; }
     }
 }

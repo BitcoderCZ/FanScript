@@ -35,10 +35,9 @@ namespace FanScript.LangServer
                         return tree;
 
                     treeVersion = ContentVersion;
-                    if (string.IsNullOrEmpty(content))
-                        return null;
-
-                    return tree = SyntaxTree.Parse(SourceText.From(content, DocumentUri.GetFileSystemPath(Uri) ?? string.Empty));
+                    return string.IsNullOrEmpty(content)
+                        ? null
+                        : (tree = SyntaxTree.Parse(SourceText.From(content, DocumentUri.GetFileSystemPath(Uri) ?? string.Empty)));
                 }
             }
         }
@@ -62,10 +61,7 @@ namespace FanScript.LangServer
 
                     SyntaxTree? tree = this.tree;
                     compilationVersion = treeVersion;
-                    if (tree is null)
-                        return null;
-
-                    return compilation = Compilation.CreateScript(null, tree);
+                    return tree is null ? null : (compilation = Compilation.Create(null, tree));
                 }
             }
         }

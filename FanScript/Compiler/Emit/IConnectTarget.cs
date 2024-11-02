@@ -1,33 +1,37 @@
-﻿using FanScript.FCInfo;
+﻿using System.Runtime.CompilerServices;
+using FanScript.FCInfo;
 using MathUtils.Vectors;
-using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("FanScript.Tests")]
+
 namespace FanScript.Compiler.Emit
 {
-    public interface ConnectTarget
+    public interface IConnectTarget
     {
         Vector3I Pos { get; }
 
         int TerminalIndex { get; }
+
         Vector3I? VoxelPos { get; }
     }
 
-    internal sealed class NopConnectTarget : ConnectTarget
+    internal sealed class NopConnectTarget : IConnectTarget
     {
+        public static readonly NopConnectTarget Instance = new NopConnectTarget();
+
+        private NopConnectTarget()
+        {
+        }
+
         public Vector3I Pos => new Vector3I(-1, -1, -1);
 
         public int TerminalIndex => -1;
+
         public Vector3I? VoxelPos => new Vector3I(-1, -1, -1);
     }
 
-    internal sealed class BlockConnectTarget : ConnectTarget
+    internal sealed class BlockConnectTarget : IConnectTarget
     {
-        public Vector3I Pos => Block.Pos;
-
-        public int TerminalIndex => Terminal.Index;
-        public Vector3I? VoxelPos => Terminal.Pos;
-
         public readonly Block Block;
         public readonly Terminal Terminal;
 
@@ -36,15 +40,16 @@ namespace FanScript.Compiler.Emit
             Block = block;
             Terminal = terminal;
         }
-    }
 
-    internal sealed class BlockVoxelConnectTarget : ConnectTarget
-    {
         public Vector3I Pos => Block.Pos;
 
-        public int TerminalIndex { get; init; }
-        public Vector3I? VoxelPos { get; init; }
+        public int TerminalIndex => Terminal.Index;
 
+        public Vector3I? VoxelPos => Terminal.Pos;
+    }
+
+    internal sealed class BlockVoxelConnectTarget : IConnectTarget
+    {
         public readonly Block Block;
 
         public BlockVoxelConnectTarget(Block block, Vector3I? voxelPos = null)
@@ -52,34 +57,38 @@ namespace FanScript.Compiler.Emit
             Block = block;
             VoxelPos = voxelPos ?? new Vector3I(7, 3, 3);
         }
-    }
 
-    internal sealed class AbsoluteConnectTarget : ConnectTarget
-    {
-        public Vector3I Pos { get; init; }
+        public Vector3I Pos => Block.Pos;
 
         public int TerminalIndex { get; init; }
 
         public Vector3I? VoxelPos { get; init; }
+    }
 
+    internal sealed class AbsoluteConnectTarget : IConnectTarget
+    {
         public AbsoluteConnectTarget(Vector3I pos, Vector3I? voxelPos = null)
         {
             Pos = pos;
             VoxelPos = voxelPos;
         }
+
+        public Vector3I Pos { get; init; }
+
+        public int TerminalIndex { get; init; }
+
+        public Vector3I? VoxelPos { get; init; }
     }
 
+#pragma warning disable SA1204 // Static elements should appear before instance elements
     internal static class ConnectTargetE
+#pragma warning restore SA1204
     {
-        public static WireType GetWireType(this ConnectTarget connectTarget)
-        {
-            switch (connectTarget)
+        public static WireType GetWireType(this IConnectTarget connectTarget)
+            => connectTarget switch
             {
-                case BlockConnectTarget blockTarget:
-                    return blockTarget.Terminal.WireType;
-                default:
-                    return WireType.Error;
-            }
-        }
+                BlockConnectTarget blockTarget => blockTarget.Terminal.WireType,
+                _ => WireType.Error,
+            };
     }
 }

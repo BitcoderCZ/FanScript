@@ -5,7 +5,8 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class BoundPostfixStatement : BoundStatement
     {
-        public BoundPostfixStatement(SyntaxNode syntax, VariableSymbol variable, PostfixKind postfixKind) : base(syntax)
+        public BoundPostfixStatement(SyntaxNode syntax, VariableSymbol variable, PostfixKind postfixKind)
+            : base(syntax)
         {
             Variable = variable;
             PostfixKind = postfixKind;
@@ -14,6 +15,7 @@ namespace FanScript.Compiler.Binding
         public override BoundNodeKind Kind => BoundNodeKind.PostfixStatement;
 
         public VariableSymbol Variable { get; }
+
         public PostfixKind PostfixKind { get; }
     }
 }

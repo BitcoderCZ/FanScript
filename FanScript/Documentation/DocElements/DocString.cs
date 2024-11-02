@@ -5,7 +5,7 @@ namespace FanScript.Documentation.DocElements
     public sealed class DocString : DocElement
     {
         public DocString(string text)
-            : base(ImmutableArray<DocArg>.Empty, null)
+            : base([], null)
         {
             Text = text;
         }

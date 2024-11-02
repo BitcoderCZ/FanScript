@@ -1,4 +1,4 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using FanScript.Compiler.Symbols.Functions;
 using FanScript.Documentation.Attributes;
 using FanScript.Documentation.DocElements;
 using FanScript.Documentation.DocElements.Builders;
@@ -9,8 +9,8 @@ namespace FanScript.LangServer.Utils
 {
     internal static class DocUtils
     {
-        private static DocElementParser parser = new DocElementParser((FunctionSymbol?)null);
-        private static DocElementBuilder builder = new TextBuilder();
+        private static readonly DocElementParser parser = new DocElementParser((FunctionSymbol?)null);
+        private static readonly DocElementBuilder builder = new TextBuilder();
 
         public static string ParseAndBuild(ReadOnlySpan<char> text, FunctionSymbol? currentFunction)
             => Build(Parse(text, currentFunction));

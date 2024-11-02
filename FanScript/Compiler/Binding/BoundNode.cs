@@ -10,6 +10,7 @@ namespace FanScript.Compiler.Binding
         }
 
         public abstract BoundNodeKind Kind { get; }
+
         public SyntaxNode Syntax { get; }
 
         public override string ToString()

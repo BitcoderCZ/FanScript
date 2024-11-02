@@ -2,7 +2,8 @@
 {
     public sealed class TypeDocAttribute : DocumentationAttribute
     {
-        public TypeDocAttribute() : base()
+        public TypeDocAttribute()
+            : base()
         {
         }
 

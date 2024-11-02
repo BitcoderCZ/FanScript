@@ -1,6 +1,7 @@
 ﻿using FanScript.Compiler;
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
@@ -17,6 +18,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FanScript.LangServer.Handlers
 {
@@ -48,7 +50,7 @@ namespace FanScript.LangServer.Handlers
                 return null;
 
             var requestSpan = request.Position.ToSpan(tree.Text);
-            var syntax = tree.FindSyntax(requestSpan);
+            object? syntax = tree.FindSyntax(requestSpan);
 
             if (syntax is not SyntaxNode node)
                 return null;
@@ -68,16 +70,12 @@ namespace FanScript.LangServer.Handlers
             if (node is SyntaxToken sToken)
             {
                 if (sToken.Kind.IsModifier())
-                    return getHoverForModifier(ModifiersE.FromKind(sToken.Kind), sToken.Location);
+                    return GetHoverForModifier(ModifiersE.FromKind(sToken.Kind), sToken.Location);
 
-                TypeSymbol? type;
-                if (sToken.Text == TypeSymbol.Null.Name)
-                    type = TypeSymbol.Null;
-                else
-                    type = TypeSymbol.GetType(sToken.Text);
+                TypeSymbol? type = sToken.Text == TypeSymbol.Null.Name ? TypeSymbol.Null : TypeSymbol.GetType(sToken.Text);
 
                 if (type != TypeSymbol.Error)
-                    return getHoverForType(type, sToken.Location);
+                    return GetHoverForType(type, sToken.Location);
             }
 
             switch (node.Parent)
@@ -89,13 +87,14 @@ namespace FanScript.LangServer.Handlers
 
                         if (name.Parent is PropertyExpressionSyntax propEx && name == propEx.Expression)
                         {
-                            PropertySymbol? prop = resolveProperty(propEx, scope
-                                .GetAllVariables()
-                                .Concat(compilation.GetVariables().Where(var => var.IsGlobal))
-                                .ToArray(), out _) as PropertySymbol;
+                            PropertySymbol? prop = ResolveProperty(compilation, propEx,
+                            [
+                                .. scope.GetAllVariables(),
+                                .. compilation.GetVariables().Where(var => var.IsGlobal),
+                            ], out _) as PropertySymbol;
 
                             if (prop is not null)
-                                return getHoverForProperty(prop, node.Location);
+                                return GetHoverForProperty(prop, node.Location);
                         }
                         else
                         {
@@ -108,9 +107,10 @@ namespace FanScript.LangServer.Handlers
                                 .FirstOrDefault(var => var.Name == token.Text);
 
                             if (varSymbol is not null)
-                                return getHoverForVariable(varSymbol, node.Location);
+                                return GetHoverForVariable(varSymbol, node.Location);
                         }
                     }
+
                     break;
                 case VariableDeclarationStatementSyntax variableDeclarationStatement when node == variableDeclarationStatement.IdentifierToken:
                 case AssignmentStatementSyntax assignment when node == assignment.Destination:
@@ -124,8 +124,9 @@ namespace FanScript.LangServer.Handlers
                             .FirstOrDefault(var => var.Name == token.Text);
 
                         if (varSymbol is not null)
-                            return getHoverForVariable(varSymbol, node.Location);
+                            return GetHoverForVariable(varSymbol, node.Location);
                     }
+
                     break;
                 case CallExpressionSyntax call when node == call.Identifier:
                     {
@@ -134,13 +135,14 @@ namespace FanScript.LangServer.Handlers
                             IEnumerable<FunctionSymbol>? funcs = null;
                             TypeSymbol? baseType = null;
                             if (scope is not null)
-                                funcs = resolveProperty(propEx, scope
-                                .GetAllVariables()
-                                .Concat(compilation.GetVariables().Where(var => var.IsGlobal))
-                                .ToArray(), out baseType) as IEnumerable<FunctionSymbol>;
+                                funcs = ResolveProperty(compilation, propEx,
+                                [
+                                    .. scope.GetAllVariables(),
+                                    .. compilation.GetVariables().Where(var => var.IsGlobal),
+                                ], out baseType) as IEnumerable<FunctionSymbol>;
 
                             if (funcs is not null && baseType is not null)
-                                return getHoverForMethods(funcs.ToArray(), baseType, node.Location);
+                                return GetHoverForMethods(funcs.ToArray(), baseType, node.Location);
                         }
                         else
                         {
@@ -148,9 +150,10 @@ namespace FanScript.LangServer.Handlers
                                 .GetFunctions()
                                 .Where(func => func.Name == call.Identifier.Text);
 
-                            return getHoverForFunctions(functions.ToArray(), node.Location);
+                            return GetHoverForFunctions(functions.ToArray(), node.Location);
                         }
                     }
+
                     break;
                 case CallStatementSyntax call when node == call.Identifier:
                     {
@@ -158,7 +161,7 @@ namespace FanScript.LangServer.Handlers
                             .GetFunctions()
                             .Where(func => func.Name == call.Identifier.Text);
 
-                        return getHoverForFunctions(functions.ToArray(), node.Location);
+                        return GetHoverForFunctions(functions.ToArray(), node.Location);
                     }
                 case EventStatementSyntax sb when node == sb.Identifier:
                     {
@@ -195,8 +198,9 @@ namespace FanScript.LangServer.Handlers
                                .FirstOrDefault(var => var.Name == token.Text);
 
                         if (varSymbol is not null)
-                            return getHoverForVariable(varSymbol, node.Location);
+                            return GetHoverForVariable(varSymbol, node.Location);
                     }
+
                     break;
                 case BuildCommandStatementSyntax bc when node == bc.Identifier:
                     {
@@ -205,182 +209,11 @@ namespace FanScript.LangServer.Handlers
                         if (command is null)
                             break;
 
-                        var doc = DocUtils.GetAttribute<BuildCommand, BuildCommandDocAttribute>(command.Value);
-
-                        return new Hover()
-                        {
-                            Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
-                            {
-                                Kind = MarkupKind.PlainText,
-                                Value = DocUtils.ParseAndBuild(doc.Info, null),
-                            }),
-                            Range = node.Location.ToRange(),
-                        };
+                        return GetHoverForBuildCommand(command.Value, node.Location);
                     }
             }
 
             return null;
-
-            object? resolveProperty(PropertyExpressionSyntax syntax, VariableSymbol[] variables, out TypeSymbol? baseType)
-            {
-                VariableSymbol? baseVar = null;
-                baseType = null;
-
-                switch (syntax.BaseExpression)
-                {
-                    case PropertyExpressionSyntax propEx:
-                        baseVar = resolveProperty(propEx, variables, out _) as VariableSymbol;
-                        break;
-                    case NameExpressionSyntax nameEx:
-                        baseVar = variables.FirstOrDefault(var => var.Name == nameEx.IdentifierToken.Text);
-                        break;
-                    default:
-                        return null;
-                }
-
-                if (baseVar is null)
-                    return null;
-
-                baseType = baseVar.Type;
-
-                if (syntax.Expression is NameExpressionSyntax name)
-                {
-                    PropertyDefinitionSymbol? propDef = baseVar.Type.GetProperty(name.IdentifierToken.Text);
-                    return propDef is null ?
-                        null :
-                        new PropertySymbol(propDef, new BoundVariableExpression(null!, baseVar));
-                }
-                else if (syntax.Expression is CallExpressionSyntax call)
-                {
-                    // method (instance function)
-                    return compilation
-                        .GetFunctions()
-                        .Where(func => func.IsMethod && func.Name == call.Identifier.Text)
-                        .OrderBy(func => Math.Abs(func.Parameters.Length - call.Arguments.Count));
-                }
-
-                return null;
-            }
-
-            Hover? getHoverForVariable(VariableSymbol variable, TextLocation location)
-            {
-                if (variable.Modifiers.HasFlag(Modifiers.Constant) && variable.Modifiers.HasFlag(Modifiers.Global))
-                {
-                    foreach (var group in Constants.Groups)
-                    {
-                        if (variable.Name.StartsWith(group.Name, StringComparison.Ordinal))
-                        {
-                            for (int i = 0; i < group.Values.Length; i++)
-                            {
-                                if (variable.Name == group.Name + "_" + group.Values[i].Name)
-                                {
-                                    var doc = Constants.ConstantToDoc[group];
-
-                                    string info = doc.Info is null ? string.Empty : DocUtils.ParseAndBuild(doc.Info, null);
-
-                                    if (doc.ValueInfos is not null && !string.IsNullOrEmpty(doc.ValueInfos[i]))
-                                        info += "\n" + DocUtils.ParseAndBuild(doc.ValueInfos[i], null);
-
-                                    if (info.Length == 0)
-                                        return null;
-
-                                    return new Hover()
-                                    {
-                                        Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
-                                        {
-                                            Kind = MarkupKind.PlainText,
-                                            Value = info,
-                                        }),
-                                        Range = location.ToRange(),
-                                    };
-                                }
-                            }
-                        }
-                    }
-                }
-
-                return new Hover()
-                {
-                    Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
-                    {
-                        Kind = MarkupKind.PlainText,
-                        Value = variableInfo(variable),
-                    }),
-                    Range = location.ToRange(),
-                };
-            }
-            Hover getHoverForProperty(PropertySymbol property, TextLocation location)
-            {
-                return new Hover()
-                {
-                    Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
-                    {
-                        Kind = MarkupKind.PlainText,
-                        Value = propertyInfo(property),
-                    }),
-                    Range = location.ToRange(),
-                };
-            }
-            Hover? getHoverForFunctions(FunctionSymbol[] functions, TextLocation location)
-            {
-                if (functions.Length == 0)
-                    return null;
-
-                MarkedString[] results = new MarkedString[functions.Length];
-
-                for (int i = 0; i < functions.Length; i++)
-                    results[i] = new MarkedString(functionInfo(functions[i]));
-
-                return new Hover()
-                {
-                    Contents = new MarkedStringsOrMarkupContent(results),
-                    Range = location.ToRange(),
-                };
-            }
-            Hover? getHoverForMethods(FunctionSymbol[] methods, TypeSymbol baseType, TextLocation location)
-            {
-                if (methods.Length == 0)
-                    return null;
-
-                MarkedString[] results = new MarkedString[methods.Length];
-
-                for (int i = 0; i < methods.Length; i++)
-                    results[i] = new MarkedString(methodInfo(baseType, methods[i]));
-
-                return new Hover()
-                {
-                    Contents = new MarkedStringsOrMarkupContent(results),
-                    Range = location.ToRange(),
-                };
-            }
-            Hover getHoverForModifier(Modifiers mod, TextLocation location)
-            {
-                ModifierDocAttribute doc = DocUtils.GetAttribute<Modifiers, ModifierDocAttribute>(mod);
-
-                return new Hover()
-                {
-                    Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
-                    {
-                        Kind = MarkupKind.PlainText,
-                        Value = DocUtils.ParseAndBuild(doc.Info, null),
-                    }),
-                    Range = location.ToRange(),
-                };
-            }
-            Hover getHoverForType(TypeSymbol type, TextLocation location)
-            {
-                TypeDocAttribute doc = TypeSymbol.TypeToDoc[type];
-
-                return new Hover()
-                {
-                    Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
-                    {
-                        Kind = MarkupKind.PlainText,
-                        Value = DocUtils.ParseAndBuild(doc.Info, null),
-                    }),
-                    Range = location.ToRange(),
-                };
-            }
         }
 
         protected override HoverRegistrationOptions CreateRegistrationOptions(HoverCapability capability, ClientCapabilities clientCapabilities)
@@ -389,8 +222,83 @@ namespace FanScript.LangServer.Handlers
                 DocumentSelector = TextDocumentSelector.ForLanguage("fanscript"),
             };
 
-        private static string variableInfo(VariableSymbol variable)
+        private static object? ResolveProperty(Compilation compilation, PropertyExpressionSyntax syntax, VariableSymbol[] variables, out TypeSymbol? baseType)
         {
+            VariableSymbol? baseVar = null;
+            baseType = null;
+
+            switch (syntax.BaseExpression)
+            {
+                case PropertyExpressionSyntax propEx:
+                    baseVar = ResolveProperty(compilation, propEx, variables, out _) as VariableSymbol;
+                    break;
+                case NameExpressionSyntax nameEx:
+                    baseVar = variables.FirstOrDefault(var => var.Name == nameEx.IdentifierToken.Text);
+                    break;
+                default:
+                    return null;
+            }
+
+            if (baseVar is null)
+                return null;
+
+            baseType = baseVar.Type;
+
+            if (syntax.Expression is NameExpressionSyntax name)
+            {
+                PropertyDefinitionSymbol? propDef = baseVar.Type.GetProperty(name.IdentifierToken.Text);
+                return propDef is null ?
+                    null :
+                    new PropertySymbol(propDef, new BoundVariableExpression(null!, baseVar));
+            }
+            else if (syntax.Expression is CallExpressionSyntax call)
+            {
+                // method (instance function)
+                return compilation
+                    .GetFunctions()
+                    .Where(func => func.IsMethod && func.Name == call.Identifier.Text)
+                    .OrderBy(func => Math.Abs(func.Parameters.Length - call.Arguments.Count));
+            }
+
+            return null;
+        }
+
+        private static Hover? GetHoverForVariable(VariableSymbol variable, TextLocation location)
+        {
+            if (variable.Modifiers.HasFlag(Modifiers.Constant) && variable.Modifiers.HasFlag(Modifiers.Global))
+            {
+                foreach (var group in Constants.Groups)
+                {
+                    if (variable.Name.StartsWith(group.Name, StringComparison.Ordinal))
+                    {
+                        for (int i = 0; i < group.Values.Length; i++)
+                        {
+                            if (variable.Name == group.Name + "_" + group.Values[i].Name)
+                            {
+                                var doc = Constants.ConstantToDoc[group];
+
+                                string info = doc.Info is null ? string.Empty : DocUtils.ParseAndBuild(doc.Info, null);
+
+                                if (doc.ValueInfos is not null && !string.IsNullOrEmpty(doc.ValueInfos[i]))
+                                    info += "\n" + DocUtils.ParseAndBuild(doc.ValueInfos[i], null);
+
+                                return info.Length == 0
+                                    ? null
+                                    : new Hover()
+                                    {
+                                        Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+                                        {
+                                            Kind = MarkupKind.PlainText,
+                                            Value = info,
+                                        }),
+                                        Range = location.ToRange(),
+                                    };
+                            }
+                        }
+                    }
+                }
+            }
+
             StringBuilder builder = new StringBuilder();
 
             variable.Modifiers.ToSyntaxString(builder);
@@ -405,9 +313,18 @@ namespace FanScript.LangServer.Handlers
                 builder.Append(variable.Constant.Value);
             }
 
-            return builder.ToString();
+            return new Hover()
+            {
+                Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+                {
+                    Kind = MarkupKind.PlainText,
+                    Value = builder.ToString(),
+                }),
+                Range = location.ToRange(),
+            };
         }
-        private static string propertyInfo(PropertySymbol property)
+
+        private static Hover GetHoverForProperty(PropertySymbol property, TextLocation location)
         {
             StringBuilder builder = new StringBuilder();
 
@@ -429,59 +346,140 @@ namespace FanScript.LangServer.Handlers
                 builder.Append(property.Constant.Value);
             }
 
-            return builder.ToString();
+            return new Hover()
+            {
+                Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+                {
+                    Kind = MarkupKind.PlainText,
+                    Value = builder.ToString(),
+                }),
+                Range = location.ToRange(),
+            };
         }
-        private static string functionInfo(FunctionSymbol function)
+
+        private static Hover? GetHoverForFunctions(FunctionSymbol[] functions, TextLocation location)
         {
-            FunctionDocAttribute? doc;
-            if (function is BuiltinFunctionSymbol)
-                doc = BuiltinFunctions.FunctionToDoc[function];
-            else
-                doc = new FunctionDocAttribute();
+            if (functions.Length == 0)
+                return null;
 
             StringBuilder builder = new StringBuilder();
+            MarkedString[] results = new MarkedString[functions.Length];
 
-            builder.Append(function.ToString());
-
-            if (!string.IsNullOrEmpty(doc.Info))
+            for (int i = 0; i < functions.Length; i++)
             {
-                builder.Append(" - ");
-                builder.Append(DocUtils.ParseAndBuild(doc.Info, function));
+                FunctionSymbol function = functions[i];
+
+                FunctionDocAttribute? doc = function is BuiltinFunctionSymbol ? BuiltinFunctions.FunctionToDoc[function] : new FunctionDocAttribute();
+
+                builder.Append(function.ToString());
+
+                if (!string.IsNullOrEmpty(doc.Info))
+                {
+                    builder.Append(" - ");
+                    builder.Append(DocUtils.ParseAndBuild(doc.Info, function));
+                }
+
+                results[i] = new MarkedString(builder.ToString());
+
+                builder.Clear();
             }
 
-            return builder.ToString();
+            return new Hover()
+            {
+                Contents = new MarkedStringsOrMarkupContent(results),
+                Range = location.ToRange(),
+            };
         }
-        private static string methodInfo(TypeSymbol baseType, FunctionSymbol method)
+
+        private static Hover? GetHoverForMethods(FunctionSymbol[] methods, TypeSymbol baseType, TextLocation location)
         {
-            FunctionDocAttribute? doc;
-            if (method is BuiltinFunctionSymbol)
-                doc = BuiltinFunctions.FunctionToDoc[method];
-            else
-                doc = new FunctionDocAttribute();
+            if (methods.Length == 0)
+                return null;
 
             StringBuilder builder = new StringBuilder();
-            using StringWriter writer = new StringWriter(builder);
+            MarkedString[] results = new MarkedString[methods.Length];
 
-            if (baseType.IsGenericInstance)
-                baseType = TypeSymbol.GetGenericDefinition(baseType);
-
-            method.Modifiers.ToSyntaxString(builder);
-            builder.Append(' ');
-            builder.Append(method.Type);
-            builder.Append(' ');
-            builder.Append(baseType);
-            builder.Append('.');
-            builder.Append(method.Name);
-
-            SymbolPrinter.WriteFunctionTo(method, writer, true, true);
-
-            if (!string.IsNullOrEmpty(doc.Info))
+            for (int i = 0; i < methods.Length; i++)
             {
-                builder.Append(" - ");
-                builder.Append(DocUtils.ParseAndBuild(doc.Info, method));
+                FunctionSymbol method = methods[i];
+
+                FunctionDocAttribute? doc = method is BuiltinFunctionSymbol ? BuiltinFunctions.FunctionToDoc[method] : new FunctionDocAttribute();
+                using StringWriter writer = new StringWriter(builder);
+
+                if (baseType.IsGenericInstance)
+                    baseType = TypeSymbol.GetGenericDefinition(baseType);
+
+                method.Modifiers.ToSyntaxString(builder);
+                builder.Append(' ');
+                builder.Append(method.Type);
+                builder.Append(' ');
+                builder.Append(baseType);
+                builder.Append('.');
+                builder.Append(method.Name);
+
+               method.WriteTo(writer, true, true);
+
+                if (!string.IsNullOrEmpty(doc.Info))
+                {
+                    builder.Append(" - ");
+                    builder.Append(DocUtils.ParseAndBuild(doc.Info, method));
+                }
+
+                results[i] = new MarkedString(builder.ToString());
+
+                builder.Clear();
             }
 
-            return builder.ToString();
+            return new Hover()
+            {
+                Contents = new MarkedStringsOrMarkupContent(results),
+                Range = location.ToRange(),
+            };
+        }
+
+        private static Hover GetHoverForModifier(Modifiers mod, TextLocation location)
+        {
+            ModifierDocAttribute doc = DocUtils.GetAttribute<Modifiers, ModifierDocAttribute>(mod);
+
+            return new Hover()
+            {
+                Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+                {
+                    Kind = MarkupKind.PlainText,
+                    Value = DocUtils.ParseAndBuild(doc.Info, null),
+                }),
+                Range = location.ToRange(),
+            };
+        }
+
+        private static Hover GetHoverForType(TypeSymbol type, TextLocation location)
+        {
+            TypeDocAttribute doc = TypeSymbol.TypeToDoc[type];
+
+            return new Hover()
+            {
+                Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+                {
+                    Kind = MarkupKind.PlainText,
+                    Value = DocUtils.ParseAndBuild(doc.Info, null),
+                }),
+                Range = location.ToRange(),
+            };
+        }
+
+        private static Hover GetHoverForBuildCommand(BuildCommand command, TextLocation location)
+        {
+            BuildCommandDocAttribute doc = DocUtils.GetAttribute<BuildCommand, BuildCommandDocAttribute>(command);
+
+            return new Hover()
+            {
+                Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
+                {
+                    Kind = MarkupKind.PlainText,
+                    Value = DocUtils.ParseAndBuild(doc.Info, null),
+                }),
+                Range = location.ToRange(),
+            };
         }
     }
 }

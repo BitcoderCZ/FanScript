@@ -2,7 +2,8 @@
 {
     public abstract class OperatorDocAttribute : DocumentationAttribute
     {
-        public OperatorDocAttribute() : base()
+        public OperatorDocAttribute()
+            : base()
         {
         }
 
@@ -11,14 +12,16 @@
 
     public sealed class BinaryOperatorDocAttribute : OperatorDocAttribute
     {
-        public BinaryOperatorDocAttribute() : base()
+        public BinaryOperatorDocAttribute()
+            : base()
         {
         }
     }
 
     public sealed class UnaryOperatorDocAttribute : OperatorDocAttribute
     {
-        public UnaryOperatorDocAttribute() : base()
+        public UnaryOperatorDocAttribute()
+            : base()
         {
         }
     }

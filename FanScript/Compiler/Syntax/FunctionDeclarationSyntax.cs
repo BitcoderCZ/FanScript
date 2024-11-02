@@ -18,12 +18,19 @@
         public override SyntaxKind Kind => SyntaxKind.FunctionDeclaration;
 
         public ModifierClauseSyntax Modifiers { get; }
+
         public SyntaxToken Keyword { get; }
+
         public TypeClauseSyntax? TypeClause { get; }
+
         public SyntaxToken Identifier { get; }
+
         public SyntaxToken OpenParenthesisToken { get; }
+
         public SeparatedSyntaxList<ParameterSyntax> Parameters { get; }
+
         public SyntaxToken CloseParenthesisToken { get; }
+
         public BlockStatementSyntax Body { get; }
     }
 }

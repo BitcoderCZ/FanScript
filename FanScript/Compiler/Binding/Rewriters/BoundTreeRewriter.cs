@@ -1,14 +1,13 @@
-﻿using FanScript.Compiler.Exceptions;
+﻿using System.Collections.Immutable;
+using FanScript.Compiler.Exceptions;
 using FanScript.Compiler.Symbols.Variables;
-using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Binding.Rewriters
 {
     internal abstract class BoundTreeRewriter
     {
         public virtual BoundStatement RewriteStatement(BoundStatement node)
-        {
-            return node switch
+            => node switch
             {
                 BoundBlockStatement blockStatement => RewriteBlockStatement(blockStatement),
                 BoundEventStatement eventStatement => RewriteEventStatement(eventStatement),
@@ -21,7 +20,8 @@ namespace FanScript.Compiler.Binding.Rewriters
                 BoundIfStatement ifStatement => RewriteIfStatement(ifStatement),
                 BoundWhileStatement whileStatement => RewriteWhileStatement(whileStatement),
                 BoundDoWhileStatement doWhileStatement => RewriteDoWhileStatement(doWhileStatement),
-                //case BoundNodeKind.ForStatement:
+
+                // case BoundNodeKind.ForStatement:
                 //    return RewriteForStatement((BoundForStatement)node);
                 BoundLabelStatement labelStatement => RewriteLabelStatement(labelStatement),
                 BoundGotoStatement gotoStatement => RewriteGotoStatement(gotoStatement),
@@ -34,13 +34,12 @@ namespace FanScript.Compiler.Binding.Rewriters
 
                 _ => throw new UnexpectedBoundNodeException(node),
             };
-        }
 
         protected virtual BoundStatement RewriteBlockStatement(BoundBlockStatement node)
         {
             ImmutableArray<BoundStatement>.Builder? builder = null;
 
-            for (var i = 0; i < node.Statements.Length; i++)
+            for (int i = 0; i < node.Statements.Length; i++)
             {
                 BoundStatement oldStatement = node.Statements[i];
                 BoundStatement newStatement = RewriteStatement(oldStatement);
@@ -50,19 +49,17 @@ namespace FanScript.Compiler.Binding.Rewriters
                     {
                         builder = ImmutableArray.CreateBuilder<BoundStatement>(node.Statements.Length);
 
-                        for (var j = 0; j < i; j++)
+                        for (int j = 0; j < i; j++)
+                        {
                             builder.Add(node.Statements[j]);
+                        }
                     }
                 }
 
-                if (builder is not null)
-                    builder.Add(newStatement);
+                builder?.Add(newStatement);
             }
 
-            if (builder is null)
-                return node;
-
-            return new BoundBlockStatement(node.Syntax, builder.MoveToImmutable());
+            return builder is null ? node : (BoundStatement)new BoundBlockStatement(node.Syntax, builder.MoveToImmutable());
         }
 
         protected virtual BoundStatement RewriteEventStatement(BoundEventStatement node)
@@ -71,10 +68,9 @@ namespace FanScript.Compiler.Binding.Rewriters
 
             BoundBlockStatement block = (BoundBlockStatement)RewriteBlockStatement(node.Block);
 
-            if (argumentClause == node.ArgumentClause && block == node.Block)
-                return node;
-
-            return new BoundEventStatement(node.Syntax, node.Type, argumentClause, block);
+            return argumentClause == node.ArgumentClause && block == node.Block
+                ? node
+                : (BoundStatement)new BoundEventStatement(node.Syntax, node.Type, argumentClause, block);
         }
 
         protected virtual BoundStatement RewriteNopStatement(BoundNopStatement node)
@@ -89,31 +85,24 @@ namespace FanScript.Compiler.Binding.Rewriters
         protected virtual BoundStatement RewriteVariableDeclaration(BoundVariableDeclarationStatement node)
         {
             if (node.OptionalAssignment is null)
+            {
                 return node;
+            }
 
             BoundStatement assignment = RewriteStatement(node.OptionalAssignment);
-            if (assignment == node.OptionalAssignment)
-                return node;
-
-            return new BoundVariableDeclarationStatement(node.Syntax, node.Variable, assignment);
+            return assignment == node.OptionalAssignment ? node : new BoundVariableDeclarationStatement(node.Syntax, node.Variable, assignment);
         }
 
         protected virtual BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)
         {
             BoundExpression expression = RewriteExpression(node.Expression);
-            if (expression == node.Expression)
-                return node;
-
-            return new BoundAssignmentStatement(node.Syntax, node.Variable, expression);
+            return expression == node.Expression ? node : new BoundAssignmentStatement(node.Syntax, node.Variable, expression);
         }
 
         protected virtual BoundStatement RewriteCompoundAssignmentStatement(BoundCompoundAssignmentStatement node)
         {
             BoundExpression expression = RewriteExpression(node.Expression);
-            if (expression == node.Expression)
-                return node;
-
-            return new BoundCompoundAssignmentStatement(node.Syntax, node.Variable, node.Op, expression);
+            return expression == node.Expression ? node : new BoundCompoundAssignmentStatement(node.Syntax, node.Variable, node.Op, expression);
         }
 
         protected virtual BoundStatement RewriteIfStatement(BoundIfStatement node)
@@ -121,30 +110,27 @@ namespace FanScript.Compiler.Binding.Rewriters
             BoundExpression condition = RewriteExpression(node.Condition);
             BoundStatement thenStatement = RewriteStatement(node.ThenStatement);
             BoundStatement? elseStatement = node.ElseStatement is null ? null : RewriteStatement(node.ElseStatement);
-            if (condition == node.Condition && thenStatement == node.ThenStatement && elseStatement == node.ElseStatement)
-                return node;
-
-            return new BoundIfStatement(node.Syntax, condition, thenStatement, elseStatement);
+            return condition == node.Condition && thenStatement == node.ThenStatement && elseStatement == node.ElseStatement
+                ? node
+                : new BoundIfStatement(node.Syntax, condition, thenStatement, elseStatement);
         }
 
         protected virtual BoundStatement RewriteWhileStatement(BoundWhileStatement node)
         {
             BoundExpression condition = RewriteExpression(node.Condition);
             BoundStatement body = RewriteStatement(node.Body);
-            if (condition == node.Condition && body == node.Body)
-                return node;
-
-            return new BoundWhileStatement(node.Syntax, condition, body, node.BreakLabel, node.ContinueLabel);
+            return condition == node.Condition && body == node.Body
+                ? node
+                : new BoundWhileStatement(node.Syntax, condition, body, node.BreakLabel, node.ContinueLabel);
         }
 
         protected virtual BoundStatement RewriteDoWhileStatement(BoundDoWhileStatement node)
         {
             BoundStatement body = RewriteStatement(node.Body);
             BoundExpression condition = RewriteExpression(node.Condition);
-            if (body == node.Body && condition == node.Condition)
-                return node;
-
-            return new BoundDoWhileStatement(node.Syntax, body, condition, node.BreakLabel, node.ContinueLabel);
+            return body == node.Body && condition == node.Condition
+                ? node
+                : new BoundDoWhileStatement(node.Syntax, body, condition, node.BreakLabel, node.ContinueLabel);
         }
 
         protected virtual BoundStatement RewriteLabelStatement(BoundLabelStatement node)
@@ -156,37 +142,31 @@ namespace FanScript.Compiler.Binding.Rewriters
         protected virtual BoundStatement RewriteEventGotoStatement(BoundEventGotoStatement node)
         {
             if (node.ArgumentClause is null)
+            {
                 return node;
+            }
 
             BoundArgumentClause clase = RewriteArgumentClause(node.ArgumentClause);
 
-            if (clase == node.ArgumentClause)
-                return node;
-
-            return new BoundEventGotoStatement(
+            return clase == node.ArgumentClause
+                ? node
+                : (BoundStatement)new BoundEventGotoStatement(
                 node.Syntax,
                 node.Label,
                 node.EventType,
-                clase
-            );
+                clase);
         }
 
         protected virtual BoundStatement RewriteConditionalGotoStatement(BoundConditionalGotoStatement node)
         {
             BoundExpression condition = RewriteExpression(node.Condition);
-            if (condition == node.Condition)
-                return node;
-
-            return new BoundConditionalGotoStatement(node.Syntax, node.Label, condition, node.JumpIfTrue);
+            return condition == node.Condition ? node : new BoundConditionalGotoStatement(node.Syntax, node.Label, condition, node.JumpIfTrue);
         }
 
         protected virtual BoundStatement RewriteReturnStatement(BoundReturnStatement node)
         {
             BoundExpression? expression = node.Expression is null ? null : RewriteExpression(node.Expression);
-            if (expression == node.Expression)
-                return node;
-
-            return new BoundReturnStatement(node.Syntax, expression);
+            return expression == node.Expression ? node : new BoundReturnStatement(node.Syntax, expression);
         }
 
         protected virtual BoundStatement RewriteEmitterHint(BoundEmitterHintStatement node)
@@ -196,24 +176,20 @@ namespace FanScript.Compiler.Binding.Rewriters
         {
             BoundArgumentClause argumentClause = RewriteArgumentClause(node.ArgumentClause);
 
-            if (argumentClause == node.ArgumentClause)
-                return node;
-
-            return new BoundCallStatement(node.Syntax, node.Function, argumentClause, node.ReturnType, node.GenericType, node.ResultVariable);
+            return argumentClause == node.ArgumentClause
+                ? node
+                : new BoundCallStatement(node.Syntax, node.Function, argumentClause, node.ReturnType, node.GenericType, node.ResultVariable);
         }
 
         protected virtual BoundStatement RewriteExpressionStatement(BoundExpressionStatement node)
         {
             BoundExpression expression = RewriteExpression(node.Expression);
-            if (expression == node.Expression)
-                return node;
-
-            return new BoundExpressionStatement(node.Syntax, expression);
+            return expression == node.Expression ? node : new BoundExpressionStatement(node.Syntax, expression);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:Elements should be ordered by access", Justification = "whomp whomp")]
         public virtual BoundExpression RewriteExpression(BoundExpression node)
-        {
-            return node switch
+            => node switch
             {
                 BoundErrorExpression errorExpression => RewriteErrorExpression(errorExpression),
                 BoundLiteralExpression literalExpression => RewriteLiteralExpression(literalExpression),
@@ -231,7 +207,6 @@ namespace FanScript.Compiler.Binding.Rewriters
 
                 _ => throw new UnexpectedBoundNodeException(node),
             };
-        }
 
         protected virtual BoundExpression RewriteErrorExpression(BoundErrorExpression node)
             => node;
@@ -247,11 +222,9 @@ namespace FanScript.Compiler.Binding.Rewriters
                     {
                         BoundExpression newEx = RewriteExpression(prop.Expression);
 
-                        if (newEx == prop.Expression)
-                            return node;
-
-                        return new BoundVariableExpression(node.Syntax, new PropertySymbol(prop.Definition, newEx));
+                        return newEx == prop.Expression ? node : new BoundVariableExpression(node.Syntax, new PropertySymbol(prop.Definition, newEx));
                     }
+
                 default:
                     return node;
             }
@@ -261,10 +234,7 @@ namespace FanScript.Compiler.Binding.Rewriters
         {
             BoundExpression operand = RewriteExpression(node.Operand);
 
-            if (operand == node.Operand)
-                return node;
-
-            return new BoundUnaryExpression(node.Syntax, node.Op, operand);
+            return operand == node.Operand ? node : new BoundUnaryExpression(node.Syntax, node.Op, operand);
         }
 
         protected virtual BoundExpression RewriteBinaryExpression(BoundBinaryExpression node)
@@ -272,30 +242,23 @@ namespace FanScript.Compiler.Binding.Rewriters
             BoundExpression left = RewriteExpression(node.Left);
             BoundExpression right = RewriteExpression(node.Right);
 
-            if (left == node.Left && right == node.Right)
-                return node;
-
-            return new BoundBinaryExpression(node.Syntax, left, node.Op, right);
+            return left == node.Left && right == node.Right ? node : new BoundBinaryExpression(node.Syntax, left, node.Op, right);
         }
 
         protected virtual BoundExpression RewriteCallExpression(BoundCallExpression node)
         {
             BoundArgumentClause argumentClause = RewriteArgumentClause(node.ArgumentClause);
 
-            if (argumentClause == node.ArgumentClause)
-                return node;
-
-            return new BoundCallExpression(node.Syntax, node.Function, argumentClause, node.ReturnType, node.GenericType);
+            return argumentClause == node.ArgumentClause
+                ? node
+                : new BoundCallExpression(node.Syntax, node.Function, argumentClause, node.ReturnType, node.GenericType);
         }
 
         protected virtual BoundExpression RewriteConversionExpression(BoundConversionExpression node)
         {
             BoundExpression expression = RewriteExpression(node.Expression);
 
-            if (expression == node.Expression)
-                return node;
-
-            return new BoundConversionExpression(node.Syntax, node.Type, expression);
+            return expression == node.Expression ? node : new BoundConversionExpression(node.Syntax, node.Type, expression);
         }
 
         protected virtual BoundExpression RewriteConstructorExpression(BoundConstructorExpression node)
@@ -308,14 +271,14 @@ namespace FanScript.Compiler.Binding.Rewriters
                 yDiff = expressionY != node.ExpressionY,
                 zDiff = expressionZ != node.ExpressionZ;
 
-            if (xDiff || yDiff || zDiff)
-                return new BoundConstructorExpression(node.Syntax, node.Type,
+            return xDiff || yDiff || zDiff
+                ? new BoundConstructorExpression(
+                    node.Syntax, 
+                    node.Type,
                     xDiff ? expressionX : node.ExpressionX,
                     yDiff ? expressionY : node.ExpressionY,
-                    zDiff ? expressionZ : node.ExpressionZ
-                );
-            else
-                return node;
+                    zDiff ? expressionZ : node.ExpressionZ)
+                : (BoundExpression)node;
         }
 
         protected virtual BoundExpression RewritePostfixExpression(BoundPostfixExpression node)
@@ -328,7 +291,7 @@ namespace FanScript.Compiler.Binding.Rewriters
         {
             ImmutableArray<BoundExpression>.Builder? builder = null;
 
-            for (var i = 0; i < node.Elements.Length; i++)
+            for (int i = 0; i < node.Elements.Length; i++)
             {
                 BoundExpression oldElement = node.Elements[i];
                 BoundExpression newElement = RewriteExpression(oldElement);
@@ -339,36 +302,28 @@ namespace FanScript.Compiler.Binding.Rewriters
                         builder = ImmutableArray.CreateBuilder<BoundExpression>(node.Elements.Length);
 
                         for (int j = 0; j < i; j++)
+                        {
                             builder.Add(node.Elements[j]);
+                        }
                     }
                 }
 
-                if (builder is not null)
-                    builder.Add(newElement);
+                builder?.Add(newElement);
             }
 
-            if (builder is null)
-                return node;
-
-            return new BoundArraySegmentExpression(node.Syntax, node.ElementType, builder.ToImmutable());
+            return builder is null ? node : new BoundArraySegmentExpression(node.Syntax, node.ElementType, builder.ToImmutable());
         }
 
         protected virtual BoundExpression RewriteAssignmentExpression(BoundAssignmentExpression node)
         {
             BoundExpression expression = RewriteExpression(node.Expression);
-            if (expression == node.Expression)
-                return node;
-
-            return new BoundAssignmentExpression(node.Syntax, node.Variable, expression);
+            return expression == node.Expression ? node : new BoundAssignmentExpression(node.Syntax, node.Variable, expression);
         }
 
         protected virtual BoundExpression RewriteCompoundAssignmentExpression(BoundCompoundAssignmentExpression node)
         {
             BoundExpression expression = RewriteExpression(node.Expression);
-            if (expression == node.Expression)
-                return node;
-
-            return new BoundCompoundAssignmentExpression(node.Syntax, node.Variable, node.Op, expression);
+            return expression == node.Expression ? node : new BoundCompoundAssignmentExpression(node.Syntax, node.Variable, node.Op, expression);
         }
 
         #region Helper functions
@@ -376,7 +331,7 @@ namespace FanScript.Compiler.Binding.Rewriters
         {
             ImmutableArray<BoundExpression>.Builder? builder = null;
 
-            for (var i = 0; i < node.Arguments.Length; i++)
+            for (int i = 0; i < node.Arguments.Length; i++)
             {
                 BoundExpression oldArgument = node.Arguments[i];
                 BoundExpression newArgument = RewriteExpression(oldArgument);
@@ -387,18 +342,16 @@ namespace FanScript.Compiler.Binding.Rewriters
                         builder = ImmutableArray.CreateBuilder<BoundExpression>(node.Arguments.Length);
 
                         for (int j = 0; j < i; j++)
+                        {
                             builder.Add(node.Arguments[j]);
+                        }
                     }
                 }
 
-                if (builder is not null)
-                    builder.Add(newArgument);
+                builder?.Add(newArgument);
             }
 
-            if (builder is null)
-                return node;
-
-            return new BoundArgumentClause(node.Syntax, node.ArgModifiers, builder.ToImmutable());
+            return builder is null ? node : new BoundArgumentClause(node.Syntax, node.ArgModifiers, builder.ToImmutable());
         }
         #endregion
     }

@@ -13,8 +13,11 @@ namespace FanScript.Compiler.Binding
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.EventStatement;
+
         public EventType Type { get; }
+
         public BoundArgumentClause? ArgumentClause { get; }
+
         public BoundBlockStatement Block { get; }
     }
 }

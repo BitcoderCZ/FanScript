@@ -2,16 +2,13 @@
 {
     public readonly struct Indexable<TKey, TValue>
     {
-        private readonly Func<TKey, TValue> get;
+        private readonly Func<TKey, TValue> _getFunc;
 
-        public TValue this[TKey index]
+        public Indexable(Func<TKey, TValue> getFunc)
         {
-            get => get(index);
+            _getFunc = getFunc;
         }
 
-        public Indexable(Func<TKey, TValue> get)
-        {
-            this.get = get;
-        }
+        public TValue this[TKey index] => _getFunc(index);
     }
 }

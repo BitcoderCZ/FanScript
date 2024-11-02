@@ -2,37 +2,32 @@
 {
     internal class EmitConnector
     {
-        public EmitStore Store
+        private readonly Action<IEmitStore, IEmitStore> _connectFunc;
+
+        private IEmitStore? _firstStore;
+        private IEmitStore? _lastStore;
+
+        public EmitConnector(Action<IEmitStore, IEmitStore> connectFunc)
         {
-            get
-            {
-                if (firstStore is not null && lastStore is not null)
-                    return new MultiEmitStore(firstStore, lastStore);
-                else
-                    return NopEmitStore.Instance;
-            }
+            _connectFunc = connectFunc;
         }
 
-        private EmitStore? firstStore;
-        private EmitStore? lastStore;
+        public IEmitStore Store => _firstStore is not null && _lastStore is not null ? new MultiEmitStore(_firstStore, _lastStore) : NopEmitStore.Instance;
 
-        private Action<EmitStore, EmitStore> connect;
-
-        public EmitConnector(Action<EmitStore, EmitStore> connectFunc)
-        {
-            connect = connectFunc;
-        }
-
-        public void Add(EmitStore store)
+        public void Add(IEmitStore store)
         {
             if (store is NopEmitStore)
+            {
                 return;
+            }
 
-            if (lastStore is not null)
-                connect(lastStore, store);
+            if (_lastStore is not null)
+            {
+                _connectFunc(_lastStore, store);
+            }
 
-            firstStore ??= store;
-            lastStore = store;
+            _firstStore ??= store;
+            _lastStore = store;
         }
     }
 }

@@ -27,7 +27,7 @@ namespace FanScript.LangServer.Utils
         private DateTime? firstInvoke;
         private DateTime? lastInvoke;
 
-        private object lockObj = new object();
+        private readonly object lockObj = new object();
 
         public DelayedRunner(Action action, TimeSpan runAfter, TimeSpan forceRunAfter)
         {
@@ -38,9 +38,9 @@ namespace FanScript.LangServer.Utils
         }
 
         private static Thread? thread;
-        private static List<DelayedRunner> scheduled = new();
+        private static readonly List<DelayedRunner> scheduled = [];
 
-        private static void startThread()
+        private static void StartThread()
         {
             if (thread is not null && thread.IsAlive)
                 return;
@@ -53,7 +53,7 @@ namespace FanScript.LangServer.Utils
                 {
                     Thread.Sleep(1);
 
-                    List<DelayedRunner> toRemove = new();
+                    List<DelayedRunner> toRemove = [];
                     lock (scheduled)
                     {
                         if (scheduled.Count == 0)
@@ -63,7 +63,7 @@ namespace FanScript.LangServer.Utils
 
                         for (int i = 0; i < 10; i++)
                         {
-                            if (scheduled[index].checkTimers(now))
+                            if (scheduled[index].CheckTimers(now))
                                 toRemove.Add(scheduled[index]);
 
                             index++;
@@ -74,7 +74,7 @@ namespace FanScript.LangServer.Utils
                     }
 
                     for (int i = 0; i < toRemove.Count; i++)
-                        toRemove[i].invoke();
+                        toRemove[i].InvokeInternal();
                 }
             });
 
@@ -87,11 +87,11 @@ namespace FanScript.LangServer.Utils
         {
             if (forceRun)
             {
-                invoke();
+                InvokeInternal();
                 return;
             }
 
-            startThread();
+            StartThread();
 
             DateTime now = DateTime.UtcNow;
 
@@ -111,7 +111,7 @@ namespace FanScript.LangServer.Utils
             }
         }
 
-        private void invoke()
+        private void InvokeInternal()
         {
             bool wasScheduled;
             lock (lockObj)
@@ -143,7 +143,7 @@ namespace FanScript.LangServer.Utils
             }
         }
 
-        private bool checkTimers(DateTime now)
+        private bool CheckTimers(DateTime now)
         {
             lock (lockObj)
                 return now - lastInvoke > RunAfter || now - firstInvoke > ForceRunAfter;

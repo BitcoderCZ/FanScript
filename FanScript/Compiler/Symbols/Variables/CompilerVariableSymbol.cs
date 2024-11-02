@@ -7,7 +7,7 @@
         {
         }
 
-        protected override string getNameForResult()
+        protected override string GetNameForResult()
             => "^" + Name;
     }
 }

@@ -2,7 +2,8 @@
 {
     public sealed class EventDocAttribute : DocumentationAttribute
     {
-        public EventDocAttribute() : base()
+        public EventDocAttribute()
+            : base()
         {
         }
 

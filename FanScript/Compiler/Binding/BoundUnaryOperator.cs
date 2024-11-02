@@ -1,11 +1,25 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using System.Collections.Immutable;
+using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
-using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Binding
 {
     internal sealed class BoundUnaryOperator
     {
+        public static ImmutableArray<BoundUnaryOperator> Operators =
+        [
+            new BoundUnaryOperator(SyntaxKind.BangToken, BoundUnaryOperatorKind.LogicalNegation, TypeSymbol.Bool),
+
+            new BoundUnaryOperator(SyntaxKind.PlusToken, BoundUnaryOperatorKind.Identity, TypeSymbol.Float),
+            new BoundUnaryOperator(SyntaxKind.MinusToken, BoundUnaryOperatorKind.Negation, TypeSymbol.Float),
+
+            new BoundUnaryOperator(SyntaxKind.PlusToken, BoundUnaryOperatorKind.Identity, TypeSymbol.Vector3),
+            new BoundUnaryOperator(SyntaxKind.MinusToken, BoundUnaryOperatorKind.Negation, TypeSymbol.Vector3),
+
+            new BoundUnaryOperator(SyntaxKind.PlusToken, BoundUnaryOperatorKind.Identity, TypeSymbol.Rotation),
+            new BoundUnaryOperator(SyntaxKind.MinusToken, BoundUnaryOperatorKind.Negation, TypeSymbol.Rotation),
+        ];
+
         private BoundUnaryOperator(SyntaxKind syntaxKind, BoundUnaryOperatorKind kind, TypeSymbol operandType)
             : this(syntaxKind, kind, operandType, operandType)
         {
@@ -20,31 +34,22 @@ namespace FanScript.Compiler.Binding
         }
 
         public SyntaxKind SyntaxKind { get; }
+
         public BoundUnaryOperatorKind Kind { get; }
+
         public TypeSymbol OperandType { get; }
+
         public TypeSymbol Type { get; }
-
-        public static ImmutableArray<BoundUnaryOperator> Operators
-            => operators.ToImmutableArray();
-        private static BoundUnaryOperator[] operators =
-        {
-            new BoundUnaryOperator(SyntaxKind.BangToken, BoundUnaryOperatorKind.LogicalNegation, TypeSymbol.Bool),
-
-            new BoundUnaryOperator(SyntaxKind.PlusToken, BoundUnaryOperatorKind.Identity, TypeSymbol.Float),
-            new BoundUnaryOperator(SyntaxKind.MinusToken, BoundUnaryOperatorKind.Negation, TypeSymbol.Float),
-
-            new BoundUnaryOperator(SyntaxKind.PlusToken, BoundUnaryOperatorKind.Identity, TypeSymbol.Vector3),
-            new BoundUnaryOperator(SyntaxKind.MinusToken, BoundUnaryOperatorKind.Negation, TypeSymbol.Vector3),
-
-            new BoundUnaryOperator(SyntaxKind.PlusToken, BoundUnaryOperatorKind.Identity, TypeSymbol.Rotation),
-            new BoundUnaryOperator(SyntaxKind.MinusToken, BoundUnaryOperatorKind.Negation, TypeSymbol.Rotation),
-        };
 
         public static BoundUnaryOperator? Bind(SyntaxKind syntaxKind, TypeSymbol? operandType)
         {
-            foreach (BoundUnaryOperator op in operators)
+            foreach (BoundUnaryOperator op in Operators)
+            {
                 if (op.SyntaxKind == syntaxKind && op.OperandType == operandType)
+                {
                     return op;
+                }
+            }
 
             return null;
         }

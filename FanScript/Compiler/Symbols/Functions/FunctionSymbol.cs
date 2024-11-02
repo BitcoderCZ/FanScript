@@ -1,12 +1,15 @@
-﻿using FanScript.Compiler.Symbols.Variables;
-using FanScript.Compiler.Syntax;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using FanScript.Compiler.Symbols.Variables;
+using FanScript.Compiler.Syntax;
+using FanScript.Utils;
 
-namespace FanScript.Compiler.Symbols
+namespace FanScript.Compiler.Symbols.Functions
 {
     public class FunctionSymbol : Symbol, IComparable<FunctionSymbol>
     {
+        private int? _hashCode;
+
         internal FunctionSymbol(Namespace @namespace, Modifiers modifiers, TypeSymbol type, string name, ImmutableArray<ParameterSymbol> parameters, FunctionDeclarationSyntax? declaration = null)
             : base(name)
         {
@@ -16,6 +19,7 @@ namespace FanScript.Compiler.Symbols
             Parameters = parameters;
             Declaration = declaration;
         }
+
         internal FunctionSymbol(Namespace @namespace, Modifiers modifiers, TypeSymbol type, string name, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<TypeSymbol>? allowedGenericTypes, FunctionDeclarationSyntax? declaration = null)
             : base(name)
         {
@@ -30,81 +34,125 @@ namespace FanScript.Compiler.Symbols
         }
 
         public override SymbolKind Kind => SymbolKind.Function;
+
         public Namespace Namespace { get; }
+
         public Modifiers Modifiers { get; }
+
         public TypeSymbol Type { get; }
+
         public ImmutableArray<ParameterSymbol> Parameters { get; }
 
         public short Id { get; init; } = -1;
+
         public FunctionDeclarationSyntax? Declaration { get; }
 
         public bool IsMethod { get; init; }
+
         [MemberNotNullWhen(true, nameof(AllowedGenericTypes))]
         public bool IsGeneric { get; }
+
         public ImmutableArray<TypeSymbol>? AllowedGenericTypes { get; }
 
         public string ToString(bool onlyParams)
         {
             if (!onlyParams)
+            {
                 return ToString();
+            }
 
             using (var writer = new StringWriter())
             {
-                SymbolPrinter.WriteFunctionTo(this, writer, onlyParams);
+                WriteTo(writer, onlyParams, false);
                 return writer.ToString();
             }
         }
 
         public int CompareTo(FunctionSymbol? other)
         {
-            if (other is null) return 1;
+            if (other is null)
+            {
+                return 1;
+            }
 
             int nameComp = string.Compare(Name, other.Name, StringComparison.Ordinal);
 
-            if (nameComp != 0)
-                return nameComp;
-
-            if (Parameters.Length != other.Parameters.Length)
-                return Parameters.Length.CompareTo(other.Parameters.Length);
-
-            return 0;
+            return nameComp != 0
+                ? nameComp
+                : Parameters.Length != other.Parameters.Length ? Parameters.Length.CompareTo(other.Parameters.Length) : 0;
         }
 
-        private int? hashCode;
+        public override void WriteTo(TextWriter writer)
+            => WriteTo(writer, false, false);
+
+        public void WriteTo(TextWriter writer, bool onlyParams, bool writeAsMethod)
+        {
+            if (!onlyParams)
+            {
+                if (Modifiers != 0)
+                {
+                    writer.WriteModifiers(Modifiers);
+                    writer.WriteSpace();
+                }
+
+                writer.WriteWritable(Type);
+                writer.WriteSpace();
+                writer.WriteIdentifier(Name);
+            }
+
+            if (IsGeneric)
+            {
+                writer.WritePunctuation(SyntaxKind.LessToken);
+                writer.WritePunctuation(SyntaxKind.GreaterToken);
+            }
+
+            writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
+
+            int startParam = (writeAsMethod && IsMethod) ? 1 : 0;
+            for (int i = startParam; i < Parameters.Length; i++)
+            {
+                if (i > startParam)
+                {
+                    writer.WritePunctuation(SyntaxKind.CommaToken);
+                    writer.WriteSpace();
+                }
+
+                writer.WriteWritable(Parameters[i]);
+            }
+
+            writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
+        }
+
         public override int GetHashCode()
-            => hashCode ??= HashCode.Combine(
+            => _hashCode ??= HashCode.Combine(
                 Name,
                 Type,
                 Parameters
-                    .Aggregate(new HashCode(), (hash, param) => { hash.Add(param); return hash; })
-                    .ToHashCode()
-            );
+                    .Aggregate(default(HashCode), (hash, param) => 
+                    {
+                        hash.Add(param);
+                        return hash;
+                    })
+                    .ToHashCode());
 
         public override bool Equals(object? obj)
-        {
-            if (obj is FunctionSymbol other)
-                return Name == other.Name &&
-                    Type == other.Type &&
-                    Parameters.SequenceEqual(other.Parameters);
-            else
-                return false;
-        }
+            => obj is FunctionSymbol other && Name == other.Name && Type == other.Type && Parameters.SequenceEqual(other.Parameters);
     }
 
     internal sealed class FunctionFactory
     {
-        private short lastId;
+        private short _lastId;
 
         public FunctionSymbol Create(Namespace @namespace, Modifiers modifiers, TypeSymbol type, string name, ImmutableArray<ParameterSymbol> parameters, FunctionDeclarationSyntax? declaration = null)
             => new FunctionSymbol(@namespace, modifiers, type, name, parameters, declaration)
             {
-                Id = lastId++,
+                Id = _lastId++,
             };
 
         public FunctionSymbol CreateGeneric(Namespace @namespace, Modifiers modifiers, TypeSymbol type, string name, ImmutableArray<ParameterSymbol> parameters, ImmutableArray<TypeSymbol>? allowedGenericTypes, FunctionDeclarationSyntax? declaration = null)
             => new FunctionSymbol(@namespace, modifiers, type, name, parameters, allowedGenericTypes, declaration)
             {
-                Id = lastId++,
+                Id = _lastId++,
             };
     }
 }

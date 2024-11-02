@@ -8,21 +8,27 @@ namespace FanScript.Compiler.Emit
     internal interface IEmitContext
     {
         DiagnosticBag Diagnostics { get; }
+
         BlockBuilder Builder { get; }
 
-        EmitStore EmitStatement(BoundStatement statement);
-        EmitStore EmitExpression(BoundExpression expression);
+        IEmitStore EmitStatement(BoundStatement statement);
+
+        IEmitStore EmitExpression(BoundExpression expression);
 
         IDisposable StatementBlock();
+
         IDisposable ExpressionBlock();
 
         Block AddBlock(BlockDef def);
-        void Connect(EmitStore from, EmitStore to);
+
+        void Connect(IEmitStore from, IEmitStore to);
+
         void SetBlockValue(Block block, int valueIndex, object value);
 
-        EmitStore EmitLiteralExpression(object? value);
+        IEmitStore EmitLiteralExpression(object? value);
 
-        EmitStore EmitGetVariable(VariableSymbol variable);
+        IEmitStore EmitGetVariable(VariableSymbol variable);
+
         /// <summary>
         /// Emits setting <paramref name="expression"/> to <paramref name="getValueStore"/>
         /// </summary>
@@ -32,7 +38,8 @@ namespace FanScript.Compiler.Emit
         /// <param name="expression"></param>
         /// <param name="getValueStore"></param>
         /// <returns></returns>
-        EmitStore EmitSetExpression(BoundExpression expression, Func<EmitStore> getValueStore);
+        IEmitStore EmitSetExpression(BoundExpression expression, Func<IEmitStore> getValueStore);
+
         /// <summary>
         /// Emits setting <paramref name="variable"/> to <paramref name="getValueStore"/>
         /// </summary>
@@ -42,15 +49,16 @@ namespace FanScript.Compiler.Emit
         /// <param name="expression"></param>
         /// <param name="getValueStore"></param>
         /// <returns></returns>
-        EmitStore EmitSetVariable(VariableSymbol variable, Func<EmitStore> getValueStore);
+        IEmitStore EmitSetVariable(VariableSymbol variable, Func<IEmitStore> getValueStore);
 
-        (EmitStore X, EmitStore Y, EmitStore Z) BreakVector(BoundExpression expression);
-        EmitStore?[] BreakVectorAny(BoundExpression expression, bool[] useComponent);
+        (IEmitStore X, IEmitStore Y, IEmitStore Z) BreakVector(BoundExpression expression);
+
+        IEmitStore?[] BreakVectorAny(BoundExpression expression, bool[] useComponent);
 
         object?[]? ValidateConstants(ReadOnlyMemory<BoundExpression> expressions, bool mustBeConstant);
 
         void WriteComment(string text);
 
-        EmitStore EmitSetArraySegment(BoundArraySegmentExpression segment, BoundExpression arrayVariable, BoundExpression startIndex);
+        IEmitStore EmitSetArraySegment(BoundArraySegmentExpression segment, BoundExpression arrayVariable, BoundExpression startIndex);
     }
 }

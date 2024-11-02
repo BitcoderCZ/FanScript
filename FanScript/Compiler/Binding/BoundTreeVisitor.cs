@@ -42,6 +42,7 @@ namespace FanScript.Compiler.Binding
                 case BoundDoWhileStatement doWhileStatement:
                     VisitDoWhileStatement(doWhileStatement);
                     break;
+
                 //case BoundNodeKind.ForStatement:
                 //    VisitForStatement((BoundForStatement)node);
                 //    break;
@@ -49,7 +50,7 @@ namespace FanScript.Compiler.Binding
                     VisitLabelStatement(labelStatement);
                     break;
                 case BoundGotoStatement gotoStatement:
-                    VisitGotoStatement((BoundGotoStatement)node);
+                    VisitGotoStatement(gotoStatement);
                     break;
                 case BoundEventGotoStatement eventGotoStatement:
                     VistiEventGotoStatement(eventGotoStatement);
@@ -76,52 +77,57 @@ namespace FanScript.Compiler.Binding
 
         protected virtual void VisitBlockStatement(BoundBlockStatement node)
         {
-            for (var i = 0; i < node.Statements.Length; i++)
+            for (int i = 0; i < node.Statements.Length; i++)
+            {
                 Visit(node.Statements[i]);
+            }
         }
 
         protected virtual void VisitEventStatement(BoundEventStatement node)
-        {
-            VisitBlockStatement(node.Block);
-        }
+            => VisitBlockStatement(node.Block);
 
         protected virtual void VisitNopStatement(BoundNopStatement node)
-        { }
+        { 
+        }
 
         protected virtual void VisitPostfixStatement(BoundPostfixStatement node)
-        { }
+        {
+        }
 
         protected virtual void VisitPostfixExpression(BoundPostfixExpression node)
-        { }
+        { 
+        }
 
         protected virtual void VisitPrefixStatement(BoundPrefixStatement node)
-        { }
+        { 
+        }
 
         protected virtual void VisitPrefixExpression(BoundPrefixExpression node)
-        { }
+        { 
+        }
 
         protected virtual void VisitVariableDeclaration(BoundVariableDeclarationStatement node)
         {
             if (node.OptionalAssignment is not null)
+            {
                 Visit(node.OptionalAssignment);
+            }
         }
 
         protected virtual void VisitAssignmentStatement(BoundAssignmentStatement node)
-        {
-            VisitExpression(node.Expression);
-        }
+            => VisitExpression(node.Expression);
 
         protected virtual void VisitCompoundAssignmentStatement(BoundCompoundAssignmentStatement node)
-        {
-            VisitExpression(node.Expression);
-        }
+            => VisitExpression(node.Expression);
 
         protected virtual void VisitIfStatement(BoundIfStatement node)
         {
             VisitExpression(node.Condition);
             Visit(node.ThenStatement);
             if (node.ElseStatement is not null)
+            {
                 Visit(node.ElseStatement);
+            }
         }
 
         protected virtual void VisitWhileStatement(BoundWhileStatement node)
@@ -137,41 +143,43 @@ namespace FanScript.Compiler.Binding
         }
 
         protected virtual void VisitLabelStatement(BoundLabelStatement node)
-        { }
+        { 
+        }
 
         protected virtual void VisitGotoStatement(BoundGotoStatement node)
-        { }
+        { 
+        }
 
         protected virtual void VistiEventGotoStatement(BoundEventGotoStatement node)
         {
             if (node.ArgumentClause is not null)
+            {
                 VisitArgumentClause(node.ArgumentClause);
+            }
         }
 
         protected virtual void VisitConditionalGotoStatement(BoundConditionalGotoStatement node)
-        {
-            VisitExpression(node.Condition);
-        }
+            => VisitExpression(node.Condition);
 
         protected virtual void VisitReturnStatement(BoundReturnStatement node)
         {
             if (node.Expression is not null)
+            {
                 VisitExpression(node.Expression);
+            }
         }
 
         protected virtual void VisitEmitterHint(BoundEmitterHintStatement node)
-        { }
+        { 
+        }
 
         protected virtual void VisitCallStatement(BoundCallStatement node)
-        {
-            VisitArgumentClause(node.ArgumentClause);
-        }
+            => VisitArgumentClause(node.ArgumentClause);
 
         protected virtual void VisitExpressionStatement(BoundExpressionStatement node)
-        {
-            VisitExpression(node.Expression);
-        }
+            => VisitExpression(node.Expression);
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:Elements should be ordered by access", Justification = "whomp whomp")]
         public virtual void VisitExpression(BoundExpression node)
         {
             switch (node)
@@ -180,7 +188,7 @@ namespace FanScript.Compiler.Binding
                     VisitErrorExpression(errorExpression);
                     break;
                 case BoundLiteralExpression literalExpression:
-                    VisitLiteralExpression((BoundLiteralExpression)node);
+                    VisitLiteralExpression(literalExpression);
                     break;
                 case BoundVariableExpression variableExpression:
                     VisitVariableExpression(variableExpression);
@@ -221,10 +229,12 @@ namespace FanScript.Compiler.Binding
         }
 
         protected virtual void VisitErrorExpression(BoundErrorExpression node)
-        { }
+        {
+        }
 
         protected virtual void VisitLiteralExpression(BoundLiteralExpression node)
-        { }
+        { 
+        }
 
         protected virtual void VisitVariableExpression(BoundVariableExpression node)
         {
@@ -239,9 +249,7 @@ namespace FanScript.Compiler.Binding
         }
 
         protected virtual void VisitUnaryExpression(BoundUnaryExpression node)
-        {
-            VisitExpression(node.Operand);
-        }
+            => VisitExpression(node.Operand);
 
         protected virtual void VisitBinaryExpression(BoundBinaryExpression node)
         {
@@ -250,14 +258,10 @@ namespace FanScript.Compiler.Binding
         }
 
         protected virtual void VisitCallExpression(BoundCallExpression node)
-        {
-            VisitArgumentClause(node.ArgumentClause);
-        }
+            => VisitArgumentClause(node.ArgumentClause);
 
         protected virtual void VisitConversionExpression(BoundConversionExpression node)
-        {
-            VisitExpression(node.Expression);
-        }
+            => VisitExpression(node.Expression);
 
         protected virtual void VisitConstructorExpression(BoundConstructorExpression node)
         {
@@ -268,25 +272,25 @@ namespace FanScript.Compiler.Binding
 
         protected virtual void VisitArraySegmentExpression(BoundArraySegmentExpression node)
         {
-            for (var i = 0; i < node.Elements.Length; i++)
+            for (int i = 0; i < node.Elements.Length; i++)
+            {
                 VisitExpression(node.Elements[i]);
+            }
         }
 
         protected virtual void VisitAssignmentExpression(BoundAssignmentExpression node)
-        {
-            VisitExpression(node.Expression);
-        }
+            => VisitExpression(node.Expression);
 
         protected virtual void VisitCompoundAssignmentExpression(BoundCompoundAssignmentExpression node)
-        {
-            VisitExpression(node.Expression);
-        }
+            => VisitExpression(node.Expression);
 
         #region Helper functions
         protected virtual void VisitArgumentClause(BoundArgumentClause node)
         {
-            for (var i = 0; i < node.Arguments.Length; i++)
+            for (int i = 0; i < node.Arguments.Length; i++)
+            {
                 VisitExpression(node.Arguments[i]);
+            }
         }
         #endregion
     }

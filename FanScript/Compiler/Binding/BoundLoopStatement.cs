@@ -12,6 +12,7 @@ namespace FanScript.Compiler.Binding
         }
 
         public BoundLabel BreakLabel { get; }
+
         public BoundLabel ContinueLabel { get; }
     }
 }

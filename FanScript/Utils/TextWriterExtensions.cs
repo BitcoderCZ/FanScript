@@ -1,45 +1,54 @@
-﻿using FanScript.Compiler;
+﻿using System.CodeDom.Compiler;
+using System.Diagnostics;
+using System.Globalization;
+using FanScript.Compiler;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
-using System.CodeDom.Compiler;
-using System.Diagnostics;
-using System.Globalization;
 
 namespace FanScript.Utils
 {
     public static class TextWriterExtensions
     {
-        private static bool IsConsole(this TextWriter writer)
+        public static bool IsConsole(this TextWriter writer)
         {
             if (writer == Console.Out)
+            {
                 return !Console.IsOutputRedirected;
-
-            if (writer == Console.Error)
+            }
+            else if (writer == Console.Error)
+            {
                 return !Console.IsErrorRedirected && !Console.IsOutputRedirected; // Color codes are always output to Console.Out
-
-            if (writer is IndentedTextWriter iw && iw.InnerWriter.IsConsole())
-                return true;
-
-            return false;
+            }
+            else
+            {
+                return writer is IndentedTextWriter iw && iw.InnerWriter.IsConsole();
+            }
         }
 
-        internal static void SetForeground(this TextWriter writer, ConsoleColor color)
+        public static void SetForeground(this TextWriter writer, ConsoleColor color)
         {
             if (writer.IsConsole())
+            {
                 Console.ForegroundColor = color;
+            }
         }
 
-        internal static void ResetColor(this TextWriter writer)
+        public static void ResetColor(this TextWriter writer)
         {
             if (writer.IsConsole())
+            {
                 Console.ResetColor();
+            }
         }
+
+        public static void WriteWritable(this TextWriter writer, ITextWritable value)
+            => value.WriteTo(writer);
 
         public static void WriteKeyword(this TextWriter writer, SyntaxKind kind)
         {
             string? text = SyntaxFacts.GetText(kind);
-            Debug.Assert(kind.IsKeyword() && text is not null);
+            Debug.Assert(kind.IsKeyword() && text is not null, $"{nameof(kind)} must be a keyword and it's text cannot be null.");
 
             writer.WriteKeyword(text);
         }
@@ -49,15 +58,19 @@ namespace FanScript.Utils
             bool isFirst = true;
 
             foreach (var modifier in Enum.GetValues<Modifiers>())
+            {
                 if (modifiers.HasFlag(modifier))
                 {
                     if (!isFirst)
+                    {
                         writer.WriteSpace();
+                    }
 
                     isFirst = false;
 
                     writer.WriteKeyword(modifier.ToKind().GetText());
                 }
+            }
         }
 
         public static void WriteKeyword(this TextWriter writer, string? text)
@@ -76,6 +89,7 @@ namespace FanScript.Utils
 
         public static void WriteNumber(this TextWriter writer, float value)
             => WriteNumber(writer, value.ToString(CultureInfo.InvariantCulture));
+
         public static void WriteNumber(this TextWriter writer, string text)
         {
             writer.SetForeground(ConsoleColor.Cyan);
@@ -91,14 +105,12 @@ namespace FanScript.Utils
         }
 
         public static void WriteSpace(this TextWriter writer)
-        {
-            writer.WritePunctuation(" ");
-        }
+            => writer.WritePunctuation(" ");
 
         public static void WritePunctuation(this TextWriter writer, SyntaxKind kind)
         {
             string? text = SyntaxFacts.GetText(kind);
-            Debug.Assert(text is not null);
+            Debug.Assert(text is not null, $"{nameof(kind)}'s text cannot be null.");
 
             writer.WritePunctuation(text);
         }

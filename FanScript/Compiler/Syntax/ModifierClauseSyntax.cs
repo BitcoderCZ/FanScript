@@ -4,7 +4,8 @@ namespace FanScript.Compiler.Syntax
 {
     public sealed partial class ModifierClauseSyntax : SyntaxNode
     {
-        public ModifierClauseSyntax(SyntaxTree syntaxTree, ImmutableArray<SyntaxToken> modifiers) : base(syntaxTree)
+        public ModifierClauseSyntax(SyntaxTree syntaxTree, ImmutableArray<SyntaxToken> modifiers)
+            : base(syntaxTree)
         {
             Modifiers = modifiers;
         }

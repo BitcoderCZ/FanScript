@@ -18,19 +18,20 @@ namespace FanScript.Compiler.Binding
             {
                 Vector3F val = new Vector3F((float)ExpressionX.ConstantValue.GetValueOrDefault(TypeSymbol.Float), (float)ExpressionY.ConstantValue.GetValueOrDefault(TypeSymbol.Float), (float)ExpressionZ.ConstantValue.GetValueOrDefault(TypeSymbol.Float));
 
-                if (Type == TypeSymbol.Rotation)
-                    ConstantValue = new BoundConstant(new Rotation(val));
-                else
-                    ConstantValue = new BoundConstant(val);
+                ConstantValue = Type == TypeSymbol.Rotation ? new BoundConstant(new Rotation(val)) : new BoundConstant(val);
             }
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.ConstructorExpression;
+
         public override TypeSymbol Type { get; }
+
         public override BoundConstant? ConstantValue { get; }
 
         public BoundExpression ExpressionX { get; }
+
         public BoundExpression ExpressionY { get; }
+
         public BoundExpression ExpressionZ { get; }
     }
 }

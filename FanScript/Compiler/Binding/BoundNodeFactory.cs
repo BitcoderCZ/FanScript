@@ -1,9 +1,9 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using System.Collections.Immutable;
+using System.Diagnostics;
+using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
 using MathUtils.Vectors;
-using System.Collections.Immutable;
-using System.Diagnostics;
 
 namespace FanScript.Compiler.Binding
 {
@@ -14,19 +14,6 @@ namespace FanScript.Compiler.Binding
 
         public static BoundVariableDeclarationStatement VariableDeclaration(SyntaxNode syntax, VariableSymbol symbol, BoundAssignmentStatement? optionalAssignment)
             => new BoundVariableDeclarationStatement(syntax, symbol, optionalAssignment);
-
-        public static BoundVariableDeclarationStatement VariableDeclaration(SyntaxNode syntax, string name, BoundAssignmentStatement? optionalAssignment)
-            => VariableDeclarationInternal(syntax, name, optionalAssignment, isReadOnly: false);
-
-        public static BoundVariableDeclarationStatement ConstantDeclaration(SyntaxNode syntax, string name, BoundAssignmentStatement? optionalAssignment)
-            => VariableDeclarationInternal(syntax, name, optionalAssignment, isReadOnly: true);
-
-        private static BoundVariableDeclarationStatement VariableDeclarationInternal(SyntaxNode syntax, string name, BoundAssignmentStatement? optionalAssignment, bool isReadOnly)
-        {
-            throw new NotImplementedException();
-            //var local = new LocalVariableSymbol(name, isReadOnly, initializer.Type, initializer.ConstantValue);
-            //return new BoundVariableDeclaration(syntax, local, optionalAssignment);
-        }
 
         public static BoundWhileStatement While(SyntaxNode syntax, BoundExpression condition, BoundStatement body, BoundLabel breakLabel, BoundLabel continueLabel)
             => new BoundWhileStatement(syntax, condition, body, breakLabel, continueLabel);
@@ -81,10 +68,10 @@ namespace FanScript.Compiler.Binding
 
         public static BoundUnaryExpression Not(SyntaxNode syntax, BoundExpression condition)
         {
-            Debug.Assert(condition.Type == TypeSymbol.Bool || condition.Type == TypeSymbol.Error);
+            Debug.Assert(condition.Type == TypeSymbol.Bool || condition.Type == TypeSymbol.Error, "Not can only be created on expressions of type bool and error.");
 
             BoundUnaryOperator? op = BoundUnaryOperator.Bind(SyntaxKind.BangToken, TypeSymbol.Bool);
-            Debug.Assert(op is not null);
+            Debug.Assert(op is not null, "Not bool operator must exist.");
             return new BoundUnaryExpression(syntax, op, condition);
         }
 
@@ -96,7 +83,7 @@ namespace FanScript.Compiler.Binding
 
         public static BoundLiteralExpression Literal(SyntaxNode syntax, object? literal)
         {
-            Debug.Assert(literal is null || literal is string || literal is bool || literal is float || literal is Vector3F || literal is Rotation);
+            Debug.Assert(literal is null || literal is string || literal is bool || literal is float || literal is Vector3F || literal is Rotation, "Literal type must be one of: null, string, bool, float, Vector3F or Rotation.");
 
             return new BoundLiteralExpression(syntax, literal);
         }

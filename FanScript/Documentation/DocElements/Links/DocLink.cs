@@ -4,7 +4,8 @@ namespace FanScript.Documentation.DocElements.Links
 {
     public abstract class DocLink : DocElement
     {
-        protected DocLink(ImmutableArray<DocArg> arguments, DocString value) : base(arguments, value)
+        protected DocLink(ImmutableArray<DocArg> arguments, DocString value)
+            : base(arguments, value)
         {
         }
 

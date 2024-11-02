@@ -1,6 +1,6 @@
-﻿using FanScript.Compiler.Exceptions;
+﻿using System.CodeDom.Compiler;
+using FanScript.Compiler.Exceptions;
 using FanScript.Compiler.Symbols;
-using System.CodeDom.Compiler;
 
 namespace FanScript.Compiler.Binding
 {
@@ -15,270 +15,36 @@ namespace FanScript.Compiler.Binding
         }
 
         public BasicBlock Start { get; }
+
         public BasicBlock End { get; }
+
         public List<BasicBlock> Blocks { get; }
+
         public List<BasicBlockBranch> Branches { get; }
 
-        public sealed class BasicBlock
+        public static ControlFlowGraph Create(BoundBlockStatement body)
         {
-            public BasicBlock()
-            {
-            }
+            BasicBlockBuilder basicBlockBuilder = new BasicBlockBuilder();
+            List<BasicBlock> blocks = basicBlockBuilder.Build(body);
 
-            public BasicBlock(bool isStart)
-            {
-                IsStart = isStart;
-                IsEnd = !isStart;
-            }
-
-            public bool IsStart { get; }
-            public bool IsEnd { get; }
-            public List<BoundStatement> Statements { get; } = new List<BoundStatement>();
-            public List<BasicBlockBranch> Incoming { get; } = new List<BasicBlockBranch>();
-            public List<BasicBlockBranch> Outgoing { get; } = new List<BasicBlockBranch>();
-
-            public override string ToString()
-            {
-                if (IsStart)
-                    return "<Start>";
-
-                if (IsEnd)
-                    return "<End>";
-
-                using (StringWriter writer = new StringWriter())
-                using (IndentedTextWriter indentedWriter = new IndentedTextWriter(writer))
-                {
-                    foreach (BoundStatement statement in Statements)
-                        statement.WriteTo(indentedWriter);
-
-                    return writer.ToString();
-                }
-            }
+            GraphBuilder graphBuilder = new GraphBuilder();
+            return graphBuilder.Build(blocks);
         }
 
-        public sealed class BasicBlockBranch
+        public static bool AllPathsReturn(BoundBlockStatement body)
         {
-            public BasicBlockBranch(BasicBlock from, BasicBlock to, BoundExpression? condition)
+            ControlFlowGraph graph = Create(body);
+
+            foreach (BasicBlockBranch branch in graph.End.Incoming)
             {
-                From = from;
-                To = to;
-                Condition = condition;
-            }
-
-            public BasicBlock From { get; }
-            public BasicBlock To { get; }
-            public BoundExpression? Condition { get; }
-
-            public override string ToString()
-            {
-                if (Condition is null)
-                    return string.Empty;
-
-                return Condition.ToString();
-            }
-        }
-
-        public sealed class BasicBlockBuilder
-        {
-            private List<BoundStatement> statements = new List<BoundStatement>();
-            private List<BasicBlock> blocks = new List<BasicBlock>();
-
-            public List<BasicBlock> Build(BoundBlockStatement block)
-            {
-                foreach (var statement in block.Statements)
+                BoundStatement? lastStatement = branch.From.Statements.LastOrDefault();
+                if (lastStatement is null || lastStatement.Kind != BoundNodeKind.ReturnStatement)
                 {
-                    switch (statement)
-                    {
-                        case BoundLabelStatement:
-                            startBlock();
-                            statements.Add(statement);
-                            break;
-                        case BoundGotoStatement:
-                        case BoundEventGotoStatement:
-                        case BoundConditionalGotoStatement:
-                        case BoundReturnStatement:
-                            statements.Add(statement);
-                            startBlock();
-                            break;
-                        case BoundNopStatement:
-                        case BoundEmitterHintStatement:
-                        case BoundVariableDeclarationStatement:
-                        case BoundAssignmentStatement:
-                        case BoundPostfixStatement:
-                        case BoundPrefixStatement:
-                        case BoundCallStatement:
-                        case BoundExpressionStatement:
-                            statements.Add(statement);
-                            break;
-                        default:
-                            throw new UnexpectedBoundNodeException(statement);
-                    }
-                }
-
-                endBlock();
-
-                return blocks.ToList();
-            }
-
-            private void startBlock()
-            {
-                endBlock();
-            }
-
-            private void endBlock()
-            {
-                if (statements.Count > 0)
-                {
-                    BasicBlock block = new BasicBlock();
-                    block.Statements.AddRange(statements);
-                    blocks.Add(block);
-                    statements.Clear();
+                    return false;
                 }
             }
-        }
 
-        public sealed class GraphBuilder
-        {
-            private Dictionary<BoundStatement, BasicBlock> blockFromStatement = new Dictionary<BoundStatement, BasicBlock>();
-            private Dictionary<BoundLabel, BasicBlock> blockFromLabel = new Dictionary<BoundLabel, BasicBlock>();
-            private List<BasicBlockBranch> branches = new List<BasicBlockBranch>();
-            private BasicBlock start = new BasicBlock(isStart: true);
-            private BasicBlock end = new BasicBlock(isStart: false);
-
-            public ControlFlowGraph Build(List<BasicBlock> blocks)
-            {
-                if (!blocks.Any())
-                    connect(start, end);
-                else
-                    connect(start, blocks.First());
-
-                foreach (BasicBlock block in blocks)
-                {
-                    foreach (BoundStatement statement in block.Statements)
-                    {
-                        blockFromStatement.Add(statement, block);
-                        if (statement is BoundLabelStatement labelStatement)
-                            blockFromLabel.Add(labelStatement.Label, block);
-                    }
-                }
-
-                for (int i = 0; i < blocks.Count; i++)
-                {
-                    BasicBlock current = blocks[i];
-                    BasicBlock next = i == blocks.Count - 1 ? end : blocks[i + 1];
-
-                    foreach (BoundStatement statement in current.Statements)
-                    {
-                        bool isLastStatementInBlock = statement == current.Statements.Last();
-                        switch (statement)
-                        {
-                            case BoundGotoStatement gotoStatement:
-                                {
-                                    BasicBlock toBlock = blockFromLabel[gotoStatement.Label];
-                                    connect(current, toBlock);
-                                }
-                                break;
-                            case BoundEventGotoStatement eventGotoStatement:
-                                {
-                                    BasicBlock thenBlock = blockFromLabel[eventGotoStatement.Label];
-                                    BasicBlock elseBlock = next;
-                                    connect(current, thenBlock, null);
-                                    connect(current, elseBlock, null);
-                                }
-                                break;
-                            case BoundConditionalGotoStatement conditionalGotoStatement:
-                                {
-                                    BasicBlock thenBlock = blockFromLabel[conditionalGotoStatement.Label];
-                                    BasicBlock elseBlock = next;
-
-                                    BoundExpression negatedCondition = Negate(conditionalGotoStatement.Condition);
-                                    BoundExpression thenCondition = conditionalGotoStatement.JumpIfTrue ? conditionalGotoStatement.Condition : negatedCondition;
-                                    BoundExpression elseCondition = conditionalGotoStatement.JumpIfTrue ? negatedCondition : conditionalGotoStatement.Condition;
-                                    connect(current, thenBlock, thenCondition);
-                                    connect(current, elseBlock, elseCondition);
-                                }
-                                break;
-                            case BoundReturnStatement:
-                                connect(current, end);
-                                break;
-                            case BoundNopStatement:
-                            case BoundEmitterHintStatement:
-                            case BoundVariableDeclarationStatement:
-                            case BoundAssignmentStatement:
-                            case BoundPostfixStatement:
-                            case BoundPrefixStatement:
-                            case BoundLabelStatement:
-                            case BoundCallStatement:
-                            case BoundExpressionStatement:
-                                {
-                                    if (isLastStatementInBlock)
-                                        connect(current, next);
-                                }
-                                break;
-                            default:
-                                throw new UnexpectedBoundNodeException(statement);
-                        }
-                    }
-                }
-
-            ScanAgain:
-                foreach (BasicBlock block in blocks)
-                {
-                    if (!block.Incoming.Any())
-                    {
-                        removeBlock(blocks, block);
-                        goto ScanAgain;
-                    }
-                }
-
-                blocks.Insert(0, start);
-                blocks.Add(end);
-
-                return new ControlFlowGraph(start, end, blocks, branches);
-            }
-
-            private void connect(BasicBlock from, BasicBlock to, BoundExpression? condition = null)
-            {
-                if (condition is BoundLiteralExpression l)
-                {
-                    bool value = (bool)l.ConstantValue.GetValueOrDefault(TypeSymbol.Bool);
-                    if (value)
-                        condition = null;
-                    else
-                        return;
-                }
-
-                BasicBlockBranch branch = new BasicBlockBranch(from, to, condition);
-                from.Outgoing.Add(branch);
-                to.Incoming.Add(branch);
-                branches.Add(branch);
-            }
-
-            private void removeBlock(List<BasicBlock> blocks, BasicBlock block)
-            {
-                foreach (BasicBlockBranch branch in block.Incoming)
-                {
-                    branch.From.Outgoing.Remove(branch);
-                    branches.Remove(branch);
-                }
-
-                foreach (BasicBlockBranch branch in block.Outgoing)
-                {
-                    branch.To.Incoming.Remove(branch);
-                    branches.Remove(branch);
-                }
-
-                blocks.Remove(block);
-            }
-
-            private BoundExpression Negate(BoundExpression condition)
-            {
-                BoundUnaryExpression negated = BoundNodeFactory.Not(condition.Syntax, condition);
-                if (negated.ConstantValue is not null)
-                    return new BoundLiteralExpression(condition.Syntax, negated.ConstantValue.Value);
-
-                return negated;
-            }
+            return true;
         }
 
         public void WriteTo(TextWriter writer)
@@ -290,7 +56,7 @@ namespace FanScript.Compiler.Binding
 
             writer.WriteLine("digraph G {");
 
-            Dictionary<BasicBlock, string> blockIds = new Dictionary<BasicBlock, string>();
+            Dictionary<BasicBlock, string> blockIds = [];
 
             for (int i = 0; i < Blocks.Count; i++)
             {
@@ -316,27 +82,282 @@ namespace FanScript.Compiler.Binding
             writer.WriteLine("}");
         }
 
-        public static ControlFlowGraph Create(BoundBlockStatement body)
+        public sealed class BasicBlock
         {
-            BasicBlockBuilder basicBlockBuilder = new BasicBlockBuilder();
-            List<BasicBlock> blocks = basicBlockBuilder.Build(body);
-
-            GraphBuilder graphBuilder = new GraphBuilder();
-            return graphBuilder.Build(blocks);
-        }
-
-        public static bool AllPathsReturn(BoundBlockStatement body)
-        {
-            ControlFlowGraph graph = Create(body);
-
-            foreach (BasicBlockBranch branch in graph.End.Incoming)
+            public BasicBlock()
             {
-                BoundStatement? lastStatement = branch.From.Statements.LastOrDefault();
-                if (lastStatement is null || lastStatement.Kind != BoundNodeKind.ReturnStatement)
-                    return false;
             }
 
-            return true;
+            public BasicBlock(bool isStart)
+            {
+                IsStart = isStart;
+                IsEnd = !isStart;
+            }
+
+            public bool IsStart { get; }
+
+            public bool IsEnd { get; }
+
+            public List<BoundStatement> Statements { get; } = [];
+
+            public List<BasicBlockBranch> Incoming { get; } = [];
+
+            public List<BasicBlockBranch> Outgoing { get; } = [];
+
+            public override string ToString()
+            {
+                if (IsStart)
+                {
+                    return "<Start>";
+                }
+
+                if (IsEnd)
+                {
+                    return "<End>";
+                }
+
+                using (StringWriter writer = new StringWriter())
+                using (IndentedTextWriter indentedWriter = new IndentedTextWriter(writer))
+                {
+                    foreach (BoundStatement statement in Statements)
+                    {
+                        statement.WriteTo(indentedWriter);
+                    }
+
+                    return writer.ToString();
+                }
+            }
+        }
+
+        public sealed class BasicBlockBranch
+        {
+            public BasicBlockBranch(BasicBlock from, BasicBlock to, BoundExpression? condition)
+            {
+                From = from;
+                To = to;
+                Condition = condition;
+            }
+
+            public BasicBlock From { get; }
+
+            public BasicBlock To { get; }
+
+            public BoundExpression? Condition { get; }
+
+            public override string ToString()
+                => Condition is null ? string.Empty : Condition.ToString();
+        }
+
+        public sealed class BasicBlockBuilder
+        {
+            private readonly List<BoundStatement> _statements = [];
+            private readonly List<BasicBlock> _blocks = [];
+
+            public List<BasicBlock> Build(BoundBlockStatement block)
+            {
+                foreach (var statement in block.Statements)
+                {
+                    switch (statement)
+                    {
+                        case BoundLabelStatement:
+                            StartBlock();
+                            _statements.Add(statement);
+                            break;
+                        case BoundGotoStatement:
+                        case BoundEventGotoStatement:
+                        case BoundConditionalGotoStatement:
+                        case BoundReturnStatement:
+                            _statements.Add(statement);
+                            StartBlock();
+                            break;
+                        case BoundNopStatement:
+                        case BoundEmitterHintStatement:
+                        case BoundVariableDeclarationStatement:
+                        case BoundAssignmentStatement:
+                        case BoundPostfixStatement:
+                        case BoundPrefixStatement:
+                        case BoundCallStatement:
+                        case BoundExpressionStatement:
+                            _statements.Add(statement);
+                            break;
+                        default:
+                            throw new UnexpectedBoundNodeException(statement);
+                    }
+                }
+
+                EndBlock();
+
+                return [.. _blocks];
+            }
+
+            private void StartBlock()
+                => EndBlock();
+
+            private void EndBlock()
+            {
+                if (_statements.Count > 0)
+                {
+                    BasicBlock block = new BasicBlock();
+                    block.Statements.AddRange(_statements);
+                    _blocks.Add(block);
+                    _statements.Clear();
+                }
+            }
+        }
+
+        public sealed class GraphBuilder
+        {
+            private readonly Dictionary<BoundStatement, BasicBlock> _blockFromStatement = [];
+            private readonly Dictionary<BoundLabel, BasicBlock> _blockFromLabel = [];
+            private readonly List<BasicBlockBranch> _branches = [];
+            private readonly BasicBlock _start = new BasicBlock(isStart: true);
+            private readonly BasicBlock _end = new BasicBlock(isStart: false);
+
+            public ControlFlowGraph Build(List<BasicBlock> blocks)
+            {
+                if (!blocks.Any())
+                {
+                    Connect(_start, _end);
+                }
+                else
+                {
+                    Connect(_start, blocks.First());
+                }
+
+                foreach (BasicBlock block in blocks)
+                {
+                    foreach (BoundStatement statement in block.Statements)
+                    {
+                        _blockFromStatement.Add(statement, block);
+                        if (statement is BoundLabelStatement labelStatement)
+                        {
+                            _blockFromLabel.Add(labelStatement.Label, block);
+                        }
+                    }
+                }
+
+                for (int i = 0; i < blocks.Count; i++)
+                {
+                    BasicBlock current = blocks[i];
+                    BasicBlock next = i == blocks.Count - 1 ? _end : blocks[i + 1];
+
+                    foreach (BoundStatement statement in current.Statements)
+                    {
+                        bool isLastStatementInBlock = statement == current.Statements.Last();
+                        switch (statement)
+                        {
+                            case BoundGotoStatement gotoStatement:
+                                {
+                                    BasicBlock toBlock = _blockFromLabel[gotoStatement.Label];
+                                    Connect(current, toBlock);
+                                }
+
+                                break;
+                            case BoundEventGotoStatement eventGotoStatement:
+                                {
+                                    BasicBlock thenBlock = _blockFromLabel[eventGotoStatement.Label];
+                                    BasicBlock elseBlock = next;
+                                    Connect(current, thenBlock, null);
+                                    Connect(current, elseBlock, null);
+                                }
+
+                                break;
+                            case BoundConditionalGotoStatement conditionalGotoStatement:
+                                {
+                                    BasicBlock thenBlock = _blockFromLabel[conditionalGotoStatement.Label];
+                                    BasicBlock elseBlock = next;
+
+                                    BoundExpression negatedCondition = Negate(conditionalGotoStatement.Condition);
+                                    BoundExpression thenCondition = conditionalGotoStatement.JumpIfTrue ? conditionalGotoStatement.Condition : negatedCondition;
+                                    BoundExpression elseCondition = conditionalGotoStatement.JumpIfTrue ? negatedCondition : conditionalGotoStatement.Condition;
+                                    Connect(current, thenBlock, thenCondition);
+                                    Connect(current, elseBlock, elseCondition);
+                                }
+
+                                break;
+                            case BoundReturnStatement:
+                                Connect(current, _end);
+                                break;
+                            case BoundNopStatement:
+                            case BoundEmitterHintStatement:
+                            case BoundVariableDeclarationStatement:
+                            case BoundAssignmentStatement:
+                            case BoundPostfixStatement:
+                            case BoundPrefixStatement:
+                            case BoundLabelStatement:
+                            case BoundCallStatement:
+                            case BoundExpressionStatement:
+                                if (isLastStatementInBlock)
+                                {
+                                    Connect(current, next);
+                                }
+
+                                break;
+                            default:
+                                throw new UnexpectedBoundNodeException(statement);
+                        }
+                    }
+                }
+
+            ScanAgain:
+                foreach (BasicBlock block in blocks)
+                {
+                    if (!block.Incoming.Any())
+                    {
+                        RemoveBlock(blocks, block);
+                        goto ScanAgain;
+                    }
+                }
+
+                blocks.Insert(0, _start);
+                blocks.Add(_end);
+
+                return new ControlFlowGraph(_start, _end, blocks, _branches);
+            }
+
+            private static BoundExpression Negate(BoundExpression condition)
+            {
+                BoundUnaryExpression negated = BoundNodeFactory.Not(condition.Syntax, condition);
+                return negated.ConstantValue is not null ? new BoundLiteralExpression(condition.Syntax, negated.ConstantValue.Value) : negated;
+            }
+
+            private void Connect(BasicBlock from, BasicBlock to, BoundExpression? condition = null)
+            {
+                if (condition is BoundLiteralExpression l)
+                {
+                    bool value = (bool)l.ConstantValue.GetValueOrDefault(TypeSymbol.Bool);
+                    if (value)
+                    {
+                        condition = null;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+
+                BasicBlockBranch branch = new BasicBlockBranch(from, to, condition);
+                from.Outgoing.Add(branch);
+                to.Incoming.Add(branch);
+                _branches.Add(branch);
+            }
+
+            private void RemoveBlock(List<BasicBlock> blocks, BasicBlock block)
+            {
+                foreach (BasicBlockBranch branch in block.Incoming)
+                {
+                    branch.From.Outgoing.Remove(branch);
+                    _branches.Remove(branch);
+                }
+
+                foreach (BasicBlockBranch branch in block.Outgoing)
+                {
+                    branch.To.Incoming.Remove(branch);
+                    _branches.Remove(branch);
+                }
+
+                blocks.Remove(block);
+            }
         }
     }
 }

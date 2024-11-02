@@ -9,13 +9,13 @@ namespace FanScript.Midi
 
         public const int MaxNumbChannels = 10;
 
-        private MidiFile file;
-        private MidiConvertSettings settings;
+        private readonly MidiFile file;
+        private readonly MidiConvertSettings settings;
 
         private long microsecondsPerQuaterNote;
         private readonly short ticksPerQuaterNote;
 
-        private FcSongBuilder builder;
+        private readonly FcSongBuilder builder;
 
         public MidiConverter(MidiFile file, MidiConvertSettings? settings = null)
         {
@@ -32,7 +32,7 @@ namespace FanScript.Midi
                     ticksPerQuaterNote = tpqnDivision.TicksPerQuarterNote;
                     Console.WriteLine($"TicksPerQuarterNote: {ticksPerQuaterNote}");
                     break;
-                case SmpteTimeDivision smpteDivision: // TODO:
+                case SmpteTimeDivision: // TODO:
                 default:
                     throw new Exception($"Unknown TimeDivision '{file.TimeDivision.GetType()}'");
             }
@@ -52,7 +52,7 @@ namespace FanScript.Midi
                 Console.WriteLine($"Chunk, Id: {midiChunk.ChunkId}");
 
                 if (midiChunk is TrackChunk trackChunk)
-                    processTrackChunk(trackChunk);
+                    ProcessTrackChunk(trackChunk);
                 else
                     Console.WriteLine(midiChunk.GetType());
             }
@@ -60,32 +60,32 @@ namespace FanScript.Midi
             return builder.Build();
         }
 
-        private void processTrackChunk(TrackChunk chunk)
+        private void ProcessTrackChunk(TrackChunk chunk)
         {
             foreach (var @event in chunk.Events)
             {
                 switch (@event)
                 {
                     case SetTempoEvent setTempo:
-                        handleSetTempo(setTempo);
+                        HandleSetTempo(setTempo);
                         break;
                     case SequenceTrackNameEvent sequenceTrackName:
-                        handleSequenceTractName(sequenceTrackName);
+                        HandleSequenceTractName(sequenceTrackName);
                         break;
                     case ControlChangeEvent controlChange:
-                        handleControlChange(controlChange);
+                        HandleControlChange(controlChange);
                         break;
                     case PitchBendEvent pitchBend:
-                        handlePitchBend(pitchBend);
+                        HandlePitchBend(pitchBend);
                         break;
                     case NoteOnEvent noteOn:
-                        handleNoteOn(noteOn);
+                        HandleNoteOn(noteOn);
                         break;
                     case NoteOffEvent noteOff:
-                        handleNoteOff(noteOff);
+                        HandleNoteOff(noteOff);
                         break;
                     case ProgramChangeEvent programChange:
-                        handleProgramChange(programChange);
+                        HandleProgramChange(programChange);
                         break;
                     default:
                         Console.WriteLine(@event.GetType());
@@ -94,23 +94,19 @@ namespace FanScript.Midi
             }
         }
 
-        private void handleSetTempo(SetTempoEvent @event)
+        private void HandleSetTempo(SetTempoEvent @event)
         {
             microsecondsPerQuaterNote = @event.MicrosecondsPerQuarterNote;
             Console.WriteLine($"Set tempo to {@event.MicrosecondsPerQuarterNote} mc/qnote ({@event.MicrosecondsPerQuarterNote / 1000f} ms/qnote)");
         }
 
-        private void handleSequenceTractName(SequenceTrackNameEvent @event)
-        {
-            Console.WriteLine($"Sequence track name: '{@event.Text}'");
-        }
+        private static void HandleSequenceTractName(SequenceTrackNameEvent @event)
+            => Console.WriteLine($"Sequence track name: '{@event.Text}'");
 
-        private void handleControlChange(ControlChangeEvent @event)
-        {
-            Console.WriteLine($"Control event: Channel: {@event.Channel}, Value: {@event.ControlValue}, Number: {@event.ControlNumber} (Delta time: {@event.DeltaTime})");
-        }
+        private static void HandleControlChange(ControlChangeEvent @event)
+            => Console.WriteLine($"Control event: Channel: {@event.Channel}, Value: {@event.ControlValue}, Number: {@event.ControlNumber} (Delta time: {@event.DeltaTime})");
 
-        private void handlePitchBend(PitchBendEvent @event)
+        private static void HandlePitchBend(PitchBendEvent @event)
         {
             if (@event.PitchValue == 0x2000)
                 Console.WriteLine($"Pitch bend: Channel: {@event.Channel}, Pitch Value: default ({0x2000}) (Delta time: {@event.DeltaTime})");
@@ -118,31 +114,31 @@ namespace FanScript.Midi
                 Console.WriteLine($"Pitch bend: Channel: {@event.Channel}, Pitch Value: {@event.PitchValue} (Delta time: {@event.DeltaTime})");
         }
 
-        private void handleNoteOn(NoteOnEvent @event)
+        private void HandleNoteOn(NoteOnEvent @event)
         {
             Note note = Note.Get(@event.NoteNumber);
-            TimeSpan deltaTime = getDeltaTimeTime(@event.DeltaTime);
+            TimeSpan deltaTime = GetDeltaTimeTime(@event.DeltaTime);
 
             builder.PlayNote(@event.Channel, deltaTime, note, @event.Velocity);
         }
 
-        private void handleNoteOff(NoteOffEvent @event)
+        private void HandleNoteOff(NoteOffEvent @event)
         {
             Note note = Note.Get(@event.NoteNumber);
-            TimeSpan deltaTime = getDeltaTimeTime(@event.DeltaTime);
+            TimeSpan deltaTime = GetDeltaTimeTime(@event.DeltaTime);
 
             builder.EndPlayNote(@event.Channel, deltaTime, note);
         }
 
-        private void handleProgramChange(ProgramChangeEvent @event)
+        private void HandleProgramChange(ProgramChangeEvent @event)
         {
-            TimeSpan deltaTime = getDeltaTimeTime(@event.DeltaTime);
+            TimeSpan deltaTime = GetDeltaTimeTime(@event.DeltaTime);
 
             builder.SetInstrument(@event.Channel, deltaTime, @event.ProgramNumber);
         }
 
         #region Utils
-        private TimeSpan getDeltaTimeTime(long deltaTime)
+        private TimeSpan GetDeltaTimeTime(long deltaTime)
         {
             TimeSpan span = TimeSpan.FromMicroseconds((microsecondsPerQuaterNote / ticksPerQuaterNote) * deltaTime);
             return span;

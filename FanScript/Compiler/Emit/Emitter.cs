@@ -1,122 +1,132 @@
-﻿using FanScript.Compiler.Binding;
+﻿using System.Collections.Immutable;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Emit.Utils;
 using FanScript.Compiler.Exceptions;
 using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
-using System.Collections.Immutable;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices;
 
 namespace FanScript.Compiler.Emit
 {
     internal sealed class Emitter : IEmitContext
     {
-        public DiagnosticBag Diagnostics { get; private set; } = new DiagnosticBag();
-        private BoundProgram program = null!;
-        private CodePlacer placer = null!;
-        public BlockBuilder Builder { get; private set; } = null!;
-
-        private FunctionSymbol currentFunciton = null!;
-
         // key - a label before antoher label, item - the label after key
-        private Dictionary<string, string> sameTargetLabels = new();
+        private readonly Dictionary<string, string> _sameTargetLabels = [];
+
         // key - label name, item - list of goto "origins", not only gotos but also statements just before the label
-        private ListMultiValueDictionary<string, EmitStore> gotosToConnect = new();
+        private readonly ListMultiValueDictionary<string, IEmitStore> _gotosToConnect = [];
+
         // key - label name, item - the store to connect gotos to
-        private Dictionary<string, EmitStore> afterLabel = new();
+        private readonly Dictionary<string, IEmitStore> _afterLabel = [];
 
-        private readonly InlineVarManager inlineVarManager = new();
+        private readonly InlineVarManager _inlineVarManager = new();
 
-        private Dictionary<VariableSymbol, BreakBlockCache> vectorBreakCache = new();
-        private Dictionary<VariableSymbol, BreakBlockCache> rotationBreakCache = new();
+        private readonly Dictionary<VariableSymbol, BreakBlockCache> _vectorBreakCache = [];
+        private readonly Dictionary<VariableSymbol, BreakBlockCache> _rotationBreakCache = [];
 
-        private Stack<List<EmitStore>> beforeReturnStack = new();
-        private Dictionary<FunctionSymbol, EmitStore> functions = new();
-        private ListMultiValueDictionary<FunctionSymbol, EmitStore> calls = new();
+        private readonly Stack<List<IEmitStore>> _beforeReturnStack = new();
+        private readonly Dictionary<FunctionSymbol, IEmitStore> _functions = [];
+        private readonly ListMultiValueDictionary<FunctionSymbol, IEmitStore> _calls = [];
+
+        private BoundProgram _program = null!;
+        private CodePlacer _placer = null!;
+
+        private FunctionSymbol _currentFunciton = null!;
 
         private Emitter()
         {
         }
 
+        public DiagnosticBag Diagnostics { get; private set; } = new DiagnosticBag();
+
+        public BlockBuilder Builder { get; private set; } = null!;
+
         public static ImmutableArray<Diagnostic> Emit(BoundProgram program, CodePlacer placer, BlockBuilder builder)
         {
             if (program.Diagnostics.HasErrors())
+            {
                 return program.Diagnostics;
+            }
             else
             {
                 Emitter emitter = new Emitter();
-                return emitter.emit(program, placer, builder);
+                return emitter.EmitInternal(program, placer, builder);
             }
         }
 
-        private ImmutableArray<Diagnostic> emit(BoundProgram program, CodePlacer placer, BlockBuilder builder)
+        private ImmutableArray<Diagnostic> EmitInternal(BoundProgram program, CodePlacer placer, BlockBuilder builder)
         {
-            this.program = program;
-            this.placer = placer;
-            this.Builder = builder;
+            _program = program;
+            _placer = placer;
+            Builder = builder;
 
-            vectorBreakCache.Clear();
-            rotationBreakCache.Clear();
+            _vectorBreakCache.Clear();
+            _rotationBreakCache.Clear();
 
-            foreach (var (func, body) in this.program.Functions.ToImmutableSortedDictionary())
+            foreach (var (func, body) in _program.Functions.ToImmutableSortedDictionary())
             {
                 if (func != program.ScriptFunction && program.Analysis.ShouldFunctionGetInlined(func))
+                {
                     continue;
+                }
 
-                currentFunciton = func;
+                _currentFunciton = func;
 
                 using (StatementBlock())
                 {
                     WriteComment(func.Name);
 
-                    beforeReturnStack.Push(new List<EmitStore>());
-                    functions.Add(func, EmitStatement(body));
-                    beforeReturnStack.Pop();
+                    _beforeReturnStack.Push([]);
+                    _functions.Add(func, EmitStatement(body));
+                    _beforeReturnStack.Pop();
 
-                    processLabelsAndGotos();
+                    ProcessLabelsAndGotos();
                 }
 
-                currentFunciton = null!;
+                _currentFunciton = null!;
             }
 
-            processCalls();
+            ProcessCalls();
 
-            return Diagnostics
-                .Concat(this.program.Diagnostics)
-                .ToImmutableArray();
+            return [.. Diagnostics, .. _program.Diagnostics];
         }
 
-        private void processLabelsAndGotos()
+        private void ProcessLabelsAndGotos()
         {
-            foreach (var (labelName, stores) in gotosToConnect)
+            foreach (var (labelName, stores) in _gotosToConnect)
             {
-                if (!tryGetAfterLabel(labelName, out EmitStore? afterLabel))
+                if (!TryGetAfterLabel(labelName, out IEmitStore? afterLabel))
+                {
                     continue;
+                }
 
-                foreach (EmitStore store in stores)
+                foreach (IEmitStore store in stores)
+                {
                     Builder.Connect(store, afterLabel);
+                }
             }
 
-            sameTargetLabels.Clear();
-            gotosToConnect.Clear();
-            afterLabel.Clear();
+            _sameTargetLabels.Clear();
+            _gotosToConnect.Clear();
+            _afterLabel.Clear();
 
-            bool tryGetAfterLabel(string name, [NotNullWhen(true)] out EmitStore? emitStore)
+            bool TryGetAfterLabel(string name, [NotNullWhen(true)] out IEmitStore? emitStore)
             {
-                if (afterLabel.TryGetValue(name, out emitStore))
+                if (_afterLabel.TryGetValue(name, out emitStore))
                 {
-                    if (emitStore is GotoEmitStore gotoEmit)
-                        return tryGetAfterLabel(gotoEmit.LabelName, out emitStore);
-                    else
-                        return true;
+                    return emitStore is not GotoEmitStore gotoEmit || TryGetAfterLabel(gotoEmit.LabelName, out emitStore);
                 }
-                else if (sameTargetLabels.TryGetValue(name, out string? target))
-                    return tryGetAfterLabel(target, out emitStore);
+                else if (_sameTargetLabels.TryGetValue(name, out string? target))
+                {
+                    return TryGetAfterLabel(target, out emitStore);
+                }
                 else
                 {
                     emitStore = null;
@@ -125,39 +135,44 @@ namespace FanScript.Compiler.Emit
             }
         }
 
-        private void processCalls()
+        private void ProcessCalls()
         {
-            foreach (var (func, callList) in calls)
+            foreach (var (func, callList) in _calls)
             {
-                if (!functions.TryGetValue(func, out var funcStore))
+                if (!_functions.TryGetValue(func, out var funcStore))
+                {
                     throw new Exception($"Failed to get entry point for function '{func}'.");
+                }
 
-                for (var i = 0; i < callList.Count; i++)
+                for (int i = 0; i < callList.Count; i++)
+                {
                     Connect(callList[i], funcStore);
+                }
             }
 
-            functions.Clear();
-            calls.Clear();
+            _functions.Clear();
+            _calls.Clear();
         }
 
-        public EmitStore EmitStatement(BoundStatement statement)
+        [SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:Elements should be ordered by access", Justification = "whomp whomp")]
+        public IEmitStore EmitStatement(BoundStatement statement)
         {
-            EmitStore store = statement switch
+            IEmitStore store = statement switch
             {
-                BoundBlockStatement blockStatement => emitBlockStatement(blockStatement),
+                BoundBlockStatement blockStatement => EmitBlockStatement(blockStatement),
                 BoundVariableDeclarationStatement variableDeclarationStatement when variableDeclarationStatement.OptionalAssignment is not null => EmitStatement(variableDeclarationStatement.OptionalAssignment),
                 BoundVariableDeclarationStatement => NopEmitStore.Instance,
-                BoundAssignmentStatement assignmentStatement => emitAssigmentStatement(assignmentStatement),
-                BoundPostfixStatement postfixStatement => emitPostfixStatement(postfixStatement),
-                BoundPrefixStatement prefixStatement => emitPrefixStatement(prefixStatement),
-                BoundGotoStatement gotoStatement => emitGotoStatement(gotoStatement),
-                BoundEventGotoStatement eventGotoStatement => emitEventGotoStatement(eventGotoStatement),
-                BoundConditionalGotoStatement conditionalGotoStatement => emitConditionalGotoStatement(conditionalGotoStatement),
-                BoundLabelStatement labelStatement => emitLabelStatement(labelStatement),
-                BoundReturnStatement returnStatement => emitReturnStatement(returnStatement),
-                BoundEmitterHintStatement emitterHintStatement => emitHint(emitterHintStatement),
-                BoundCallStatement callStatement => emitCallStatement(callStatement),
-                BoundExpressionStatement expressionStatement => emitExpressionStatement(expressionStatement),
+                BoundAssignmentStatement assignmentStatement => EmitAssigmentStatement(assignmentStatement),
+                BoundPostfixStatement postfixStatement => EmitPostfixStatement(postfixStatement),
+                BoundPrefixStatement prefixStatement => EmitPrefixStatement(prefixStatement),
+                BoundGotoStatement gotoStatement => EmitGotoStatement(gotoStatement),
+                BoundEventGotoStatement eventGotoStatement => EmitEventGotoStatement(eventGotoStatement),
+                BoundConditionalGotoStatement conditionalGotoStatement => EmitConditionalGotoStatement(conditionalGotoStatement),
+                BoundLabelStatement labelStatement => EmitLabelStatement(labelStatement),
+                BoundReturnStatement returnStatement => EmitReturnStatement(returnStatement),
+                BoundEmitterHintStatement emitterHintStatement => EmitHint(emitterHintStatement),
+                BoundCallStatement callStatement => EmitCallStatement(callStatement),
+                BoundExpressionStatement expressionStatement => EmitExpressionStatement(expressionStatement),
                 BoundNopStatement => NopEmitStore.Instance,
 
                 _ => throw new UnexpectedBoundNodeException(statement),
@@ -166,55 +181,56 @@ namespace FanScript.Compiler.Emit
             return store;
         }
 
-        private EmitStore emitBlockStatement(BoundBlockStatement statement)
+        private IEmitStore EmitBlockStatement(BoundBlockStatement statement)
         {
             if (statement.Statements.Length == 0)
+            {
                 return NopEmitStore.Instance;
+            }
             else if (statement.Statements.Length == 1 && statement.Statements[0] is BoundBlockStatement inBlock)
-                return emitBlockStatement(inBlock);
+            {
+                return EmitBlockStatement(inBlock);
+            }
 
             EmitConnector connector = new EmitConnector(Connect);
 
-            bool newCodeBlock = placer.CurrentCodeBlockBlocks > 0;
+            bool newCodeBlock = _placer.CurrentCodeBlockBlocks > 0;
             if (newCodeBlock)
-                enterStatementBlock();
+            {
+                EnterStatementBlock();
+            }
 
             for (int i = 0; i < statement.Statements.Length; i++)
             {
-                EmitStore statementStore = EmitStatement(statement.Statements[i]);
+                IEmitStore statementStore = EmitStatement(statement.Statements[i]);
 
                 connector.Add(statementStore);
             }
 
             if (newCodeBlock)
-                exitStatementBlock();
+            {
+                ExitStatementBlock();
+            }
 
             return connector.Store;
         }
 
-        private EmitStore emitAssigmentStatement(BoundAssignmentStatement statement)
-            => emitSetVariable(statement.Variable, statement.Expression);
+        private IEmitStore EmitAssigmentStatement(BoundAssignmentStatement statement)
+            => EmitSetVariable(statement.Variable, statement.Expression);
 
-        private EmitStore emitPostfixStatement(BoundPostfixStatement statement)
+        private BasicEmitStore EmitPostfixStatement(BoundPostfixStatement statement)
         {
-            BlockDef def;
-            switch (statement.PostfixKind)
+            BlockDef def = statement.PostfixKind switch
             {
-                case PostfixKind.Increment:
-                    def = Blocks.Variables.PlusPlusFloat;
-                    break;
-                case PostfixKind.Decrement:
-                    def = Blocks.Variables.MinusMinusFloat;
-                    break;
-                default:
-                    throw new UnknownEnumValueException<PostfixKind>(statement.PostfixKind);
-            }
-
+                PostfixKind.Increment => Blocks.Variables.PlusPlusFloat,
+                PostfixKind.Decrement => Blocks.Variables.MinusMinusFloat,
+                _ => throw new UnknownEnumValueException<PostfixKind>(statement.PostfixKind),
+            };
             Block block = AddBlock(def);
 
             using (ExpressionBlock())
             {
-                EmitStore store = EmitGetVariable(statement.Variable);
+                IEmitStore store = EmitGetVariable(statement.Variable);
 
                 Connect(store, BasicEmitStore.CIn(block, block.Type.Terminals["Variable"]));
             }
@@ -222,26 +238,19 @@ namespace FanScript.Compiler.Emit
             return new BasicEmitStore(block);
         }
 
-        private EmitStore emitPrefixStatement(BoundPrefixStatement statement)
+        private BasicEmitStore EmitPrefixStatement(BoundPrefixStatement statement)
         {
-            BlockDef def;
-            switch (statement.PrefixKind)
+            BlockDef def = statement.PrefixKind switch
             {
-                case PrefixKind.Increment:
-                    def = Blocks.Variables.PlusPlusFloat;
-                    break;
-                case PrefixKind.Decrement:
-                    def = Blocks.Variables.MinusMinusFloat;
-                    break;
-                default:
-                    throw new UnknownEnumValueException<PrefixKind>(statement.PrefixKind);
-            }
-
+                PrefixKind.Increment => Blocks.Variables.PlusPlusFloat,
+                PrefixKind.Decrement => Blocks.Variables.MinusMinusFloat,
+                _ => throw new UnknownEnumValueException<PrefixKind>(statement.PrefixKind),
+            };
             Block block = AddBlock(def);
 
             using (ExpressionBlock())
             {
-                EmitStore store = EmitGetVariable(statement.Variable);
+                IEmitStore store = EmitGetVariable(statement.Variable);
 
                 Connect(store, BasicEmitStore.CIn(block, block.Type.Terminals["Variable"]));
             }
@@ -249,52 +258,29 @@ namespace FanScript.Compiler.Emit
             return new BasicEmitStore(block);
         }
 
-        private EmitStore emitGotoStatement(BoundGotoStatement statement)
-        {
-            if (statement.IsRollback)
-                return RollbackEmitStore.Instance;
-            else
-                return new GotoEmitStore(statement.Label.Name);
-        }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1204:Static elements should appear before instance elements", Justification = "whomp whomp")]
+        private static IEmitStore EmitGotoStatement(BoundGotoStatement statement)
+            => statement.IsRollback ? RollbackEmitStore.Instance : new GotoEmitStore(statement.Label.Name);
 
-        private EmitStore emitEventGotoStatement(BoundEventGotoStatement statement)
+        private BasicEmitStore EmitEventGotoStatement(BoundEventGotoStatement statement)
         {
-            BlockDef def;
-            switch (statement.EventType)
+            BlockDef def = statement.EventType switch
             {
-                case EventType.Play:
-                    def = Blocks.Control.PlaySensor;
-                    break;
-                case EventType.LateUpdate:
-                    def = Blocks.Control.LateUpdate;
-                    break;
-                case EventType.BoxArt:
-                    def = Blocks.Control.BoxArtSensor;
-                    break;
-                case EventType.Touch:
-                    def = Blocks.Control.TouchSensor;
-                    break;
-                case EventType.Swipe:
-                    def = Blocks.Control.SwipeSensor;
-                    break;
-                case EventType.Button:
-                    def = Blocks.Control.Button;
-                    break;
-                case EventType.Collision:
-                    def = Blocks.Control.Collision;
-                    break;
-                case EventType.Loop:
-                    def = Blocks.Control.Loop;
-                    break;
-                default:
-                    throw new UnknownEnumValueException<EventType>(statement.EventType);
-            }
-
+                EventType.Play => Blocks.Control.PlaySensor,
+                EventType.LateUpdate => Blocks.Control.LateUpdate,
+                EventType.BoxArt => Blocks.Control.BoxArtSensor,
+                EventType.Touch => Blocks.Control.TouchSensor,
+                EventType.Swipe => Blocks.Control.SwipeSensor,
+                EventType.Button => Blocks.Control.Button,
+                EventType.Collision => Blocks.Control.Collision,
+                EventType.Loop => Blocks.Control.Loop,
+                _ => throw new UnknownEnumValueException<EventType>(statement.EventType),
+            };
             Block block = AddBlock(def);
 
             ImmutableArray<BoundExpression>? arguments = statement.ArgumentClause?.Arguments;
 
-            enterStatementBlock();
+            EnterStatementBlock();
 
             switch (statement.EventType)
             {
@@ -302,54 +288,67 @@ namespace FanScript.Compiler.Emit
                     {
                         object?[]? values = ValidateConstants(arguments!.Value.AsMemory(2..), true);
                         if (values is null)
+                        {
                             break;
+                        }
 
                         for (int i = 0; i < values.Length; i++)
+                        {
                             SetBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
+                        }
 
-                        connectToLabel(statement.Label.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(..2)));
+                        ConnectToLabel(statement.Label.Name, PlaceAndConnectRefArgs(arguments!.Value.AsSpan(..2)));
                         return new BasicEmitStore(block);
                     }
+
                 case EventType.Swipe:
                     {
-                        connectToLabel(statement.Label.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan()));
+                        ConnectToLabel(statement.Label.Name, PlaceAndConnectRefArgs(arguments!.Value.AsSpan()));
                         return new BasicEmitStore(block);
                     }
+
                 case EventType.Button:
                     {
                         object?[]? values = ValidateConstants(arguments!.Value.AsMemory(), true);
                         if (values is null)
+                        {
                             break;
+                        }
 
                         for (int i = 0; i < values.Length; i++)
+                        {
                             SetBlockValue(block, i, (byte)((float?)values[i] ?? 0f)); // unbox, then cast
+                        }
                     }
+
                     break;
                 case EventType.Collision:
                     {
-                        connectToLabel(statement.Label.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(1..), arguments!.Value.AsMemory(..1)));
+                        ConnectToLabel(statement.Label.Name, PlaceAndConnectRefArgs(arguments!.Value.AsSpan(1..), arguments!.Value.AsMemory(..1)));
                         return new BasicEmitStore(block);
                     }
+
                 case EventType.Loop:
                     {
-                        connectToLabel(statement.Label.Name, placeAndConnectRefArgs(arguments!.Value.AsSpan(2..), arguments!.Value.AsMemory(..2)));
+                        ConnectToLabel(statement.Label.Name, PlaceAndConnectRefArgs(arguments!.Value.AsSpan(2..), arguments!.Value.AsMemory(..2)));
                         return new BasicEmitStore(block);
                     }
             }
 
-            connectToLabel(statement.Label.Name, BasicEmitStore.COut(block, block.Type.TerminalArray[^2]));
+            ConnectToLabel(statement.Label.Name, BasicEmitStore.COut(block, block.Type.TerminalArray[^2]));
 
             return new BasicEmitStore(block);
 
-            EmitStore placeAndConnectRefArgs(ReadOnlySpan<BoundExpression> outArguments, ReadOnlyMemory<BoundExpression>? arguments = null)
+            IEmitStore PlaceAndConnectRefArgs(ReadOnlySpan<BoundExpression> outArguments, ReadOnlyMemory<BoundExpression>? arguments = null)
             {
                 arguments ??= ReadOnlyMemory<BoundExpression>.Empty;
 
-                EmitStore lastStore = BasicEmitStore.COut(block, block.Type.TerminalArray[Index.FromEnd(2 + arguments.Value.Length)]);
+                EmitConnector connector = new EmitConnector(Connect);
+                connector.Add(BasicEmitStore.COut(block, block.Type.TerminalArray[Index.FromEnd(2 + arguments.Value.Length)]));
 
                 if (arguments.Value.Length != 0)
                 {
-                    exitStatementBlock();
+                    ExitStatementBlock();
 
                     using (ExpressionBlock())
                     {
@@ -357,79 +356,74 @@ namespace FanScript.Compiler.Emit
 
                         for (int i = 0; i < argumentsSpan.Length; i++)
                         {
-                            EmitStore store = EmitExpression(argumentsSpan[i]);
+                            IEmitStore store = EmitExpression(argumentsSpan[i]);
 
                             Connect(store, BasicEmitStore.CIn(block, block.Type.TerminalArray[Index.FromEnd(i + 2)]));
                         }
                     }
 
-                    enterStatementBlock();
+                    EnterStatementBlock();
                 }
 
                 for (int i = 0; i < outArguments.Length; i++)
                 {
                     VariableSymbol variable = ((BoundVariableExpression)outArguments[i]).Variable;
 
-                    EmitStore varStore = EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.TerminalArray[Index.FromEnd(i + arguments.Value.Length + 3)]));
-
-                    Connect(lastStore, varStore);
-
-                    if (varStore is not NopEmitStore)
-                        lastStore = varStore;
+                    connector.Add(EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.TerminalArray[Index.FromEnd(i + arguments.Value.Length + 3)])));
                 }
 
-                return lastStore;
+                return connector.Store;
             }
         }
-
-        private EmitStore emitConditionalGotoStatement(BoundConditionalGotoStatement statement)
+        
+        private ConditionalGotoEmitStore EmitConditionalGotoStatement(BoundConditionalGotoStatement statement)
         {
             Block block = AddBlock(Blocks.Control.If);
 
             using (ExpressionBlock())
             {
-                EmitStore condition = EmitExpression(statement.Condition);
+                IEmitStore condition = EmitExpression(statement.Condition);
 
                 Connect(condition, BasicEmitStore.CIn(block, block.Type.Terminals["Condition"]));
             }
 
-            ConditionalGotoEmitStore store = new ConditionalGotoEmitStore(block, block.Type.Before,
-                block, block.Type.Terminals[statement.JumpIfTrue ? "True" : "False"], block,
+            ConditionalGotoEmitStore store = new ConditionalGotoEmitStore(
+                block,
+                block.Type.Before,
+                block, 
+                block.Type.Terminals[statement.JumpIfTrue ? "True" : "False"], 
+                block,
                 block.Type.Terminals[statement.JumpIfTrue ? "False" : "True"]);
 
-            connectToLabel(statement.Label.Name, BasicEmitStore.COut(store.OnCondition, store.OnConditionTerminal));
+            ConnectToLabel(statement.Label.Name, BasicEmitStore.COut(store.OnCondition, store.OnConditionTerminal));
+
             return store;
-
         }
 
-        private EmitStore emitLabelStatement(BoundLabelStatement statement)
-        {
-            return new LabelEmitStore(statement.Label.Name);
-        }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1204:Static elements should appear before instance elements", Justification = "whomp whomp")]
+        private static LabelEmitStore EmitLabelStatement(BoundLabelStatement statement)
+            => new LabelEmitStore(statement.Label.Name);
 
-        private EmitStore emitReturnStatement(BoundReturnStatement statement)
-        {
-            if (statement.Expression is null)
-                return new ReturnEmitStore();
+        private IEmitStore EmitReturnStatement(BoundReturnStatement statement)
+            => statement.Expression is null
+                ? new ReturnEmitStore()
+                : EmitSetVariable(ReservedCompilerVariableSymbol.CreateFunctionRes(_currentFunciton), statement.Expression);
 
-            return emitSetVariable(ReservedCompilerVariableSymbol.CreateFunctionRes(currentFunciton), statement.Expression);
-        }
-
-        private EmitStore emitHint(BoundEmitterHintStatement statement)
+        private NopEmitStore EmitHint(BoundEmitterHintStatement statement)
         {
             switch (statement.Hint)
             {
                 case BoundEmitterHintStatement.HintKind.StatementBlockStart:
-                    enterStatementBlock();
+                    EnterStatementBlock();
                     break;
                 case BoundEmitterHintStatement.HintKind.StatementBlockEnd:
-                    exitStatementBlock();
+                    ExitStatementBlock();
                     break;
                 case BoundEmitterHintStatement.HintKind.HighlightStart:
-                    placer.EnterHighlight();
+                    _placer.EnterHighlight();
                     break;
                 case BoundEmitterHintStatement.HintKind.HighlightEnd:
-                    placer.ExitHightlight();
+                    _placer.ExitHightlight();
                     break;
                 default:
                     throw new UnknownEnumValueException<BoundEmitterHintStatement.HintKind>(statement.Hint);
@@ -438,12 +432,14 @@ namespace FanScript.Compiler.Emit
             return NopEmitStore.Instance;
         }
 
-        private EmitStore emitCallStatement(BoundCallStatement statement)
+        private IEmitStore EmitCallStatement(BoundCallStatement statement)
         {
             if (statement.Function is BuiltinFunctionSymbol builtinFunction)
+            {
                 return builtinFunction.Emit(new BoundCallExpression(statement.Syntax, statement.Function, statement.ArgumentClause, statement.ReturnType, statement.GenericType), this);
+            }
 
-            Debug.Assert(!statement.Function.Modifiers.HasFlag(Modifiers.Inline));
+            Debug.Assert(!statement.Function.Modifiers.HasFlag(Modifiers.Inline), "Calls to inline funcitons should get inlined.");
 
             FunctionSymbol func = statement.Function;
 
@@ -454,9 +450,11 @@ namespace FanScript.Compiler.Emit
                 Modifiers mods = func.Parameters[i].Modifiers;
 
                 if (mods.HasFlag(Modifiers.Out))
+                {
                     continue;
+                }
 
-                EmitStore setStore = emitSetVariable(func.Parameters[i], statement.ArgumentClause.Arguments[i]);
+                IEmitStore setStore = EmitSetVariable(func.Parameters[i], statement.ArgumentClause.Arguments[i]);
 
                 connector.Add(setStore);
             }
@@ -469,7 +467,7 @@ namespace FanScript.Compiler.Emit
                 Connect(BasicEmitStore.COut(trueBlock, trueBlock.Type.Terminals["True"]), BasicEmitStore.CIn(callBlock, callBlock.Type.Terminals["Condition"]));
             }
 
-            calls.Add(func, BasicEmitStore.COut(callBlock, callBlock.Type.Terminals["True"]));
+            _calls.Add(func, BasicEmitStore.COut(callBlock, callBlock.Type.Terminals["True"]));
 
             connector.Add(new BasicEmitStore(callBlock));
 
@@ -478,12 +476,16 @@ namespace FanScript.Compiler.Emit
                 Modifiers mods = func.Parameters[i].Modifiers;
 
                 if (!mods.HasFlag(Modifiers.Out) && !mods.HasFlag(Modifiers.Ref))
+                {
                     continue;
+                }
 
-                EmitStore setStore = EmitSetExpression(statement.ArgumentClause.Arguments[i], () =>
+                IEmitStore setStore = EmitSetExpression(statement.ArgumentClause.Arguments[i], () =>
                 {
                     using (ExpressionBlock())
+                    {
                         return EmitGetVariable(func.Parameters[i]);
+                    }
                 });
 
                 connector.Add(setStore);
@@ -491,10 +493,12 @@ namespace FanScript.Compiler.Emit
 
             if (func.Type != TypeSymbol.Void && statement.ResultVariable is not null)
             {
-                EmitStore setStore = EmitSetVariable(statement.ResultVariable, () =>
+                IEmitStore setStore = EmitSetVariable(statement.ResultVariable, () =>
                 {
                     using (ExpressionBlock())
+                    {
                         return EmitGetVariable(ReservedCompilerVariableSymbol.CreateFunctionRes(func));
+                    }
                 });
 
                 connector.Add(setStore);
@@ -503,24 +507,20 @@ namespace FanScript.Compiler.Emit
             return connector.Store;
         }
 
-        private EmitStore emitExpressionStatement(BoundExpressionStatement statement)
-        {
-            if (statement.Expression is BoundNopExpression)
-                return NopEmitStore.Instance;
+        private IEmitStore EmitExpressionStatement(BoundExpressionStatement statement)
+            => statement.Expression is BoundNopExpression ? NopEmitStore.Instance : EmitExpression(statement.Expression);
 
-            return EmitExpression(statement.Expression);
-        }
-
-        public EmitStore EmitExpression(BoundExpression expression)
+        [SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:Elements should be ordered by access", Justification = "whomp whomp")]
+        public IEmitStore EmitExpression(BoundExpression expression)
         {
-            EmitStore store = expression switch
+            IEmitStore store = expression switch
             {
-                BoundLiteralExpression literalExpression => emitLiteralExpression(literalExpression),
-                BoundConstructorExpression constructorExpression => emitConstructorExpression(constructorExpression),
-                BoundUnaryExpression unaryExpression => emitUnaryExpression(unaryExpression),
-                BoundBinaryExpression binaryExpression => emitBinaryExpression(binaryExpression),
-                BoundVariableExpression variableExpression => emitVariableExpression(variableExpression),
-                BoundCallExpression callExpression => emitCallExpression(callExpression),
+                BoundLiteralExpression literalExpression => EmitLiteralExpression(literalExpression),
+                BoundConstructorExpression constructorExpression => EmitConstructorExpression(constructorExpression),
+                BoundUnaryExpression unaryExpression => EmitUnaryExpression(unaryExpression),
+                BoundBinaryExpression binaryExpression => EmitBinaryExpression(binaryExpression),
+                BoundVariableExpression variableExpression => EmitVariableExpression(variableExpression),
+                BoundCallExpression callExpression => EmitCallExpression(callExpression),
 
                 _ => throw new UnexpectedBoundNodeException(expression),
             };
@@ -528,34 +528,42 @@ namespace FanScript.Compiler.Emit
             return store;
         }
 
-        private EmitStore emitLiteralExpression(BoundLiteralExpression expression)
+        private IEmitStore EmitLiteralExpression(BoundLiteralExpression expression)
             => EmitLiteralExpression(expression.Value);
-        public EmitStore EmitLiteralExpression(object? value)
+
+        [SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:Elements should be ordered by access", Justification = "whomp whomp")]
+        public IEmitStore EmitLiteralExpression(object? value)
         {
             if (value is null)
+            {
                 return NopEmitStore.Instance;
+            }
 
             Block block = AddBlock(Blocks.Values.ValueByType(value));
 
             if (value is not bool)
+            {
                 SetBlockValue(block, 0, value);
+            }
 
             return BasicEmitStore.COut(block, block.Type.TerminalArray[0]);
         }
 
-        private EmitStore emitConstructorExpression(BoundConstructorExpression expression)
+        private IEmitStore EmitConstructorExpression(BoundConstructorExpression expression)
         {
             if (expression.ConstantValue is not null)
+            {
                 return EmitLiteralExpression(expression.ConstantValue.Value);
+            }
 
             BlockDef def = Blocks.Math.MakeByType(expression.Type.ToWireType());
             Block block = AddBlock(def);
 
             using (ExpressionBlock())
             {
-                EmitStore xStore = EmitExpression(expression.ExpressionX);
-                EmitStore yStore = EmitExpression(expression.ExpressionY);
-                EmitStore zStore = EmitExpression(expression.ExpressionZ);
+                IEmitStore xStore = EmitExpression(expression.ExpressionX);
+                IEmitStore yStore = EmitExpression(expression.ExpressionY);
+                IEmitStore zStore = EmitExpression(expression.ExpressionZ);
 
                 Connect(xStore, BasicEmitStore.CIn(block, def.Terminals["X"]));
                 Connect(yStore, BasicEmitStore.CIn(block, def.Terminals["Y"]));
@@ -565,7 +573,7 @@ namespace FanScript.Compiler.Emit
             return BasicEmitStore.COut(block, def.TerminalArray[0]);
         }
 
-        private EmitStore emitUnaryExpression(BoundUnaryExpression expression)
+        private IEmitStore EmitUnaryExpression(BoundUnaryExpression expression)
         {
             switch (expression.Op.Kind)
             {
@@ -579,7 +587,7 @@ namespace FanScript.Compiler.Emit
 
                             using (ExpressionBlock())
                             {
-                                EmitStore opStore = EmitExpression(expression.Operand);
+                                IEmitStore opStore = EmitExpression(expression.Operand);
 
                                 Block numb = AddBlock(Blocks.Values.Number);
                                 SetBlockValue(numb, 0, -1f);
@@ -592,12 +600,11 @@ namespace FanScript.Compiler.Emit
                         }
                         else
                         {
-
                             Block block = AddBlock(expression.Type == TypeSymbol.Float ? Blocks.Math.Negate : Blocks.Math.Inverse);
 
                             using (ExpressionBlock())
                             {
-                                EmitStore opStore = EmitExpression(expression.Operand);
+                                IEmitStore opStore = EmitExpression(expression.Operand);
 
                                 Connect(opStore, BasicEmitStore.CIn(block, block.Type.TerminalArray[1]));
                             }
@@ -605,74 +612,49 @@ namespace FanScript.Compiler.Emit
                             return BasicEmitStore.COut(block, block.Type.TerminalArray[0]);
                         }
                     }
+
                 case BoundUnaryOperatorKind.LogicalNegation:
                     {
                         Block block = AddBlock(Blocks.Math.Not);
 
                         using (ExpressionBlock())
                         {
-                            EmitStore opStore = EmitExpression(expression.Operand);
+                            IEmitStore opStore = EmitExpression(expression.Operand);
 
                             Connect(opStore, BasicEmitStore.CIn(block, block.Type.Terminals["Tru"]));
                         }
 
                         return BasicEmitStore.COut(block, block.Type.Terminals["Not Tru"]);
                     }
+
                 default:
                     throw new UnknownEnumValueException<BoundUnaryOperatorKind>(expression.Op.Kind);
             }
         }
 
-        private EmitStore emitBinaryExpression(BoundBinaryExpression expression)
+        private IEmitStore EmitBinaryExpression(BoundBinaryExpression expression)
+            => expression.Type == TypeSymbol.Bool || expression.Type == TypeSymbol.Float
+                ? EmitBinaryExpression_FloatOrBool(expression)
+                : expression.Type == TypeSymbol.Vector3 || expression.Type == TypeSymbol.Rotation
+                ? EmitBinaryExpression_VecOrRot(expression)
+                : throw new UnexpectedSymbolException(expression.Type);
+
+        private BasicEmitStore EmitBinaryExpression_FloatOrBool(BoundBinaryExpression expression)
         {
-            if (expression.Type == TypeSymbol.Bool || expression.Type == TypeSymbol.Float)
-                return emitBinaryExpression_FloatOrBool(expression);
-            else if (expression.Type == TypeSymbol.Vector3 || expression.Type == TypeSymbol.Rotation)
-                return emitBinaryExpression_VecOrRot(expression);
-            else
-                throw new UnexpectedSymbolException(expression.Type);
-        }
-        private EmitStore emitBinaryExpression_FloatOrBool(BoundBinaryExpression expression)
-        {
-            BlockDef op;
-            switch (expression.Op.Kind)
+            BlockDef op = expression.Op.Kind switch
             {
-                case BoundBinaryOperatorKind.Addition:
-                    op = Blocks.Math.Add_Number;
-                    break;
-                case BoundBinaryOperatorKind.Subtraction:
-                    op = Blocks.Math.Subtract_Number;
-                    break;
-                case BoundBinaryOperatorKind.Multiplication:
-                    op = Blocks.Math.Multiply_Number;
-                    break;
-                case BoundBinaryOperatorKind.Division:
-                    op = Blocks.Math.Divide_Number;
-                    break;
-                case BoundBinaryOperatorKind.Modulo:
-                    op = Blocks.Math.Modulo_Number;
-                    break;
-                case BoundBinaryOperatorKind.Equals:
-                case BoundBinaryOperatorKind.NotEquals:
-                    op = Blocks.Math.EqualsByType(expression.Left.Type!.ToWireType());
-                    break;
-                case BoundBinaryOperatorKind.LogicalAnd:
-                    op = Blocks.Math.LogicalAnd;
-                    break;
-                case BoundBinaryOperatorKind.LogicalOr:
-                    op = Blocks.Math.LogicalOr;
-                    break;
-                case BoundBinaryOperatorKind.Less:
-                case BoundBinaryOperatorKind.GreaterOrEquals:
-                    op = Blocks.Math.Less;
-                    break;
-                case BoundBinaryOperatorKind.Greater:
-                case BoundBinaryOperatorKind.LessOrEquals:
-                    op = Blocks.Math.Greater;
-                    break;
-                default:
-                    throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind);
-            }
+                BoundBinaryOperatorKind.Addition => Blocks.Math.Add_Number,
+                BoundBinaryOperatorKind.Subtraction => Blocks.Math.Subtract_Number,
+                BoundBinaryOperatorKind.Multiplication => Blocks.Math.Multiply_Number,
+                BoundBinaryOperatorKind.Division => Blocks.Math.Divide_Number,
+                BoundBinaryOperatorKind.Modulo => Blocks.Math.Modulo_Number,
+                BoundBinaryOperatorKind.Equals or BoundBinaryOperatorKind.NotEquals => Blocks.Math.EqualsByType(expression.Left.Type!.ToWireType()),
+                BoundBinaryOperatorKind.LogicalAnd => Blocks.Math.LogicalAnd,
+                BoundBinaryOperatorKind.LogicalOr => Blocks.Math.LogicalOr,
+                BoundBinaryOperatorKind.Less or BoundBinaryOperatorKind.GreaterOrEquals => Blocks.Math.Less,
+                BoundBinaryOperatorKind.Greater or BoundBinaryOperatorKind.LessOrEquals => Blocks.Math.Greater,
+                _ => throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind),
+            };
 
             if (expression.Op.Kind == BoundBinaryOperatorKind.NotEquals
                 || expression.Op.Kind == BoundBinaryOperatorKind.LessOrEquals
@@ -684,13 +666,12 @@ namespace FanScript.Compiler.Emit
                 {
                     Block block = AddBlock(op);
 
-                    Connect(BasicEmitStore.COut(block, block.Type.TerminalArray[0]),
-                        BasicEmitStore.CIn(not, not.Type.Terminals["Tru"]));
+                    Connect(BasicEmitStore.COut(block, block.Type.TerminalArray[0]), BasicEmitStore.CIn(not, not.Type.Terminals["Tru"]));
 
                     using (ExpressionBlock())
                     {
-                        EmitStore store0 = EmitExpression(expression.Left);
-                        EmitStore store1 = EmitExpression(expression.Right);
+                        IEmitStore store0 = EmitExpression(expression.Left);
+                        IEmitStore store1 = EmitExpression(expression.Right);
 
                         Connect(store0, BasicEmitStore.CIn(block, block.Type.TerminalArray[2]));
                         Connect(store1, BasicEmitStore.CIn(block, block.Type.TerminalArray[1]));
@@ -704,8 +685,8 @@ namespace FanScript.Compiler.Emit
                 Block block = AddBlock(op);
                 using (ExpressionBlock())
                 {
-                    EmitStore store0 = EmitExpression(expression.Left);
-                    EmitStore store1 = EmitExpression(expression.Right);
+                    IEmitStore store0 = EmitExpression(expression.Left);
+                    IEmitStore store1 = EmitExpression(expression.Right);
 
                     Connect(store0, BasicEmitStore.CIn(block, block.Type.TerminalArray[2]));
                     Connect(store1, BasicEmitStore.CIn(block, block.Type.TerminalArray[1]));
@@ -714,37 +695,43 @@ namespace FanScript.Compiler.Emit
                 return BasicEmitStore.COut(block, block.Type.TerminalArray[0]);
             }
         }
-        private EmitStore emitBinaryExpression_VecOrRot(BoundBinaryExpression expression)
+
+        private IEmitStore EmitBinaryExpression_VecOrRot(BoundBinaryExpression expression)
         {
             BlockDef? defOp = null;
             switch (expression.Op.Kind)
             {
                 case BoundBinaryOperatorKind.Addition:
                     if (expression.Left.Type == TypeSymbol.Vector3)
+                    {
                         defOp = Blocks.Math.Add_Vector;
+                    }
+
                     break;
                 case BoundBinaryOperatorKind.Subtraction:
                     if (expression.Left.Type == TypeSymbol.Vector3)
+                    {
                         defOp = Blocks.Math.Subtract_Vector;
+                    }
+
                     break;
                 case BoundBinaryOperatorKind.Multiplication:
-                    if (expression.Left.Type == TypeSymbol.Vector3 && expression.Right.Type == TypeSymbol.Float)
-                        defOp = Blocks.Math.Multiply_Vector;
-                    else if (expression.Left.Type == TypeSymbol.Rotation && expression.Right.Type == TypeSymbol.Rotation)
-                        defOp = Blocks.Math.Multiply_Rotation;
-                    else if (expression.Left.Type == TypeSymbol.Vector3 && expression.Right.Type == TypeSymbol.Rotation)
-                        defOp = Blocks.Math.Rotate_Vector;
-                    else
-                        throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind);
+                    defOp = expression.Left.Type == TypeSymbol.Vector3 && expression.Right.Type == TypeSymbol.Float
+                        ? Blocks.Math.Multiply_Vector
+                        : expression.Left.Type == TypeSymbol.Rotation && expression.Right.Type == TypeSymbol.Rotation
+                        ? Blocks.Math.Multiply_Rotation
+                        : expression.Left.Type == TypeSymbol.Vector3 && expression.Right.Type == TypeSymbol.Rotation
+                        ? Blocks.Math.Rotate_Vector
+                        : throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind);
                     break;
                 case BoundBinaryOperatorKind.Division:
                 case BoundBinaryOperatorKind.Modulo:
                     break; // supported, but not one block
                 case BoundBinaryOperatorKind.Equals:
-                    if (expression.Left.Type == TypeSymbol.Vector3)
-                        defOp = Blocks.Math.Equals_Vector;
-                    else
-                        throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind);
+                    defOp = expression.Left.Type == TypeSymbol.Vector3
+                        ? Blocks.Math.Equals_Vector
+                        : throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind);
+
                     // rotation doesn't have equals???
                     break;
                 case BoundBinaryOperatorKind.NotEquals:
@@ -758,32 +745,30 @@ namespace FanScript.Compiler.Emit
                 switch (expression.Op.Kind)
                 {
                     case BoundBinaryOperatorKind.Addition: // Rotation
-                        return buildOperatorWithBreak(Blocks.Math.Make_Rotation, Blocks.Math.Add_Number);
+                        return BuildOperatorWithBreak(Blocks.Math.Make_Rotation, Blocks.Math.Add_Number);
                     case BoundBinaryOperatorKind.Subtraction: // Rotation
-                        return buildOperatorWithBreak(Blocks.Math.Make_Rotation, Blocks.Math.Subtract_Number);
+                        return BuildOperatorWithBreak(Blocks.Math.Make_Rotation, Blocks.Math.Subtract_Number);
                     case BoundBinaryOperatorKind.Division: // Vector3
-                        return buildOperatorWithBreak(Blocks.Math.Make_Vector, Blocks.Math.Divide_Number);
+                        return BuildOperatorWithBreak(Blocks.Math.Make_Vector, Blocks.Math.Divide_Number);
                     case BoundBinaryOperatorKind.Modulo: // Vector3
-                        return buildOperatorWithBreak(Blocks.Math.Make_Vector, Blocks.Math.Modulo_Number);
+                        return BuildOperatorWithBreak(Blocks.Math.Make_Vector, Blocks.Math.Modulo_Number);
                     case BoundBinaryOperatorKind.NotEquals:
                         {
-                            if (expression.Left.Type == TypeSymbol.Vector3)
-                                defOp = Blocks.Math.Equals_Vector;
-                            else
-                                throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind);
+                            defOp = expression.Left.Type == TypeSymbol.Vector3
+                                ? Blocks.Math.Equals_Vector
+                                : throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind);
 
                             Block not = AddBlock(Blocks.Math.Not);
                             using (ExpressionBlock())
                             {
                                 Block op = AddBlock(defOp);
 
-                                Connect(BasicEmitStore.COut(op, op.Type.TerminalArray[0]),
-                                    BasicEmitStore.CIn(not, not.Type.Terminals["Tru"]));
+                                Connect(BasicEmitStore.COut(op, op.Type.TerminalArray[0]), BasicEmitStore.CIn(not, not.Type.Terminals["Tru"]));
 
                                 using (ExpressionBlock())
                                 {
-                                    EmitStore store0 = EmitExpression(expression.Left);
-                                    EmitStore store1 = EmitExpression(expression.Right);
+                                    IEmitStore store0 = EmitExpression(expression.Left);
+                                    IEmitStore store1 = EmitExpression(expression.Right);
 
                                     Connect(store0, BasicEmitStore.CIn(op, op.Type.TerminalArray[2]));
                                     Connect(store1, BasicEmitStore.CIn(op, op.Type.TerminalArray[1]));
@@ -792,6 +777,7 @@ namespace FanScript.Compiler.Emit
 
                             return BasicEmitStore.COut(not, not.Type.Terminals["Not Tru"]);
                         }
+
                     default:
                         throw new UnknownEnumValueException<BoundBinaryOperatorKind>(expression.Op.Kind);
                 }
@@ -801,8 +787,8 @@ namespace FanScript.Compiler.Emit
                 Block op = AddBlock(defOp);
                 using (ExpressionBlock())
                 {
-                    EmitStore store0 = EmitExpression(expression.Left);
-                    EmitStore store1 = EmitExpression(expression.Right);
+                    IEmitStore store0 = EmitExpression(expression.Left);
+                    IEmitStore store1 = EmitExpression(expression.Right);
 
                     Connect(store0, BasicEmitStore.CIn(op, op.Type.TerminalArray[2]));
                     Connect(store1, BasicEmitStore.CIn(op, op.Type.TerminalArray[1]));
@@ -811,7 +797,7 @@ namespace FanScript.Compiler.Emit
                 return BasicEmitStore.COut(op, op.Type.TerminalArray[0]);
             }
 
-            EmitStore buildOperatorWithBreak(BlockDef defMake, BlockDef defOp)
+            IEmitStore BuildOperatorWithBreak(BlockDef defMake, BlockDef defOp)
             {
                 Block make = AddBlock(defMake);
 
@@ -819,83 +805,81 @@ namespace FanScript.Compiler.Emit
                 {
                     Block op1 = AddBlock(defOp);
 
-                    EmitStore leftX;
-                    EmitStore leftY;
-                    EmitStore leftZ;
-                    EmitStore rightX;
-                    EmitStore rightY;
-                    EmitStore rightZ;
+                    IEmitStore leftX;
+                    IEmitStore leftY;
+                    IEmitStore leftZ;
+                    IEmitStore rightX;
+                    IEmitStore rightY;
+                    IEmitStore rightZ;
                     using (ExpressionBlock())
                     {
                         (leftX, leftY, leftZ) = BreakVector(expression.Left);
 
                         if (expression.Right.Type == TypeSymbol.Vector3 || expression.Right.Type == TypeSymbol.Rotation)
+                        {
                             (rightX, rightY, rightZ) = BreakVector(expression.Right);
+                        }
                         else
+                        {
                             rightZ = rightY = rightX = EmitExpression(expression.Right);
+                        }
                     }
 
                     Block op2 = AddBlock(defOp);
                     Block op3 = AddBlock(defOp);
 
                     // left to op
-                    Connect(leftX,
-                        BasicEmitStore.CIn(op1, op1.Type.TerminalArray[2]));
-                    Connect(leftY,
-                        BasicEmitStore.CIn(op2, op2.Type.TerminalArray[2]));
-                    Connect(leftZ,
-                        BasicEmitStore.CIn(op3, op3.Type.TerminalArray[2]));
+                    Connect(leftX, BasicEmitStore.CIn(op1, op1.Type.TerminalArray[2]));
+                    Connect(leftY, BasicEmitStore.CIn(op2, op2.Type.TerminalArray[2]));
+                    Connect(leftZ, BasicEmitStore.CIn(op3, op3.Type.TerminalArray[2]));
 
                     // right to op
-                    Connect(rightX,
-                        BasicEmitStore.CIn(op1, op1.Type.TerminalArray[1]));
-                    Connect(rightY,
-                        BasicEmitStore.CIn(op2, op2.Type.TerminalArray[1]));
-                    Connect(rightZ,
-                        BasicEmitStore.CIn(op3, op3.Type.TerminalArray[1]));
+                    Connect(rightX, BasicEmitStore.CIn(op1, op1.Type.TerminalArray[1]));
+                    Connect(rightY, BasicEmitStore.CIn(op2, op2.Type.TerminalArray[1]));
+                    Connect(rightZ, BasicEmitStore.CIn(op3, op3.Type.TerminalArray[1]));
 
                     // op to make
-                    Connect(BasicEmitStore.COut(op1, op1.Type.TerminalArray[0]),
-                        BasicEmitStore.CIn(make, make.Type.TerminalArray[3]));
-                    Connect(BasicEmitStore.COut(op2, op2.Type.TerminalArray[0]),
-                        BasicEmitStore.CIn(make, make.Type.TerminalArray[2]));
-                    Connect(BasicEmitStore.COut(op3, op3.Type.TerminalArray[0]),
-                        BasicEmitStore.CIn(make, make.Type.TerminalArray[1]));
+                    Connect(BasicEmitStore.COut(op1, op1.Type.TerminalArray[0]), BasicEmitStore.CIn(make, make.Type.TerminalArray[3]));
+                    Connect(BasicEmitStore.COut(op2, op2.Type.TerminalArray[0]), BasicEmitStore.CIn(make, make.Type.TerminalArray[2]));
+                    Connect(BasicEmitStore.COut(op3, op3.Type.TerminalArray[0]), BasicEmitStore.CIn(make, make.Type.TerminalArray[1]));
                 }
 
                 return BasicEmitStore.COut(make, make.Type.TerminalArray[0]);
             }
         }
 
-        private EmitStore emitVariableExpression(BoundVariableExpression expression)
+        private IEmitStore EmitVariableExpression(BoundVariableExpression expression)
             => EmitGetVariable(expression.Variable);
 
-        private EmitStore emitCallExpression(BoundCallExpression expression)
+        private IEmitStore EmitCallExpression(BoundCallExpression expression)
         {
             if (expression.Function is BuiltinFunctionSymbol builtinFunction)
+            {
                 return builtinFunction.Emit(expression, this);
+            }
 
             Debug.Fail("User defined function calls should be extracted to statement calls.");
             return NopEmitStore.Instance;
         }
 
         #region Utils
-        public EmitStore EmitGetVariable(VariableSymbol variable)
+        [SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:Elements should be ordered by access", Justification = "whomp whomp")]
+        public IEmitStore EmitGetVariable(VariableSymbol variable)
         {
             switch (variable)
             {
                 case PropertySymbol property:
                     return property.Definition.EmitGet.Invoke(this, property.Expression);
                 case NullVariableSymbol:
-                    {
-                        return NopEmitStore.Instance;
-                    }
+                    return NopEmitStore.Instance;
                 default:
                     {
                         if (variable.Modifiers.HasFlag(Modifiers.Inline))
                         {
-                            if (inlineVarManager.TryGet(variable, this, out var store))
+                            if (_inlineVarManager.TryGet(variable, this, out var store))
+                            {
                                 return store;
+                            }
                             else
                             {
                                 Diagnostics.ReportTooManyInlineVariableUses(Text.TextLocation.None, variable.Name);
@@ -911,17 +895,20 @@ namespace FanScript.Compiler.Emit
                     }
             }
         }
-        private EmitStore emitSetExpression(BoundExpression expression, BoundExpression valueExpression)
+
+        private IEmitStore EmitSetExpression(BoundExpression expression, BoundExpression valueExpression)
             => EmitSetExpression(expression, () =>
             {
                 using (ExpressionBlock())
                 {
-                    EmitStore store = EmitExpression(valueExpression);
+                    IEmitStore store = EmitExpression(valueExpression);
 
                     return store;
                 }
             });
-        public EmitStore EmitSetExpression(BoundExpression expression, Func<EmitStore> getValueStore)
+
+        [SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:Elements should be ordered by access", Justification = "whomp whomp")]
+        public IEmitStore EmitSetExpression(BoundExpression expression, Func<IEmitStore> getValueStore)
         {
             switch (expression)
             {
@@ -931,8 +918,8 @@ namespace FanScript.Compiler.Emit
                     {
                         Block set = AddBlock(Blocks.Variables.Set_PtrByType(expression.Type.ToWireType()));
 
-                        EmitStore exStore = EmitExpression(expression);
-                        EmitStore valStore = getValueStore();
+                        IEmitStore exStore = EmitExpression(expression);
+                        IEmitStore valStore = getValueStore();
 
                         Connect(exStore, BasicEmitStore.CIn(set, set.Type.Terminals["Variable"]));
                         Connect(valStore, BasicEmitStore.CIn(set, set.Type.Terminals["Value"]));
@@ -941,16 +928,19 @@ namespace FanScript.Compiler.Emit
                     }
             }
         }
-        private EmitStore emitSetVariable(VariableSymbol variable, BoundExpression expression)
+
+        private IEmitStore EmitSetVariable(VariableSymbol variable, BoundExpression expression)
             => EmitSetVariable(variable, () =>
             {
                 using (ExpressionBlock())
                 {
-                    EmitStore store = EmitExpression(expression);
+                    IEmitStore store = EmitExpression(expression);
                     return store;
                 }
             });
-        public EmitStore EmitSetVariable(VariableSymbol variable, Func<EmitStore> getValueStore)
+
+        [SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:Elements should be ordered by access", Justification = "whomp whomp")]
+        public IEmitStore EmitSetVariable(VariableSymbol variable, Func<IEmitStore> getValueStore)
         {
             switch (variable)
             {
@@ -961,10 +951,12 @@ namespace FanScript.Compiler.Emit
                 default:
                     {
                         if (variable.Modifiers.HasFlag(Modifiers.Constant))
+                        {
                             return NopEmitStore.Instance;
+                        }
                         else if (variable.Modifiers.HasFlag(Modifiers.Inline))
                         {
-                            inlineVarManager.Set(variable, getValueStore());
+                            _inlineVarManager.Set(variable, getValueStore());
                             return NopEmitStore.Instance;
                         }
 
@@ -972,7 +964,7 @@ namespace FanScript.Compiler.Emit
 
                         SetBlockValue(block, 0, variable.ResultName);
 
-                        EmitStore valueStore = getValueStore();
+                        IEmitStore valueStore = getValueStore();
 
                         Connect(valueStore, BasicEmitStore.CIn(block, block.Type.TerminalArray[1]));
 
@@ -988,52 +980,62 @@ namespace FanScript.Compiler.Emit
         /// <param name="expression">The vector expression; <see cref="BoundLiteralExpression"/>, <see cref="BoundConstructorExpression"/> or <see cref="BoundVariableExpression"/></param>
         /// <returns>(x, y, z)</returns>
         /// <exception cref="InvalidDataException"></exception>
-        public (EmitStore X, EmitStore Y, EmitStore Z) BreakVector(BoundExpression expression)
+        public (IEmitStore X, IEmitStore Y, IEmitStore Z) BreakVector(BoundExpression expression)
         {
             var result = BreakVectorAny(expression, [true, true, true]);
             return (result[0]!, result[1]!, result[2]!);
         }
-        public EmitStore?[] BreakVectorAny(BoundExpression expression, bool[] useComponent)
+
+        public IEmitStore?[] BreakVectorAny(BoundExpression expression, bool[] useComponent)
         {
             ArgumentNullException.ThrowIfNull(expression);
             ArgumentNullException.ThrowIfNull(useComponent);
             if (useComponent.Length != 3)
+            {
                 throw new ArgumentException(nameof(useComponent), $"{nameof(useComponent)}.Length must be 3, not '{useComponent.Length}'");
+            }
 
             Vector3F? vector = null;
             if (expression is BoundLiteralExpression literal)
             {
-                if (literal.Value is Vector3F vec)
-                    vector = vec;
-                else if (literal.Value is Rotation rot)
-                    vector = rot.Value;
-                else
-                    throw new InvalidDataException($"Invalid value type '{literal.Value?.GetType()}'");
+                vector = literal.Value is Vector3F vec
+                    ? vec
+                    : literal.Value is Rotation rot
+                    ? (Vector3F?)rot.Value
+                    : throw new InvalidDataException($"Invalid value type '{literal.Value?.GetType()}'");
             }
             else if (expression is BoundConstructorExpression contructor && contructor.ConstantValue is not null)
+            {
                 vector = contructor.ConstantValue.Value is Vector3F ?
                     (Vector3F)contructor.ConstantValue.Value :
                     ((Rotation)contructor.ConstantValue.Value!).Value;
+            }
             else if (expression is BoundVariableExpression variable && variable.Variable.Modifiers.HasFlag(Modifiers.Constant) && variable.ConstantValue is not null)
+            {
                 vector = variable.ConstantValue.Value is Vector3F ?
                     (Vector3F)variable.ConstantValue.Value :
                     ((Rotation)variable.ConstantValue.Value!).Value;
+            }
 
             if (vector is not null)
+            {
                 return [
                     useComponent[0] ? EmitLiteralExpression(vector.Value.X) : null,
                     useComponent[1] ? EmitLiteralExpression(vector.Value.Y) : null,
                     useComponent[2] ? EmitLiteralExpression(vector.Value.Z) : null,
                 ];
+            }
             else if (expression is BoundConstructorExpression contructor)
+            {
                 return [
                     useComponent[0] ? EmitExpression(contructor.ExpressionX) : null,
                     useComponent[1] ? EmitExpression(contructor.ExpressionY) : null,
                     useComponent[2] ? EmitExpression(contructor.ExpressionZ) : null,
                 ];
+            }
             else if (expression is BoundVariableExpression var)
             {
-                BreakBlockCache cache = (var.Type == TypeSymbol.Vector3 ? vectorBreakCache : rotationBreakCache)
+                BreakBlockCache cache = (var.Type == TypeSymbol.Vector3 ? _vectorBreakCache : _rotationBreakCache)
                     .AddIfAbsent(var.Variable, new BreakBlockCache());
                 if (!cache.TryGet(out Block? block))
                 {
@@ -1042,7 +1044,7 @@ namespace FanScript.Compiler.Emit
 
                     using (ExpressionBlock())
                     {
-                        EmitStore store = emitVariableExpression(var);
+                        IEmitStore store = EmitVariableExpression(var);
                         Connect(store, BasicEmitStore.CIn(block, block.Type.TerminalArray[3]));
                     }
                 }
@@ -1060,7 +1062,7 @@ namespace FanScript.Compiler.Emit
 
                 using (ExpressionBlock())
                 {
-                    EmitStore store = EmitExpression(expression);
+                    IEmitStore store = EmitExpression(expression);
                     Connect(store, BasicEmitStore.CIn(block, block.Type.TerminalArray[3]));
                 }
 
@@ -1085,17 +1087,19 @@ namespace FanScript.Compiler.Emit
                 if (constant is null)
                 {
                     if (mustBeConstant)
+                    {
                         Diagnostics.ReportValueMustBeConstant(expressionsMem[i].Syntax.Location);
+                    }
+
                     invalid = true;
                 }
                 else
+                {
                     values[i] = constant.Value;
+                }
             }
 
-            if (invalid)
-                return null;
-            else
-                return values;
+            return invalid ? null : values;
         }
 
         public void WriteComment(string text)
@@ -1113,21 +1117,23 @@ namespace FanScript.Compiler.Emit
             //}
         }
 
-        public EmitStore EmitSetArraySegment(BoundArraySegmentExpression segment, BoundExpression arrayVariable, BoundExpression startIndex)
+        public IEmitStore EmitSetArraySegment(BoundArraySegmentExpression segment, BoundExpression arrayVariable, BoundExpression startIndex)
         {
-            Debug.Assert(arrayVariable.Type.InnerType == segment.ElementType);
-            Debug.Assert(startIndex.Type == TypeSymbol.Float);
+            Debug.Assert(arrayVariable.Type.InnerType == segment.ElementType, "Inner type of array variable");
+            Debug.Assert(startIndex.Type == TypeSymbol.Float, $"The type of {nameof(startIndex)} must be float.");
 
             WireType type = arrayVariable.Type.ToWireType();
 
             EmitConnector connector = new EmitConnector(Connect);
 
-            EmitStore? lastElementStore = null;
+            IEmitStore? lastElementStore = null;
 
             for (int i = 0; i < segment.Elements.Length; i++)
             {
                 if (i == 0 && startIndex.ConstantValue is not null && (float)startIndex.ConstantValue.GetValueOrDefault(TypeSymbol.Float) == 0f)
-                    connector.Add(emitSetExpression(arrayVariable, segment.Elements[i]));
+                {
+                    connector.Add(EmitSetExpression(arrayVariable, segment.Elements[i]));
+                }
                 else
                 {
                     Block setBlock = AddBlock(Blocks.Variables.Set_PtrByType(type));
@@ -1163,57 +1169,90 @@ namespace FanScript.Compiler.Emit
         #region CodePlacer and BlockBuilder redirects
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Block AddBlock(BlockDef def)
-            => placer.PlaceBlock(def);
-        public void Connect(EmitStore from, EmitStore to)
+            => _placer.PlaceBlock(def);
+
+        public void Connect(IEmitStore from, IEmitStore to)
         {
             while (from is MultiEmitStore multi)
+            {
                 from = multi.OutStore;
+            }
+
             while (to is MultiEmitStore multi)
+            {
                 to = multi.InStore;
+            }
 
             if (from is RollbackEmitStore || to is RollbackEmitStore)
             {
-                if (to is ReturnEmitStore && from is not RollbackEmitStore && beforeReturnStack.Count > 0)
-                    beforeReturnStack.Peek().Add(from);
+                if (to is ReturnEmitStore && from is not RollbackEmitStore && _beforeReturnStack.Count > 0)
+                {
+                    _beforeReturnStack.Peek().Add(from);
+                }
 
                 return;
             }
 
             if (from is LabelEmitStore sameFrom && to is LabelEmitStore sameTo)
-                sameTargetLabels.Add(sameFrom.Name, sameTo.Name);
-            else if (from is GotoEmitStore fromGoto)
+            {
+                _sameTargetLabels.Add(sameFrom.Name, sameTo.Name);
+            }
+            else if (from is GotoEmitStore)
             {
                 // ignore, the going to is handeled if to is GotoEmitStore
             }
             else if (from is LabelEmitStore fromLabel)
-                afterLabel.Add(fromLabel.Name, to);
+            {
+                _afterLabel.Add(fromLabel.Name, to);
+            }
             else if (to is LabelEmitStore toLabel)
-                connectToLabel(toLabel.Name, from); // normal block before label, connect to block after the label
+            {
+                ConnectToLabel(toLabel.Name, from); // normal block before label, connect to block after the label
+            }
             else if (to is GotoEmitStore toGoto)
-                connectToLabel(toGoto.LabelName, from);
+            {
+                ConnectToLabel(toGoto.LabelName, from);
+            }
             else
+            {
                 Builder.Connect(from, to);
+            }
         }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void connectToLabel(string labelName, EmitStore store)
-            => gotosToConnect.Add(labelName, store);
+        private void ConnectToLabel(string labelName, IEmitStore store)
+            => _gotosToConnect.Add(labelName, store);
+
+        [SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:Elements should be ordered by access", Justification = "whomp whomp")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void SetBlockValue(Block block, int valueIndex, object value)
             => Builder.SetBlockValue(block, valueIndex, value);
 
-        private void enterStatementBlock()
-            => placer.EnterStatementBlock();
-        public IDisposable StatementBlock()
-            => placer.StatementBlock();
-        private void exitStatementBlock()
-            => placer.ExitStatementBlock();
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void EnterStatementBlock()
+            => _placer.EnterStatementBlock();
 
-        private void enterExpressionBlock()
-            => placer.EnterExpressionBlock();
+        [SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:Elements should be ordered by access", Justification = "whomp whomp")]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public IDisposable StatementBlock()
+            => _placer.StatementBlock();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ExitStatementBlock()
+            => _placer.ExitStatementBlock();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void EnterExpressionBlock()
+            => _placer.EnterExpressionBlock();
+
+        [SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1202:Elements should be ordered by access", Justification = "whomp whomp")]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public IDisposable ExpressionBlock()
-            => placer.ExpressionBlock();
-        private void exitExpressionBlock()
-            => placer.ExitExpressionBlock();
+            => _placer.ExpressionBlock();
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ExitExpressionBlock()
+            => _placer.ExitExpressionBlock();
         #endregion
     }
 }

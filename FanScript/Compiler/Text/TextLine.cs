@@ -2,6 +2,11 @@
 {
     public sealed class TextLine
     {
+        public readonly SourceText Text;
+        public readonly int Start;
+        public readonly int Lenght;
+        public readonly int LenghtIncludingLineBreak;
+
         public TextLine(SourceText text, int start, int lenght, int lenghtIncludingLineBreak)
         {
             Text = text;
@@ -10,16 +15,11 @@
             LenghtIncludingLineBreak = lenghtIncludingLineBreak;
         }
 
-        public readonly SourceText Text;
-        public readonly int Start;
-        public readonly int Lenght;
-        public int End
-            => Start + Lenght;
-        public readonly int LenghtIncludingLineBreak;
-        public TextSpan Span
-            => new TextSpan(Start, Lenght);
-        public TextSpan SpanIncludingLineBreak
-            => new TextSpan(Start, LenghtIncludingLineBreak);
+        public int End => Start + Lenght;
+
+        public TextSpan Span  => new TextSpan(Start, Lenght);
+
+        public TextSpan SpanIncludingLineBreak => new TextSpan(Start, LenghtIncludingLineBreak);
 
         public override string ToString()
             => Text.ToString(Span);

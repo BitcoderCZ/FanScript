@@ -5,7 +5,8 @@ namespace FanScript.Compiler.Binding
 {
     internal sealed class BoundPrefixStatement : BoundStatement
     {
-        public BoundPrefixStatement(SyntaxNode syntax, VariableSymbol variable, PrefixKind prefixKind) : base(syntax)
+        public BoundPrefixStatement(SyntaxNode syntax, VariableSymbol variable, PrefixKind prefixKind)
+            : base(syntax)
         {
             Variable = variable;
             PrefixKind = prefixKind;
@@ -14,6 +15,7 @@ namespace FanScript.Compiler.Binding
         public override BoundNodeKind Kind => BoundNodeKind.PrefixStatement;
 
         public VariableSymbol Variable { get; }
+
         public PrefixKind PrefixKind { get; }
     }
 }

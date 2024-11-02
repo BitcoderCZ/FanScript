@@ -12,6 +12,7 @@ namespace FanScript.Documentation.DocElements
         }
 
         public override DocElement Value { get; }
+
         public int Level { get; }
     }
 }

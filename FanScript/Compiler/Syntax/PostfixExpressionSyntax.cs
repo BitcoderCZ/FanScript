@@ -2,7 +2,8 @@
 {
     public sealed partial class PostfixExpressionSyntax : ExpressionSyntax
     {
-        internal PostfixExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken, SyntaxToken operatorToken) : base(syntaxTree)
+        internal PostfixExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken, SyntaxToken operatorToken)
+            : base(syntaxTree)
         {
             IdentifierToken = identifierToken;
             OperatorToken = operatorToken;
@@ -11,6 +12,7 @@
         public override SyntaxKind Kind => SyntaxKind.PostfixExpression;
 
         public SyntaxToken IdentifierToken { get; }
+
         public SyntaxToken OperatorToken { get; }
     }
 }

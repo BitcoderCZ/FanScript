@@ -1,7 +1,8 @@
-﻿using FanScript.Utils;
-using MathUtils.Vectors;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
+using FanScript.Compiler.Exceptions;
+using FanScript.Utils;
+using MathUtils.Vectors;
 
 /*
 function con(nChr) {
@@ -119,36 +120,41 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 {
     public class EditorScriptBlockBuilder : BlockBuilder
     {
+        public enum Compression
+        {
+            None,
+            Base64,
+        }
+
         /// <summary>
         /// 
         /// </summary>
         /// <param name="startPos"></param>
-        /// <param name="_args">Must be null or <see cref="Args"/></param>
+        /// <param name="iArgs">Must be null or <see cref="Args"/></param>
         /// <returns>The editor script (js) to build the code</returns>
         /// <exception cref="Exception"></exception>
-        public override string Build(Vector3I startPos, IArgs? _args)
+        public override string Build(Vector3I startPos, IArgs? iArgs)
         {
-            Args args = (_args as Args) ?? Args.Default;
+            Args args = (iArgs as Args) ?? Args.Default;
 
             Block[] blocks = PreBuild(startPos, sortByPos: true); // sortByPos is requred because of a bug that sometimes deletes objects if they are placed from +Z to -Z, even if they aren't overlaping
 
-            switch (args.Compression)
+            return args.Compression switch
             {
-                case Compression.None:
-                    return buildNormal(blocks);
-                case Compression.Base64:
-                    return buildBase64(blocks);
-                default:
-                    throw new Exception($"Unsuported compression: {args.Compression}");
-            }
+                Compression.None => BuildNormal(blocks),
+                Compression.Base64 => BuildBase64(blocks),
+                _ => throw new UnknownEnumValueException<Compression>(args.Compression),
+            };
         }
 
-        private string buildNormal(Block[] blocks)
+        private string BuildNormal(Block[] blocks)
         {
             StringBuilder builder = new StringBuilder();
 
             if (blocks.Length > 0 && blocks[0].Pos != Vector3I.Zero)
+            {
                 builder.AppendLine($"setBlock(0,0,0,1);"); // make sure the level origin doesn't shift
+            }
 
             for (int i = 0; i < blocks.Length; i++)
             {
@@ -171,7 +177,7 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                     string s => $"\"{s}\"",
                     Vector3F v => $"[{v.X.ToString(CultureInfo.InvariantCulture)},{v.Y.ToString(CultureInfo.InvariantCulture)},{v.Z.ToString(CultureInfo.InvariantCulture)}]",
                     Rotation r => $"[{r.Value.X.ToString(CultureInfo.InvariantCulture)},{r.Value.Y.ToString(CultureInfo.InvariantCulture)},{r.Value.Z.ToString(CultureInfo.InvariantCulture)}]",
-                    _ => throw new Exception($"Cannot convert object of type: '{set.Value.GetType()}' to Block Value")
+                    _ => throw new Exception($"Cannot convert object of type: '{set.Value.GetType()}' to Block Value"),
                 };
 
                 builder.AppendLine($"setBlockValue({set.Block.Pos.X},{set.Block.Pos.Y},{set.Block.Pos.Z},{set.ValueIndex},{val});");
@@ -193,7 +199,8 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 
             return builder.ToString();
         }
-        private string buildBase64(Block[] blocks)
+
+        private string BuildBase64(Block[] blocks)
         {
             byte[] bufer;
             using (MemoryStream stream = new MemoryStream())
@@ -270,7 +277,9 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                         writer.WriteInt32(b ? 1 : 0);
                     }
                     else
+                    {
                         throw new Exception($"Unsuported Value type: {val.Value.GetType()}");
+                    }
                 }
 
                 writer.WriteInt32(connections.Count);
@@ -302,12 +311,6 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                 var t=function(t,e){const n=t.replace(/[^A-Za-z0-9+/]/g,""),a=n.length,g=e?Math.ceil((3*a+1>>2)/e)*e:3*a+1>>2,r=new Uint8Array(g);let I,o,l=0,c=0;for(let t=0;t<a;t++)if(o=3&t,l|=((f=n.charCodeAt(t))>64&&f<91?f-65:f>96&&f<123?f-71:f>47&&f<58?f+4:43===f?62:47===f?63:0)<<6*(3-o),3===o||a-t==1){for(I=0;I<3&&c<g;)r[c]=l>>>(16>>>I&24)&255,I++,c++;l=0}var f;return r}("[CODE]"),e=new DataView(t.buffer),n=new TextDecoder,a=0,g=e.getInt32(a,!0);a+=4;for(var r=0;r<g;r++){var I=e.getInt32(a,!0),o=e.getInt32(a+4,!0),l=e.getInt32(a+8,!0),c=e.getInt32(a+12,!0);a+=16,setBlock(I,o,l,c)}updateChanges();var f=e.getInt32(a,!0);a+=4;for(r=0;r<f;r++){let g=e.getInt32(a,!0),r=e.getInt32(a+4,!0),I=e.getInt32(a+8,!0),o=e.getInt32(a+12,!0),l=e.getInt32(a+16,!0);var v;if(a+=20,0==l)v=e.getFloat32(a,!0),a+=4;else if(1==l){var s=e.getInt32(a,!0);a+=4;var u=t.subarray(a,a+s);a+=s,v=n.decode(u)}else 2==l&&(v=[e.getFloat32(a,!0),e.getFloat32(a+4,!0),e.getFloat32(a+8,!0)],a+=12);setBlockValue(g,r,I,o,v)}updateChanges();var d=e.getInt32(a,!0);a+=4;for(r=0;r<d;r++){var i=e.getInt32(a,!0),h=e.getInt32(a+4,!0),C=e.getInt32(a+8,!0),p=e.getInt32(a+12,!0),w=e.getInt32(a+16,!0),F=e.getInt32(a+20,!0),A=e.getInt32(a+24,!0),D=e.getInt32(a+28,!0);a+=32,connect(i,h,C,A,p,w,F,D)}updateChanges();
                 """
                 .Replace("[CODE]", code);
-        }
-
-        public enum Compression
-        {
-            None,
-            Base64,
         }
 
         public sealed class Args : IArgs

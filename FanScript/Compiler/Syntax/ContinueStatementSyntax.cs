@@ -9,6 +9,7 @@
         }
 
         public override SyntaxKind Kind => SyntaxKind.ContinueStatement;
+
         public SyntaxToken Keyword { get; }
     }
 }

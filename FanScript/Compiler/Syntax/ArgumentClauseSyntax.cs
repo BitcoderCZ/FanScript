@@ -13,7 +13,9 @@
         public override SyntaxKind Kind => SyntaxKind.ArgumentClause;
 
         public SyntaxToken OpenParenthesisToken { get; }
+
         public SeparatedSyntaxList<ModifiersWExpressionSyntax> Arguments { get; }
+
         public SyntaxToken CloseParenthesisToken { get; }
     }
 }

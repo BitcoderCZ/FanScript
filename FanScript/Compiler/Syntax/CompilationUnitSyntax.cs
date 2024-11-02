@@ -12,7 +12,9 @@ namespace FanScript.Compiler.Syntax
         }
 
         public override SyntaxKind Kind => SyntaxKind.CompilationUnit;
+
         public ImmutableArray<MemberSyntax> Members { get; }
+
         public SyntaxToken EndOfFileToken { get; }
     }
 }

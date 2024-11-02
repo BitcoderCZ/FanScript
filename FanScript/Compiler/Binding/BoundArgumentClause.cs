@@ -1,5 +1,5 @@
-﻿using FanScript.Compiler.Syntax;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
+using FanScript.Compiler.Syntax;
 
 namespace FanScript.Compiler.Binding
 {
@@ -9,7 +9,9 @@ namespace FanScript.Compiler.Binding
             : base(syntax)
         {
             if (argModifiers.Length != arguments.Length)
+            {
                 throw new ArgumentException(nameof(arguments), $"{nameof(arguments)}.Length must match {nameof(argModifiers)}.Length");
+            }
 
             ArgModifiers = argModifiers;
             Arguments = arguments;
@@ -18,6 +20,7 @@ namespace FanScript.Compiler.Binding
         public override BoundNodeKind Kind => BoundNodeKind.ArgumentClause;
 
         public ImmutableArray<Modifiers> ArgModifiers { get; }
+
         public ImmutableArray<BoundExpression> Arguments { get; }
     }
 }

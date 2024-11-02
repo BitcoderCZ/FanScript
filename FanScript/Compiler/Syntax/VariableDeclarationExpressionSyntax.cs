@@ -11,8 +11,7 @@ namespace FanScript.Compiler.Syntax
                 syntaxTree,
                 modifierClause.Modifiers
                     .Where(token => ModifiersE.FromKind(token.Kind).GetTargets().Contains(ModifierTarget.Variable))
-                    .ToImmutableArray()
-            );
+                    .ToImmutableArray());
             TypeClause = typeClause;
             IdentifierToken = identifierToken;
         }
@@ -20,7 +19,9 @@ namespace FanScript.Compiler.Syntax
         public override SyntaxKind Kind => SyntaxKind.VariableDeclarationExpression;
 
         public ModifierClauseSyntax ModifierClause { get; }
+
         public TypeClauseSyntax TypeClause { get; }
+
         public SyntaxToken IdentifierToken { get; }
     }
 }

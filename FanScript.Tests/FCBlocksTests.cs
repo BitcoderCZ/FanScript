@@ -16,16 +16,16 @@ namespace FanScript.Tests
         [Fact]
         public void IDsDoNotRepeated()
         {
-            HashSet<ushort> ids = new();
+            HashSet<ushort> ids = [];
 
-            foreach (var def in getBlockDefs())
+            foreach (var def in GetBlockDefs())
                 if (!ids.Add(def.Id))
                     Assert.Fail($"Id {def.Id} has been encountered multiple times");
         }
         [Fact]
         public void Manual_TerminalsAreCorrect()
         {
-            var defBlocks = getBlockDefs().ToArray();
+            var defBlocks = GetBlockDefs().ToArray();
             var active = defBlocks.Where(def => def.Type == BlockType.Active);
             var pasive = defBlocks.Where(def => def.Type != BlockType.Active);
 
@@ -135,7 +135,7 @@ namespace FanScript.Tests
         }
 
         #region Utils
-        private static IEnumerable<BlockDef> getBlockDefs()
+        private static IEnumerable<BlockDef> GetBlockDefs()
         {
             BindingFlags bindingFlags = BindingFlags.Static | BindingFlags.Public;
 
@@ -149,9 +149,10 @@ namespace FanScript.Tests
                             return list;
                         })
                 )
-                .Where(field => field.FieldType == typeof(BlockDef))
-            )
+                .Where(field => field.FieldType == typeof(BlockDef)))
+            {
                 yield return (BlockDef)field.GetValue(null)!;
+            }
         }
         #endregion
     }

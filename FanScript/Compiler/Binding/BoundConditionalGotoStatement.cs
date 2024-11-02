@@ -15,7 +15,9 @@ namespace FanScript.Compiler.Binding
         public override BoundNodeKind Kind => BoundNodeKind.ConditionalGotoStatement;
 
         public BoundLabel Label { get; }
+
         public BoundExpression Condition { get; }
+
         public bool JumpIfTrue { get; }
     }
 }

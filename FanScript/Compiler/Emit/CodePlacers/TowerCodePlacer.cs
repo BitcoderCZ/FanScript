@@ -1,40 +1,47 @@
-﻿using FanScript.FCInfo;
+﻿using System.Diagnostics;
+using FanScript.FCInfo;
 using MathUtils.Vectors;
-using System.Diagnostics;
 
 namespace FanScript.Compiler.Emit.BlockPlacers
 {
     public class TowerCodePlacer : CodePlacer
     {
-        public override int CurrentCodeBlockBlocks => blocks.Count;
+        private readonly List<Block> _blocks = new List<Block>(256);
 
-        private int maxHeight = 20;
-        public int MaxHeight
-        {
-            get => maxHeight;
-            set
-            {
-                ArgumentOutOfRangeException.ThrowIfLessThan(value, 1);
-                maxHeight = value;
-            }
-        }
-        public bool SquarePlacement { get; set; } = true;
-
-        private bool inHighlight = false;
-        private int statementDepth = 0;
-
-        private List<Block> blocks = new List<Block>(256);
+        private int _maxHeight = 20;
+        private bool _inHighlight = false;
+        private int _statementDepth = 0;
 
         public TowerCodePlacer(BlockBuilder builder)
             : base(builder)
         {
         }
 
+        public enum Move
+        {
+            X,
+            Z,
+        }
+
+        public override int CurrentCodeBlockBlocks => _blocks.Count;
+
+        public int MaxHeight
+        {
+            get => _maxHeight;
+            set
+            {
+                ArgumentOutOfRangeException.ThrowIfLessThan(value, 1);
+                _maxHeight = value;
+            }
+        }
+
+        public bool SquarePlacement { get; set; } = true;
+
         public override Block PlaceBlock(BlockDef blockDef)
         {
             Block block;
 
-            if (inHighlight)
+            if (_inHighlight)
             {
                 block = new Block(Vector3I.Zero, blockDef);
                 Builder.AddHighlightedBlock(block);
@@ -42,39 +49,40 @@ namespace FanScript.Compiler.Emit.BlockPlacers
             else
             {
                 block = new Block(Vector3I.Zero, blockDef);
-                blocks.Add(block);
+                _blocks.Add(block);
             }
 
             return block;
         }
 
         public override void EnterStatementBlock()
-        {
-            statementDepth++;
-        }
+            => _statementDepth++;
+
         public override void ExitStatementBlock()
         {
             const int move = 4;
 
-            statementDepth--;
+            _statementDepth--;
 
-            Debug.Assert(statementDepth >= 0);
+            Debug.Assert(_statementDepth >= 0, "Must be in a statement to exit one.");
 
-            if (statementDepth == 0 && blocks.Count > 0)
+            if (_statementDepth == 0 && _blocks.Count > 0)
             {
                 // https://stackoverflow.com/a/17974
-                int width = (blocks.Count + MaxHeight - 1) / MaxHeight;
+                int width = (_blocks.Count + MaxHeight - 1) / MaxHeight;
 
                 if (SquarePlacement)
+                {
                     width = Math.Max(1, (int)Math.Ceiling(Math.Sqrt(width)));
+                }
 
                 width *= move;
 
                 Vector3I bPos = Vector3I.Zero;
 
-                for (int i = 0; i < blocks.Count; i++)
+                for (int i = 0; i < _blocks.Count; i++)
                 {
-                    blocks[i].Pos = bPos;
+                    _blocks[i].Pos = bPos;
                     bPos.Y++;
 
                     if (bPos.Y > MaxHeight)
@@ -90,33 +98,24 @@ namespace FanScript.Compiler.Emit.BlockPlacers
                     }
                 }
 
-                Builder.AddBlockSegments(blocks);
+                Builder.AddBlockSegments(_blocks);
 
-                blocks.Clear();
+                _blocks.Clear();
             }
         }
 
         public override void EnterExpressionBlock()
         {
         }
+
         public override void ExitExpressionBlock()
         {
         }
 
         public override void EnterHighlight()
-        {
-            inHighlight = true;
-        }
+            => _inHighlight = true;
 
         public override void ExitHightlight()
-        {
-            inHighlight = false;
-        }
-
-        public enum Move
-        {
-            X,
-            Z
-        }
+            => _inHighlight = false;
     }
 }

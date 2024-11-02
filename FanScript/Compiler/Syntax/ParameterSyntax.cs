@@ -13,7 +13,9 @@
         public override SyntaxKind Kind => SyntaxKind.Parameter;
 
         public ModifierClauseSyntax Modifiers { get; }
+
         public TypeClauseSyntax TypeClause { get; }
+
         public SyntaxToken Identifier { get; }
     }
 }

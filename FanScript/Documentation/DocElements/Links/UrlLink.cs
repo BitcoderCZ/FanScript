@@ -12,6 +12,7 @@ namespace FanScript.Documentation.DocElements.Links
         }
 
         public string DisplayString { get; }
+
         public string Url { get; }
 
         public override (string DisplayString, string LinkString) GetStrings()

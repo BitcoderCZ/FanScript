@@ -10,6 +10,7 @@ namespace FanScript.Compiler.Syntax
             TypeToken = typeToken;
             HasGenericParameter = false;
         }
+
         internal TypeClauseSyntax(SyntaxTree syntaxTree, SyntaxToken typeToken, SyntaxToken lessToken, TypeClauseSyntax innerType, SyntaxToken greaterToken)
             : base(syntaxTree)
         {
@@ -23,10 +24,14 @@ namespace FanScript.Compiler.Syntax
         public override SyntaxKind Kind => SyntaxKind.TypeClause;
 
         public SyntaxToken TypeToken { get; }
+
         [MemberNotNullWhen(true, nameof(LessToken), nameof(InnerType), nameof(GreaterToken))]
         public bool HasGenericParameter { get; }
+
         public SyntaxToken? LessToken { get; }
+
         public TypeClauseSyntax? InnerType { get; }
+
         public SyntaxToken? GreaterToken { get; }
 
         public override IEnumerable<SyntaxNode> GetChildren()

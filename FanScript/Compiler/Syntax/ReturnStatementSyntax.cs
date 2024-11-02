@@ -10,7 +10,9 @@
         }
 
         public override SyntaxKind Kind => SyntaxKind.ReturnStatement;
+
         public SyntaxToken ReturnKeyword { get; }
+
         public ExpressionSyntax? Expression { get; }
     }
 }

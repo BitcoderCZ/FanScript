@@ -16,31 +16,32 @@ namespace FanScript.Compiler.Binding
         public object GetValueOrDefault(TypeSymbol type)
         {
             if (Value is not null)
+            {
                 return Value;
+            }
 
             if (type.IsGenericInstance)
             {
                 if (type.NonGenericEquals(TypeSymbol.Array) ||
                     type.NonGenericEquals(TypeSymbol.ArraySegment))
-                    return getDefault(type.InnerType);
+                {
+                    return GetDefault(type.InnerType);
+                }
             }
 
-            return getDefault(type);
+            return GetDefault(type);
 
-            object getDefault(TypeSymbol type)
+            static object GetDefault(TypeSymbol type)
             {
-                if (type == TypeSymbol.Bool)
-                    return false;
-                else if (type == TypeSymbol.Float)
-                    return 0f;
-                else if (type == TypeSymbol.String)
-                    return string.Empty;
-                else if (type == TypeSymbol.Vector3)
-                    return Vector3F.Zero;
-                else if (type == TypeSymbol.Rotation)
-                    return new Rotation(Vector3F.Zero);
-                else
-                    throw new UnexpectedSymbolException(type);
+                return type == TypeSymbol.Bool
+                    ? false
+                    : type == TypeSymbol.Float
+                    ? 0f
+                    : type == TypeSymbol.String
+                    ? string.Empty
+                    : type == TypeSymbol.Vector3
+                    ? Vector3F.Zero
+                    : type == TypeSymbol.Rotation ? (object)new Rotation(Vector3F.Zero) : throw new UnexpectedSymbolException(type);
             }
         }
     }

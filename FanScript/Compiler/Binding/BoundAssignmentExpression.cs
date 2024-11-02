@@ -14,9 +14,11 @@ namespace FanScript.Compiler.Binding
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.AssignmentExpression;
+
         public override TypeSymbol Type => Variable.Type;
 
         public VariableSymbol Variable { get; }
+
         public BoundExpression Expression { get; }
     }
 }

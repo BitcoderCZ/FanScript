@@ -2,7 +2,8 @@
 {
     public sealed class NullVariableSymbol : VariableSymbol
     {
-        public NullVariableSymbol() : base("_", Modifiers.Readonly, TypeSymbol.Null)
+        public NullVariableSymbol()
+            : base("_", Modifiers.Readonly, TypeSymbol.Null)
         {
         }
 

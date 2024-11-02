@@ -1,5 +1,5 @@
-﻿using FanScript.Compiler.Symbols;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
+using FanScript.Compiler.Symbols.Functions;
 
 namespace FanScript.Documentation.DocElements.Links
 {
@@ -9,13 +9,16 @@ namespace FanScript.Documentation.DocElements.Links
             : base(arguments, value)
         {
             if (paramIndex < 0 || paramIndex >= function.Parameters.Length)
+            {
                 throw new ArgumentOutOfRangeException(nameof(paramIndex));
+            }
 
             Function = function;
             ParamIndex = paramIndex;
         }
 
         public FunctionSymbol Function { get; }
+
         public int ParamIndex { get; }
 
         public string ParamName => Function.Parameters[ParamIndex].Name;

@@ -5,8 +5,8 @@ namespace FanScript.Compiler
 {
     public class Block
     {
-        public Vector3I Pos;
         public readonly BlockDef Type;
+        public Vector3I Pos;
 
         public Block(Vector3I pos, BlockDef type)
         {
@@ -21,11 +21,6 @@ namespace FanScript.Compiler
             => Pos.GetHashCode() ^ Type.GetHashCode();
 
         public override bool Equals(object? obj)
-        {
-            if (obj is Block other)
-                return Pos == other.Pos && Type == other.Type;
-            else
-                return false;
-        }
+            => obj is Block other && Pos == other.Pos && Type == other.Type;
     }
 }

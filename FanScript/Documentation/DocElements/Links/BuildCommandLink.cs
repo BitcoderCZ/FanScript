@@ -1,6 +1,6 @@
-﻿using FanScript.Compiler;
+﻿using System.Collections.Immutable;
+using FanScript.Compiler;
 using FanScript.Utils;
-using System.Collections.Immutable;
 
 namespace FanScript.Documentation.DocElements.Links
 {

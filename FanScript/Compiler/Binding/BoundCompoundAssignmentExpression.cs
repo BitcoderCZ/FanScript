@@ -15,10 +15,13 @@ namespace FanScript.Compiler.Binding
         }
 
         public override BoundNodeKind Kind => BoundNodeKind.CompoundAssignmentExpression;
+
         public override TypeSymbol Type => Variable.Type;
 
         public VariableSymbol Variable { get; }
+
         public BoundBinaryOperator Op { get; }
+
         public BoundExpression Expression { get; }
     }
 }

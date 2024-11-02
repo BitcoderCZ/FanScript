@@ -1,17 +1,12 @@
-﻿using FanScript.Compiler.Diagnostics;
-using FanScript.Compiler.Symbols;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
+using FanScript.Compiler.Diagnostics;
+using FanScript.Compiler.Symbols.Functions;
 
 namespace FanScript.Compiler.Binding
 {
     internal sealed class BoundProgram
     {
-        public BoundProgram(BoundProgram? previous,
-                            ImmutableArray<Diagnostic> diagnostics,
-                            FunctionSymbol? scriptFunction,
-                            ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions,
-                            BoundAnalysisResult analysis,
-                            ImmutableDictionary<FunctionSymbol, ScopeWSpan> functionScopes)
+        public BoundProgram(BoundProgram? previous, ImmutableArray<Diagnostic> diagnostics, FunctionSymbol? scriptFunction, ImmutableDictionary<FunctionSymbol, BoundBlockStatement> functions, BoundAnalysisResult analysis, ImmutableDictionary<FunctionSymbol, ScopeWSpan> functionScopes)
         {
             Previous = previous;
             Diagnostics = diagnostics;
@@ -22,10 +17,15 @@ namespace FanScript.Compiler.Binding
         }
 
         public BoundProgram? Previous { get; }
+
         public ImmutableArray<Diagnostic> Diagnostics { get; }
+
         public FunctionSymbol? ScriptFunction { get; }
+
         public ImmutableDictionary<FunctionSymbol, BoundBlockStatement> Functions { get; }
+
         public ImmutableDictionary<FunctionSymbol, ScopeWSpan> FunctionScopes { get; }
+
         public BoundAnalysisResult Analysis { get; }
     }
 }

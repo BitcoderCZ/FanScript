@@ -11,8 +11,11 @@
         }
 
         public override SyntaxKind Kind => SyntaxKind.AssignmentExpression;
+
         public AssignableExpressionSyntax Destination { get; }
+
         public SyntaxToken AssignmentToken { get; }
+
         public ExpressionSyntax Expression { get; }
     }
 }

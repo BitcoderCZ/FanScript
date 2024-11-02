@@ -1,6 +1,6 @@
-﻿using FanScript.Compiler.Symbols;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Text;
+using FanScript.Compiler.Symbols.Functions;
 
 namespace FanScript.Documentation.DocElements.Links
 {
@@ -22,7 +22,9 @@ namespace FanScript.Documentation.DocElements.Links
             displayBuilder.Append(Function.Name);
             linkBuilder.Append(Function.Namespace + Function.Name);
             if (Function.IsGeneric)
+            {
                 displayBuilder.Append("<>");
+            }
 
             displayBuilder.Append('(');
             linkBuilder.Append('.');

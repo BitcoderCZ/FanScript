@@ -19,6 +19,7 @@
         ConPtr = 13,
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:File name should match first type name", Justification = "It does, but enums aren't detected for some reason")]
     public static class WireTypeE
     {
         public static WireType ToPointer(this WireType wireType)
@@ -28,6 +29,6 @@
             => wireType == WireType.Void ? wireType : (WireType)((int)wireType & (int.MaxValue ^ 1));
 
         public static bool IsPointer(this WireType wireType)
-            => wireType == WireType.Void ? false : ((int)wireType & 1) == 1;
+            => wireType != WireType.Void && ((int)wireType & 1) == 1;
     }
 }

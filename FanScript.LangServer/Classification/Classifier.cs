@@ -58,6 +58,7 @@ namespace FanScript.LangServer.Classification
                         else
                             AddClassification(token.Kind, token.Span, span, result);
                     }
+
                     break;
             }
 
@@ -66,9 +67,7 @@ namespace FanScript.LangServer.Classification
         }
 
         private static void ClassifyTrivia(SyntaxTrivia trivia, TextSpan span, ImmutableArray<ClassifiedSpan>.Builder result)
-        {
-            AddClassification(trivia.Kind, trivia.Span, span, result);
-        }
+            => AddClassification(trivia.Kind, trivia.Span, span, result);
 
         private static void AddClassification(SyntaxKind elementKind, TextSpan elementSpan, TextSpan span, ImmutableArray<ClassifiedSpan>.Builder result)
         {
@@ -97,24 +96,20 @@ namespace FanScript.LangServer.Classification
             result.Add(new ClassifiedSpan(adjustedSpan, classification));
         }
 
+        // TODO: add kind.IsOperand() SemanticTokenType.Operator (+, -, ...)
         private static SemanticTokenType? GetClassification(SyntaxKind kind)
-        {
-            // TODO: add kind.IsOperand SemanticTokenType.Operator (+, -, ...)
-
-            if (kind.IsKeyword())
-                return SemanticTokenType.Keyword;
-            else if (kind.IsModifier())
-                return SemanticTokenType.Modifier;
-            else if (kind == SyntaxKind.IdentifierToken)
-                return SemanticTokenType.Variable;
-            else if (kind == SyntaxKind.FloatToken)
-                return SemanticTokenType.Number;
-            else if (kind == SyntaxKind.StringToken)
-                return SemanticTokenType.String;
-            else if (kind.IsComment())
-                return SemanticTokenType.Comment;
-            else
-                return null;
-        }
+            => kind.IsKeyword()
+                ? SemanticTokenType.Keyword
+                : kind.IsModifier()
+                ? SemanticTokenType.Modifier
+                : kind == SyntaxKind.IdentifierToken
+                ? SemanticTokenType.Variable
+                : kind == SyntaxKind.FloatToken
+                ? SemanticTokenType.Number
+                : kind == SyntaxKind.StringToken
+                ? SemanticTokenType.String
+                : kind.IsComment()
+                ? SemanticTokenType.Comment
+                : (SemanticTokenType?)null;
     }
 }

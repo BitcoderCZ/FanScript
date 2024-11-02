@@ -1,10 +1,10 @@
-﻿using FanScript.Compiler.Exceptions;
+﻿using System.CodeDom.Compiler;
+using FanScript.Compiler.Exceptions;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
 using MathUtils.Vectors;
-using System.CodeDom.Compiler;
 
 namespace FanScript.Compiler.Binding
 {
@@ -13,9 +13,13 @@ namespace FanScript.Compiler.Binding
         public static void WriteTo(this BoundNode node, TextWriter writer)
         {
             if (writer is IndentedTextWriter iw)
+            {
                 WriteTo(node, iw);
+            }
             else
+            {
                 WriteTo(node, new IndentedTextWriter(writer));
+            }
         }
 
         public static void WriteTo(this BoundNode node, IndentedTextWriter writer)
@@ -55,6 +59,7 @@ namespace FanScript.Compiler.Binding
                 case BoundDoWhileStatement doWhileStatement:
                     WriteDoWhileStatement(doWhileStatement, writer);
                     break;
+
                 //case BoundNodeKind.ForStatement:
                 //    WriteForStatement((BoundForStatement)node, writer);
                 //    break;
@@ -98,7 +103,7 @@ namespace FanScript.Compiler.Binding
                     WriteBinaryExpression(binaryExpression, writer);
                     break;
                 case BoundCallExpression callExpression:
-                    WriteCallExpression((BoundCallExpression)node, writer);
+                    WriteCallExpression(callExpression, writer);
                     break;
                 case BoundConversionExpression conversionExpression:
                     WriteConversionExpression(conversionExpression, writer);
@@ -131,35 +136,49 @@ namespace FanScript.Compiler.Binding
             bool needsIndentation = node is not BoundBlockStatement;
 
             if (needsIndentation)
+            {
                 writer.Indent++;
+            }
 
             node.WriteTo(writer);
 
             if (needsIndentation)
+            {
                 writer.Indent--;
+            }
         }
 
         private static void WriteNestedExpression(this IndentedTextWriter writer, int parentPrecedence, BoundExpression expression)
         {
             if (expression is BoundUnaryExpression unary)
+            {
                 writer.WriteNestedExpression(parentPrecedence, SyntaxFacts.GetUnaryOperatorPrecedence(unary.Op.SyntaxKind), unary);
+            }
             else if (expression is BoundBinaryExpression binary)
+            {
                 writer.WriteNestedExpression(parentPrecedence, SyntaxFacts.GetBinaryOperatorPrecedence(binary.Op.SyntaxKind), binary);
+            }
             else
+            {
                 expression.WriteTo(writer);
+            }
         }
 
         private static void WriteNestedExpression(this IndentedTextWriter writer, int parentPrecedence, int currentPrecedence, BoundExpression expression)
         {
-            var needsParenthesis = parentPrecedence >= currentPrecedence;
+            bool needsParenthesis = parentPrecedence >= currentPrecedence;
 
             if (needsParenthesis)
+            {
                 writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
+            }
 
             expression.WriteTo(writer);
 
             if (needsParenthesis)
+            {
                 writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
+            }
         }
 
         private static void WriteBlockStatement(BoundBlockStatement node, IndentedTextWriter writer)
@@ -169,7 +188,9 @@ namespace FanScript.Compiler.Binding
             writer.Indent++;
 
             foreach (var s in node.Statements)
+            {
                 s.WriteTo(writer);
+            }
 
             writer.Indent--;
             writer.WritePunctuation(SyntaxKind.CloseBraceToken);
@@ -181,12 +202,17 @@ namespace FanScript.Compiler.Binding
             writer.WriteKeyword(SyntaxKind.KeywordOn);
             writer.WriteSpace();
             writer.WriteIdentifier(node.Type.ToString());
+
             if (node.ArgumentClause is not null)
+            {
                 WriteArgumentClause(node.ArgumentClause, writer);
+            }
+
             writer.WriteLine();
             WriteBlockStatement(node.Block, writer);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "Write... method parameters should be consistent")]
         private static void WriteNopStatement(BoundNopStatement node, IndentedTextWriter writer)
         {
             writer.WriteKeyword("nop");
@@ -214,6 +240,7 @@ namespace FanScript.Compiler.Binding
                 writer.WriteModifiers(node.Variable.Modifiers);
                 writer.WriteSpace();
             }
+
             node.Variable.Type.WriteTo(writer);
             writer.WriteSpace();
 
@@ -223,8 +250,7 @@ namespace FanScript.Compiler.Binding
                 writer.WriteLine();
             }
 
-            if (node.OptionalAssignment is not null)
-                node.OptionalAssignment.WriteTo(writer);
+            node.OptionalAssignment?.WriteTo(writer);
         }
 
         private static void WriteAssignmentStatement(BoundAssignmentStatement node, IndentedTextWriter writer)
@@ -261,7 +287,9 @@ namespace FanScript.Compiler.Binding
             if (node.ElseStatement is not null)
             {
                 writer.WriteKeyword(SyntaxKind.KeywordElse);
-                if (node.ElseStatement is BoundIfStatement) // "else if"
+
+                // "else if"
+                if (node.ElseStatement is BoundIfStatement)
                 {
                     writer.WriteSpace();
                     node.ElseStatement.WriteTo(writer);
@@ -294,35 +322,39 @@ namespace FanScript.Compiler.Binding
             writer.WriteLine();
         }
 
-        //private static void WriteForStatement(BoundForStatement node, IndentedTextWriter writer)
-        //{
-        //    writer.WriteKeyword(SyntaxKind.ForKeyword);
-        //    writer.WriteSpace();
-        //    writer.WriteIdentifier(node.Variable.Name);
-        //    writer.WriteSpace();
-        //    writer.WritePunctuation(SyntaxKind.EqualsToken);
-        //    writer.WriteSpace();
-        //    node.LowerBound.WriteTo(writer);
-        //    writer.WriteSpace();
-        //    writer.WriteKeyword(SyntaxKind.ToKeyword);
-        //    writer.WriteSpace();
-        //    node.UpperBound.WriteTo(writer);
-        //    writer.WriteLine();
-        //    writer.WriteNestedStatement(node.Body);
-        //}
+        /*private static void WriteForStatement(BoundForStatement node, IndentedTextWriter writer)
+        {
+            writer.WriteKeyword(SyntaxKind.ForKeyword);
+            writer.WriteSpace();
+            writer.WriteIdentifier(node.Variable.Name);
+            writer.WriteSpace();
+            writer.WritePunctuation(SyntaxKind.EqualsToken);
+            writer.WriteSpace();
+            node.LowerBound.WriteTo(writer);
+            writer.WriteSpace();
+            writer.WriteKeyword(SyntaxKind.ToKeyword);
+            writer.WriteSpace();
+            node.UpperBound.WriteTo(writer);
+            writer.WriteLine();
+            writer.WriteNestedStatement(node.Body);
+        }*/
 
         private static void WriteLabelStatement(BoundLabelStatement node, IndentedTextWriter writer)
         {
             bool unindent = writer.Indent > 0;
             if (unindent)
+            {
                 writer.Indent--;
+            }
 
             writer.WritePunctuation(node.Label.Name);
             writer.WritePunctuation(SyntaxKind.ColonToken);
             writer.WriteLine();
 
             if (unindent)
+            {
                 writer.Indent++;
+            }
         }
 
         private static void WriteGotoStatement(BoundGotoStatement node, IndentedTextWriter writer)
@@ -349,7 +381,9 @@ namespace FanScript.Compiler.Binding
             writer.WriteSpace();
             writer.WriteIdentifier(node.EventType.ToString());
             if (node.ArgumentClause is not null)
+            {
                 WriteArgumentClause(node.ArgumentClause, writer);
+            }
 
             writer.WriteLine();
         }
@@ -374,6 +408,7 @@ namespace FanScript.Compiler.Binding
                 writer.WriteSpace();
                 node.Expression.WriteTo(writer);
             }
+
             writer.WriteLine();
         }
 
@@ -426,26 +461,27 @@ namespace FanScript.Compiler.Binding
             writer.WriteLine();
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0060:Remove unused parameter", Justification = "Write... method parameters should be consistent")]
         private static void WriteErrorExpression(BoundErrorExpression node, IndentedTextWriter writer)
-        {
-            writer.WriteKeyword("?");
-        }
+            => writer.WriteKeyword("?");
 
         private static void WriteLiteralExpression(BoundLiteralExpression node, IndentedTextWriter writer)
         {
             if (node.Type == TypeSymbol.Null)
+            {
                 writer.WriteKeyword(SyntaxKind.KeywordNull);
+            }
             else if (node.Type == TypeSymbol.Bool)
+            {
                 writer.WriteKeyword((bool)node.Value! ? SyntaxKind.KeywordTrue : SyntaxKind.KeywordFalse);
+            }
             else if (node.Type == TypeSymbol.Float)
+            {
                 writer.WriteNumber((float)node.Value!);
+            }
             else if (node.Type == TypeSymbol.Vector3 || node.Type == TypeSymbol.Rotation)
             {
-                Vector3F val;
-                if (node.Type == TypeSymbol.Rotation)
-                    val = ((Rotation)node.Value!).Value;
-                else
-                    val = (Vector3F)node.Value!;
+                Vector3F val = node.Type == TypeSymbol.Rotation ? ((Rotation)node.Value!).Value : (Vector3F)node.Value!;
 
                 node.Type.WriteTo(writer);
                 writer.WritePunctuation(SyntaxKind.OpenParenthesisToken);
@@ -459,13 +495,17 @@ namespace FanScript.Compiler.Binding
                 writer.WritePunctuation(SyntaxKind.CloseParenthesisToken);
             }
             else if (node.Type == TypeSymbol.String)
+            {
                 writer.WriteString("\"" +
                     ((string)node.Value!)
                         .Replace("\\", "\\\\")
                         .Replace("\"", "\\\"")
                     + "\"");
+            }
             else
-                throw new Exception($"Unexpected type {node.Type}");
+            {
+                throw new UnexpectedSymbolException(node.Type);
+            }
         }
 
         private static void WriteVariableExpression(BoundVariableExpression node, IndentedTextWriter writer)
@@ -507,7 +547,9 @@ namespace FanScript.Compiler.Binding
         private static void WriteConversionExpression(BoundConversionExpression node, IndentedTextWriter writer)
         {
             if (node.Type.NonGenericEquals(TypeSymbol.Array))
+            {
                 node.Expression.WriteTo(writer); // arraySegment to array
+            }
             else
             {
                 writer.WriteIdentifier(node.Type.Name);
@@ -551,7 +593,9 @@ namespace FanScript.Compiler.Binding
             foreach (var element in node.Elements)
             {
                 if (isFirst)
+                {
                     isFirst = false;
+                }
                 else
                 {
                     writer.WritePunctuation(SyntaxKind.CommaToken);
@@ -594,7 +638,9 @@ namespace FanScript.Compiler.Binding
                 foreach (var (argument, modifiers) in node.Arguments.Zip(node.ArgModifiers))
                 {
                     if (isFirst)
+                    {
                         isFirst = false;
+                    }
                     else
                     {
                         writer.WritePunctuation(SyntaxKind.CommaToken);
@@ -603,7 +649,10 @@ namespace FanScript.Compiler.Binding
 
                     writer.WriteModifiers(modifiers);
                     if (modifiers != 0)
+                    {
                         writer.WriteSpace();
+                    }
+
                     argument.WriteTo(writer);
                 }
             }
@@ -621,6 +670,7 @@ namespace FanScript.Compiler.Binding
                         writer.WritePunctuation(SyntaxKind.DotToken);
                         goto default;
                     }
+
                 default:
                     writer.WriteIdentifier(variable.ResultName);
                     break;

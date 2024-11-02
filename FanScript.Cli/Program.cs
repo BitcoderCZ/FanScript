@@ -54,9 +54,9 @@ namespace FanScript.Cli
             [Option("prefabIndex", SetName = "gfb_existing", Default = (ushort)0, Required = false, HelpText = "(Only used with GameFileBuilder)Index of the custom prefab that code will get placed in. NOT the prefab's id, but it's index as a custom prefab - the first custom prefab would be id 597 and INDEX 0.")]
             public ushort PrefabIndex { get; set; }
         }
-#pragma warning restore CS8618 
+#pragma warning restore CS8618
 
-        static int Main(string[] args)
+        private static int Main(string[] args)
         {
 #if DEBUG
             Debugger.Launch();
@@ -64,11 +64,11 @@ namespace FanScript.Cli
 
             return Parser.Default.ParseArguments<BuildOptions>(args)
                 .MapResult(
-                    opts => runVerb(runBuild, opts, "build"),
+                    opts => RunVerb(RunBuild, opts, "build"),
                 errs => 1);
         }
 
-        static int runVerb<T>(Func<T, int> action, T arg, string name)
+        private static int RunVerb<T>(Func<T, int> action, T arg, string name)
         {
 #if !DEBUG
             try
@@ -84,7 +84,7 @@ namespace FanScript.Cli
 #endif
         }
 
-        static int runBuild(BuildOptions opts)
+        private static int RunBuild(BuildOptions opts)
         {
             if (!File.Exists(opts.Src))
                 return Log.Error($"Source file '{opts.Src}' wasn't found.", ErrorCode.FileNotFound);
@@ -97,7 +97,7 @@ namespace FanScript.Cli
                 Console.WriteLine();
             }
 
-            Compilation compilation = Compilation.CreateScript(null, tree);
+            Compilation compilation = Compilation.Create(null, tree);
 
             if (opts.ShowCompiledCode)
             {
@@ -113,32 +113,18 @@ namespace FanScript.Cli
                 Console.WriteLine();
             }
 
-            BlockBuilder builder;
-            switch (opts.Builder)
+            BlockBuilder builder = opts.Builder switch
             {
-                case CodeBuilderEnum.EditorScript:
-                    builder = new EditorScriptBlockBuilder();
-                    break;
-                case CodeBuilderEnum.GameFile:
-                    builder = new GameFileBlockBuilder();
-                    break;
-                default:
-                    throw new InvalidDataException($"Unknown CodeBuilder '{opts.Builder}'");
-            }
-
-            CodePlacer placer;
-            switch (opts.Placer)
+                CodeBuilderEnum.EditorScript => new EditorScriptBlockBuilder(),
+                CodeBuilderEnum.GameFile => new GameFileBlockBuilder(),
+                _ => throw new InvalidDataException($"Unknown CodeBuilder '{opts.Builder}'"),
+            };
+            CodePlacer placer = opts.Placer switch
             {
-                case BlockPlacerEnum.Tower:
-                    placer = new TowerCodePlacer(builder);
-                    break;
-                case BlockPlacerEnum.Ground:
-                    placer = new GroundCodePlacer(builder);
-                    break;
-                default:
-                    throw new InvalidDataException($"Unknown BlockPlacer '{opts.Placer}'");
-            }
-
+                BlockPlacerEnum.Tower => new TowerCodePlacer(builder),
+                BlockPlacerEnum.Ground => new GroundCodePlacer(builder),
+                _ => throw new InvalidDataException($"Unknown BlockPlacer '{opts.Placer}'"),
+            };
             var diagnostics = compilation.Emit(placer, builder);
 
             if (diagnostics.Any())
@@ -168,15 +154,11 @@ namespace FanScript.Cli
 
                         Log.Info("Copied code to clipboard");
                     }
+
                     break;
                 case CodeBuilderEnum.GameFile:
                     {
-                        GameFileBlockBuilder.Args args;
-                        if (opts.UseExistingPrefab)
-                            args = new(opts.InGameFile, opts.PrefabIndex);
-                        else
-                            args = new(opts.InGameFile, opts.PrefabName, opts.PrefabType);
-
+                        GameFileBlockBuilder.Args args = opts.UseExistingPrefab ? new(opts.InGameFile, opts.PrefabIndex) : new(opts.InGameFile, opts.PrefabName, opts.PrefabType);
                         Game game = (Game)builder.Build(pos, args);
 
                         game.TrimPrefabs();
@@ -186,6 +168,7 @@ namespace FanScript.Cli
 
                         Log.Info($"Built code to file '{Path.GetFullPath("GAME.fcg")}'");
                     }
+
                     break;
                 default:
                     throw new InvalidDataException($"Unknown CodeBuilder '{opts.Builder}'");

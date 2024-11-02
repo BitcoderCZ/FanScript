@@ -1,32 +1,19 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using System.Collections.Immutable;
+using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
-using System.Collections.Immutable;
 using static FanScript.Compiler.Binding.BoundNodeFactory;
 
 namespace FanScript.Compiler.Binding.Rewriters
 {
     internal sealed class Lowerer : BoundTreeRewriter
     {
-        private Dictionary<string, int> labelCount = new();
+        private readonly Dictionary<string, int> _labelCount = [];
+        private readonly string _funcName;
 
-        private string funcName;
         private Lowerer(string funcName)
         {
-            this.funcName = funcName + "_";
-        }
-
-        private BoundLabel GenerateLabel(string name)
-        {
-            name = funcName + name;
-
-            int count;
-            if (!labelCount.TryGetValue(name, out count))
-                count = 1;
-
-            labelCount[name] = count + 1;
-
-            string labelName = name + count;
-            return new BoundLabel(labelName);
+            _funcName = funcName + "_";
         }
 
         public static BoundBlockStatement Lower(FunctionSymbol function, BoundStatement statement)
@@ -37,85 +24,19 @@ namespace FanScript.Compiler.Binding.Rewriters
             return RemoveDeadCode(Flatten(function, result));
         }
 
-        private static BoundBlockStatement Flatten(FunctionSymbol function, BoundStatement statement)
-        {
-            ImmutableArray<BoundStatement>.Builder builder = ImmutableArray.CreateBuilder<BoundStatement>();
-            Stack<BoundStatement> stack = new Stack<BoundStatement>();
-            stack.Push(statement);
-
-            while (stack.Count > 0)
-            {
-                BoundStatement current = stack.Pop();
-
-                if (current is BoundBlockStatement block)
-                {
-                    foreach (BoundStatement s in block.Statements.Reverse())
-                        stack.Push(s);
-                }
-                else
-                    builder.Add(current);
-            }
-
-            if (function.Type == TypeSymbol.Void)
-            {
-                if (builder.Count == 0 || CanFallThrough(builder.Last()))
-                    builder.Add(new BoundReturnStatement(statement.Syntax, null));
-            }
-
-            return new BoundBlockStatement(statement.Syntax, builder.ToImmutable());
-        }
-
-        private static bool CanFallThrough(BoundStatement boundStatement)
-        {
-            return boundStatement.Kind != BoundNodeKind.ReturnStatement &&
-                   boundStatement.Kind != BoundNodeKind.GotoStatement;
-        }
-
-        private static BoundBlockStatement RemoveDeadCode(BoundBlockStatement node)
-        {
-            ControlFlowGraph controlFlow = ControlFlowGraph.Create(node);
-            HashSet<BoundStatement> reachableStatements = new HashSet<BoundStatement>(
-                controlFlow.Blocks.SelectMany(b => b.Statements));
-
-            ImmutableArray<BoundStatement>.Builder builder = node.Statements.ToBuilder();
-            for (int i = builder.Count - 1; i >= 0; i--)
-                if (!reachableStatements.Contains(builder[i]) && builder[i] is not BoundEmitterHintStatement)
-                    builder.RemoveAt(i);
-
-            return new BoundBlockStatement(node.Syntax, builder.ToImmutable());
-        }
-
         protected override BoundExpression RewriteBinaryExpression(BoundBinaryExpression node)
-        {
-            if (node.ConstantValue != null)
-                return Literal(node.Syntax, node.ConstantValue.Value);
-
-            return base.RewriteBinaryExpression(node);
-        }
+            => node.ConstantValue is not null ? Literal(node.Syntax, node.ConstantValue.Value) : base.RewriteBinaryExpression(node);
 
         protected override BoundExpression RewriteUnaryExpression(BoundUnaryExpression node)
-        {
-            if (node.ConstantValue != null)
-                return Literal(node.Syntax, node.ConstantValue.Value);
-
-            return base.RewriteUnaryExpression(node);
-        }
+            => node.ConstantValue is not null ? Literal(node.Syntax, node.ConstantValue.Value) : base.RewriteUnaryExpression(node);
 
         protected override BoundExpression RewriteVariableExpression(BoundVariableExpression node)
-        {
-            if (node.ConstantValue != null)
-                return Literal(node.Syntax, node.ConstantValue.Value);
-
-            return base.RewriteVariableExpression(node);
-        }
+            => node.ConstantValue is not null ? Literal(node.Syntax, node.ConstantValue.Value) : base.RewriteVariableExpression(node);
 
         protected override BoundStatement RewriteAssignmentStatement(BoundAssignmentStatement node)
-        {
-            if (node.Expression is BoundArraySegmentExpression expression)
-                return lowerArraySegmentAssignment(expression, node.Variable);
-
-            return base.RewriteAssignmentStatement(node);
-        }
+            => node.Expression is BoundArraySegmentExpression expression
+                ? LowerArraySegmentAssignment(expression, node.Variable)
+                : base.RewriteAssignmentStatement(node);
 
         protected override BoundStatement RewriteIfStatement(BoundIfStatement node)
         {
@@ -129,7 +50,6 @@ namespace FanScript.Compiler.Binding.Rewriters
                 // gotoFalse <condition> end
                 // <then>
                 // end:
-
                 BoundLabel endLabel = GenerateLabel("ifEnd");
                 BoundBlockStatement result = Block(
                     node.Syntax,
@@ -137,8 +57,7 @@ namespace FanScript.Compiler.Binding.Rewriters
                     Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockStart),
                     node.ThenStatement,
                     Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockEnd),
-                    Label(node.Syntax, endLabel)
-                );
+                    Label(node.Syntax, endLabel));
 
                 return RewriteStatement(result);
             }
@@ -157,7 +76,6 @@ namespace FanScript.Compiler.Binding.Rewriters
                 // else:
                 // <else>
                 // end:
-
                 BoundLabel elseLabel = GenerateLabel("else");
                 BoundLabel endLabel = GenerateLabel("ifEnd");
                 BoundBlockStatement result = Block(
@@ -168,23 +86,20 @@ namespace FanScript.Compiler.Binding.Rewriters
                     Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockEnd),
                     Goto(node.Syntax, endLabel),
                     Label(node.Syntax, elseLabel),
-                    getElse(),
-                    Label(node.Syntax, endLabel)
-                );
+                    GetElse(),
+                    Label(node.Syntax, endLabel));
 
                 return RewriteStatement(result);
 
-                BoundStatement getElse()
+                BoundStatement GetElse()
                 {
-                    if (node.ElseStatement is BoundIfStatement)
-                        return node.ElseStatement;
-                    else
-                        return Block(
+                    return node.ElseStatement is BoundIfStatement
+                        ? node.ElseStatement
+                        : Block(
                             node.Syntax,
                             Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockStart),
                             node.ElseStatement!,
-                            Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockEnd)
-                        );
+                            Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockEnd));
                 }
             }
         }
@@ -204,7 +119,6 @@ namespace FanScript.Compiler.Binding.Rewriters
             // <body>
             // goto end [rollback] // special goto that doesn't *really* "goto" but for the purposes of ControlFlowGraph does, neccesary because once body is finished the goto end will execute anyway bacause of how the special block blocks work (exec body, exec after)
             // end:
-
             BoundLabel onSpecialLabel = GenerateLabel("onSpecial");
             BoundLabel endLabel = GenerateLabel("end");
             BoundBlockStatement result = Block(
@@ -212,12 +126,10 @@ namespace FanScript.Compiler.Binding.Rewriters
                 EventGoto(newNode.Syntax, onSpecialLabel, newNode.Type, newNode.ArgumentClause),
                 Goto(newNode.Syntax, endLabel),
                 Label(newNode.Syntax, onSpecialLabel),
-                // Hint(newNode.Syntax, BoundEmitterHint.HintKind.StatementBlockStart), might need to be sooner if there are ref variables, so let emitter handle it
                 newNode.Block,
                 Hint(newNode.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockEnd),
                 RollbackGoto(newNode.Syntax, endLabel),
-                Label(newNode.Syntax, endLabel)
-            );
+                Label(newNode.Syntax, endLabel));
 
             return RewriteStatement(result);
         }
@@ -234,7 +146,6 @@ namespace FanScript.Compiler.Binding.Rewriters
             // <body>
             // goto continue
             // break:
-
             BoundBlockStatement result = Block(
                 node.Syntax,
                 Label(node.Syntax, node.ContinueLabel),
@@ -243,8 +154,7 @@ namespace FanScript.Compiler.Binding.Rewriters
                 node.Body,
                 Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockEnd),
                 Goto(node.Syntax, node.ContinueLabel),
-                Label(node.Syntax, node.BreakLabel)
-            );
+                Label(node.Syntax, node.BreakLabel));
 
             return RewriteStatement(result);
         }
@@ -262,7 +172,6 @@ namespace FanScript.Compiler.Binding.Rewriters
             // continue:
             // gotoTrue <condition> body
             // break:
-
             BoundLabel bodyLabel = GenerateLabel("body");
             BoundBlockStatement result = Block(
                 node.Syntax,
@@ -272,8 +181,7 @@ namespace FanScript.Compiler.Binding.Rewriters
                 Hint(node.Syntax, BoundEmitterHintStatement.HintKind.StatementBlockEnd),
                 Label(node.Syntax, node.ContinueLabel),
                 GotoTrue(node.Syntax, bodyLabel, node.Condition),
-                Label(node.Syntax, node.BreakLabel)
-            );
+                Label(node.Syntax, node.BreakLabel));
 
             return RewriteStatement(result);
         }
@@ -284,10 +192,7 @@ namespace FanScript.Compiler.Binding.Rewriters
             {
                 bool condition = (bool)node.Condition.ConstantValue.GetValueOrDefault(TypeSymbol.Bool);
                 condition = node.JumpIfTrue ? condition : !condition;
-                if (condition)
-                    return RewriteStatement(Goto(node.Syntax, node.Label));
-                else
-                    return RewriteStatement(Nop(node.Syntax));
+                return condition ? RewriteStatement(Goto(node.Syntax, node.Label)) : RewriteStatement(Nop(node.Syntax));
             }
 
             return base.RewriteConditionalGotoStatement(node);
@@ -302,7 +207,6 @@ namespace FanScript.Compiler.Binding.Rewriters
             // ---->
             //
             // a = (a <op> b)
-
             BoundAssignmentStatement result = Assignment(
                 newNode.Syntax,
                 newNode.Variable,
@@ -310,9 +214,7 @@ namespace FanScript.Compiler.Binding.Rewriters
                     newNode.Syntax,
                     Variable(newNode.Syntax, newNode.Variable),
                     newNode.Op,
-                    newNode.Expression
-                )
-            );
+                    newNode.Expression));
 
             return result;
         }
@@ -326,7 +228,6 @@ namespace FanScript.Compiler.Binding.Rewriters
             // ---->
             //
             // a = (a <op> b)
-
             BoundAssignmentExpression result = AssignmentExpression(
                 newNode.Syntax,
                 newNode.Variable,
@@ -334,9 +235,7 @@ namespace FanScript.Compiler.Binding.Rewriters
                     newNode.Syntax,
                     Variable(newNode.Syntax, newNode.Variable),
                     newNode.Op,
-                    newNode.Expression
-                )
-            );
+                    newNode.Expression));
 
             return result;
         }
@@ -344,21 +243,29 @@ namespace FanScript.Compiler.Binding.Rewriters
         protected override BoundStatement RewriteCallStatement(BoundCallStatement node)
         {
             if (node.Function is not ConstantFunctionSymbol conFunc)
+            {
                 return base.RewriteCallStatement(node);
+            }
 
             BoundCallStatement newNode = (BoundCallStatement)base.RewriteCallStatement(node);
 
             if (newNode.ResultVariable is null)
+            {
                 return newNode;
+            }
 
             BoundConstant[] constants = new BoundConstant[conFunc.Parameters.Length];
             for (int i = 0; i < newNode.Function.Parameters.Length; i++)
             {
                 if (newNode.Function.Parameters[i].Modifiers.MakesTargetReference(out _))
+                {
                     throw new NotImplementedException($"ref and out parameters aren't yet implemented for {nameof(ConstantFunctionSymbol)}.");
+                }
 
                 if (newNode.Arguments[i].ConstantValue is null)
+                {
                     return newNode;
+                }
 
                 constants[i] = newNode.Arguments[i].ConstantValue!;
             }
@@ -366,14 +273,15 @@ namespace FanScript.Compiler.Binding.Rewriters
             return Assignment(
                 newNode.Syntax,
                 newNode.ResultVariable,
-                Literal(newNode.Syntax, conFunc.ConstantEmit(constants)[0])
-            );
+                Literal(newNode.Syntax, conFunc.ConstantEmit(constants)[0]));
         }
 
         protected override BoundExpression RewriteCallExpression(BoundCallExpression node)
         {
             if (node.Function is not ConstantFunctionSymbol conFunc)
+            {
                 return base.RewriteCallExpression(node);
+            }
 
             BoundCallExpression newNode = (BoundCallExpression)base.RewriteCallExpression(node);
 
@@ -381,10 +289,14 @@ namespace FanScript.Compiler.Binding.Rewriters
             for (int i = 0; i < newNode.Function.Parameters.Length; i++)
             {
                 if (newNode.Function.Parameters[i].Modifiers.MakesTargetReference(out _))
+                {
                     throw new NotImplementedException($"ref and out parameters aren't yet implemented for {nameof(ConstantFunctionSymbol)}.");
+                }
 
                 if (newNode.Arguments[i].ConstantValue is null)
+                {
                     return newNode;
+                }
 
                 constants[i] = newNode.Arguments[i].ConstantValue!;
             }
@@ -392,7 +304,83 @@ namespace FanScript.Compiler.Binding.Rewriters
             return Literal(newNode.Syntax, conFunc.ConstantEmit(constants)[0]);
         }
 
-        private BoundStatement lowerArraySegmentAssignment(BoundArraySegmentExpression expression, VariableSymbol arrayVariable, float startIndex = 0f)
+        private static BoundBlockStatement Flatten(FunctionSymbol function, BoundStatement statement)
+        {
+            ImmutableArray<BoundStatement>.Builder builder = ImmutableArray.CreateBuilder<BoundStatement>();
+            Stack<BoundStatement> stack = new Stack<BoundStatement>();
+            stack.Push(statement);
+
+            while (stack.Count > 0)
+            {
+                BoundStatement current = stack.Pop();
+
+                if (current is BoundBlockStatement block)
+                {
+                    foreach (BoundStatement s in block.Statements.Reverse())
+                    {
+                        stack.Push(s);
+                    }
+                }
+                else
+                {
+                    builder.Add(current);
+                }
+            }
+
+            if (function.Type == TypeSymbol.Void)
+            {
+                if (builder.Count == 0 || CanFallThrough(builder.Last()))
+                {
+                    builder.Add(new BoundReturnStatement(statement.Syntax, null));
+                }
+            }
+
+            return new BoundBlockStatement(statement.Syntax, builder.ToImmutable());
+        }
+
+        private static bool CanFallThrough(BoundStatement boundStatement)
+            => boundStatement switch
+            {
+                BoundReturnStatement => false,
+                BoundGotoStatement => false,
+                _ => true,
+            };
+
+        private static BoundBlockStatement RemoveDeadCode(BoundBlockStatement node)
+        {
+            ControlFlowGraph controlFlow = ControlFlowGraph.Create(node);
+            HashSet<BoundStatement> reachableStatements = new HashSet<BoundStatement>(
+                controlFlow.Blocks.SelectMany(b => b.Statements));
+
+            ImmutableArray<BoundStatement>.Builder builder = node.Statements.ToBuilder();
+            for (int i = builder.Count - 1; i >= 0; i--)
+            {
+                if (!reachableStatements.Contains(builder[i]) && builder[i] is not BoundEmitterHintStatement)
+                {
+                    builder.RemoveAt(i);
+                }
+            }
+
+            return new BoundBlockStatement(node.Syntax, builder.ToImmutable());
+        }
+
+        private BoundLabel GenerateLabel(string name)
+        {
+            name = _funcName + name;
+
+            int count;
+            if (!_labelCount.TryGetValue(name, out count))
+            {
+                count = 1;
+            }
+
+            _labelCount[name] = count + 1;
+
+            string labelName = name + count;
+            return new BoundLabel(labelName);
+        }
+
+        private BoundBlockStatement LowerArraySegmentAssignment(BoundArraySegmentExpression expression, VariableSymbol arrayVariable, float startIndex = 0f)
         {
             BoundArraySegmentExpression node = (BoundArraySegmentExpression)RewriteArraySegmentExpression(expression);
 
@@ -401,22 +389,18 @@ namespace FanScript.Compiler.Binding.Rewriters
             // ---->
             //
             // setRange(x, 0, [a, b, c, ...])
-
             BoundBlockStatement result = Block(
                 node.Syntax,
                 new BoundCallStatement(
                     node.Syntax,
-                    BuiltinFunctions.Array_SetRange,
+                    BuiltinFunctions.ArraySetRange,
                     new BoundArgumentClause(
                         node.Syntax,
                         [0, 0, 0],
-                        [Variable(node.Syntax, arrayVariable), Literal(node.Syntax, startIndex), expression]
-                    ),
+                        [Variable(node.Syntax, arrayVariable), Literal(node.Syntax, startIndex), expression]),
                     TypeSymbol.Void,
                     node.ElementType,
-                    null
-                )
-            );
+                    null));
 
             return result;
         }

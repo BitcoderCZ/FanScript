@@ -1,4 +1,6 @@
-﻿namespace FanScript.Compiler.Symbols.Variables
+﻿using FanScript.Utils;
+
+namespace FanScript.Compiler.Symbols.Variables
 {
     public sealed class ParameterSymbol : BasicVariableSymbol
     {
@@ -6,6 +8,7 @@
             : this(name, 0, type)
         {
         }
+
         internal ParameterSymbol(string name, Modifiers modifiers, TypeSymbol type)
             : base(name, modifiers, type)
         {
@@ -13,5 +16,18 @@
         }
 
         public override SymbolKind Kind => SymbolKind.Parameter;
+
+        public override void WriteTo(TextWriter writer)
+        {
+            if (Modifiers != 0)
+            {
+                writer.WriteModifiers(Modifiers);
+                writer.WriteSpace();
+            }
+
+            writer.WriteWritable(Type);
+            writer.WriteSpace();
+            writer.WriteIdentifier(Name);
+        }
     }
 }

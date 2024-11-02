@@ -1,10 +1,10 @@
-﻿using FancadeLoaderLib;
+﻿using System.Diagnostics.CodeAnalysis;
+using FancadeLoaderLib;
 using FancadeLoaderLib.Editing.Utils;
 using FancadeLoaderLib.Partial;
 using FanScript.Compiler.Emit.BlockBuilders;
 using FanScript.Utils;
 using MathUtils.Vectors;
-using System.Diagnostics.CodeAnalysis;
 
 /*
 log("Block id: " + getBlock(0, 0, 0));
@@ -23,20 +23,22 @@ namespace FanScript.Compiler.Emit.CodeBuilders
         /// 
         /// </summary>
         /// <param name="startPos"></param>
-        /// <param name="_args">Must be null or <see cref="Args"/></param>
+        /// <param name="iArgs">Must be null or <see cref="Args"/></param>
         /// <returns>The <see cref="Game"/> object that was written to</returns>
         /// <exception cref="InvalidDataException"></exception>
-        public override Game Build(Vector3I startPos, IArgs? _args)
+        public override Game Build(Vector3I startPos, IArgs? iArgs)
         {
-            Args args = (_args as Args) ?? Args.Default;
+            Args args = (iArgs as Args) ?? Args.Default;
 
             Game game;
             if (string.IsNullOrEmpty(args.InGameFile))
+            {
                 game = new Game("FanScript");
+            }
             else
             {
-                using (FileStream fs = File.OpenRead(args.InGameFile))
-                    game = Game.LoadCompressed(fs);
+                using FileStream fs = File.OpenRead(args.InGameFile);
+                game = Game.LoadCompressed(fs);
             }
 
             Prefab prefab;
@@ -49,7 +51,9 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                     int index = 0;
 
                     while (index < game.Prefabs.Count && game.Prefabs[index].Type == PrefabType.Level)
+                    {
                         index++;
+                    }
 
                     game.Prefabs.Insert(index, prefab);
                 }
@@ -65,7 +69,9 @@ namespace FanScript.Compiler.Emit.CodeBuilders
             else
             {
                 if (args.PrefabIndex < 0 || args.PrefabIndex >= game.Prefabs.Count)
+                {
                     throw new IndexOutOfRangeException($"PrefabIndex must be greater or equal to 0 and smaller than the number of prefabs ({game.Prefabs.Count}).");
+                }
 
                 prefab = game.Prefabs[args.PrefabIndex.Value];
             }
@@ -74,7 +80,7 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 
             PartialPrefabList stockPrefabs = StockPrefabs.Instance.List;
 
-            Dictionary<ushort, PartialPrefabGroup> groupCache = new();
+            Dictionary<ushort, PartialPrefabGroup> groupCache = [];
 
             for (int i = 0; i < blocks.Length; i++)
             {
@@ -90,7 +96,9 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                     prefab.Blocks.SetGroup(block.Pos, group);
                 }
                 else
+                {
                     prefab.Blocks.SetBlock(block.Pos, block.Type.Id);
+                }
             }
 
             for (int i = 0; i < values.Count; i++)
@@ -99,7 +107,7 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                 prefab.Settings.Add(new PrefabSetting()
                 {
                     Index = (byte)set.ValueIndex,
-                    Type = (set.Value switch
+                    Type = set.Value switch
                     {
                         byte => SettingType.Byte,
                         ushort => SettingType.Ushort,
@@ -108,7 +116,7 @@ namespace FanScript.Compiler.Emit.CodeBuilders
                         Rotation => SettingType.Vec3,
                         string => SettingType.String,
                         _ => throw new InvalidDataException($"Unsupported type of value: '{set.Value.GetType()}'."),
-                    }),
+                    },
                     Position = (Vector3US)set.Block.Pos,
                     Value = set.Value is Rotation rot ? rot.Value : set.Value,
                 });
@@ -135,10 +143,6 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 
             public readonly string? InGameFile;
 
-            [MemberNotNullWhen(true, nameof(PrefabName), nameof(PrefabType))]
-            [MemberNotNullWhen(false, nameof(PrefabIndex))]
-            public bool CreateNewPrefab { get; private set; }
-
             public readonly string? PrefabName;
             public readonly PrefabType? PrefabType;
 
@@ -162,6 +166,10 @@ namespace FanScript.Compiler.Emit.CodeBuilders
 
                 PrefabIndex = prefabIndex;
             }
+
+            [MemberNotNullWhen(true, nameof(PrefabName), nameof(PrefabType))]
+            [MemberNotNullWhen(false, nameof(PrefabIndex))]
+            public bool CreateNewPrefab { get; private set; }
         }
     }
 }

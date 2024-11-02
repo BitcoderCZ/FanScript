@@ -1,29 +1,24 @@
-﻿using FanScript.Compiler.Emit;
+﻿using System.Collections;
+using FanScript.Compiler.Emit;
 using FanScript.Compiler.Exceptions;
 using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using FanScript.FCInfo;
-using System.Collections;
 
 namespace FanScript.Compiler.Diagnostics
 {
     public sealed class DiagnosticBag : IEnumerable<Diagnostic>
     {
-        private readonly List<Diagnostic> diagnostics = new List<Diagnostic>();
+        private readonly List<Diagnostic> _diagnostics = [];
 
-        public IEnumerator<Diagnostic> GetEnumerator() => diagnostics.GetEnumerator();
+        public IEnumerator<Diagnostic> GetEnumerator() => _diagnostics.GetEnumerator();
 
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         public void AddRange(IEnumerable<Diagnostic> diagnostics)
-            => this.diagnostics.AddRange(diagnostics);
-
-        private void ReportError(TextLocation location, string message)
-            => diagnostics.Add(Diagnostic.Error(location, message));
-
-        private void ReportWarning(TextLocation location, string message)
-            => diagnostics.Add(Diagnostic.Warning(location, message));
+            => _diagnostics.AddRange(diagnostics);
 
         public void ReportInvalidNumber(TextLocation location, string text)
             => ReportError(location, $"The number {text} isn't a valid number.");
@@ -42,12 +37,14 @@ namespace FanScript.Compiler.Diagnostics
 
         public void ReportUnexpectedToken(TextLocation location, SyntaxKind actualKind, SyntaxKind expectedKind)
             => ReportError(location, $"Unexpected token <{actualKind}>, expected <{expectedKind}>.");
+
         public void ReportUnexpectedToken(TextLocation location, SyntaxKind actualKind, SyntaxKind[] expectedKinds)
             => ReportError(location, $"Unexpected token <{actualKind}>, expected one of <{string.Join(", ", expectedKinds)}>.");
 
-        internal void ReportUnexpectedIdentifier(TextLocation location, string actualText, string expectedText)
+        public void ReportUnexpectedIdentifier(TextLocation location, string actualText, string expectedText)
             => ReportError(location, $"Unexpected token '{actualText}', expected '{expectedText}'.");
-        internal void ReportUnexpectedIdentifier(TextLocation location, string actualText, IEnumerable<string> expectedTexts)
+
+        public void ReportUnexpectedIdentifier(TextLocation location, string actualText, IEnumerable<string> expectedTexts)
             => ReportError(location, $"Unexpected token '{actualText}', expected one of {string.Join(", ", expectedTexts.Select(text => "'" + text + "'").ToArray())}.");
 
         public void ReportUndefinedUnaryOperator(TextLocation location, string operatorText, TypeSymbol? operandType)
@@ -214,6 +211,7 @@ namespace FanScript.Compiler.Diagnostics
 
         public void ReportUnreachableCode(TextLocation location)
           => ReportWarning(location, $"Unreachable code detected.");
+
         // TODO: this needs all the added statements/expressions (right?)
         public void ReportUnreachableCode(SyntaxNode node)
         {
@@ -221,9 +219,13 @@ namespace FanScript.Compiler.Diagnostics
             {
                 case BlockStatementSyntax blockStatement:
                     StatementSyntax? firstStatement = blockStatement.Statements.FirstOrDefault();
+
                     // Report just for non empty blocks.
                     if (firstStatement is not null)
+                    {
                         ReportUnreachableCode(firstStatement);
+                    }
+
                     return;
                 case VariableDeclarationStatementSyntax variableDeclarationStatement:
                     ReportUnreachableCode(variableDeclarationStatement.TypeClause.Location);
@@ -237,6 +239,7 @@ namespace FanScript.Compiler.Diagnostics
                 case DoWhileStatementSyntax doWhileStatement:
                     ReportUnreachableCode(doWhileStatement.DoKeyword.Location);
                     return;
+
                 //case SyntaxKind.ForStatement:
                 //    ReportUnreachableCode(((ForStatementSyntax)node).Keyword.Location);
                 //    return;
@@ -284,5 +287,11 @@ namespace FanScript.Compiler.Diagnostics
 
         public void ReportFailedToDeclare(TextLocation location, string type, string name)
             => ReportWarning(location, $"Failed to declare {type} '{name}'.");
+
+        private void ReportError(TextLocation location, string message)
+            => _diagnostics.Add(Diagnostic.Error(location, message));
+
+        private void ReportWarning(TextLocation location, string message)
+            => _diagnostics.Add(Diagnostic.Warning(location, message));
     }
 }

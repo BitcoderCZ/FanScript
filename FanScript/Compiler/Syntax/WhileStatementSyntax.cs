@@ -13,7 +13,9 @@
         public override SyntaxKind Kind => SyntaxKind.WhileStatement;
 
         public SyntaxToken WhileKeyword { get; }
+
         public ExpressionSyntax Condition { get; }
+
         public StatementSyntax Body { get; }
     }
 }

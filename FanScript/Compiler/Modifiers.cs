@@ -1,11 +1,11 @@
-﻿using FanScript.Compiler.Symbols;
-using FanScript.Compiler.Syntax;
-using FanScript.Documentation.Attributes;
-using System.Collections.Frozen;
+﻿using System.Collections.Frozen;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Syntax;
+using FanScript.Documentation.Attributes;
 
 namespace FanScript.Compiler
 {
@@ -32,8 +32,7 @@ namespace FanScript.Compiler
 
             readonly float b // error - A readonly/constant variable needs to be initialized.
             </>
-            """
-        )]
+            """)]
         Readonly = 1 << 0,
         [ModifierDoc(
             Info = """
@@ -64,14 +63,12 @@ namespace FanScript.Compiler
 
             const float d // error - A readonly/constant variable needs to be initialized.
             </>
-            """
-        )]
+            """)]
         Constant = 1 << 1,
         [ModifierDoc(
             Info = """
             Similar to <link type="mod">out</>, but the argument is both taken in and out.
-            """
-        )]
+            """)]
         Ref = 1 << 2,
         [ModifierDoc(
             Info = """
@@ -95,16 +92,14 @@ namespace FanScript.Compiler
             // if you don't need the value of the out parameter, you can use a discard
             add(13, 22, out _)
             </>
-            """
-        )]
+            """)]
         Out = 1 << 3,
         [ModifierDoc(
             Info = """
             Makes the variable global - can be accesed from all functions.
             
             Can be applied to all types of vairables.
-            """
-        )]
+            """)]
         Global = 1 << 4,
         [ModifierDoc(
             Info = """
@@ -114,8 +109,7 @@ namespace FanScript.Compiler
             <list>
             <item><link type="type">float</></>
             </>
-            """
-        )]
+            """)]
         Saved = 1 << 5,
         [ModifierDoc(
             Info = """
@@ -133,8 +127,7 @@ namespace FanScript.Compiler
             <item><link type="type">obj</></>
             <item><link type="type">constr</></>
             </>
-            """
-        )]
+            """)]
         Inline = 1 << 6,
     }
 
@@ -149,9 +142,10 @@ namespace FanScript.Compiler
     /// <summary>
     /// Extension methods for <see cref="Modifiers"/>
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:File name should match first type name", Justification = "It does, but enums aren't detected for some reason")]
     public static class ModifiersE
     {
-        private static readonly FrozenDictionary<Modifiers, ModifierInfo> lookup = new Dictionary<Modifiers, ModifierInfo>()
+        private static readonly FrozenDictionary<Modifiers, ModifierInfo> Lookup = new Dictionary<Modifiers, ModifierInfo>()
         {
             [Modifiers.Readonly] = new ModifierInfo(SyntaxKind.ReadOnlyModifier, [ModifierTarget.Variable, ModifierTarget.Parameter]) { Conflicts = [Modifiers.Constant, Modifiers.Ref, Modifiers.Out] },
             [Modifiers.Constant] = new ModifierInfo(SyntaxKind.ConstantModifier, [ModifierTarget.Variable]) { Conflicts = [Modifiers.Readonly, Modifiers.Saved, Modifiers.Inline] },
@@ -193,28 +187,33 @@ namespace FanScript.Compiler
                 {
                     validMods |= Modifiers.Inline;
                     if (type != TypeSymbol.Object && type != TypeSymbol.Constraint)
+                    {
                         validMods |= Modifiers.Constant;
+                    }
                 }
+
                 if (type == TypeSymbol.Float)
+                {
                     validMods |= Modifiers.Saved;
+                }
 
                 return validMods;
             }
 
-            return lookup
+            return Lookup
                 .Where(item => item.Value.Targets.Contains(target))
                 .Select(item => item.Key)
                 .Colaps();
         }
 
         public static IReadOnlyCollection<ModifierTarget> GetTargets(this Modifiers mod)
-            => lookup[mod].Targets;
+            => Lookup[mod].Targets;
 
         public static SyntaxKind ToKind(this Modifiers mod)
-            => lookup[mod].Kind;
+            => Lookup[mod].Kind;
 
         public static IReadOnlyCollection<Modifiers> GetConflictingModifiers(this Modifiers mod)
-            => lookup[mod].Conflicts;
+            => Lookup[mod].Conflicts;
 
         /// <summary>
         /// Gets modifiers reuired by <paramref name="mod"/>
@@ -225,11 +224,11 @@ namespace FanScript.Compiler
         /// <param name="mod"></param>
         /// <returns>The required modifiers</returns>
         public static IReadOnlyCollection<Modifiers> GetRequiredModifiers(this Modifiers mod)
-            => lookup[mod].RequiredOneOf;
+            => Lookup[mod].RequiredOneOf;
 
         public static bool MakesTargetReference(this Modifiers mods, [NotNullWhen(true)] out Modifiers? makesRefMod)
         {
-            foreach (var (mod, info) in lookup)
+            foreach (var (mod, info) in Lookup)
                 if (mods.HasFlag(mod) && info.MakesTargetReference)
                 {
                     makesRefMod = mod;
@@ -246,38 +245,46 @@ namespace FanScript.Compiler
             mods.ToSyntaxString(builder);
             return builder.ToString();
         }
+
         public static void ToSyntaxString(this Modifiers mods, StringBuilder builder)
         {
             bool isFirst = true;
 
             foreach (var modifier in Enum.GetValues<Modifiers>())
+            {
                 if (mods.HasFlag(modifier))
                 {
                     if (!isFirst)
+                    {
                         builder.Append(' ');
+                    }
 
                     isFirst = false;
 
                     builder.Append(modifier.ToKind().GetText());
                 }
+            }
         }
 
         private class ModifierInfo
         {
             public readonly SyntaxKind Kind;
-            public IReadOnlyCollection<ModifierTarget> Targets { get; init; }
-            public IReadOnlyCollection<Modifiers> Conflicts { get; init; }
-            public IReadOnlyCollection<Modifiers> RequiredOneOf { get; init; }
-
-            public bool MakesTargetReference { get; init; } = false;
 
             public ModifierInfo(SyntaxKind kind, IReadOnlyCollection<ModifierTarget> targets)
             {
                 Kind = kind;
                 Targets = targets;
-                Conflicts = ReadOnlyCollection<Modifiers>.Empty;
-                RequiredOneOf = ReadOnlyCollection<Modifiers>.Empty;
+                Conflicts = [];
+                RequiredOneOf = [];
             }
+
+            public IReadOnlyCollection<ModifierTarget> Targets { get; init; }
+
+            public IReadOnlyCollection<Modifiers> Conflicts { get; init; }
+
+            public IReadOnlyCollection<Modifiers> RequiredOneOf { get; init; }
+
+            public bool MakesTargetReference { get; init; } = false;
         }
     }
 }

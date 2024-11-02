@@ -1,5 +1,5 @@
-﻿using FanScript.Compiler.Diagnostics;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
+using FanScript.Compiler.Diagnostics;
 
 namespace FanScript.Compiler
 {

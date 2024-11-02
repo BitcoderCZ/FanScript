@@ -13,7 +13,6 @@
         public UnclosedStartTagException(string elementName)
             : base($"An element \"{elementName}\" has unclosed start tag.")
         {
-
         }
     }
 
@@ -22,7 +21,6 @@
         public UnclosedEndTagException(string elementName)
             : base($"An element \"{elementName}\" has unclosed end tag.")
         {
-
         }
     }
 }

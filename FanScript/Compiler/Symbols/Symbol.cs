@@ -1,20 +1,21 @@
 ﻿using System.Diagnostics;
+using FanScript.Utils;
 
 namespace FanScript.Compiler.Symbols
 {
-    public abstract class Symbol
+    public abstract class Symbol : ITextWritable
     {
         private protected Symbol(string name)
         {
-            Debug.Assert(!string.IsNullOrEmpty(name));
+            Debug.Assert(!string.IsNullOrEmpty(name), "Symbol name cannot be empty.");
             Name = name;
         }
 
         public abstract SymbolKind Kind { get; }
+
         public string Name { get; protected set; }
 
-        public void WriteTo(TextWriter writer)
-            => SymbolPrinter.WriteTo(this, writer);
+        public abstract void WriteTo(TextWriter writer);
 
         public override string ToString()
         {
@@ -29,9 +30,6 @@ namespace FanScript.Compiler.Symbols
             => Name.GetHashCode();
 
         public override bool Equals(object? obj)
-        {
-            if (obj is Symbol other) return Name == other.Name;
-            else return false;
-        }
+            => obj is Symbol other && Name == other.Name;
     }
 }

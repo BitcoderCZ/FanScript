@@ -1,5 +1,5 @@
-﻿using FanScript.Compiler.Text;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
+using FanScript.Compiler.Text;
 
 namespace FanScript.Compiler.Syntax
 {
@@ -18,10 +18,15 @@ namespace FanScript.Compiler.Syntax
         }
 
         public override SyntaxKind Kind { get; }
+
         public int Position { get; }
+
         public string Text { get; }
+
         public object? Value { get; }
+
         public override TextSpan Span => new TextSpan(Position, Text.Length);
+
         public override TextSpan FullSpan
         {
             get
@@ -37,16 +42,15 @@ namespace FanScript.Compiler.Syntax
         }
 
         public ImmutableArray<SyntaxTrivia> LeadingTrivia { get; }
-        public ImmutableArray<SyntaxTrivia> TrailingTrivia { get; }
 
-        public override IEnumerable<SyntaxNode> GetChildren()
-        {
-            return Array.Empty<SyntaxNode>();
-        }
+        public ImmutableArray<SyntaxTrivia> TrailingTrivia { get; }
 
         /// <summary>
         /// A token is missing if it was inserted by the parser and doesn't appear in source.
         /// </summary>
         public bool IsMissing { get; }
+
+        public override IEnumerable<SyntaxNode> GetChildren()
+            => [];
     }
 }

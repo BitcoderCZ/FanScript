@@ -5,26 +5,19 @@ namespace FanScript.Cli
     internal static class Log
     {
         public static void Debug(string msg)
-            => log(new Message(msg, Level.Debug));
+            => LogInternal(new Message(msg, Level.Debug));
 
         public static void Info(string msg)
-            => log(new Message(msg, Level.Info));
+            => LogInternal(new Message(msg, Level.Info));
 
         public static int Error(string msg, ErrorCode errCode, Exception? exception = null)
         {
-            Message mes;
-
-            if (exception is null)
-                mes = new Message(msg, Level.Error, errCode);
-            else
-                mes = new Message(msg, errCode, exception);
-
-            log(mes);
+            LogInternal(exception is null ? new Message(msg, Level.Error, errCode) : new Message(msg, errCode, exception));
 
             return (int)errCode;
         }
 
-        private static void log(in Message msg)
+        private static void LogInternal(in Message msg)
         {
             StringBuilder builder = new StringBuilder();
 

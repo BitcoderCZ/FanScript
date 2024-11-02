@@ -5,105 +5,55 @@ namespace FanScript.Compiler.Syntax
     public static class SyntaxFacts
     {
         public static int GetUnaryOperatorPrecedence(this SyntaxKind kind)
-        {
-            switch (kind)
+            => kind switch
             {
-                case SyntaxKind.PlusToken:
-                case SyntaxKind.MinusToken:
-                case SyntaxKind.BangToken:
-                    return 6;
-
-                default:
-                    return 0;
-            }
-        }
+                SyntaxKind.PlusToken or SyntaxKind.MinusToken or SyntaxKind.BangToken => 6,
+                _ => 0,
+            };
 
         public static int GetBinaryOperatorPrecedence(this SyntaxKind kind)
-        {
-            switch (kind)
+            => kind switch
             {
-                case SyntaxKind.StarToken:
-                case SyntaxKind.SlashToken:
-                case SyntaxKind.PercentToken:
-                    return 5;
-
-                case SyntaxKind.PlusToken:
-                case SyntaxKind.MinusToken:
-                    return 4;
-
-                case SyntaxKind.EqualsEqualsToken:
-                case SyntaxKind.BangEqualsToken:
-                case SyntaxKind.LessToken:
-                case SyntaxKind.LessOrEqualsToken:
-                case SyntaxKind.GreaterToken:
-                case SyntaxKind.GreaterOrEqualsToken:
-                    return 3;
-
-                case SyntaxKind.AmpersandAmpersandToken:
-                    return 2;
-
-                case SyntaxKind.PipePipeToken:
-                    return 1;
-
-                default:
-                    return 0;
-            }
-        }
+                SyntaxKind.StarToken or SyntaxKind.SlashToken or SyntaxKind.PercentToken => 5,
+                SyntaxKind.PlusToken or SyntaxKind.MinusToken => 4,
+                SyntaxKind.EqualsEqualsToken or SyntaxKind.BangEqualsToken or SyntaxKind.LessToken or SyntaxKind.LessOrEqualsToken or SyntaxKind.GreaterToken or SyntaxKind.GreaterOrEqualsToken => 3,
+                SyntaxKind.AmpersandAmpersandToken => 2,
+                SyntaxKind.PipePipeToken => 1,
+                _ => 0,
+            };
 
         public static bool IsComment(this SyntaxKind kind)
-        {
-            return kind == SyntaxKind.SingleLineCommentTrivia ||
-                   kind == SyntaxKind.MultiLineCommentTrivia;
-        }
+             => kind switch
+             {
+                 SyntaxKind.SingleLineCommentTrivia or SyntaxKind.MultiLineCommentTrivia => true,
+                 _ => false,
+             };
 
-        internal static SyntaxKind GetKeywordKind(string text)
-        {
-            switch (text)
+        public static SyntaxKind GetKeywordKind(string text)
+            => text switch
             {
-                case "true":
-                    return SyntaxKind.KeywordTrue;
-                case "false":
-                    return SyntaxKind.KeywordFalse;
-                case "for":
-                    return SyntaxKind.KeywordFor;
-                case "if":
-                    return SyntaxKind.KeywordIf;
-                case "else":
-                    return SyntaxKind.KeywordElse;
-                case "while":
-                    return SyntaxKind.KeywordWhile;
-                case "do":
-                    return SyntaxKind.KeywordDo;
-                case "break":
-                    return SyntaxKind.KeywordBreak;
-                case "continue":
-                    return SyntaxKind.KeywordContinue;
-                case "on":
-                    return SyntaxKind.KeywordOn;
-                case "null":
-                    return SyntaxKind.KeywordNull;
-                case "func":
-                    return SyntaxKind.KeywordFunction;
-                case "return":
-                    return SyntaxKind.KeywordReturn;
-                case "readonly":
-                    return SyntaxKind.ReadOnlyModifier;
-                case "const":
-                    return SyntaxKind.ConstantModifier;
-                case "ref":
-                    return SyntaxKind.RefModifier;
-                case "out":
-                    return SyntaxKind.OutModifier;
-                case "global":
-                    return SyntaxKind.GlobalModifier;
-                case "saved":
-                    return SyntaxKind.SavedModifier;
-                case "inline":
-                    return SyntaxKind.InlineModifier;
-                default:
-                    return SyntaxKind.IdentifierToken;
-            }
-        }
+                "true" => SyntaxKind.KeywordTrue,
+                "false" => SyntaxKind.KeywordFalse,
+                "for" => SyntaxKind.KeywordFor,
+                "if" => SyntaxKind.KeywordIf,
+                "else" => SyntaxKind.KeywordElse,
+                "while" => SyntaxKind.KeywordWhile,
+                "do" => SyntaxKind.KeywordDo,
+                "break" => SyntaxKind.KeywordBreak,
+                "continue" => SyntaxKind.KeywordContinue,
+                "on" => SyntaxKind.KeywordOn,
+                "null" => SyntaxKind.KeywordNull,
+                "func" => SyntaxKind.KeywordFunction,
+                "return" => SyntaxKind.KeywordReturn,
+                "readonly" => SyntaxKind.ReadOnlyModifier,
+                "const" => SyntaxKind.ConstantModifier,
+                "ref" => SyntaxKind.RefModifier,
+                "out" => SyntaxKind.OutModifier,
+                "global" => SyntaxKind.GlobalModifier,
+                "saved" => SyntaxKind.SavedModifier,
+                "inline" => SyntaxKind.InlineModifier,
+                _ => SyntaxKind.IdentifierToken,
+            };
 
         public static IEnumerable<SyntaxKind> GetUnaryOperatorKinds()
         {
@@ -111,7 +61,9 @@ namespace FanScript.Compiler.Syntax
             foreach (var kind in kinds)
             {
                 if (GetUnaryOperatorPrecedence(kind) > 0)
+                {
                     yield return kind;
+                }
             }
         }
 
@@ -121,7 +73,9 @@ namespace FanScript.Compiler.Syntax
             foreach (var kind in kinds)
             {
                 if (GetBinaryOperatorPrecedence(kind) > 0)
+                {
                     yield return kind;
+                }
             }
         }
 
@@ -235,23 +189,15 @@ namespace FanScript.Compiler.Syntax
                 SyntaxKind.InlineModifier =>
                     "inline",
                 _ =>
-                    null
+                    null,
             };
 
         public static bool IsTrivia(this SyntaxKind kind)
-        {
-            switch (kind)
+            => kind switch
             {
-                case SyntaxKind.SkippedTextTrivia:
-                case SyntaxKind.LineBreakTrivia:
-                case SyntaxKind.WhitespaceTrivia:
-                case SyntaxKind.SingleLineCommentTrivia:
-                case SyntaxKind.MultiLineCommentTrivia:
-                    return true;
-                default:
-                    return false;
-            }
-        }
+                SyntaxKind.SkippedTextTrivia or SyntaxKind.LineBreakTrivia or SyntaxKind.WhitespaceTrivia or SyntaxKind.SingleLineCommentTrivia or SyntaxKind.MultiLineCommentTrivia => true,
+                _ => false,
+            };
 
         public static bool IsKeyword(this SyntaxKind kind)
             => kind.ToString().StartsWith("Keyword");
@@ -264,22 +210,14 @@ namespace FanScript.Compiler.Syntax
                    (kind.IsKeyword() || kind.IsModifier() || kind.ToString().EndsWith("Token"));
 
         public static SyntaxKind GetBinaryOperatorOfAssignmentOperator(SyntaxKind kind)
-        {
-            switch (kind)
+            => kind switch
             {
-                case SyntaxKind.PlusEqualsToken:
-                    return SyntaxKind.PlusToken;
-                case SyntaxKind.MinusEqualsToken:
-                    return SyntaxKind.MinusToken;
-                case SyntaxKind.StarEqualsToken:
-                    return SyntaxKind.StarToken;
-                case SyntaxKind.SlashEqualsToken:
-                    return SyntaxKind.SlashToken;
-                case SyntaxKind.PercentEqualsToken:
-                    return SyntaxKind.PercentToken;
-                default:
-                    throw new UnknownEnumValueException<SyntaxKind>(kind);
-            }
-        }
+                SyntaxKind.PlusEqualsToken => SyntaxKind.PlusToken,
+                SyntaxKind.MinusEqualsToken => SyntaxKind.MinusToken,
+                SyntaxKind.StarEqualsToken => SyntaxKind.StarToken,
+                SyntaxKind.SlashEqualsToken => SyntaxKind.SlashToken,
+                SyntaxKind.PercentEqualsToken => SyntaxKind.PercentToken,
+                _ => throw new UnknownEnumValueException<SyntaxKind>(kind),
+            };
     }
 }

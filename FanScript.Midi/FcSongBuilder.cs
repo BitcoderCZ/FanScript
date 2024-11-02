@@ -9,7 +9,7 @@ namespace FanScript.Midi
         private readonly MidiConvertSettings settings;
 
         private readonly ChannelTimeInfo[] channelTime = new ChannelTimeInfo[MidiConverter.MaxNumbChannels];
-        private readonly Dictionary<int, Note> playingNotes = new(); // also array, Note?
+        private readonly Dictionary<int, Note> playingNotes = []; // also array, Note?
         private readonly SongStats stats = new();
         private readonly FcSong.Channel[] channels = new FcSong.Channel[MidiConverter.MaxNumbChannels];
 
@@ -30,10 +30,7 @@ namespace FanScript.Midi
                 {
                     bool used = stats.UsedChannels[index];
 
-                    if (used && channelCount++ < settings.MaxChannels)
-                        return true;
-
-                    return false;
+                    return used && channelCount++ < settings.MaxChannels;
                 }));
         }
 
@@ -54,11 +51,11 @@ namespace FanScript.Midi
                 return;
             }
 
-            if (getLongDelta(channel, deltaTime, out long longDelta))
+            if (GetLongDelta(channel, deltaTime, out long longDelta))
                 return;
 
-            byte noteNumb = noteToNumb(note);
-            byte delta = addLongDelta(channel, longDelta);
+            byte noteNumb = NoteToNumb(note);
+            byte delta = AddLongDelta(channel, longDelta);
             byte bVelocity = (byte)Math.Min(velocity * 255f, 255f);
 
             if (playingNotes.TryGetValue(channel, out Note? currentlyPlaying))
@@ -87,7 +84,7 @@ namespace FanScript.Midi
                 return;
             }
 
-            if (getLongDelta(channel, deltaTime, out long longDelta))
+            if (GetLongDelta(channel, deltaTime, out long longDelta))
                 return;
 
             if (!playingNotes.TryGetValue(channel, out Note? currentlyPlaying))
@@ -103,7 +100,7 @@ namespace FanScript.Midi
 
             playingNotes.Remove(channel);
 
-            byte delta = addLongDelta(channel, longDelta);
+            byte delta = AddLongDelta(channel, longDelta);
 
             stats.ChannelUsed(channel);
 
@@ -121,24 +118,22 @@ namespace FanScript.Midi
                 return;
             }
 
-            if (getLongDelta(channel, deltaTime, out long longDelta))
+            if (GetLongDelta(channel, deltaTime, out long longDelta))
                 return;
 
             byte sound = (byte)Utils.InstrumentToFcSound(instrument);
 
-            byte delta = addLongDelta(channel, longDelta);
+            byte delta = AddLongDelta(channel, longDelta);
 
             Console.WriteLine($"[{channel}] Set instrument to '{instrument}' (sound: {sound}");
 
             channels[channel].Events.Add(new ChannelEvent(ChannelEventType.SetInstrument, delta, sound));
         }
 
-        private byte noteToNumb(Note note)
-        {
-            return (byte)note.NoteName;//note.NoteNumber;
-        }
+        private static byte NoteToNumb(Note note)
+            => (byte)note.NoteName;//note.NoteNumber;
 
-        private bool getLongDelta(byte channel, TimeSpan deltaTime, out long longDelta)
+        private bool GetLongDelta(byte channel, TimeSpan deltaTime, out long longDelta)
         {
             ref ChannelTimeInfo time = ref channelTime[channel];
 
@@ -147,7 +142,7 @@ namespace FanScript.Midi
             return time.CurrentFrame > settings.MaxFrames;
         }
 
-        private byte addLongDelta(byte channel, long wholeDelta)
+        private byte AddLongDelta(byte channel, long wholeDelta)
         {
             uint maxWait = (uint)(ChannelEvent.MaxDeltaTime + 255);
 
@@ -196,9 +191,7 @@ namespace FanScript.Midi
             }
 
             public void Clear()
-            {
-                Array.Clear(UsedChannels);
-            }
+                => Array.Clear(UsedChannels);
         }
     }
 }

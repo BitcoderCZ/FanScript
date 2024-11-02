@@ -2,7 +2,8 @@
 {
     public sealed class ConstantDocAttribute : DocumentationAttribute
     {
-        public ConstantDocAttribute() : base()
+        public ConstantDocAttribute()
+            : base()
         {
         }
 

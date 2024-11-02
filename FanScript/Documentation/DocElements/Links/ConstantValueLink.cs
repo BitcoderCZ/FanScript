@@ -1,5 +1,5 @@
-﻿using FanScript.Compiler;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
+using FanScript.Compiler;
 
 namespace FanScript.Documentation.DocElements.Links
 {
@@ -13,6 +13,7 @@ namespace FanScript.Documentation.DocElements.Links
         }
 
         public ConstantGroup Group { get; }
+
         public Constant Constant { get; }
 
         public override (string DisplayString, string LinkString) GetStrings()

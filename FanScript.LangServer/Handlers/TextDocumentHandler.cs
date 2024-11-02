@@ -20,7 +20,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
-
 #pragma warning disable CS0618
 
 namespace FanScript.LangServer.Handlers
@@ -31,9 +30,9 @@ namespace FanScript.LangServer.Handlers
         private readonly ILogger<TextDocumentHandler> logger;
         private readonly ILanguageServerConfiguration configuration;
 
-        private readonly Dictionary<DocumentUri, Document> documentCache = new();
+        private readonly Dictionary<DocumentUri, Document> documentCache = [];
 
-        private ConcurrentDictionary<DocumentUri, DelayedRunner> findErrorsDict = new();
+        private readonly ConcurrentDictionary<DocumentUri, DelayedRunner> findErrorsDict = new();
 
         private readonly TextDocumentSelector textDocumentSelector = new TextDocumentSelector(
             new TextDocumentFilter
@@ -71,7 +70,7 @@ namespace FanScript.LangServer.Handlers
         {
             await Task.Yield();
 
-            var runner = new DelayedRunner(() => findErrors(notification.TextDocument.Uri), TimeSpan.FromSeconds(0.75), TimeSpan.FromSeconds(4));
+            var runner = new DelayedRunner(() => FindErrors(notification.TextDocument.Uri), TimeSpan.FromSeconds(0.75), TimeSpan.FromSeconds(4));
             findErrorsDict.AddOrUpdate(notification.TextDocument.Uri, runner, (uri, oldRunner) =>
             {
                 oldRunner.Stop();
@@ -120,7 +119,7 @@ namespace FanScript.LangServer.Handlers
             return document;
         }
 
-        private void findErrors(DocumentUri uri)
+        private void FindErrors(DocumentUri uri)
         {
             Document document = GetDocument(uri);
             Compilation? compilation = document.Compilation;
@@ -139,7 +138,7 @@ namespace FanScript.LangServer.Handlers
 
             List<Diagnostic> convert(ImmutableArray<Compiler.Diagnostics.Diagnostic> diagnostics)
             {
-                List<Diagnostic> result = new();
+                List<Diagnostic> result = [];
 
                 foreach (var diagnostic in diagnostics)
                     result.Add(new Diagnostic()

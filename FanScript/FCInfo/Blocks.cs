@@ -1,4 +1,5 @@
 ﻿using FanScript.Compiler;
+using FanScript.Compiler.Exceptions;
 using MathUtils.Vectors;
 
 namespace FanScript.FCInfo
@@ -99,51 +100,13 @@ namespace FanScript.FCInfo
 
         public static class Math
         {
-            public static BlockDef EqualsByType(WireType type)
-            {
-                switch (type.ToNormal())
-                {
-                    case WireType.Float:
-                        return Equals_Number;
-                    case WireType.Vec3:
-                        return Equals_Vector;
-                    case WireType.Bool:
-                        return Equals_Bool;
-                    case WireType.Obj:
-                        return Equals_Object;
-                    default:
-                        throw new Exception($"Unsuported WireType: {type}");
-                }
-            }
-            public static BlockDef BreakByType(WireType type)
-            {
-                switch (type.ToNormal())
-                {
-                    case WireType.Vec3:
-                        return Break_Vector;
-                    case WireType.Rot:
-                        return Break_Rotation;
-                    default:
-                        throw new Exception($"Unsuported WireType: {type}");
-                }
-            }
-            public static BlockDef MakeByType(WireType type)
-            {
-                switch (type.ToNormal())
-                {
-                    case WireType.Vec3:
-                        return Make_Vector;
-                    case WireType.Rot:
-                        return Make_Rotation;
-                    default:
-                        throw new Exception($"Unsuported WireType: {type}");
-                }
-            }
-
+#pragma warning disable SA1310 // Field names should not contain underscore
             public static readonly BlockDef Negate = new BlockDef("Negate", 90, BlockType.Pasive, new Vector2I(2, 1), new Terminal(WireType.Float, TerminalType.Out, "-Num"), new Terminal(WireType.Float, TerminalType.In, "Num"));
+#pragma warning restore SA1310
             public static readonly BlockDef Not = new BlockDef("Not", 144, BlockType.Pasive, new Vector2I(2, 1), new Terminal(WireType.Bool, TerminalType.Out, "Not Tru"), new Terminal(WireType.Bool, TerminalType.In, "Tru"));
             public static readonly BlockDef Inverse = new BlockDef("Inverse", 440, BlockType.Pasive, new Vector2I(2, 1), new Terminal(WireType.Rot, TerminalType.Out, "Rot Inverse"), new Terminal(WireType.Rot, TerminalType.In, "Rot"));
 
+#pragma warning disable SA1310 // Field names should not contain underscore
             public static readonly BlockDef Add_Number = new BlockDef("Add Numbers", 92, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.Float, TerminalType.Out, "Num1 + Num2"), new Terminal(WireType.Float, TerminalType.In, "Num2"), new Terminal(WireType.Float, TerminalType.In, "Num1"));
             public static readonly BlockDef Add_Vector = new BlockDef("Add Vectors", 96, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.Vec3, TerminalType.Out, "Vec1 + Vec2"), new Terminal(WireType.Vec3, TerminalType.In, "Vec2"), new Terminal(WireType.Vec3, TerminalType.In, "Vec1"));
             public static readonly BlockDef Subtract_Number = new BlockDef("Subtract Numbers", 100, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.Float, TerminalType.Out, "Num1 - Num2"), new Terminal(WireType.Float, TerminalType.In, "Num2"), new Terminal(WireType.Float, TerminalType.In, "Num1"));
@@ -160,6 +123,7 @@ namespace FanScript.FCInfo
             public static readonly BlockDef Equals_Vector = new BlockDef("Equals Vectors", 136, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.Bool, TerminalType.Out, "Vec1 = Vec2"), new Terminal(WireType.Vec3, TerminalType.In, "Vec2"), new Terminal(WireType.Vec3, TerminalType.In, "Vec1"));
             public static readonly BlockDef Equals_Object = new BlockDef("Equals Objects", 140, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.Bool, TerminalType.Out, "Obj1 = Obj2"), new Terminal(WireType.Obj, TerminalType.In, "Obj2"), new Terminal(WireType.Obj, TerminalType.In, "Obj1"));
             public static readonly BlockDef Equals_Bool = new BlockDef("Equals Truths", 421, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.Bool, TerminalType.Out, "Tru1 = Tru2"), new Terminal(WireType.Bool, TerminalType.In, "Tru2"), new Terminal(WireType.Bool, TerminalType.In, "Tru1"));
+#pragma warning restore SA1310 // Field names should not contain underscore
 
             public static readonly BlockDef LogicalAnd = new BlockDef("AND", 146, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.Bool, TerminalType.Out, "Tru1 & Tru2"), new Terminal(WireType.Bool, TerminalType.In, "Tru2"), new Terminal(WireType.Bool, TerminalType.In, "Tru1"));
             public static readonly BlockDef LogicalOr = new BlockDef("OR", 417, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.Bool, TerminalType.Out, "Tru1 | Tru2"), new Terminal(WireType.Bool, TerminalType.In, "Tru2"), new Terminal(WireType.Bool, TerminalType.In, "Tru1"));
@@ -200,46 +164,42 @@ namespace FanScript.FCInfo
 
             public static readonly BlockDef LineVsPlane = new BlockDef("Line vs Plane", 208, BlockType.Pasive, new Vector2I(2, 4), new Terminal(WireType.Vec3, TerminalType.Out, "Intersection"), new Terminal(WireType.Vec3, TerminalType.In, "Plane Normal"), new Terminal(WireType.Vec3, TerminalType.In, "Plane Point"), new Terminal(WireType.Vec3, TerminalType.In, "Line To"), new Terminal(WireType.Vec3, TerminalType.In, "Line From"));
 
+#pragma warning disable SA1310 // Field names should not contain underscore
             public static readonly BlockDef Make_Vector = new BlockDef("Make Vector", 150, BlockType.Pasive, new Vector2I(2, 3), new Terminal(WireType.Vec3, TerminalType.Out, "Vector"), new Terminal(WireType.Float, TerminalType.In, "Z"), new Terminal(WireType.Float, TerminalType.In, "Y"), new Terminal(WireType.Float, TerminalType.In, "X"));
             public static readonly BlockDef Break_Vector = new BlockDef("Break Vector", 156, BlockType.Pasive, new Vector2I(2, 3), new Terminal(WireType.Float, TerminalType.Out, "Z"), new Terminal(WireType.Float, TerminalType.Out, "Y"), new Terminal(WireType.Float, TerminalType.Out, "X"), new Terminal(WireType.Vec3, TerminalType.In, "Vector"));
             public static readonly BlockDef Make_Rotation = new BlockDef("Make Rotation", 162, BlockType.Pasive, new Vector2I(2, 3), new Terminal(WireType.Rot, TerminalType.Out, "Rotation"), new Terminal(WireType.Float, TerminalType.In, "Z angle"), new Terminal(WireType.Float, TerminalType.In, "Y angle"), new Terminal(WireType.Float, TerminalType.In, "X angle"));
             public static readonly BlockDef Break_Rotation = new BlockDef("Break Rotation", 442, BlockType.Pasive, new Vector2I(2, 3), new Terminal(WireType.Float, TerminalType.Out, "Z angle"), new Terminal(WireType.Float, TerminalType.Out, "Y angle"), new Terminal(WireType.Float, TerminalType.Out, "X angle"), new Terminal(WireType.Rot, TerminalType.In, "Rotation"));
+#pragma warning restore SA1310 // Field names should not contain underscore
+
+            public static BlockDef EqualsByType(WireType type)
+                => type.ToNormal() switch
+                {
+                    WireType.Float => Equals_Number,
+                    WireType.Vec3 => Equals_Vector,
+                    WireType.Bool => Equals_Bool,
+                    WireType.Obj => Equals_Object,
+                    _ => throw new UnknownEnumValueException<WireType>(type),
+                };
+
+            public static BlockDef BreakByType(WireType type)
+                => type.ToNormal() switch
+                {
+                    WireType.Vec3 => Break_Vector,
+                    WireType.Rot => Break_Rotation,
+                    _ => throw new UnknownEnumValueException<WireType>(type),
+                };
+
+            public static BlockDef MakeByType(WireType type)
+                => type.ToNormal() switch
+                {
+                    WireType.Vec3 => Make_Vector,
+                    WireType.Rot => Make_Rotation,
+                    _ => throw new UnknownEnumValueException<WireType>(type),
+                };
         }
 
         public static class Values
         {
-            public static BlockDef ValueByType(object value)
-            {
-                if (value is float)
-                    return Number;
-                else if (value is bool b)
-                    return b ? True : False;
-                else if (value is Vector3F)
-                    return Vector;
-                else if (value is Rotation)
-                    return Rotation;
-                else
-                    throw new Exception($"Value doesn't exist for Type '{value.GetType()}',");
-            }
-            public static BlockDef InspectByType(WireType type)
-            {
-                switch (type.ToNormal())
-                {
-                    case WireType.Float:
-                        return Inspect_Number;
-                    case WireType.Bool:
-                        return Inspect_Truth;
-                    case WireType.Vec3:
-                        return Inspect_Vector;
-                    case WireType.Rot:
-                        return Inspect_Rotation;
-                    case WireType.Obj:
-                        return Inspect_Object;
-                    default:
-                        throw new Exception($"Cannot get inspect for WireType: \"{Enum.GetName(typeof(WireType), type)}\"");
-                }
-            }
-
             public static readonly BlockDef Number = new BlockDef("Number", 36, BlockType.Value, new Vector2I(2, 1), new Terminal(WireType.Float, TerminalType.Out, "Number"));
             public static readonly BlockDef Vector = new BlockDef("Vector", 38, BlockType.Value, new Vector2I(2, 2), new Terminal(WireType.Vec3, TerminalType.Out, "Vector"));
             public static readonly BlockDef Rotation = new BlockDef("Rotation", 42, BlockType.Value, new Vector2I(2, 2), new Terminal(WireType.Rot, TerminalType.Out, "Rotation"));
@@ -248,96 +208,39 @@ namespace FanScript.FCInfo
 
             public static readonly BlockDef Comment = new BlockDef("Comment", 15, BlockType.Value, new Vector2I(1, 1));
 
+#pragma warning disable SA1310 // Field names should not contain underscore
             public static readonly BlockDef Inspect_Number = new BlockDef("Inspect Number", 16, BlockType.Active, new Vector2I(2, 2), new Terminal(WireType.Void, TerminalType.Out, "After"), new Terminal(WireType.Float, TerminalType.In, "Number"), new Terminal(WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef Inspect_Vector = new BlockDef("Inspect Vector", 20, BlockType.Active, new Vector2I(2, 2), new Terminal(WireType.Void, TerminalType.Out, "After"), new Terminal(WireType.Vec3, TerminalType.In, "Vector"), new Terminal(WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef Inspect_Rotation = new BlockDef("Inspect Rotation", 24, BlockType.Active, new Vector2I(2, 2), new Terminal(WireType.Void, TerminalType.Out, "After"), new Terminal(WireType.Rot, TerminalType.In, "Rotation"), new Terminal(WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef Inspect_Truth = new BlockDef("Inspect Truth", 28, BlockType.Active, new Vector2I(2, 2), new Terminal(WireType.Void, TerminalType.Out, "After"), new Terminal(WireType.Bool, TerminalType.In, "Truth"), new Terminal(WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef Inspect_Object = new BlockDef("Inspect Object", 32, BlockType.Active, new Vector2I(2, 2), new Terminal(WireType.Void, TerminalType.Out, "After"), new Terminal(WireType.Obj, TerminalType.In, "Object"), new Terminal(WireType.Void, TerminalType.In, "Before"));
+#pragma warning restore SA1310 // Field names should not contain underscore
+
+            public static BlockDef ValueByType(object value)
+                => value switch
+                {
+                    float => Number,
+                    bool b => b ? True : False,
+                    Vector3F => Vector,
+                    Compiler.Rotation => Rotation,
+                    _ => throw new Exception($"Value doesn't exist for Type '{value.GetType()}',"),
+                };
+
+            public static BlockDef InspectByType(WireType type)
+                => type.ToNormal() switch
+                {
+                    WireType.Float => Inspect_Number,
+                    WireType.Bool => Inspect_Truth,
+                    WireType.Vec3 => Inspect_Vector,
+                    WireType.Rot => Inspect_Rotation,
+                    WireType.Obj => Inspect_Object,
+                    _ => throw new UnknownEnumValueException<WireType>(type),
+                };
         }
 
         public static class Variables
         {
-            public static BlockDef VariableByType(WireType type)
-            {
-                switch (type.ToNormal())
-                {
-                    case WireType.Float:
-                        return Variable_Num;
-                    case WireType.Bool:
-                        return Variable_Tru;
-                    case WireType.Vec3:
-                        return Variable_Vec;
-                    case WireType.Rot:
-                        return Variable_Rot;
-                    case WireType.Obj:
-                        return Variable_Obj;
-                    case WireType.Con:
-                        return Variable_Con;
-                    default:
-                        throw new Exception($"Get_variable doesn't exist for WireType \"{Enum.GetName(typeof(WireType), type)}\"");
-                }
-            }
-            public static BlockDef Set_VariableByType(WireType type)
-            {
-                switch (type.ToNormal())
-                {
-                    case WireType.Float:
-                        return Set_Variable_Num;
-                    case WireType.Bool:
-                        return Set_Variable_Tru;
-                    case WireType.Vec3:
-                        return Set_Variable_Vec;
-                    case WireType.Rot:
-                        return Set_Variable_Rot;
-                    case WireType.Obj:
-                        return Set_Variable_Obj;
-                    case WireType.Con:
-                        return Set_Variable_Con;
-                    default:
-                        throw new Exception($"Set_Variable doesn't exist for WireType \"{Enum.GetName(typeof(WireType), type)}\"");
-                }
-            }
-            public static BlockDef ListByType(WireType type)
-            {
-                switch (type.ToNormal())
-                {
-                    case WireType.Float:
-                        return List_Num;
-                    case WireType.Bool:
-                        return List_Tru;
-                    case WireType.Vec3:
-                        return List_Vec;
-                    case WireType.Rot:
-                        return List_Rot;
-                    case WireType.Obj:
-                        return List_Obj;
-                    case WireType.Con:
-                        return List_Con;
-                    default:
-                        throw new Exception($"List doesn't exist for WireType \"{Enum.GetName(typeof(WireType), type)}\"");
-                }
-            }
-            public static BlockDef Set_PtrByType(WireType type)
-            {
-                switch (type.ToNormal())
-                {
-                    case WireType.Float:
-                        return Set_Ptr_Num;
-                    case WireType.Bool:
-                        return Set_Ptr_Tru;
-                    case WireType.Vec3:
-                        return Set_Ptr_Vec;
-                    case WireType.Rot:
-                        return Set_Ptr_Rot;
-                    case WireType.Obj:
-                        return Set_Ptr_Obj;
-                    case WireType.Con:
-                        return Set_Ptr_Rot;
-                    default:
-                        throw new Exception($"Set_Ptr doesn't exist for WireType \"{Enum.GetName(typeof(WireType), type)}\"");
-                }
-            }
-
+#pragma warning disable SA1310 // Field names should not contain underscore
             #region variable
             public static readonly BlockDef Variable_Num = new BlockDef("Variable", 46, BlockType.Pasive, new Vector2I(2, 1), new Terminal(WireType.FloatPtr, TerminalType.Out, "Number"));
             public static readonly BlockDef Variable_Vec = new BlockDef("Variable", 48, BlockType.Pasive, new Vector2I(2, 1), new Terminal(WireType.Vec3Ptr, TerminalType.Out, "Vector"));
@@ -355,6 +258,7 @@ namespace FanScript.FCInfo
             public static readonly BlockDef Set_Variable_Con = new BlockDef("Set Variable", 438, BlockType.Active, new Vector2I(2, 1), new Terminal(WireType.Void, TerminalType.Out, "After"), new Terminal(WireType.Con, TerminalType.In, "Value"), new Terminal(WireType.Void, TerminalType.In, "Before"));
             #endregion
             #region set_ptr
+
             // the big setters that take in variable
             public static readonly BlockDef Set_Ptr_Num = new BlockDef("Set Number", 58, BlockType.Active, new Vector2I(2, 2), new Terminal(WireType.Void, TerminalType.Out, "After"), new Terminal(WireType.Float, TerminalType.In, "Value"), new Terminal(WireType.FloatPtr, TerminalType.In, "Variable"), new Terminal(WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef Set_Ptr_Vec = new BlockDef("Set Vector", 62, BlockType.Active, new Vector2I(2, 2), new Terminal(WireType.Void, TerminalType.Out, "After"), new Terminal(WireType.Vec3, TerminalType.In, "Value"), new Terminal(WireType.Vec3Ptr, TerminalType.In, "Variable"), new Terminal(WireType.Void, TerminalType.In, "Before"));
@@ -371,8 +275,57 @@ namespace FanScript.FCInfo
             public static readonly BlockDef List_Obj = new BlockDef("List Object", 86, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.ObjPtr, TerminalType.Out, "Element"), new Terminal(WireType.Float, TerminalType.In, "Index"), new Terminal(WireType.ObjPtr, TerminalType.In, "Variable"));
             public static readonly BlockDef List_Con = new BlockDef("List Constraint", 473, BlockType.Pasive, new Vector2I(2, 2), new Terminal(WireType.ConPtr, TerminalType.Out, "Element"), new Terminal(WireType.Float, TerminalType.In, "Index"), new Terminal(WireType.ConPtr, TerminalType.In, "Variable"));
             #endregion
+#pragma warning restore SA1310 // Field names should not contain underscore
             public static readonly BlockDef PlusPlusFloat = new BlockDef("Increase Number", 556, BlockType.Active, new Vector2I(2, 1), new Terminal(WireType.Void, TerminalType.Out, "After"), new Terminal(WireType.Float, TerminalType.In, "Variable"), new Terminal(WireType.Void, TerminalType.In, "Before"));
             public static readonly BlockDef MinusMinusFloat = new BlockDef("Decrease Number", 558, BlockType.Active, new Vector2I(2, 1), new Terminal(WireType.Void, TerminalType.Out, "After"), new Terminal(WireType.Float, TerminalType.In, "Variable"), new Terminal(WireType.Void, TerminalType.In, "Before"));
+
+            public static BlockDef VariableByType(WireType type)
+                => type.ToNormal() switch
+                {
+                    WireType.Float => Variable_Num,
+                    WireType.Bool => Variable_Tru,
+                    WireType.Vec3 => Variable_Vec,
+                    WireType.Rot => Variable_Rot,
+                    WireType.Obj => Variable_Obj,
+                    WireType.Con => Variable_Con,
+                    _ => throw new UnknownEnumValueException<WireType>(type),
+                };
+
+            public static BlockDef Set_VariableByType(WireType type)
+                => type.ToNormal() switch
+                {
+                    WireType.Float => Set_Variable_Num,
+                    WireType.Bool => Set_Variable_Tru,
+                    WireType.Vec3 => Set_Variable_Vec,
+                    WireType.Rot => Set_Variable_Rot,
+                    WireType.Obj => Set_Variable_Obj,
+                    WireType.Con => Set_Variable_Con,
+                    _ => throw new UnknownEnumValueException<WireType>(type),
+                };
+
+            public static BlockDef ListByType(WireType type)
+                => type.ToNormal() switch
+                {
+                    WireType.Float => List_Num,
+                    WireType.Bool => List_Tru,
+                    WireType.Vec3 => List_Vec,
+                    WireType.Rot => List_Rot,
+                    WireType.Obj => List_Obj,
+                    WireType.Con => List_Con,
+                    _ => throw new UnknownEnumValueException<WireType>(type),
+                };
+
+            public static BlockDef Set_PtrByType(WireType type)
+                => type.ToNormal() switch
+                {
+                    WireType.Float => Set_Ptr_Num,
+                    WireType.Bool => Set_Ptr_Tru,
+                    WireType.Vec3 => Set_Ptr_Vec,
+                    WireType.Rot => Set_Ptr_Rot,
+                    WireType.Obj => Set_Ptr_Obj,
+                    WireType.Con => Set_Ptr_Rot,
+                    _ => throw new UnknownEnumValueException<WireType>(type),
+                };
         }
     }
 }

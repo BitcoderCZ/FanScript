@@ -9,6 +9,7 @@
         }
 
         public override SyntaxKind Kind => SyntaxKind.GlobalStatement;
+
         public StatementSyntax Statement { get; }
     }
 }

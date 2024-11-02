@@ -13,7 +13,9 @@ namespace FanScript.Utils
         public static void AddRangeSafe<T>(this ImmutableArray<T>.Builder builder, ImmutableArray<T> items)
         {
             if (!items.IsDefault)
+            {
                 builder.AddRange(items);
+            }
         }
     }
 }

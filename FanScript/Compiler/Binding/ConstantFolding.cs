@@ -14,23 +14,31 @@ namespace FanScript.Compiler.Binding
                 switch (op.Kind)
                 {
                     case BoundUnaryOperatorKind.Identity:
-                        if (op.Type == Float)
-                            return new BoundConstant((float)operand.ConstantValue.Value!);
-                        else if (op.Type == Vector3)
-                            return new BoundConstant((Vector3F)operand.ConstantValue.Value!);
-                        else if (op.Type == TypeSymbol.Rotation)
-                            return new BoundConstant((Rotation)operand.ConstantValue.Value!);
-                        else
-                            throw new UnknownEnumValueException<BoundUnaryOperatorKind>(op.Kind);
+                        return op.Type == Float
+                            ? new BoundConstant((float)operand.ConstantValue.Value!)
+                            : op.Type == Vector3
+                            ? new BoundConstant((Vector3F)operand.ConstantValue.Value!)
+                            : op.Type == TypeSymbol.Rotation
+                            ? new BoundConstant((Rotation)operand.ConstantValue.Value!)
+                            : throw new UnknownEnumValueException<BoundUnaryOperatorKind>(op.Kind);
                     case BoundUnaryOperatorKind.Negation:
                         if (op.Type == Float)
+                        {
                             return new BoundConstant(-(float)operand.ConstantValue.Value!);
+                        }
                         else if (op.Type == Vector3)
+                        {
                             return new BoundConstant(-(Vector3F)operand.ConstantValue.Value!);
+                        }
                         else if (op.Type == TypeSymbol.Rotation)
-                            return null; // couldn't figure out how the inverse works, imo should be Quaterion Inverse, but that gave me differend results (yes I did convert deg-rad and back))
+                        {
+                            return null; // couldn't figure out how the inverse works, IMO should be Quaterion Inverse, but that gave me differend results (yes I did convert deg-rad and back))
+                        }
                         else
+                        {
                             throw new UnknownEnumValueException<BoundUnaryOperatorKind>(op.Kind);
+                        }
+
                     case BoundUnaryOperatorKind.LogicalNegation:
                         return new BoundConstant(!(bool)operand.ConstantValue.Value!);
                     default:
@@ -48,19 +56,28 @@ namespace FanScript.Compiler.Binding
 
             // Special case && and || because there are cases where only one
             // side needs to be known.
-
             if (op.Kind == BoundBinaryOperatorKind.LogicalAnd)
-                if (l is not null && !(bool)l.GetValueOrDefault(Bool) ||
-                    r is not null && !(bool)r.GetValueOrDefault(Bool))
+            {
+                if ((l is not null && !(bool)l.GetValueOrDefault(Bool)) ||
+                    (r is not null && !(bool)r.GetValueOrDefault(Bool)))
+                {
                     return new BoundConstant(false);
+                }
+            }
 
             if (op.Kind == BoundBinaryOperatorKind.LogicalOr)
-                if (l is not null && (bool)l.GetValueOrDefault(Bool) ||
-                    r is not null && (bool)r.GetValueOrDefault(Bool))
+            {
+                if ((l is not null && (bool)l.GetValueOrDefault(Bool)) ||
+                    (r is not null && (bool)r.GetValueOrDefault(Bool)))
+                {
                     return new BoundConstant(true);
+                }
+            }
 
             if (l is null || r is null)
+            {
                 return null;
+            }
 
             TypeSymbol lt = left.Type;
             TypeSymbol rt = right.Type;
@@ -81,42 +98,47 @@ namespace FanScript.Compiler.Binding
             switch (op.Kind)
             {
                 case BoundBinaryOperatorKind.Addition:
-                    if (t == Float)
-                        return new BoundConstant((float)l.GetValueOrDefault(Float) + (float)r.GetValueOrDefault(Float));
-                    else if (t == Vector3)
-                        return new BoundConstant((Vector3F)l.GetValueOrDefault(Vector3) + (Vector3F)r.GetValueOrDefault(Vector3));
-                    else
-                        throw new UnknownEnumValueException<BoundBinaryOperatorKind>(op.Kind);
+                    return t == Float
+                        ? new BoundConstant((float)l.GetValueOrDefault(Float) + (float)r.GetValueOrDefault(Float))
+                        : t == Vector3
+                        ? new BoundConstant((Vector3F)l.GetValueOrDefault(Vector3) + (Vector3F)r.GetValueOrDefault(Vector3))
+                        : throw new UnknownEnumValueException<BoundBinaryOperatorKind>(op.Kind);
                 case BoundBinaryOperatorKind.Subtraction:
-                    if (t == Float)
-                        return new BoundConstant((float)l.GetValueOrDefault(Float) - (float)r.GetValueOrDefault(Float));
-                    else if (t == Vector3)
-                        return new BoundConstant((Vector3F)l.GetValueOrDefault(Vector3) - (Vector3F)r.GetValueOrDefault(Vector3));
-                    else
-                        throw new UnknownEnumValueException<BoundBinaryOperatorKind>(op.Kind);
+                    return t == Float
+                        ? new BoundConstant((float)l.GetValueOrDefault(Float) - (float)r.GetValueOrDefault(Float))
+                        : t == Vector3
+                        ? new BoundConstant((Vector3F)l.GetValueOrDefault(Vector3) - (Vector3F)r.GetValueOrDefault(Vector3))
+                        : throw new UnknownEnumValueException<BoundBinaryOperatorKind>(op.Kind);
                 case BoundBinaryOperatorKind.Multiplication:
                     if (t == Float)
+                    {
                         return new BoundConstant((float)l.GetValueOrDefault(Float) * (float)r.GetValueOrDefault(Float));
+                    }
                     else if (t == Vector3)
+                    {
                         return new BoundConstant((Vector3F)l.GetValueOrDefault(Vector3) * (float)r.GetValueOrDefault(Float));
+                    }
                     else if (lt == Vector3 && rt == TypeSymbol.Rotation)
+                    {
                         return null; // TODO
+                    }
                     else
+                    {
                         throw new UnknownEnumValueException<BoundBinaryOperatorKind>(op.Kind);
+                    }
+
                 case BoundBinaryOperatorKind.Division:
-                    if (t == Float)
-                        return new BoundConstant((float)l.GetValueOrDefault(Float) / (float)r.GetValueOrDefault(Float));
-                    else if (t == Vector3)
-                        return new BoundConstant((Vector3F)l.GetValueOrDefault(Vector3) / (float)r.GetValueOrDefault(Float));
-                    else
-                        throw new UnknownEnumValueException<BoundBinaryOperatorKind>(op.Kind);
+                    return t == Float
+                        ? new BoundConstant((float)l.GetValueOrDefault(Float) / (float)r.GetValueOrDefault(Float))
+                        : t == Vector3
+                        ? new BoundConstant((Vector3F)l.GetValueOrDefault(Vector3) / (float)r.GetValueOrDefault(Float))
+                        : throw new UnknownEnumValueException<BoundBinaryOperatorKind>(op.Kind);
                 case BoundBinaryOperatorKind.Modulo:
-                    if (t == Float)
-                        return new BoundConstant((float)l.GetValueOrDefault(Float) % (float)r.GetValueOrDefault(Float));
-                    else if (t == Vector3)
-                        return new BoundConstant((Vector3F)l.GetValueOrDefault(Vector3) % (float)r.GetValueOrDefault(Float));
-                    else
-                        throw new UnknownEnumValueException<BoundBinaryOperatorKind>(op.Kind);
+                    return t == Float
+                        ? new BoundConstant((float)l.GetValueOrDefault(Float) % (float)r.GetValueOrDefault(Float))
+                        : t == Vector3
+                        ? new BoundConstant((Vector3F)l.GetValueOrDefault(Vector3) % (float)r.GetValueOrDefault(Float))
+                        : throw new UnknownEnumValueException<BoundBinaryOperatorKind>(op.Kind);
                 case BoundBinaryOperatorKind.LogicalAnd:
                     return new BoundConstant((bool)l.GetValueOrDefault(Bool) && (bool)r.GetValueOrDefault(Bool));
                 case BoundBinaryOperatorKind.LogicalOr:

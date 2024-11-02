@@ -1,14 +1,14 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using FanScript.Compiler.Symbols.Functions;
 
 namespace FanScript.Utils
 {
     internal sealed class CircularCallDetector
     {
-        private SetMultiValueDictionary<FunctionSymbol, FunctionSymbol> callGraph;
+        private readonly SetMultiValueDictionary<FunctionSymbol, FunctionSymbol> _callGraph;
 
         public CircularCallDetector(SetMultiValueDictionary<FunctionSymbol, FunctionSymbol> callGraph)
         {
-            this.callGraph = callGraph;
+            _callGraph = callGraph;
         }
 
         /// <summary>
@@ -17,21 +17,23 @@ namespace FanScript.Utils
         /// <returns>The dected cycle, or null if none were found</returns>
         public IEnumerable<FunctionSymbol>? Detect()
         {
-            HashSet<FunctionSymbol> visited = new();
-            List<FunctionSymbol> recursionStack = new();
+            HashSet<FunctionSymbol> visited = [];
+            List<FunctionSymbol> recursionStack = [];
 
-            foreach (FunctionSymbol function in callGraph.Keys)
+            foreach (FunctionSymbol function in _callGraph.Keys)
             {
-                IEnumerable<FunctionSymbol>? cycle = detectCycle(function, visited, recursionStack);
+                IEnumerable<FunctionSymbol>? cycle = DetectCycle(function, visited, recursionStack);
 
                 if (cycle is not null)
+                {
                     return cycle;
+                }
             }
 
             return null;
         }
 
-        private IEnumerable<FunctionSymbol>? detectCycle(FunctionSymbol function, HashSet<FunctionSymbol> visited, List<FunctionSymbol> recursionStack)
+        private IEnumerable<FunctionSymbol>? DetectCycle(FunctionSymbol function, HashSet<FunctionSymbol> visited, List<FunctionSymbol> recursionStack)
         {
             if (recursionStack.Contains(function))
             {
@@ -41,18 +43,22 @@ namespace FanScript.Utils
             }
 
             if (!visited.Add(function))
+            {
                 return null; // if visited already contained function
+            }
 
             recursionStack.Add(function);
 
-            if (callGraph.ContainsKey(function))
+            if (_callGraph.ContainsKey(function))
             {
-                foreach (var caller in callGraph[function])
+                foreach (var caller in _callGraph[function])
                 {
-                    IEnumerable<FunctionSymbol>? cycle = detectCycle(caller, visited, recursionStack);
+                    IEnumerable<FunctionSymbol>? cycle = DetectCycle(caller, visited, recursionStack);
 
                     if (cycle is not null)
+                    {
                         return cycle;
+                    }
                 }
             }
 

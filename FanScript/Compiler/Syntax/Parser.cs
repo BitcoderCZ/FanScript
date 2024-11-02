@@ -1,27 +1,27 @@
-﻿using FanScript.Compiler.Diagnostics;
+﻿using System.Collections.Immutable;
+using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Lexing;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Text;
-using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Syntax
 {
     internal sealed class Parser
     {
-        private static readonly HashSet<string> allowedTypes = TypeSymbol.BuiltInTypes
+        private static readonly HashSet<string> AllowedTypes = TypeSymbol.BuiltInTypes
                 .Select(type => type.Name)
                 .ToHashSet();
 
-        private readonly DiagnosticBag diagnostics = new DiagnosticBag();
-        private readonly SyntaxTree syntaxTree;
-        private readonly SourceText text;
-        private readonly ImmutableArray<SyntaxToken> tokens;
-        private int position;
+        private readonly DiagnosticBag _diagnostics = new DiagnosticBag();
+        private readonly SyntaxTree _syntaxTree;
+        private readonly SourceText _text;
+        private readonly ImmutableArray<SyntaxToken> _tokens;
+        private int _position;
 
         public Parser(SyntaxTree syntaxTree)
         {
-            List<SyntaxToken> tokens = new();
-            List<SyntaxToken> badTokens = new();
+            List<SyntaxToken> tokens = [];
+            List<SyntaxToken> badTokens = [];
 
             Lexer lexer = new Lexer(syntaxTree);
             SyntaxToken token;
@@ -30,7 +30,9 @@ namespace FanScript.Compiler.Syntax
                 token = lexer.Lex();
 
                 if (token.Kind == SyntaxKind.BadToken)
+                {
                     badTokens.Add(token);
+                }
                 else
                 {
                     if (badTokens.Count > 0)
@@ -41,13 +43,17 @@ namespace FanScript.Compiler.Syntax
                         foreach (SyntaxToken badToken in badTokens)
                         {
                             foreach (SyntaxTrivia lt in badToken.LeadingTrivia)
+                            {
                                 leadingTrivia.Insert(index++, lt);
+                            }
 
                             SyntaxTrivia trivia = new SyntaxTrivia(syntaxTree, SyntaxKind.SkippedTextTrivia, badToken.Position, badToken.Text);
                             leadingTrivia.Insert(index++, trivia);
 
                             foreach (SyntaxTrivia tt in badToken.TrailingTrivia)
+                            {
                                 leadingTrivia.Insert(index++, tt);
+                            }
                         }
 
                         badTokens.Clear();
@@ -58,62 +64,83 @@ namespace FanScript.Compiler.Syntax
                 }
             } while (token.Kind != SyntaxKind.EndOfFileToken);
 
-            this.syntaxTree = syntaxTree;
-            text = syntaxTree.Text;
-            this.tokens = tokens.ToImmutableArray();
-            diagnostics.AddRange(lexer.Diagnostics);
+            _syntaxTree = syntaxTree;
+            _text = syntaxTree.Text;
+            _tokens = [.. tokens];
+            _diagnostics.AddRange(lexer.Diagnostics);
         }
 
-        public DiagnosticBag Diagnostics => diagnostics;
+        public DiagnosticBag Diagnostics => _diagnostics;
+
+        private SyntaxToken Current => Peek(0);
+
+        public CompilationUnitSyntax ParseCompilationUnit()
+        {
+            ImmutableArray<MemberSyntax> members = ParseMembers();
+            SyntaxToken endOfFileToken = MatchToken(SyntaxKind.EndOfFileToken);
+            return new CompilationUnitSyntax(_syntaxTree, members, endOfFileToken);
+        }
 
         private SyntaxToken Peek(int offset)
         {
-            int index = position + offset;
-            if (index >= tokens.Length)
-                return tokens[tokens.Length - 1];
-
-            return tokens[index];
+            int index = _position + offset;
+            return index >= _tokens.Length ? _tokens[^1] : _tokens[index];
         }
-
-        private SyntaxToken Current => Peek(0);
 
         private SyntaxToken NextToken()
         {
             SyntaxToken current = Current;
-            position++;
+            _position++;
             return current;
         }
 
         private SyntaxToken MatchToken(SyntaxKind kind)
         {
             if (Current.Kind == kind)
+            {
                 return NextToken();
+            }
 
-            diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, kind);
-            return new SyntaxToken(syntaxTree, kind, Current.Position, null, null, ImmutableArray<SyntaxTrivia>.Empty, ImmutableArray<SyntaxTrivia>.Empty);
+            _diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, kind);
+            return new SyntaxToken(_syntaxTree, kind, Current.Position, null, null, [], []);
         }
+
         private SyntaxToken MatchToken(params SyntaxKind[] kinds)
         {
             foreach (SyntaxKind kind in kinds)
+            {
                 if (Current.Kind == kind)
+                {
                     return NextToken();
+                }
+            }
 
-            diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, kinds);
-            return new SyntaxToken(syntaxTree, kinds[0], Current.Position, null, null, ImmutableArray<SyntaxTrivia>.Empty, ImmutableArray<SyntaxTrivia>.Empty);
+            _diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, kinds);
+            return new SyntaxToken(_syntaxTree, kinds[0], Current.Position, null, null, [], []);
         }
+
         private SyntaxToken MatchIdentifier(string text)
         {
             if (Current.Kind == SyntaxKind.IdentifierToken && Current.Text == text)
+            {
                 return NextToken();
+            }
 
             if (Current.Kind != SyntaxKind.IdentifierToken)
-                diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, SyntaxKind.IdentifierToken);
+            {
+                _diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, SyntaxKind.IdentifierToken);
+            }
             else
-                diagnostics.ReportUnexpectedIdentifier(Current.Location, Current.Text, text);
-            return new SyntaxToken(syntaxTree, SyntaxKind.IdentifierToken, Current.Position, null, null, ImmutableArray<SyntaxTrivia>.Empty, ImmutableArray<SyntaxTrivia>.Empty);
+            {
+                _diagnostics.ReportUnexpectedIdentifier(Current.Location, Current.Text, text);
+            }
+
+            return new SyntaxToken(_syntaxTree, SyntaxKind.IdentifierToken, Current.Position, null, null, [], []);
         }
+
         private SyntaxToken MatchType(IEnumerable<TypeSymbol> types)
             => MatchIdentifier(types.Select(type => type.Name));
+
         private SyntaxToken MatchIdentifier(IEnumerable<string> texts)
         {
             if (Current.Kind == SyntaxKind.IdentifierToken)
@@ -121,22 +148,22 @@ namespace FanScript.Compiler.Syntax
                 foreach (string text in texts)
                 {
                     if (Current.Text == text)
+                    {
                         return NextToken();
+                    }
                 }
             }
 
             if (Current.Kind != SyntaxKind.IdentifierToken)
-                diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, SyntaxKind.IdentifierToken);
+            {
+                _diagnostics.ReportUnexpectedToken(Current.Location, Current.Kind, SyntaxKind.IdentifierToken);
+            }
             else
-                diagnostics.ReportUnexpectedIdentifier(Current.Location, Current.Text, texts);
-            return new SyntaxToken(syntaxTree, SyntaxKind.IdentifierToken, Current.Position, null, null, ImmutableArray<SyntaxTrivia>.Empty, ImmutableArray<SyntaxTrivia>.Empty);
-        }
+            {
+                _diagnostics.ReportUnexpectedIdentifier(Current.Location, Current.Text, texts);
+            }
 
-        public CompilationUnitSyntax ParseCompilationUnit()
-        {
-            ImmutableArray<MemberSyntax> members = ParseMembers();
-            SyntaxToken endOfFileToken = MatchToken(SyntaxKind.EndOfFileToken);
-            return new CompilationUnitSyntax(syntaxTree, members, endOfFileToken);
+            return new SyntaxToken(_syntaxTree, SyntaxKind.IdentifierToken, Current.Position, null, null, [], []);
         }
 
         private ImmutableArray<MemberSyntax> ParseMembers()
@@ -158,34 +185,36 @@ namespace FanScript.Compiler.Syntax
                 // already tried to parse an expression statement
                 // and reported one.
                 if (Current == startToken)
+                {
                     NextToken();
+                }
             }
 
             return members.ToImmutable();
         }
 
         private MemberSyntax ParseMember()
-        {
-            if (Current.Kind == SyntaxKind.KeywordFunction ||
-                (AreModifiersNow(out int nextToken) && Peek(nextToken).Kind == SyntaxKind.KeywordFunction))
-                return ParseFunctionDeclaration();
+            => Current.Kind == SyntaxKind.KeywordFunction ||
+                (AreModifiersNow(out int nextToken) && Peek(nextToken).Kind == SyntaxKind.KeywordFunction)
+                ? ParseFunctionDeclaration()
+                : ParseGlobalStatement();
 
-            return ParseGlobalStatement();
-        }
-
-        private MemberSyntax ParseFunctionDeclaration()
+        private FunctionDeclarationSyntax ParseFunctionDeclaration()
         {
             ModifierClauseSyntax modifiers = ParseModifiers();
             SyntaxToken funcKeyword = MatchToken(SyntaxKind.KeywordFunction);
             TypeClauseSyntax? funcType = null;
             if (IsTypeClauseNow(out _))
+            {
                 funcType = ParseTypeClause(false);
+            }
+
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
             SyntaxToken openParenthesisToken = MatchToken(SyntaxKind.OpenParenthesisToken);
             ImmutableArray<SyntaxNode> parameters = ParseSeparatedList(SyntaxKind.CloseParenthesisToken, parameters: true);
             SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
             BlockStatementSyntax body = ParseBlockStatement();
-            return new FunctionDeclarationSyntax(syntaxTree, modifiers, funcKeyword, funcType, identifier, openParenthesisToken, new SeparatedSyntaxList<ParameterSyntax>(parameters), closeParenthesisToken, body);
+            return new FunctionDeclarationSyntax(_syntaxTree, modifiers, funcKeyword, funcType, identifier, openParenthesisToken, new SeparatedSyntaxList<ParameterSyntax>(parameters), closeParenthesisToken, body);
         }
 
         private ParameterSyntax ParseParameter()
@@ -193,13 +222,11 @@ namespace FanScript.Compiler.Syntax
             ModifierClauseSyntax modifiers = ParseModifiers();
             TypeClauseSyntax typeClause = ParseTypeClause(false);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
-            return new ParameterSyntax(syntaxTree, modifiers, typeClause, identifier);
+            return new ParameterSyntax(_syntaxTree, modifiers, typeClause, identifier);
         }
 
-        private MemberSyntax ParseGlobalStatement()
-        {
-            return new GlobalStatementSyntax(syntaxTree, ParseStatement());
-        }
+        private GlobalStatementSyntax ParseGlobalStatement()
+            => new GlobalStatementSyntax(_syntaxTree, ParseStatement());
 
         private StatementSyntax ParseStatement()
         {
@@ -225,6 +252,7 @@ namespace FanScript.Compiler.Syntax
                     return ParseWhileStatement();
                 case SyntaxKind.KeywordDo:
                     return ParseDoWhileStatement();
+
                 //case SyntaxKind.ForKeyword:
                 //    return ParseForStatement();
                 case SyntaxKind.KeywordBreak:
@@ -239,12 +267,11 @@ namespace FanScript.Compiler.Syntax
                     return ParseCallStatement();
                 default:
                     {
-                        if (IsTypeClauseNow(out _))
-                            return ParseVariableDeclarationStatement();
-                        else if (Current.Kind.IsModifier())
-                            return ParseVariableDeclarationStatementWithModifiers();
-
-                        return ParseExpressionStatement();
+                        return IsTypeClauseNow(out _)
+                            ? ParseVariableDeclarationStatement()
+                            : Current.Kind.IsModifier()
+                            ? ParseVariableDeclarationStatementWithModifiers()
+                            : ParseExpressionStatement();
                     }
             }
         }
@@ -271,43 +298,48 @@ namespace FanScript.Compiler.Syntax
                 // already tried to parse an expression statement
                 // and reported one.
                 if (Current == startToken)
+                {
                     NextToken();
+                }
             }
 
             SyntaxToken closeBraceToken = MatchToken(SyntaxKind.CloseBraceToken);
 
-            return new BlockStatementSyntax(syntaxTree, openBraceToken, statements.ToImmutable(), closeBraceToken);
+            return new BlockStatementSyntax(_syntaxTree, openBraceToken, statements.ToImmutable(), closeBraceToken);
         }
 
-        private StatementSyntax ParseEventStatement()
+        private EventStatementSyntax ParseEventStatement()
         {
             SyntaxToken onKeyword = MatchToken(SyntaxKind.KeywordOn);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
             ArgumentClauseSyntax? argumentClause = null;
             if (Current.Kind == SyntaxKind.OpenParenthesisToken)
+            {
                 argumentClause = ParseArgumentClause();
+            }
+
             BlockStatementSyntax block = ParseBlockStatement();
 
-            return new EventStatementSyntax(syntaxTree, onKeyword, identifier, argumentClause, block);
+            return new EventStatementSyntax(_syntaxTree, onKeyword, identifier, argumentClause, block);
         }
 
-        private StatementSyntax ParsePostfixStatement()
+        private PostfixStatementSyntax ParsePostfixStatement()
         {
             SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
             SyntaxToken operatorToken = MatchToken(SyntaxKind.PlusPlusToken, SyntaxKind.MinusMinusToken);
 
-            return new PostfixStatementSyntax(syntaxTree, identifierToken, operatorToken);
+            return new PostfixStatementSyntax(_syntaxTree, identifierToken, operatorToken);
         }
 
-        private StatementSyntax ParsePrefixStatement()
+        private PrefixStatementSyntax ParsePrefixStatement()
         {
             SyntaxToken operatorToken = MatchToken(SyntaxKind.PlusPlusToken, SyntaxKind.MinusMinusToken);
             SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
 
-            return new PrefixStatementSyntax(syntaxTree, operatorToken, identifierToken);
+            return new PrefixStatementSyntax(_syntaxTree, operatorToken, identifierToken);
         }
 
-        private StatementSyntax ParseVariableDeclarationStatement(ModifierClauseSyntax? modifiers = null)
+        private VariableDeclarationStatementSyntax ParseVariableDeclarationStatement(ModifierClauseSyntax? modifiers = null)
         {
             TypeClauseSyntax typeClause = ParseTypeClause(true);
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
@@ -318,91 +350,93 @@ namespace FanScript.Compiler.Syntax
                 SyntaxToken equals = MatchToken(SyntaxKind.EqualsToken);
                 ExpressionSyntax initializer = ParseExpression();
 
-                assignment = new AssignmentStatementSyntax(syntaxTree, new NameExpressionSyntax(syntaxTree, identifier), equals, initializer);
+                assignment = new AssignmentStatementSyntax(_syntaxTree, new NameExpressionSyntax(_syntaxTree, identifier), equals, initializer);
             }
 
-            return new VariableDeclarationStatementSyntax(syntaxTree, modifiers ?? new ModifierClauseSyntax(syntaxTree, ImmutableArray<SyntaxToken>.Empty), typeClause, identifier, assignment);
+            return new VariableDeclarationStatementSyntax(_syntaxTree, modifiers ?? new ModifierClauseSyntax(_syntaxTree, []), typeClause, identifier, assignment);
         }
 
-        private StatementSyntax ParseIfStatement()
+        private IfStatementSyntax ParseIfStatement()
         {
             SyntaxToken keyword = MatchToken(SyntaxKind.KeywordIf);
             ExpressionSyntax condition = ParseExpression();
             StatementSyntax statement = ParseStatement();
             ElseClauseSyntax? elseClause = ParseOptionalElseClause();
-            return new IfStatementSyntax(syntaxTree, keyword, condition, statement, elseClause);
+            return new IfStatementSyntax(_syntaxTree, keyword, condition, statement, elseClause);
         }
 
         private ElseClauseSyntax? ParseOptionalElseClause()
         {
             if (Current.Kind != SyntaxKind.KeywordElse)
+            {
                 return null;
+            }
 
             SyntaxToken keyword = NextToken();
             StatementSyntax statement = ParseStatement();
-            return new ElseClauseSyntax(syntaxTree, keyword, statement);
+            return new ElseClauseSyntax(_syntaxTree, keyword, statement);
         }
 
-        private StatementSyntax ParseWhileStatement()
+        private WhileStatementSyntax ParseWhileStatement()
         {
             SyntaxToken keyword = MatchToken(SyntaxKind.KeywordWhile);
             ExpressionSyntax condition = ParseExpression();
             StatementSyntax body = ParseStatement();
-            return new WhileStatementSyntax(syntaxTree, keyword, condition, body);
+            return new WhileStatementSyntax(_syntaxTree, keyword, condition, body);
         }
 
-        private StatementSyntax ParseDoWhileStatement()
+        private DoWhileStatementSyntax ParseDoWhileStatement()
         {
             SyntaxToken doKeyword = MatchToken(SyntaxKind.KeywordDo);
             StatementSyntax body = ParseStatement();
             SyntaxToken whileKeyword = MatchToken(SyntaxKind.KeywordWhile);
             ExpressionSyntax condition = ParseExpression();
-            return new DoWhileStatementSyntax(syntaxTree, doKeyword, body, whileKeyword, condition);
+            return new DoWhileStatementSyntax(_syntaxTree, doKeyword, body, whileKeyword, condition);
         }
 
-        //private StatementSyntax ParseForStatement()
-        //{
-        //    var keyword = MatchToken(SyntaxKind.ForKeyword);
-        //    var identifier = MatchToken(SyntaxKind.IdentifierToken);
-        //    var equalsToken = MatchToken(SyntaxKind.EqualsToken);
-        //    var lowerBound = ParseExpression();
-        //    var toKeyword = MatchToken(SyntaxKind.ToKeyword);
-        //    var upperBound = ParseExpression();
-        //    var body = ParseStatement();
-        //    return new ForStatementSyntax(syntaxTree, keyword, identifier, equalsToken, lowerBound, toKeyword, upperBound, body);
-        //}
+        /*private StatementSyntax ParseForStatement()
+        {
+            var keyword = MatchToken(SyntaxKind.ForKeyword);
+            var identifier = MatchToken(SyntaxKind.IdentifierToken);
+            var equalsToken = MatchToken(SyntaxKind.EqualsToken);
+            var lowerBound = ParseExpression();
+            var toKeyword = MatchToken(SyntaxKind.ToKeyword);
+            var upperBound = ParseExpression();
+            var body = ParseStatement();
+            return new ForStatementSyntax(syntaxTree, keyword, identifier, equalsToken, lowerBound, toKeyword, upperBound, body);
+        }*/
 
-        private StatementSyntax ParseBreakStatement()
+        private BreakStatementSyntax ParseBreakStatement()
         {
             SyntaxToken keyword = MatchToken(SyntaxKind.KeywordBreak);
-            return new BreakStatementSyntax(syntaxTree, keyword);
+            return new BreakStatementSyntax(_syntaxTree, keyword);
         }
 
-        private StatementSyntax ParseContinueStatement()
+        private ContinueStatementSyntax ParseContinueStatement()
         {
             SyntaxToken keyword = MatchToken(SyntaxKind.KeywordContinue);
-            return new ContinueStatementSyntax(syntaxTree, keyword);
+            return new ContinueStatementSyntax(_syntaxTree, keyword);
         }
 
-        private StatementSyntax ParseReturnStatement()
+        private ReturnStatementSyntax ParseReturnStatement()
         {
             SyntaxToken keyword = MatchToken(SyntaxKind.KeywordReturn);
-            int keywordLine = text.GetLineIndex(keyword.Span.Start);
-            int currentLine = text.GetLineIndex(Current.Span.Start);
+            int keywordLine = _text.GetLineIndex(keyword.Span.Start);
+            int currentLine = _text.GetLineIndex(Current.Span.Start);
             bool isEof = Current.Kind == SyntaxKind.EndOfFileToken;
             bool sameLine = !isEof && keywordLine == currentLine;
             ExpressionSyntax? expression = sameLine ? ParseExpression() : null;
-            return new ReturnStatementSyntax(syntaxTree, keyword, expression);
+            return new ReturnStatementSyntax(_syntaxTree, keyword, expression);
         }
 
-        private StatementSyntax ParseBuildCommandStatement()
+        private BuildCommandStatementSyntax ParseBuildCommandStatement()
         {
             SyntaxToken hashtagToken = MatchToken(SyntaxKind.HashtagToken);
             SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
-            return new BuildCommandStatementSyntax(syntaxTree, hashtagToken, identifierToken);
+            return new BuildCommandStatementSyntax(_syntaxTree, hashtagToken, identifierToken);
         }
 
-        private StatementSyntax ParseCallStatement()
+        private CallStatementSyntax ParseCallStatement()
         {
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
 
@@ -419,31 +453,25 @@ namespace FanScript.Compiler.Syntax
 
             ArgumentClauseSyntax argumentClause = ParseArgumentClause();
 
-            if (hasGegenericParam)
-                return new CallStatementSyntax(syntaxTree, identifier, lessThanToken, genericType, greaterThanToken, argumentClause);
-            else
-                return new CallStatementSyntax(syntaxTree, identifier, argumentClause);
+            return hasGegenericParam
+                ? new CallStatementSyntax(_syntaxTree, identifier, lessThanToken, genericType, greaterThanToken, argumentClause)
+                : new CallStatementSyntax(_syntaxTree, identifier, argumentClause);
         }
 
-        private StatementSyntax ParseVariableDeclarationStatementWithModifiers()
-        {
-            return ParseVariableDeclarationStatement(ParseModifiers());
-        }
+        private VariableDeclarationStatementSyntax ParseVariableDeclarationStatementWithModifiers()
+            => ParseVariableDeclarationStatement(ParseModifiers());
 
         private StatementSyntax ParseExpressionStatement()
         {
             ExpressionSyntax expression = ParseExpression();
 
-            if (expression is AssignmentExpressionSyntax assignment)
-                return new AssignmentStatementSyntax(syntaxTree, assignment.Destination, assignment.AssignmentToken, assignment.Expression);
-
-            return new ExpressionStatementSyntax(syntaxTree, expression);
+            return expression is AssignmentExpressionSyntax assignment
+                ? new AssignmentStatementSyntax(_syntaxTree, assignment.Destination, assignment.AssignmentToken, assignment.Expression)
+                : (StatementSyntax)new ExpressionStatementSyntax(_syntaxTree, expression);
         }
 
         private ExpressionSyntax ParseExpression()
-        {
-            return ParseBinaryExpression();
-        }
+            => ParseBinaryExpression();
 
         private ExpressionSyntax ParseBinaryExpression(int parentPrecedence = 0)
         {
@@ -453,20 +481,24 @@ namespace FanScript.Compiler.Syntax
             {
                 SyntaxToken operatorToken = NextToken();
                 ExpressionSyntax operand = ParseBinaryExpression(unaryOperatorPrecedence);
-                left = new UnaryExpressionSyntax(syntaxTree, operatorToken, operand);
+                left = new UnaryExpressionSyntax(_syntaxTree, operatorToken, operand);
             }
             else
+            {
                 left = ParsePrimaryExpression();
+            }
 
             while (true)
             {
                 int precedence = Current.Kind.GetBinaryOperatorPrecedence();
                 if (precedence == 0 || precedence <= parentPrecedence)
+                {
                     break;
+                }
 
                 SyntaxToken operatorToken = NextToken();
                 ExpressionSyntax right = ParseBinaryExpression(precedence);
-                left = new BinaryExpressionSyntax(syntaxTree, left, operatorToken, right);
+                left = new BinaryExpressionSyntax(_syntaxTree, left, operatorToken, right);
             }
 
             return left;
@@ -481,18 +513,20 @@ namespace FanScript.Compiler.Syntax
             {
                 SyntaxToken dotToken = MatchToken(SyntaxKind.DotToken);
                 ExpressionSyntax nameOrCall = ParseNameOrCallExpressions();
-                expression = new PropertyExpressionSyntax(syntaxTree, expression, dotToken, nameOrCall);
+                expression = new PropertyExpressionSyntax(_syntaxTree, expression, dotToken, nameOrCall);
             }
 
             // handle assignment
             // a = b = c = 5
             // a = (b = (c = 5))
-
             if (expression is not AssignableExpressionSyntax assignableExpression)
+            {
                 return expression;
+            }
 
             Stack<(AssignableExpressionSyntax, SyntaxToken)> assignmentStack = new();
 
+#pragma warning disable SA1513 // Closing brace should be followed by blank line
             while (Current.Kind switch
             {
                 SyntaxKind.EqualsToken => true,
@@ -509,31 +543,34 @@ namespace FanScript.Compiler.Syntax
                 expression = ParseExpression();
 
                 if (expression is not AssignableExpressionSyntax)
+                {
                     break;
+                }
 
                 assignableExpression = (AssignableExpressionSyntax)expression;
             }
+#pragma warning restore SA1513 // Closing brace should be followed by blank line
 
             while (assignmentStack.Count > 0)
             {
                 var (destination, assignmentToken) = assignmentStack.Pop();
 
-                expression = new AssignmentExpressionSyntax(syntaxTree, destination, assignmentToken, expression);
+                expression = new AssignmentExpressionSyntax(_syntaxTree, destination, assignmentToken, expression);
             }
 
             return expression;
         }
 
         private ExpressionSyntax ParsePrimaryExpressionInternal()
-        {
-            return Current.Kind switch
+#pragma warning disable SA1513 // Closing brace should be followed by blank line
+            => Current.Kind switch
             {
                 SyntaxKind.OpenParenthesisToken => ParseParenthesizedExpression(),
                 SyntaxKind.KeywordNull => ParseNullLiteral(),
                 SyntaxKind.KeywordFalse or SyntaxKind.KeywordTrue => ParseBooleanLiteral(),
                 SyntaxKind.FloatToken => ParseNumberLiteral(),
                 SyntaxKind.StringToken => ParseStringLiteral(),
-                SyntaxKind.IdentifierToken when (Current.Text == TypeSymbol.Vector3.Name || Current.Text == TypeSymbol.Rotation.Name) => ParseVectorConstructorExpresion(),
+                SyntaxKind.IdentifierToken when Current.Text == TypeSymbol.Vector3.Name || Current.Text == TypeSymbol.Rotation.Name => ParseVectorConstructorExpresion(),
                 SyntaxKind.IdentifierToken when Peek(1).Kind switch
                 {
                     SyntaxKind.PlusPlusToken => true,
@@ -544,30 +581,30 @@ namespace FanScript.Compiler.Syntax
                 SyntaxKind.OpenSquareToken => ParseArraySegmentExpression(),
                 _ => ParseNameOrCallExpressions(),
             };
-        }
+#pragma warning restore SA1513 // Closing brace should be followed by blank line
 
-        private ExpressionSyntax ParseParenthesizedExpression()
+        private ParenthesizedExpressionSyntax ParseParenthesizedExpression()
         {
             SyntaxToken left = MatchToken(SyntaxKind.OpenParenthesisToken);
             ExpressionSyntax expression = ParseExpression();
             SyntaxToken right = MatchToken(SyntaxKind.CloseParenthesisToken);
-            return new ParenthesizedExpressionSyntax(syntaxTree, left, expression, right);
+            return new ParenthesizedExpressionSyntax(_syntaxTree, left, expression, right);
         }
 
-        private ExpressionSyntax ParseNullLiteral()
-            => new LiteralExpressionSyntax(syntaxTree, MatchToken(SyntaxKind.KeywordNull));
+        private LiteralExpressionSyntax ParseNullLiteral()
+            => new LiteralExpressionSyntax(_syntaxTree, MatchToken(SyntaxKind.KeywordNull));
 
-        private ExpressionSyntax ParseBooleanLiteral()
+        private LiteralExpressionSyntax ParseBooleanLiteral()
         {
             SyntaxToken keywordToken = MatchToken(SyntaxKind.KeywordTrue, SyntaxKind.KeywordFalse);
             bool isTrue = keywordToken.Kind == SyntaxKind.KeywordTrue;
-            return new LiteralExpressionSyntax(syntaxTree, keywordToken, isTrue);
+            return new LiteralExpressionSyntax(_syntaxTree, keywordToken, isTrue);
         }
 
-        private ExpressionSyntax ParseNumberLiteral()
-            => new LiteralExpressionSyntax(syntaxTree, MatchToken(SyntaxKind.FloatToken));
+        private LiteralExpressionSyntax ParseNumberLiteral()
+            => new LiteralExpressionSyntax(_syntaxTree, MatchToken(SyntaxKind.FloatToken));
 
-        private ExpressionSyntax ParseVectorConstructorExpresion()
+        private ConstructorExpressionSyntax ParseVectorConstructorExpresion()
         {
             SyntaxToken keywordToken = MatchType([TypeSymbol.Vector3, TypeSymbol.Rotation]);
 
@@ -579,51 +616,46 @@ namespace FanScript.Compiler.Syntax
             ExpressionSyntax expressionZ = ParseExpression();
             SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
 
-            return new ConstructorExpressionSyntax(syntaxTree, keywordToken, openParenthesisToken, expressionX, comma0Token, expressionY, comma1Token, expressionZ, closeParenthesisToken);
+            return new ConstructorExpressionSyntax(_syntaxTree, keywordToken, openParenthesisToken, expressionX, comma0Token, expressionY, comma1Token, expressionZ, closeParenthesisToken);
         }
 
-        private ExpressionSyntax ParsePostfixExpression()
+        private PostfixExpressionSyntax ParsePostfixExpression()
         {
             SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
             SyntaxToken operatorToken = MatchToken(SyntaxKind.PlusPlusToken, SyntaxKind.MinusMinusToken);
 
-            return new PostfixExpressionSyntax(syntaxTree, identifierToken, operatorToken);
+            return new PostfixExpressionSyntax(_syntaxTree, identifierToken, operatorToken);
         }
-        private ExpressionSyntax ParsePrefixExpression()
+
+        private PrefixExpressionSyntax ParsePrefixExpression()
         {
             SyntaxToken operatorToken = MatchToken(SyntaxKind.PlusPlusToken, SyntaxKind.MinusMinusToken);
             SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
 
-            return new PrefixExpressionSyntax(syntaxTree, operatorToken, identifierToken);
+            return new PrefixExpressionSyntax(_syntaxTree, operatorToken, identifierToken);
         }
 
-        private ExpressionSyntax ParseArraySegmentExpression()
+        private ArraySegmentExpressionSyntax ParseArraySegmentExpression()
         {
             SyntaxToken openSquareToken = MatchToken(SyntaxKind.OpenSquareToken);
             var elements = ParseSeparatedList(SyntaxKind.CloseSquareToken);
             SyntaxToken closeSquareToken = MatchToken(SyntaxKind.CloseSquareToken);
 
-            return new ArraySegmentExpressionSyntax(syntaxTree, openSquareToken, new SeparatedSyntaxList<ExpressionSyntax>(elements
-                .Select(node =>
-                {
-                    if (node is ModifiersWExpressionSyntax modifierClause)
-                        return modifierClause.Expression;
-
-                    return node;
-                })
-                .ToImmutableArray()), closeSquareToken);
+            return new ArraySegmentExpressionSyntax(
+                _syntaxTree,
+                openSquareToken, 
+                new SeparatedSyntaxList<ExpressionSyntax>(
+                    elements
+                    .Select(node => node is ModifiersWExpressionSyntax modifierClause ? modifierClause.Expression : node)
+                    .ToImmutableArray()),
+                closeSquareToken);
         }
 
-        private ExpressionSyntax ParseStringLiteral()
-            => new LiteralExpressionSyntax(syntaxTree, MatchToken(SyntaxKind.StringToken));
+        private LiteralExpressionSyntax ParseStringLiteral()
+            => new LiteralExpressionSyntax(_syntaxTree, MatchToken(SyntaxKind.StringToken));
 
         private ExpressionSyntax ParseNameOrCallExpressions()
-        {
-            if (IsCallNow())
-                return ParseCallExpression();
-
-            return ParseNameExpression();
-        }
+            => IsCallNow() ? ParseCallExpression() : ParseNameExpression();
 
         private bool IsCallNow()
         {
@@ -632,7 +664,8 @@ namespace FanScript.Compiler.Syntax
                 (Peek(offset).Kind == SyntaxKind.OpenParenthesisToken ||
                 (Peek(offset++).Kind == SyntaxKind.LessToken && IsTypeClauseNext(ref offset) && Peek(offset++).Kind == SyntaxKind.GreaterToken && Peek(offset).Kind == SyntaxKind.OpenParenthesisToken)); // not sure of a better way to do this, neccesary because of less than operator
         }
-        private ExpressionSyntax ParseCallExpression()
+
+        private CallExpressionSyntax ParseCallExpression()
         {
             SyntaxToken identifier = MatchToken(SyntaxKind.IdentifierToken);
 
@@ -649,16 +682,15 @@ namespace FanScript.Compiler.Syntax
 
             ArgumentClauseSyntax argumentClause = ParseArgumentClause();
 
-            if (hasGegenericParam)
-                return new CallExpressionSyntax(syntaxTree, identifier, lessThanToken, genericType, greaterThanToken, argumentClause);
-            else
-                return new CallExpressionSyntax(syntaxTree, identifier, argumentClause);
+            return hasGegenericParam
+                ? new CallExpressionSyntax(_syntaxTree, identifier, lessThanToken, genericType, greaterThanToken, argumentClause)
+                : new CallExpressionSyntax(_syntaxTree, identifier, argumentClause);
         }
 
-        private ExpressionSyntax ParseNameExpression()
+        private NameExpressionSyntax ParseNameExpression()
         {
             SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
-            return new NameExpressionSyntax(syntaxTree, identifierToken);
+            return new NameExpressionSyntax(_syntaxTree, identifierToken);
         }
 
         private ArgumentClauseSyntax ParseArgumentClause()
@@ -666,27 +698,28 @@ namespace FanScript.Compiler.Syntax
             SyntaxToken openParenthesisToken = MatchToken(SyntaxKind.OpenParenthesisToken);
             var arguments = ParseSeparatedList(SyntaxKind.CloseParenthesisToken, true);
             SyntaxToken closeParenthesisToken = MatchToken(SyntaxKind.CloseParenthesisToken);
-            return new ArgumentClauseSyntax(syntaxTree, openParenthesisToken, new SeparatedSyntaxList<ModifiersWExpressionSyntax>(arguments), closeParenthesisToken);
+            return new ArgumentClauseSyntax(_syntaxTree, openParenthesisToken, new SeparatedSyntaxList<ModifiersWExpressionSyntax>(arguments), closeParenthesisToken);
         }
+
         private ImmutableArray<SyntaxNode> ParseSeparatedList(SyntaxKind listEnd, bool allowModifiers = false, bool parameters = false)
         {
             var nodesAndSeparators = ImmutableArray.CreateBuilder<SyntaxNode>();
 
             if (Current.Kind == listEnd)
+            {
                 goto skip;
+            }
 
             while (//Current.Kind != listEnd &&
                    Current.Kind != SyntaxKind.EndOfFileToken)
             {
                 if (parameters)
+                {
                     nodesAndSeparators.Add(ParseParameter());
+                }
                 else
                 {
-                    ModifierClauseSyntax modifiers;
-                    if (allowModifiers)
-                        modifiers = ParseModifiers();
-                    else
-                        modifiers = new ModifierClauseSyntax(syntaxTree, ImmutableArray<SyntaxToken>.Empty);
+                    ModifierClauseSyntax modifiers = allowModifiers ? ParseModifiers() : new ModifierClauseSyntax(_syntaxTree, []);
 
                     if (IsTypeClauseNow(out _) && modifiers.Modifiers.Any(token => token.Kind == SyntaxKind.OutModifier))
                     {
@@ -694,28 +727,26 @@ namespace FanScript.Compiler.Syntax
                         SyntaxToken identifierToken = MatchToken(SyntaxKind.IdentifierToken);
 
                         nodesAndSeparators.Add(new ModifiersWExpressionSyntax(
-                            syntaxTree,
+                            _syntaxTree,
                             new ModifierClauseSyntax(
-                                syntaxTree,
+                                _syntaxTree,
                                 modifiers.Modifiers
                                     .Where(token => !ModifiersE.FromKind(token.Kind).GetTargets().Contains(ModifierTarget.Variable))
-                                    .ToImmutableArray()
-                            ),
+                                    .ToImmutableArray()),
                             new VariableDeclarationExpressionSyntax(
-                                syntaxTree,
+                                _syntaxTree,
                                 new ModifierClauseSyntax(
-                                    syntaxTree,
+                                    _syntaxTree,
                                     modifiers.Modifiers
                                         .Where(token => ModifiersE.FromKind(token.Kind).GetTargets().Contains(ModifierTarget.Variable))
-                                        .ToImmutableArray()
-                                ),
+                                        .ToImmutableArray()),
                                 typeClause,
-                                identifierToken
-                            )
-                        ));
+                                identifierToken)));
                     }
                     else
-                        nodesAndSeparators.Add(new ModifiersWExpressionSyntax(syntaxTree, modifiers, ParseExpression()));
+                    {
+                        nodesAndSeparators.Add(new ModifiersWExpressionSyntax(_syntaxTree, modifiers, ParseExpression()));
+                    }
                 }
 
                 if (Current.Kind == SyntaxKind.CommaToken)
@@ -724,7 +755,9 @@ namespace FanScript.Compiler.Syntax
                     nodesAndSeparators.Add(comma);
                 }
                 else
+                {
                     break;
+                }
             }
 
         skip:
@@ -736,16 +769,19 @@ namespace FanScript.Compiler.Syntax
             nextTokenIndex = 0;
             return IsTypeClauseNext(ref nextTokenIndex);
         }
+
         private bool IsTypeClauseNext(ref int nextTokenIndex)
         {
-            if (Peek(nextTokenIndex).Kind == SyntaxKind.IdentifierToken && allowedTypes.Contains(Peek(nextTokenIndex++).Text))
+            if (Peek(nextTokenIndex).Kind == SyntaxKind.IdentifierToken && AllowedTypes.Contains(Peek(nextTokenIndex++).Text))
             {
                 int temp = nextTokenIndex;
 
                 if (Peek(nextTokenIndex++).Kind == SyntaxKind.LessToken &&
                     IsTypeClauseNext(ref nextTokenIndex) &&
                     Peek(nextTokenIndex++).Kind == SyntaxKind.GreaterToken)
+                {
                     return true;
+                }
                 else
                 {
                     nextTokenIndex = temp;
@@ -755,6 +791,7 @@ namespace FanScript.Compiler.Syntax
 
             return false;
         }
+
         private TypeClauseSyntax ParseTypeClause(bool allowGeneric, bool gettingGenericParam = false)
         {
             SyntaxToken typeToken = MatchType(TypeSymbol.BuiltInTypes);
@@ -766,14 +803,20 @@ namespace FanScript.Compiler.Syntax
                 SyntaxToken greaterToken = MatchToken(SyntaxKind.GreaterToken);
 
                 if (!allowGeneric)
-                    diagnostics.ReportGenericTypeNotAllowed(typeToken.Location);
+                {
+                    _diagnostics.ReportGenericTypeNotAllowed(typeToken.Location);
+                }
                 else if (gettingGenericParam)
-                    diagnostics.ReportGenericTypeRecursion(new TextLocation(syntaxTree.Text, TextSpan.FromBounds(lessToken.Span.Start, greaterToken.Span.End)));
+                {
+                    _diagnostics.ReportGenericTypeRecursion(new TextLocation(_syntaxTree.Text, TextSpan.FromBounds(lessToken.Span.Start, greaterToken.Span.End)));
+                }
 
-                return new TypeClauseSyntax(syntaxTree, typeToken, lessToken, innerType, greaterToken);
+                return new TypeClauseSyntax(_syntaxTree, typeToken, lessToken, innerType, greaterToken);
             }
             else
-                return new TypeClauseSyntax(syntaxTree, typeToken);
+            {
+                return new TypeClauseSyntax(_syntaxTree, typeToken);
+            }
         }
 
         private bool AreModifiersNow(out int nextTokenIndex)
@@ -781,23 +824,30 @@ namespace FanScript.Compiler.Syntax
             nextTokenIndex = -1;
 
             if (!Current.Kind.IsModifier())
+            {
                 return false;
+            }
 
             nextTokenIndex = 1;
 
             while (Peek(nextTokenIndex).Kind.IsModifier())
+            {
                 nextTokenIndex++;
+            }
 
             return true;
         }
+
         private ModifierClauseSyntax ParseModifiers()
         {
             ImmutableArray<SyntaxToken>.Builder builder = ImmutableArray.CreateBuilder<SyntaxToken>();
 
             while (Current.Kind.IsModifier())
+            {
                 builder.Add(NextToken());
+            }
 
-            return new ModifierClauseSyntax(syntaxTree, builder.ToImmutable());
+            return new ModifierClauseSyntax(_syntaxTree, builder.ToImmutable());
         }
     }
 }

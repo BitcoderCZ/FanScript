@@ -1,14 +1,15 @@
-﻿using FanScript.Compiler.Binding;
-using FanScript.Compiler.Emit;
-using FanScript.Compiler.Symbols.Variables;
-using FanScript.Documentation.Attributes;
-using FanScript.FCInfo;
-using FanScript.Utils;
-using System.Collections.Frozen;
+﻿using System.Collections.Frozen;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
+using FanScript.Compiler.Binding;
+using FanScript.Compiler.Emit;
+using FanScript.Compiler.Symbols.Variables;
+using FanScript.Compiler.Syntax;
+using FanScript.Documentation.Attributes;
+using FanScript.FCInfo;
+using FanScript.Utils;
 
 namespace FanScript.Compiler.Symbols
 {
@@ -35,9 +36,9 @@ namespace FanScript.Compiler.Symbols
                 """
                 Null has implicit cast to all types.
                 """
-            ]
-        )]
+            ])]
         public static readonly TypeSymbol Null = new TypeSymbol("null");
+
         // used in function return type or parameter
         public static readonly TypeSymbol Generic = new TypeSymbol("generic");
         [TypeDoc(
@@ -49,8 +50,7 @@ namespace FanScript.Compiler.Symbols
             bool a = false
             bool b = true
             </>
-            """
-        )]
+            """)]
         public static readonly TypeSymbol Bool = new TypeSymbol("bool");
         [TypeDoc(
             Info = """
@@ -64,8 +64,7 @@ namespace FanScript.Compiler.Symbols
             float d = 0b1010_0101 // binary, _ is optional
             float e = 0x1234_ABCD // hexadecimal, _ is optional
             </>
-            """
-        )]
+            """)]
         public static readonly TypeSymbol Float = new TypeSymbol("float");
         [TypeDoc(
             Info = """
@@ -77,8 +76,7 @@ namespace FanScript.Compiler.Symbols
             <codeblock lang="fcs">
             shopSection("The string")
             </>
-            """
-        )]
+            """)]
         public static readonly TypeSymbol String = new TypeSymbol("string");
         [TypeDoc(
             Info = """
@@ -95,8 +93,7 @@ namespace FanScript.Compiler.Symbols
             const float x = 8
             vec3 c = vec3(x, 3, 5) // constant - uses the vector block
             </>
-            """
-        )]
+            """)]
         public static readonly TypeSymbol Vector3 = new TypeSymbol("vec3");
         [TypeDoc(
             Info = """
@@ -113,8 +110,7 @@ namespace FanScript.Compiler.Symbols
             const float x = 45
             rot c = rot(x, 60, 10) // constant - uses the vector block
             </>
-            """
-        )]
+            """)]
         public static readonly TypeSymbol Rotation = new TypeSymbol("rot");
         [TypeDoc(
             Info = """
@@ -126,8 +122,7 @@ namespace FanScript.Compiler.Symbols
             obj b = getBlockById(BLOCK_GRASS) // places the GRASS block (id 3) and returns a reference to it
             // comming soon: obj c = getBlockByName("My block") // places the block with nane "My block" and returns a reference to it
             </>
-            """
-        )]
+            """)]
         public static readonly TypeSymbol Object = new TypeSymbol("obj");
         [TypeDoc(
             Info = """
@@ -139,8 +134,7 @@ namespace FanScript.Compiler.Symbols
             object part = getObject(25, 0, 5)
             base.addConstraint(part, out constr a)
             </>
-            """
-        )]
+            """)]
         public static readonly TypeSymbol Constraint = new TypeSymbol("constr");
         [TypeDoc(
             Info = """
@@ -166,8 +160,7 @@ namespace FanScript.Compiler.Symbols
                 """
                 <link type="type">arraySegment</>
                 """
-            ]
-        )]
+            ])]
         public static readonly TypeSymbol Array = new TypeSymbol("array", true);
         [TypeDoc(
             Info = """
@@ -189,47 +182,18 @@ namespace FanScript.Compiler.Symbols
                 """
                 <link type="type">array</>
                 """
-            ]
-        )]
+            ])]
         public static readonly TypeSymbol ArraySegment = new TypeSymbol("arraySegment", true);
         public static readonly TypeSymbol Void = new TypeSymbol("void");
 
-        public bool IsGeneric => IsGenericDefinition || IsGenericInstance;
-
-        public bool IsGenericDefinition { get; }
-
-        [MemberNotNullWhen(true, nameof(InnerType))]
-        public bool IsGenericInstance { get; }
-        public TypeSymbol? InnerType { get; }
-
-        public FrozenDictionary<string, PropertyDefinitionSymbol> Properties { get; private set; } = FrozenDictionary<string, PropertyDefinitionSymbol>.Empty;
-
         public static readonly ImmutableArray<TypeSymbol> BuiltInGenericTypes = [Array];
+
         public static readonly ImmutableArray<TypeSymbol> BuiltInNonGenericTypes = [Bool, Float, Vector3, Rotation, Object, Constraint];
         public static readonly ImmutableArray<TypeSymbol> BuiltInTypes = BuiltInGenericTypes.AddRange(BuiltInNonGenericTypes);
 
-        private static ImmutableArray<TypeSymbol> allTypes;
-        public static ImmutableArray<TypeSymbol> AllTypes
-            => allTypes.IsDefault ?
-                (allTypes = typeof(TypeSymbol).GetFields(BindingFlags.Public | BindingFlags.Static).Where(field => field.FieldType == typeof(TypeSymbol)).Select(field => (TypeSymbol)field.GetValue(null)!).ToImmutableArray()) :
-                allTypes;
-
         public static readonly IReadOnlyDictionary<TypeSymbol, TypeDocAttribute> TypeToDoc;
 
-        private TypeSymbol(string name, bool isGenericDefinition = false)
-            : base(name)
-        {
-            IsGenericDefinition = isGenericDefinition;
-        }
-
-        private TypeSymbol(string name, TypeSymbol innerType)
-            : base(name)
-        {
-            IsGenericInstance = true;
-            InnerType = innerType;
-        }
-
-        public override SymbolKind Kind => SymbolKind.Type;
+        private static ImmutableArray<TypeSymbol> allTypes;
 
         static TypeSymbol()
         {
@@ -251,23 +215,24 @@ namespace FanScript.Compiler.Symbols
 
             Vector3.Properties = new Dictionary<string, PropertyDefinitionSymbol>()
             {
-                ["x"] = new PropertyDefinitionSymbol("x", Float, (context, expression) => getVectorComponent(context, expression, 0), (context, expression, getStore) => setVectorComponent(context, expression, getStore, 0)),
-                ["y"] = new PropertyDefinitionSymbol("y", Float, (context, expression) => getVectorComponent(context, expression, 1), (context, expression, getStore) => setVectorComponent(context, expression, getStore, 1)),
-                ["z"] = new PropertyDefinitionSymbol("z", Float, (context, expression) => getVectorComponent(context, expression, 2), (context, expression, getStore) => setVectorComponent(context, expression, getStore, 2)),
+                ["x"] = new PropertyDefinitionSymbol("x", Float, (context, expression) => GetVectorComponent(context, expression, 0), (context, expression, getStore) => SetVectorComponent(context, expression, getStore, 0)),
+                ["y"] = new PropertyDefinitionSymbol("y", Float, (context, expression) => GetVectorComponent(context, expression, 1), (context, expression, getStore) => SetVectorComponent(context, expression, getStore, 1)),
+                ["z"] = new PropertyDefinitionSymbol("z", Float, (context, expression) => GetVectorComponent(context, expression, 2), (context, expression, getStore) => SetVectorComponent(context, expression, getStore, 2)),
             }.ToFrozenDictionary();
             Rotation.Properties = new Dictionary<string, PropertyDefinitionSymbol>()
             {
-                ["x"] = new PropertyDefinitionSymbol("x", Float, (context, expression) => getVectorComponent(context, expression, 0), (context, expression, getStore) => setVectorComponent(context, expression, getStore, 0)),
-                ["y"] = new PropertyDefinitionSymbol("y", Float, (context, expression) => getVectorComponent(context, expression, 1), (context, expression, getStore) => setVectorComponent(context, expression, getStore, 1)),
-                ["z"] = new PropertyDefinitionSymbol("z", Float, (context, expression) => getVectorComponent(context, expression, 2), (context, expression, getStore) => setVectorComponent(context, expression, getStore, 2)),
+                ["x"] = new PropertyDefinitionSymbol("x", Float, (context, expression) => GetVectorComponent(context, expression, 0), (context, expression, getStore) => SetVectorComponent(context, expression, getStore, 0)),
+                ["y"] = new PropertyDefinitionSymbol("y", Float, (context, expression) => GetVectorComponent(context, expression, 1), (context, expression, getStore) => SetVectorComponent(context, expression, getStore, 1)),
+                ["z"] = new PropertyDefinitionSymbol("z", Float, (context, expression) => GetVectorComponent(context, expression, 2), (context, expression, getStore) => SetVectorComponent(context, expression, getStore, 2)),
             }.ToFrozenDictionary();
-            EmitStore getVectorComponent(IEmitContext context, BoundExpression expression, int index)
+            IEmitStore GetVectorComponent(IEmitContext context, BoundExpression expression, int index)
             {
                 bool[] arr = new bool[3];
                 arr[index] = true;
                 return context.BreakVectorAny(expression, arr)[index]!;
             }
-            EmitStore setVectorComponent(IEmitContext context, BoundExpression expression, Func<EmitStore> getStore, int index)
+
+            IEmitStore SetVectorComponent(IEmitContext context, BoundExpression expression, Func<IEmitStore> getStore, int index)
             {
                 WireType varType = expression.Type.ToWireType();
 
@@ -285,7 +250,7 @@ namespace FanScript.Compiler.Symbols
 
                             using (context.ExpressionBlock())
                             {
-                                EmitStore expressionStore = context.EmitExpression(expression);
+                                IEmitStore expressionStore = context.EmitExpression(expression);
 
                                 context.Connect(expressionStore, BasicEmitStore.CIn(@break, @break.Type.TerminalArray[3]));
                             }
@@ -293,12 +258,15 @@ namespace FanScript.Compiler.Symbols
                             for (int i = 0; i < 3; i++)
                             {
                                 if (i != index)
+                                {
                                     context.Connect(BasicEmitStore.COut(@break, @break.Type.TerminalArray[2 - i]), BasicEmitStore.CIn(make, make.Type.TerminalArray[(2 - i) + 1]));
+                                }
                             }
                         }
+
                         using (context.ExpressionBlock())
                         {
-                            EmitStore store = getStore();
+                            IEmitStore store = getStore();
 
                             context.Connect(store, BasicEmitStore.CIn(make, make.Type.TerminalArray[(2 - index) + 1]));
                         }
@@ -309,24 +277,54 @@ namespace FanScript.Compiler.Symbols
             }
         }
 
-        public static TypeSymbol CreateGenericInstance(TypeSymbol type, TypeSymbol innerType)
+        private TypeSymbol(string name, bool isGenericDefinition = false)
+            : base(name)
         {
-            if (!type.IsGenericDefinition)
-                throw new ArgumentException(nameof(type), $"{nameof(type)} must be generic definition.");
-            else if (innerType.IsGeneric) // we don't allow generic type in a generic type
-                throw new ArgumentException(nameof(innerType), $"{nameof(innerType)} must not be generic.");
-
-            return new TypeSymbol(type.Name, innerType);
+            IsGenericDefinition = isGenericDefinition;
         }
+
+        private TypeSymbol(string name, TypeSymbol innerType)
+            : base(name)
+        {
+            IsGenericInstance = true;
+            InnerType = innerType;
+        }
+
+        public static ImmutableArray<TypeSymbol> AllTypes
+            => allTypes.IsDefault ?
+                (allTypes = typeof(TypeSymbol).GetFields(BindingFlags.Public | BindingFlags.Static).Where(field => field.FieldType == typeof(TypeSymbol)).Select(field => (TypeSymbol)field.GetValue(null)!).ToImmutableArray()) :
+                allTypes;
+
+        public override SymbolKind Kind => SymbolKind.Type;
+
+        public bool IsGeneric => IsGenericDefinition || IsGenericInstance;
+
+        public bool IsGenericDefinition { get; }
+
+        [MemberNotNullWhen(true, nameof(InnerType))]
+        public bool IsGenericInstance { get; }
+
+        public TypeSymbol? InnerType { get; }
+
+        public FrozenDictionary<string, PropertyDefinitionSymbol> Properties { get; private set; } = FrozenDictionary<string, PropertyDefinitionSymbol>.Empty;
+
+        public static TypeSymbol CreateGenericInstance(TypeSymbol type, TypeSymbol innerType)
+            => !type.IsGenericDefinition
+                ? throw new ArgumentException(nameof(type), $"{nameof(type)} must be generic definition.")
+                : innerType.IsGeneric
+                ? throw new ArgumentException(nameof(innerType), $"{nameof(innerType)} must not be generic.")
+                : new TypeSymbol(type.Name, innerType);
 
         public static TypeSymbol GetGenericDefinition(TypeSymbol genericInstance)
         {
             if (!genericInstance.IsGenericInstance)
+            {
                 throw new ArgumentException(nameof(genericInstance), $"{nameof(genericInstance)} must be generic instance.");
+            }
 
             TypeSymbol definition = GetTypeInternal(genericInstance.Name);
 
-            Debug.Assert(definition.IsGenericDefinition);
+            Debug.Assert(definition.IsGenericDefinition, $"The returned type from {nameof(GetTypeInternal)} for a generic instance must be a generic definition");
 
             return definition;
         }
@@ -334,11 +332,17 @@ namespace FanScript.Compiler.Symbols
         public static TypeSymbol GetType(string? name)
         {
             if (string.IsNullOrEmpty(name))
+            {
                 return Error;
+            }
 
             for (int i = 0; i < BuiltInTypes.Length; i++)
+            {
                 if (BuiltInTypes[i].Name == name)
+                {
                     return BuiltInTypes[i];
+                }
+            }
 
             return Error;
         }
@@ -346,17 +350,24 @@ namespace FanScript.Compiler.Symbols
         public static TypeSymbol GetTypeInternal(ReadOnlySpan<char> name)
         {
             if (name.IsEmpty)
+            {
                 return Error;
+            }
 
             for (int i = 0; i < AllTypes.Length; i++)
+            {
                 if (name.Equals(AllTypes[i].Name.AsSpan(), StringComparison.InvariantCulture))
+                {
                     return AllTypes[i];
+                }
+            }
 
             return Error;
         }
 
         public bool IsGenericDefinitionOf(TypeSymbol type)
             => IsGenericDefinition && type.IsGenericInstance && NonGenericEquals(type);
+
         public bool IsGenericInstanceOf(TypeSymbol type)
             => IsGenericInstance && type.IsGenericDefinition && NonGenericEquals(type);
 
@@ -365,34 +376,45 @@ namespace FanScript.Compiler.Symbols
 
         public bool GenericEquals(TypeSymbol other)
             => Name == other.Name && Equals(InnerType, other.InnerType);
+
         public bool NonGenericEquals(TypeSymbol other)
             => Name == other.Name;
 
-        public override string ToString()
+        public override void WriteTo(TextWriter writer)
         {
-            if (IsGenericDefinition)
-                return Name + "<>";
-            else if (IsGenericInstance)
-                return Name + $"<{InnerType}>";
-            else
-                return Name;
+            writer.SetForeground(IsGeneric ? ConsoleColor.DarkGreen : ConsoleColor.Blue);
+            writer.Write(Name);
+            writer.ResetColor();
+            if (IsGeneric)
+            {
+                writer.WritePunctuation(SyntaxKind.LessToken);
+                if (IsGenericInstance)
+                {
+                    InnerType.WriteTo(writer);
+                }
+
+                writer.WritePunctuation(SyntaxKind.GreaterToken);
+            }
         }
 
         public override int GetHashCode()
             => HashCode.Combine(base.GetHashCode(), InnerType);
 
         public override bool Equals(object? obj)
-        {
-            if (obj is TypeSymbol other) return GenericEquals(other);
-            else return false;
-        }
+            => obj is TypeSymbol other && GenericEquals(other);
 
         public class FuntionParamsComparer : IEqualityComparer<TypeSymbol>
         {
             public bool Equals(TypeSymbol? x, TypeSymbol? y)
             {
-                if (x == y) return true;
-                else if (x is null || y is null) return false;
+                if (x == y)
+                {
+                    return true;
+                }
+                else if (x is null || y is null)
+                {
+                    return false;
+                }
 
                 return x.GenericEquals(y) ||
                     (x.Equals(Generic) || y.Equals(Generic)) ||

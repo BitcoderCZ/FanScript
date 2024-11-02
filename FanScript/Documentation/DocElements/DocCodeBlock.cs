@@ -12,6 +12,7 @@ namespace FanScript.Documentation.DocElements
         }
 
         public override DocString Value { get; }
+
         public string? Lang { get; }
     }
 }

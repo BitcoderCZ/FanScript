@@ -2,17 +2,17 @@
 {
     internal class Disposable : IDisposable
     {
-        private Action? onDispose;
+        private Action? _onDispose;
 
         public Disposable(Action? onDispose)
         {
-            this.onDispose = onDispose;
+            _onDispose = onDispose;
         }
 
         public void Dispose()
         {
-            onDispose?.Invoke();
-            onDispose = null;
+            _onDispose?.Invoke();
+            _onDispose = null;
         }
     }
 }

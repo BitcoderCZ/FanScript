@@ -11,6 +11,7 @@ namespace FanScript.Compiler.Syntax
             HasGenericParameter = false;
             ArgumentClause = argumentClause;
         }
+
         internal CallStatementSyntax(SyntaxTree syntaxTree, SyntaxToken identifier, SyntaxToken lessThanToken, TypeClauseSyntax genericTypeClause, SyntaxToken greaterThanToken, ArgumentClauseSyntax argumentClause)
             : base(syntaxTree)
         {
@@ -23,12 +24,18 @@ namespace FanScript.Compiler.Syntax
         }
 
         public override SyntaxKind Kind => SyntaxKind.CallStatement;
+
         public SyntaxToken Identifier { get; }
+
         [MemberNotNullWhen(true, nameof(LessThanToken), nameof(GenericTypeClause), nameof(GreaterThanToken))]
         public bool HasGenericParameter { get; }
+
         public SyntaxToken? LessThanToken { get; }
+
         public TypeClauseSyntax? GenericTypeClause { get; }
+
         public SyntaxToken? GreaterThanToken { get; }
+
         public ArgumentClauseSyntax ArgumentClause { get; }
 
         public SeparatedSyntaxList<ModifiersWExpressionSyntax> Arguments => ArgumentClause.Arguments;
@@ -42,6 +49,7 @@ namespace FanScript.Compiler.Syntax
                 yield return GenericTypeClause;
                 yield return GreaterThanToken;
             }
+
             yield return ArgumentClause;
         }
     }

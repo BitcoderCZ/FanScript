@@ -1,7 +1,8 @@
-﻿using FanScript.Compiler.Symbols;
+﻿using System.Collections.Immutable;
+using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
-using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Binding
 {
@@ -20,15 +21,20 @@ namespace FanScript.Compiler.Binding
         public override BoundNodeKind Kind => BoundNodeKind.CallStatement;
 
         public FunctionSymbol Function { get; }
+
         public BoundArgumentClause ArgumentClause { get; }
+
         public TypeSymbol ReturnType { get; }
+
         public TypeSymbol? GenericType { get; }
+
         /// <summary>
         /// Variable to which the result should be assigned to, if the type of <see cref="Function"/> != <see cref="TypeSymbol.Void"/> and <see cref="ResultVariable"/> is not <see langword="null"/>
         /// </summary>
         public VariableSymbol? ResultVariable { get; }
 
         public ImmutableArray<Modifiers> ArgModifiers => ArgumentClause.ArgModifiers;
+
         public ImmutableArray<BoundExpression> Arguments => ArgumentClause.Arguments;
     }
 }

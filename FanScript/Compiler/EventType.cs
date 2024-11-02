@@ -1,9 +1,9 @@
-﻿using FanScript.Compiler.Symbols;
-using FanScript.Compiler.Symbols.Variables;
-using FanScript.Documentation.Attributes;
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
 using System.Collections.ObjectModel;
 using System.Text;
+using FanScript.Compiler.Symbols;
+using FanScript.Compiler.Symbols.Variables;
+using FanScript.Documentation.Attributes;
 
 namespace FanScript.Compiler
 {
@@ -12,8 +12,7 @@ namespace FanScript.Compiler
         [EventDoc(
             Info = """
             Executed only on the first frame.
-            """
-        )]
+            """)]
         Play,
         [EventDoc(
             Info = """
@@ -27,14 +26,12 @@ namespace FanScript.Compiler
                     3. Runs Late Update scripts.
                     4. Renders the frame.
                 """
-            ]
-        )]
+            ])]
         LateUpdate,
         [EventDoc(
             Info = """
             Executes when taking a screenshot for the game cover.
-            """
-        )]
+            """)]
         BoxArt,
         [EventDoc(
             Info = """
@@ -53,8 +50,7 @@ namespace FanScript.Compiler
                 """
                 One of <link type="con">TOUCH_FINGER</>.
                 """
-            ]
-        )]
+            ])]
         Touch,
         [EventDoc(
             Info = """
@@ -69,8 +65,7 @@ namespace FanScript.Compiler
                 """
                 If the player holds the finger after swiping, swipe is executed every 15 frames.
                 """
-            ]
-        )]
+            ])]
         Swipe,
         [EventDoc(
             Info = """
@@ -80,8 +75,7 @@ namespace FanScript.Compiler
                 """
                 Type of the button, one of <link type="con">BUTTON_TYPE</>.
                 """
-            ]
-        )]
+            ])]
         Button,
         [EventDoc(
             Info = """
@@ -108,8 +102,7 @@ namespace FanScript.Compiler
                 """
                 If you're overriding physics to move objects (using Set Position) then no collisions will be detected.
                 """
-            ]
-        )]
+            ])]
         Collision,
         [EventDoc(
             Info = """
@@ -153,14 +146,14 @@ namespace FanScript.Compiler
                 """
                 If a non-integer value is provided for stop, it's rounded up to the next biggest integer.
                 """
-            ]
-        )]
+            ])]
         Loop,
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1649:File name should match first type name", Justification = "It does, but enums aren't detected for some reason")]
     public static class EventTypeE
     {
-        private static readonly EventCollection types = new EventCollection()
+        private static readonly EventCollection Types = new EventCollection()
         {
             new EventTypeInfo(EventType.Play, []),
             new EventTypeInfo(EventType.LateUpdate, []),
@@ -191,7 +184,7 @@ namespace FanScript.Compiler
         };
 
         public static EventTypeInfo GetInfo(this EventType sbt)
-            => types[sbt];
+            => Types[sbt];
 
         private sealed class EventCollection : KeyedCollection<EventType, EventTypeInfo>
         {
@@ -214,7 +207,9 @@ namespace FanScript.Compiler
                 var param = Parameters[i];
 
                 if (i != 0)
+                {
                     builder.Append(", ");
+                }
 
                 if (param.Modifiers != 0)
                 {
