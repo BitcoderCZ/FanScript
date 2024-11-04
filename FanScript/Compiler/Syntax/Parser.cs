@@ -643,7 +643,7 @@ namespace FanScript.Compiler.Syntax
 
             return new ArraySegmentExpressionSyntax(
                 _syntaxTree,
-                openSquareToken, 
+                openSquareToken,
                 new SeparatedSyntaxList<ExpressionSyntax>(
                     elements
                     .Select(node => node is ModifiersWExpressionSyntax modifierClause ? modifierClause.Expression : node)

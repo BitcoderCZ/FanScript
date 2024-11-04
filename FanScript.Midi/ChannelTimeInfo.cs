@@ -13,7 +13,7 @@
         {
             CurrentTime += deltaTime;
 
-            double frameDelta = ((double)deltaTime.Ticks + (double)deltaLeftOver.Ticks) / (double)FrameLength.Ticks;
+            double frameDelta = (deltaTime.Ticks + (double)deltaLeftOver.Ticks) / FrameLength.Ticks;
 
             deltaLeftOver = new TimeSpan((long)((frameDelta % 1d) * FrameLength.Ticks));
 

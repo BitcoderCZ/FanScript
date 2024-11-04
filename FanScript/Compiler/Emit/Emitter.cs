@@ -375,7 +375,7 @@ namespace FanScript.Compiler.Emit
                 return connector.Store;
             }
         }
-        
+
         private ConditionalGotoEmitStore EmitConditionalGotoStatement(BoundConditionalGotoStatement statement)
         {
             Block block = AddBlock(Blocks.Control.If);
@@ -390,8 +390,8 @@ namespace FanScript.Compiler.Emit
             ConditionalGotoEmitStore store = new ConditionalGotoEmitStore(
                 block,
                 block.Type.Before,
-                block, 
-                block.Type.Terminals[statement.JumpIfTrue ? "True" : "False"], 
+                block,
+                block.Type.Terminals[statement.JumpIfTrue ? "True" : "False"],
                 block,
                 block.Type.Terminals[statement.JumpIfTrue ? "False" : "True"]);
 

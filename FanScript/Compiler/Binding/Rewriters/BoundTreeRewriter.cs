@@ -273,7 +273,7 @@ namespace FanScript.Compiler.Binding.Rewriters
 
             return xDiff || yDiff || zDiff
                 ? new BoundConstructorExpression(
-                    node.Syntax, 
+                    node.Syntax,
                     node.Type,
                     xDiff ? expressionX : node.ExpressionX,
                     yDiff ? expressionY : node.ExpressionY,

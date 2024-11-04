@@ -8,15 +8,12 @@ using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using OmniSharp.Extensions.LanguageServer.Protocol.Server;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
 namespace FanScript.LangServer.Handlers
 {
-#pragma warning disable 618
     internal class SemanticTokensHandler : SemanticTokensHandlerBase
     {
         private readonly ILanguageServerFacade facade;
@@ -153,5 +150,4 @@ namespace FanScript.LangServer.Handlers
                 Range = true
             };
     }
-#pragma warning restore 618
 }

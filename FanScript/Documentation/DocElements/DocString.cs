@@ -1,6 +1,4 @@
-﻿using System.Collections.Immutable;
-
-namespace FanScript.Documentation.DocElements
+﻿namespace FanScript.Documentation.DocElements
 {
     public sealed class DocString : DocElement
     {

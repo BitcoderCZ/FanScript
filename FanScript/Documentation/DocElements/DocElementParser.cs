@@ -395,12 +395,10 @@ namespace FanScript.Documentation.DocElements
                     throw new ElementArgValueMissingException("link", "type");
                 }
 
-#pragma warning disable IDE0046 // Convert to conditional expression
                 if (value is not DocString valString)
                 {
                     throw new ElementParseException("link", "The value of a link must be a string.");
                 }
-#pragma warning restore IDE0046
 
                 return type.Value switch
                 {

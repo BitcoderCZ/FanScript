@@ -20,8 +20,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
-#pragma warning disable CS0618
-
 namespace FanScript.LangServer.Handlers
 {
     internal class TextDocumentHandler : TextDocumentSyncHandlerBase

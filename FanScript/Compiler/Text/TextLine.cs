@@ -17,7 +17,7 @@
 
         public int End => Start + Lenght;
 
-        public TextSpan Span  => new TextSpan(Start, Lenght);
+        public TextSpan Span => new TextSpan(Start, Lenght);
 
         public TextSpan SpanIncludingLineBreak => new TextSpan(Start, LenghtIncludingLineBreak);
 

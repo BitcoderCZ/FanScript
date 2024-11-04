@@ -43,7 +43,7 @@ namespace FanScript.Compiler.Symbols
                 ])]
             public static readonly FunctionSymbol PlaySound
                 = new BuiltinFunctionSymbol(
-                    SoundNamespace, 
+                    SoundNamespace,
                     "playSound",
                     [
                         new ParameterSymbol("volume", TypeSymbol.Float),
@@ -51,8 +51,8 @@ namespace FanScript.Compiler.Symbols
                         new ParameterSymbol("channel", Modifiers.Out, TypeSymbol.Float),
                         new ParameterSymbol("LOOP", Modifiers.Constant, TypeSymbol.Bool),
                         new ParameterSymbol("SOUND", Modifiers.Constant, TypeSymbol.Float),
-                    ], 
-                    TypeSymbol.Void, 
+                    ],
+                    TypeSymbol.Void,
                     (call, context) =>
                     {
                         object?[]? values = context.ValidateConstants(call.Arguments.AsMemory(^2..), true);
@@ -107,12 +107,12 @@ namespace FanScript.Compiler.Symbols
                 ])]
             public static readonly FunctionSymbol StopSound
                  = new BuiltinFunctionSymbol(
-                     SoundNamespace, 
+                     SoundNamespace,
                      "stopSound",
                      [
                         new ParameterSymbol("channel", TypeSymbol.Float),
-                     ], 
-                     TypeSymbol.Void, 
+                     ],
+                     TypeSymbol.Void,
                      (call, context) => EmitAX0(call, context, Blocks.Sound.StopSound));
 
             [FunctionDoc(
@@ -140,14 +140,14 @@ namespace FanScript.Compiler.Symbols
                 ])]
             public static readonly FunctionSymbol SetVolumePitch
                  = new BuiltinFunctionSymbol(
-                     SoundNamespace, 
+                     SoundNamespace,
                      "setVolumePitch",
                      [
                         new ParameterSymbol("channel", TypeSymbol.Float),
                          new ParameterSymbol("volume", TypeSymbol.Float),
                          new ParameterSymbol("pitch", TypeSymbol.Float),
-                     ], 
-                     TypeSymbol.Void, 
+                     ],
+                     TypeSymbol.Void,
                      (call, context) => EmitAX0(call, context, Blocks.Sound.VolumePitch));
 
             private static readonly Namespace SoundNamespace = BuiltinNamespace + "sound";

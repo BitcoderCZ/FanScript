@@ -18,7 +18,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace FanScript.LangServer.Handlers
 {
@@ -417,7 +416,7 @@ namespace FanScript.LangServer.Handlers
                 builder.Append('.');
                 builder.Append(method.Name);
 
-               method.WriteTo(writer, true, true);
+                method.WriteTo(writer, true, true);
 
                 if (!string.IsNullOrEmpty(doc.Info))
                 {

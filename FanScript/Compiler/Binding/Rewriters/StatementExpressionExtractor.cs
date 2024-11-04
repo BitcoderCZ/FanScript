@@ -115,7 +115,7 @@ namespace FanScript.Compiler.Binding.Rewriters
         {
             var (before, argumentClause, after) = node.ArgumentClause is null ? ([], null, []) : RewriteArgumentClause(node.ArgumentClause);
 
-            BoundBlockStatement block = (BoundBlockStatement)RewriteBlockStatement(node.Block);
+            BoundBlockStatement block = RewriteBlockStatement(node.Block);
 
             return argumentClause == node.ArgumentClause && block == node.Block && before.IsDefaultOrEmpty && after.IsDefaultOrEmpty
                 ? node

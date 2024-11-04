@@ -332,7 +332,7 @@ namespace FanScript.Compiler.Symbols
                     ],
                     TypeSymbol.Vector3,
                     (call, context) => EmitX1(call, context, Blocks.Math.CrossProduct),
-                    args =>[Vector3F.Cross((Vector3F)args[0].GetValueOrDefault(TypeSymbol.Vector3), (Vector3F)args[1].GetValueOrDefault(TypeSymbol.Vector3))]);
+                    args => [Vector3F.Cross((Vector3F)args[0].GetValueOrDefault(TypeSymbol.Vector3), (Vector3F)args[1].GetValueOrDefault(TypeSymbol.Vector3))]);
 
             [FunctionDoc(
                 Info = """

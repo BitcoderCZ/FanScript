@@ -87,7 +87,7 @@ namespace FanScript.Compiler.Binding
             => VisitBlockStatement(node.Block);
 
         protected virtual void VisitNopStatement(BoundNopStatement node)
-        { 
+        {
         }
 
         protected virtual void VisitPostfixStatement(BoundPostfixStatement node)
@@ -95,15 +95,15 @@ namespace FanScript.Compiler.Binding
         }
 
         protected virtual void VisitPostfixExpression(BoundPostfixExpression node)
-        { 
+        {
         }
 
         protected virtual void VisitPrefixStatement(BoundPrefixStatement node)
-        { 
+        {
         }
 
         protected virtual void VisitPrefixExpression(BoundPrefixExpression node)
-        { 
+        {
         }
 
         protected virtual void VisitVariableDeclaration(BoundVariableDeclarationStatement node)
@@ -143,11 +143,11 @@ namespace FanScript.Compiler.Binding
         }
 
         protected virtual void VisitLabelStatement(BoundLabelStatement node)
-        { 
+        {
         }
 
         protected virtual void VisitGotoStatement(BoundGotoStatement node)
-        { 
+        {
         }
 
         protected virtual void VistiEventGotoStatement(BoundEventGotoStatement node)
@@ -170,7 +170,7 @@ namespace FanScript.Compiler.Binding
         }
 
         protected virtual void VisitEmitterHint(BoundEmitterHintStatement node)
-        { 
+        {
         }
 
         protected virtual void VisitCallStatement(BoundCallStatement node)
@@ -233,7 +233,7 @@ namespace FanScript.Compiler.Binding
         }
 
         protected virtual void VisitLiteralExpression(BoundLiteralExpression node)
-        { 
+        {
         }
 
         protected virtual void VisitVariableExpression(BoundVariableExpression node)

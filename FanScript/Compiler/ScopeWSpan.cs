@@ -16,7 +16,7 @@ namespace FanScript.Compiler
 
         public ScopeWSpan(IEnumerable<VariableSymbol> variables, TextSpan span, ScopeWSpan? parent)
             : this(variables, span, parent, [])
-        { 
+        {
         }
 
         public ScopeWSpan(IEnumerable<VariableSymbol> variables, TextSpan span, ScopeWSpan? parent, IEnumerable<ScopeWSpan> children)

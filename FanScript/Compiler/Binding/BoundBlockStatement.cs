@@ -15,9 +15,7 @@ namespace FanScript.Compiler.Binding
 
         public ImmutableArray<BoundStatement> Statements { get; }
 
-#pragma warning disable SA1010 // Opening square brackets should be spaced correctly
         public static BoundBlockStatement Create(BoundStatement statement)
             => statement is BoundBlockStatement block ? block : new BoundBlockStatement(statement.Syntax, [statement]);
-#pragma warning restore SA1010
     }
 }

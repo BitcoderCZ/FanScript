@@ -425,12 +425,12 @@ namespace FanScript.Compiler.Symbols
             """)]
         public static readonly FunctionSymbol ToVec
            = new BuiltinFunctionSymbol(
-               BuiltinNamespace, 
+               BuiltinNamespace,
                "toVec",
                [
                    new ParameterSymbol("rot", TypeSymbol.Rotation)
-               ], 
-               TypeSymbol.Vector3, 
+               ],
+               TypeSymbol.Vector3,
                (call, context) =>
                {
                    object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), false);
@@ -759,9 +759,7 @@ namespace FanScript.Compiler.Symbols
                         else
                         {
                             Debug.Assert(type.IsValueType, "Types that are not string or Rotation must be a value type.");
-#pragma warning disable IL2062 // The parameter of method has a DynamicallyAccessedMembersAttribute, but the value passed to it can not be statically analyzed.
                             val = RuntimeHelpers.GetUninitializedObject(type);
-#pragma warning restore IL2062
                         }
                     }
                     else

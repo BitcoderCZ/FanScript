@@ -128,7 +128,7 @@ namespace FanScript.Compiler.Symbols.Functions
                 Name,
                 Type,
                 Parameters
-                    .Aggregate(default(HashCode), (hash, param) => 
+                    .Aggregate(default(HashCode), (hash, param) =>
                     {
                         hash.Add(param);
                         return hash;

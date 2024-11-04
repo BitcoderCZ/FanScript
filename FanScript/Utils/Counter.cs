@@ -51,7 +51,7 @@ namespace FanScript.Utils
                 return "0";
             }
 
-            char[] chars = new char[(int)Math.Ceiling((float)(64 - BitOperations.LeadingZeroCount(Value)) / (float)Shift)];
+            char[] chars = new char[(int)Math.Ceiling((64 - BitOperations.LeadingZeroCount(Value)) / (float)Shift)];
 
             ulong val = Value;
             int i = chars.Length - 1;

@@ -1,5 +1,4 @@
-﻿using FanScript.Compiler;
-using FanScript.Compiler.Exceptions;
+﻿using FanScript.Compiler.Exceptions;
 using MathUtils.Vectors;
 
 namespace FanScript.FCInfo
@@ -100,9 +99,7 @@ namespace FanScript.FCInfo
 
         public static class Math
         {
-#pragma warning disable SA1310 // Field names should not contain underscore
             public static readonly BlockDef Negate = new BlockDef("Negate", 90, BlockType.Pasive, new Vector2I(2, 1), new Terminal(WireType.Float, TerminalType.Out, "-Num"), new Terminal(WireType.Float, TerminalType.In, "Num"));
-#pragma warning restore SA1310
             public static readonly BlockDef Not = new BlockDef("Not", 144, BlockType.Pasive, new Vector2I(2, 1), new Terminal(WireType.Bool, TerminalType.Out, "Not Tru"), new Terminal(WireType.Bool, TerminalType.In, "Tru"));
             public static readonly BlockDef Inverse = new BlockDef("Inverse", 440, BlockType.Pasive, new Vector2I(2, 1), new Terminal(WireType.Rot, TerminalType.Out, "Rot Inverse"), new Terminal(WireType.Rot, TerminalType.In, "Rot"));
 

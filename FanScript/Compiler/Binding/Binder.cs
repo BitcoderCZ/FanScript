@@ -403,7 +403,7 @@ namespace FanScript.Compiler.Binding
             }
 
             _blockStack.Push(true);
-            BoundBlockStatement block = (BoundBlockStatement)BindBlockStatement(syntax.Block);
+            BoundBlockStatement block = BindBlockStatement(syntax.Block);
             _ = _blockStack.Pop();
 
             ExitScope();
@@ -942,11 +942,11 @@ namespace FanScript.Compiler.Binding
                             ParameterSymbol param = function.Parameters[i];
                             BoundExpression arg = boundArguments[i];
 
-                            TypeSymbol? paramGenericType = 
+                            TypeSymbol? paramGenericType =
                                 param.Type == TypeSymbol.Generic
                                 ? arg.Type
-                                : param.Type!.IsGenericDefinition && arg.Type!.IsGenericInstance 
-                                ? arg.Type.InnerType 
+                                : param.Type!.IsGenericDefinition && arg.Type!.IsGenericInstance
+                                ? arg.Type.InnerType
                                 : null;
 
                             if (paramGenericType is not null && paramGenericType != TypeSymbol.Null)
