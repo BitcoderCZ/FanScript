@@ -1,7 +1,7 @@
 ﻿using FanScript.Compiler;
 using FanScript.Compiler.Emit;
-using FanScript.Compiler.Emit.BlockPlacers;
-using FanScript.Compiler.Emit.CodeBuilders;
+using FanScript.Compiler.Emit.CodePlacers;
+using FanScript.Compiler.Emit.BlockBuilders;
 using FanScript.Compiler.Emit.Utils;
 using FanScript.FCInfo;
 using MathUtils.Vectors;

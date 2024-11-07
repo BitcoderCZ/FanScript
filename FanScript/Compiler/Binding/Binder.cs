@@ -1371,7 +1371,7 @@ namespace FanScript.Compiler.Binding
         {
             if (!modifierClause.Modifiers.Any())
             {
-                return new BoundModifierClause(modifierClause, ImmutableArray<(SyntaxToken, Modifiers)>.Empty);
+                return new BoundModifierClause(modifierClause, []);
             }
 
             checkModifier ??= item => true;
@@ -1472,7 +1472,7 @@ namespace FanScript.Compiler.Binding
                 }
             }
 
-            return new BoundModifierClause(modifierClause, modifiersAndTokens.ToImmutableArray());
+            return new BoundModifierClause(modifierClause, [.. modifiersAndTokens]);
         }
 
         private PropertySymbol? BindProperty(PropertyExpressionSyntax syntax)

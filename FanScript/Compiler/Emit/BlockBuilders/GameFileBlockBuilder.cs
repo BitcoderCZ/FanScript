@@ -15,7 +15,7 @@ for (var i = 0; i < 10; i++) {
 }
 */
 
-namespace FanScript.Compiler.Emit.CodeBuilders
+namespace FanScript.Compiler.Emit.BlockBuilders
 {
     public class GameFileBlockBuilder : BlockBuilder, IConnectToBlocksBuilder
     {

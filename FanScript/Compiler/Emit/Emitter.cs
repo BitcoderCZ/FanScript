@@ -4,6 +4,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
+using FanScript.Compiler.Emit.BlockBuilders;
+using FanScript.Compiler.Emit.CodePlacers;
 using FanScript.Compiler.Emit.Utils;
 using FanScript.Compiler.Exceptions;
 using FanScript.Compiler.Symbols;

@@ -10,6 +10,8 @@ using System.Text;
 
 namespace FanScript.Generators
 {
+    // TODO: switch to incremental generator
+#pragma warning disable RS1035 // Do not use APIs banned for analyzers
     [Generator]
     public class SyntaxNodeGetChildrenGenerator : ISourceGenerator
     {
@@ -78,7 +80,7 @@ namespace FanScript.Generators
                                     }
                                     else if (IsDerivedFrom(propertyType, syntaxNodeType))
                                     {
-                                        var canBeNull = property.NullableAnnotation == NullableAnnotation.Annotated;
+                                        bool canBeNull = property.NullableAnnotation == NullableAnnotation.Annotated;
                                         if (canBeNull)
                                         {
                                             indentedTextWriter.WriteLine($"if ({property.Name} is not null)");
@@ -175,4 +177,5 @@ namespace FanScript.Generators
             return false;
         }
     }
+#pragma warning restore RS1035 // Do not use APIs banned for analyzers
 }

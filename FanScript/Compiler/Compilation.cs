@@ -3,6 +3,8 @@ using System.Runtime.CompilerServices;
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Emit;
+using FanScript.Compiler.Emit.BlockBuilders;
+using FanScript.Compiler.Emit.CodePlacers;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;

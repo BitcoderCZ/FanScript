@@ -1,8 +1,9 @@
 ﻿using System.Diagnostics;
+using FanScript.Compiler.Emit.BlockBuilders;
 using FanScript.FCInfo;
 using MathUtils.Vectors;
 
-namespace FanScript.Compiler.Emit.BlockPlacers
+namespace FanScript.Compiler.Emit.CodePlacers
 {
     public class TowerCodePlacer : CodePlacer
     {

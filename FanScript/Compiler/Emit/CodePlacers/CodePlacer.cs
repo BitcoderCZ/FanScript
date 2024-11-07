@@ -1,7 +1,8 @@
-﻿using FanScript.FCInfo;
+﻿using FanScript.Compiler.Emit.BlockBuilders;
+using FanScript.FCInfo;
 using FanScript.Utils;
 
-namespace FanScript.Compiler.Emit
+namespace FanScript.Compiler.Emit.CodePlacers
 {
     public abstract class CodePlacer
     {

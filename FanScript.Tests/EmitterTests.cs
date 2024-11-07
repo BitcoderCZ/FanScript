@@ -1,12 +1,13 @@
 ﻿using FanScript.Compiler;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Emit;
-using FanScript.Compiler.Emit.BlockPlacers;
-using FanScript.Compiler.Emit.CodeBuilders;
+using FanScript.Compiler.Emit.CodePlacers;
+using FanScript.Compiler.Emit.BlockBuilders;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 
 namespace FanScript.Tests
 {
@@ -1117,7 +1118,7 @@ namespace FanScript.Tests
 
         public static IEnumerable<object[]> GetVariableDeclarations()
         {
-            IReadOnlyDictionary<TypeSymbol, string?> initializers = new Dictionary<TypeSymbol, string?>()
+            ReadOnlyDictionary<TypeSymbol, string?> initializers = new Dictionary<TypeSymbol, string?>()
             {
                 [TypeSymbol.Bool] = "true",
                 [TypeSymbol.Float] = "1",

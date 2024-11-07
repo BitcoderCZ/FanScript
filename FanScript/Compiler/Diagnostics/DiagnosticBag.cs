@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using FanScript.Compiler.Emit;
+using FanScript.Compiler.Emit.BlockBuilders;
 using FanScript.Compiler.Exceptions;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Functions;

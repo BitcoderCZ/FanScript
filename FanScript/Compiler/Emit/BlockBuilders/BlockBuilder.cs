@@ -3,7 +3,7 @@ using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
 
-namespace FanScript.Compiler.Emit
+namespace FanScript.Compiler.Emit.BlockBuilders
 {
     public abstract class BlockBuilder
     {

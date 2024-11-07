@@ -116,7 +116,7 @@ function con(nChr) {
                 log("Updated changes, done");
  */
 
-namespace FanScript.Compiler.Emit.CodeBuilders
+namespace FanScript.Compiler.Emit.BlockBuilders
 {
     public class EditorScriptBlockBuilder : BlockBuilder
     {

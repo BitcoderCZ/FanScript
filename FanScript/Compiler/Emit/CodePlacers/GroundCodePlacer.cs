@@ -1,10 +1,11 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using FanScript.Compiler.Emit.BlockBuilders;
 using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
 
-namespace FanScript.Compiler.Emit.BlockPlacers
+namespace FanScript.Compiler.Emit.CodePlacers
 {
     public class GroundCodePlacer : CodePlacer
     {

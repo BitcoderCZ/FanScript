@@ -1,5 +1,6 @@
 ﻿using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
+using FanScript.Compiler.Emit.BlockBuilders;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.FCInfo;
 
