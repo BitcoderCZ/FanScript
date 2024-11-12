@@ -3,120 +3,119 @@ using FanScript.Compiler.Emit.BlockBuilders;
 using FanScript.FCInfo;
 using MathUtils.Vectors;
 
-namespace FanScript.Compiler.Emit.CodePlacers
+namespace FanScript.Compiler.Emit.CodePlacers;
+
+public class TowerCodePlacer : CodePlacer
 {
-    public class TowerCodePlacer : CodePlacer
+    private readonly List<Block> _blocks = new List<Block>(256);
+
+    private int _maxHeight = 20;
+    private bool _inHighlight = false;
+    private int _statementDepth = 0;
+
+    public TowerCodePlacer(BlockBuilder builder)
+        : base(builder)
     {
-        private readonly List<Block> _blocks = new List<Block>(256);
+    }
 
-        private int _maxHeight = 20;
-        private bool _inHighlight = false;
-        private int _statementDepth = 0;
+    public enum Move
+    {
+        X,
+        Z,
+    }
 
-        public TowerCodePlacer(BlockBuilder builder)
-            : base(builder)
+    public override int CurrentCodeBlockBlocks => _blocks.Count;
+
+    public int MaxHeight
+    {
+        get => _maxHeight;
+        set
         {
+            ArgumentOutOfRangeException.ThrowIfLessThan(value, 1);
+            _maxHeight = value;
+        }
+    }
+
+    public bool SquarePlacement { get; set; } = true;
+
+    public override Block PlaceBlock(BlockDef blockDef)
+    {
+        Block block;
+
+        if (_inHighlight)
+        {
+            block = new Block(Vector3I.Zero, blockDef);
+            Builder.AddHighlightedBlock(block);
+        }
+        else
+        {
+            block = new Block(Vector3I.Zero, blockDef);
+            _blocks.Add(block);
         }
 
-        public enum Move
-        {
-            X,
-            Z,
-        }
+        return block;
+    }
 
-        public override int CurrentCodeBlockBlocks => _blocks.Count;
+    public override void EnterStatementBlock()
+        => _statementDepth++;
 
-        public int MaxHeight
+    public override void ExitStatementBlock()
+    {
+        const int move = 4;
+
+        _statementDepth--;
+
+        Debug.Assert(_statementDepth >= 0, "Must be in a statement to exit one.");
+
+        if (_statementDepth == 0 && _blocks.Count > 0)
         {
-            get => _maxHeight;
-            set
+            // https://stackoverflow.com/a/17974
+            int width = (_blocks.Count + MaxHeight - 1) / MaxHeight;
+
+            if (SquarePlacement)
             {
-                ArgumentOutOfRangeException.ThrowIfLessThan(value, 1);
-                _maxHeight = value;
+                width = Math.Max(1, (int)Math.Ceiling(Math.Sqrt(width)));
             }
-        }
 
-        public bool SquarePlacement { get; set; } = true;
+            width *= move;
 
-        public override Block PlaceBlock(BlockDef blockDef)
-        {
-            Block block;
+            Vector3I bPos = Vector3I.Zero;
 
-            if (_inHighlight)
+            for (int i = 0; i < _blocks.Count; i++)
             {
-                block = new Block(Vector3I.Zero, blockDef);
-                Builder.AddHighlightedBlock(block);
-            }
-            else
-            {
-                block = new Block(Vector3I.Zero, blockDef);
-                _blocks.Add(block);
-            }
+                _blocks[i].Pos = bPos;
+                bPos.Y++;
 
-            return block;
-        }
-
-        public override void EnterStatementBlock()
-            => _statementDepth++;
-
-        public override void ExitStatementBlock()
-        {
-            const int move = 4;
-
-            _statementDepth--;
-
-            Debug.Assert(_statementDepth >= 0, "Must be in a statement to exit one.");
-
-            if (_statementDepth == 0 && _blocks.Count > 0)
-            {
-                // https://stackoverflow.com/a/17974
-                int width = (_blocks.Count + MaxHeight - 1) / MaxHeight;
-
-                if (SquarePlacement)
+                if (bPos.Y > MaxHeight)
                 {
-                    width = Math.Max(1, (int)Math.Ceiling(Math.Sqrt(width)));
-                }
+                    bPos.Y = 0;
+                    bPos.X += move;
 
-                width *= move;
-
-                Vector3I bPos = Vector3I.Zero;
-
-                for (int i = 0; i < _blocks.Count; i++)
-                {
-                    _blocks[i].Pos = bPos;
-                    bPos.Y++;
-
-                    if (bPos.Y > MaxHeight)
+                    if (bPos.X >= width)
                     {
-                        bPos.Y = 0;
-                        bPos.X += move;
-
-                        if (bPos.X >= width)
-                        {
-                            bPos.X = 0;
-                            bPos.Z += move;
-                        }
+                        bPos.X = 0;
+                        bPos.Z += move;
                     }
                 }
-
-                Builder.AddBlockSegments(_blocks);
-
-                _blocks.Clear();
             }
+
+            Builder.AddBlockSegments(_blocks);
+
+            _blocks.Clear();
         }
-
-        public override void EnterExpressionBlock()
-        {
-        }
-
-        public override void ExitExpressionBlock()
-        {
-        }
-
-        public override void EnterHighlight()
-            => _inHighlight = true;
-
-        public override void ExitHightlight()
-            => _inHighlight = false;
     }
+
+    public override void EnterExpressionBlock()
+    {
+    }
+
+    public override void ExitExpressionBlock()
+    {
+    }
+
+    public override void EnterHighlight()
+        => _inHighlight = true;
+
+    public override void ExitHightlight()
+        => _inHighlight = false;
 }

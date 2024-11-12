@@ -1,20 +1,19 @@
 ﻿using System.Collections.Immutable;
 
-namespace FanScript.Compiler.Syntax
+namespace FanScript.Compiler.Syntax;
+
+public sealed partial class CompilationUnitSyntax : SyntaxNode
 {
-    public sealed partial class CompilationUnitSyntax : SyntaxNode
+    internal CompilationUnitSyntax(SyntaxTree syntaxTree, ImmutableArray<MemberSyntax> members, SyntaxToken endOfFileToken)
+        : base(syntaxTree)
     {
-        internal CompilationUnitSyntax(SyntaxTree syntaxTree, ImmutableArray<MemberSyntax> members, SyntaxToken endOfFileToken)
-            : base(syntaxTree)
-        {
-            Members = members;
-            EndOfFileToken = endOfFileToken;
-        }
-
-        public override SyntaxKind Kind => SyntaxKind.CompilationUnit;
-
-        public ImmutableArray<MemberSyntax> Members { get; }
-
-        public SyntaxToken EndOfFileToken { get; }
+        Members = members;
+        EndOfFileToken = endOfFileToken;
     }
+
+    public override SyntaxKind Kind => SyntaxKind.CompilationUnit;
+
+    public ImmutableArray<MemberSyntax> Members { get; }
+
+    public SyntaxToken EndOfFileToken { get; }
 }

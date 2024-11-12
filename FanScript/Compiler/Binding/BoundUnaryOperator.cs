@@ -2,56 +2,55 @@
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 
-namespace FanScript.Compiler.Binding
+namespace FanScript.Compiler.Binding;
+
+internal sealed class BoundUnaryOperator
 {
-    internal sealed class BoundUnaryOperator
+    public static ImmutableArray<BoundUnaryOperator> Operators =
+    [
+        new BoundUnaryOperator(SyntaxKind.BangToken, BoundUnaryOperatorKind.LogicalNegation, TypeSymbol.Bool),
+
+        new BoundUnaryOperator(SyntaxKind.PlusToken, BoundUnaryOperatorKind.Identity, TypeSymbol.Float),
+        new BoundUnaryOperator(SyntaxKind.MinusToken, BoundUnaryOperatorKind.Negation, TypeSymbol.Float),
+
+        new BoundUnaryOperator(SyntaxKind.PlusToken, BoundUnaryOperatorKind.Identity, TypeSymbol.Vector3),
+        new BoundUnaryOperator(SyntaxKind.MinusToken, BoundUnaryOperatorKind.Negation, TypeSymbol.Vector3),
+
+        new BoundUnaryOperator(SyntaxKind.PlusToken, BoundUnaryOperatorKind.Identity, TypeSymbol.Rotation),
+        new BoundUnaryOperator(SyntaxKind.MinusToken, BoundUnaryOperatorKind.Negation, TypeSymbol.Rotation),
+    ];
+
+    private BoundUnaryOperator(SyntaxKind syntaxKind, BoundUnaryOperatorKind kind, TypeSymbol operandType)
+        : this(syntaxKind, kind, operandType, operandType)
     {
-        public static ImmutableArray<BoundUnaryOperator> Operators =
-        [
-            new BoundUnaryOperator(SyntaxKind.BangToken, BoundUnaryOperatorKind.LogicalNegation, TypeSymbol.Bool),
+    }
 
-            new BoundUnaryOperator(SyntaxKind.PlusToken, BoundUnaryOperatorKind.Identity, TypeSymbol.Float),
-            new BoundUnaryOperator(SyntaxKind.MinusToken, BoundUnaryOperatorKind.Negation, TypeSymbol.Float),
+    private BoundUnaryOperator(SyntaxKind syntaxKind, BoundUnaryOperatorKind kind, TypeSymbol operandType, TypeSymbol resultType)
+    {
+        SyntaxKind = syntaxKind;
+        Kind = kind;
+        OperandType = operandType;
+        Type = resultType;
+    }
 
-            new BoundUnaryOperator(SyntaxKind.PlusToken, BoundUnaryOperatorKind.Identity, TypeSymbol.Vector3),
-            new BoundUnaryOperator(SyntaxKind.MinusToken, BoundUnaryOperatorKind.Negation, TypeSymbol.Vector3),
+    public SyntaxKind SyntaxKind { get; }
 
-            new BoundUnaryOperator(SyntaxKind.PlusToken, BoundUnaryOperatorKind.Identity, TypeSymbol.Rotation),
-            new BoundUnaryOperator(SyntaxKind.MinusToken, BoundUnaryOperatorKind.Negation, TypeSymbol.Rotation),
-        ];
+    public BoundUnaryOperatorKind Kind { get; }
 
-        private BoundUnaryOperator(SyntaxKind syntaxKind, BoundUnaryOperatorKind kind, TypeSymbol operandType)
-            : this(syntaxKind, kind, operandType, operandType)
+    public TypeSymbol OperandType { get; }
+
+    public TypeSymbol Type { get; }
+
+    public static BoundUnaryOperator? Bind(SyntaxKind syntaxKind, TypeSymbol? operandType)
+    {
+        foreach (BoundUnaryOperator op in Operators)
         {
-        }
-
-        private BoundUnaryOperator(SyntaxKind syntaxKind, BoundUnaryOperatorKind kind, TypeSymbol operandType, TypeSymbol resultType)
-        {
-            SyntaxKind = syntaxKind;
-            Kind = kind;
-            OperandType = operandType;
-            Type = resultType;
-        }
-
-        public SyntaxKind SyntaxKind { get; }
-
-        public BoundUnaryOperatorKind Kind { get; }
-
-        public TypeSymbol OperandType { get; }
-
-        public TypeSymbol Type { get; }
-
-        public static BoundUnaryOperator? Bind(SyntaxKind syntaxKind, TypeSymbol? operandType)
-        {
-            foreach (BoundUnaryOperator op in Operators)
+            if (op.SyntaxKind == syntaxKind && op.OperandType == operandType)
             {
-                if (op.SyntaxKind == syntaxKind && op.OperandType == operandType)
-                {
-                    return op;
-                }
+                return op;
             }
-
-            return null;
         }
+
+        return null;
     }
 }

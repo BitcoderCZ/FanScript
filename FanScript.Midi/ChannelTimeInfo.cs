@@ -1,27 +1,26 @@
-﻿namespace FanScript.Midi
+﻿namespace FanScript.Midi;
+
+internal struct ChannelTimeInfo
 {
-    internal struct ChannelTimeInfo
+    public static readonly TimeSpan FrameLength = TimeSpan.FromSeconds(1d / 60d);
+
+    public TimeSpan CurrentTime;
+    public long CurrentFrame;
+
+    private TimeSpan deltaLeftOver;
+
+    public long AddDelta(TimeSpan deltaTime)
     {
-        public static readonly TimeSpan FrameLength = TimeSpan.FromSeconds(1d / 60d);
+        CurrentTime += deltaTime;
 
-        public TimeSpan CurrentTime;
-        public long CurrentFrame;
+        double frameDelta = (deltaTime.Ticks + (double)deltaLeftOver.Ticks) / FrameLength.Ticks;
 
-        private TimeSpan deltaLeftOver;
+        deltaLeftOver = new TimeSpan((long)((frameDelta % 1d) * FrameLength.Ticks));
 
-        public long AddDelta(TimeSpan deltaTime)
-        {
-            CurrentTime += deltaTime;
+        long wholeFrameDelta = (long)frameDelta;
 
-            double frameDelta = (deltaTime.Ticks + (double)deltaLeftOver.Ticks) / FrameLength.Ticks;
+        CurrentFrame += wholeFrameDelta;
 
-            deltaLeftOver = new TimeSpan((long)((frameDelta % 1d) * FrameLength.Ticks));
-
-            long wholeFrameDelta = (long)frameDelta;
-
-            CurrentFrame += wholeFrameDelta;
-
-            return wholeFrameDelta;
-        }
+        return wholeFrameDelta;
     }
 }

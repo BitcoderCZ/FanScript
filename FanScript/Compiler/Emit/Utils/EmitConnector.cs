@@ -1,33 +1,32 @@
-﻿namespace FanScript.Compiler.Emit.Utils
+﻿namespace FanScript.Compiler.Emit.Utils;
+
+internal class EmitConnector
 {
-    internal class EmitConnector
+    private readonly Action<IEmitStore, IEmitStore> _connectFunc;
+
+    private IEmitStore? _firstStore;
+    private IEmitStore? _lastStore;
+
+    public EmitConnector(Action<IEmitStore, IEmitStore> connectFunc)
     {
-        private readonly Action<IEmitStore, IEmitStore> _connectFunc;
+        _connectFunc = connectFunc;
+    }
 
-        private IEmitStore? _firstStore;
-        private IEmitStore? _lastStore;
+    public IEmitStore Store => _firstStore is not null && _lastStore is not null ? new MultiEmitStore(_firstStore, _lastStore) : NopEmitStore.Instance;
 
-        public EmitConnector(Action<IEmitStore, IEmitStore> connectFunc)
+    public void Add(IEmitStore store)
+    {
+        if (store is NopEmitStore)
         {
-            _connectFunc = connectFunc;
+            return;
         }
 
-        public IEmitStore Store => _firstStore is not null && _lastStore is not null ? new MultiEmitStore(_firstStore, _lastStore) : NopEmitStore.Instance;
-
-        public void Add(IEmitStore store)
+        if (_lastStore is not null)
         {
-            if (store is NopEmitStore)
-            {
-                return;
-            }
-
-            if (_lastStore is not null)
-            {
-                _connectFunc(_lastStore, store);
-            }
-
-            _firstStore ??= store;
-            _lastStore = store;
+            _connectFunc(_lastStore, store);
         }
+
+        _firstStore ??= store;
+        _lastStore = store;
     }
 }

@@ -1,12 +1,11 @@
-﻿namespace FanScript.Compiler.Symbols
+﻿namespace FanScript.Compiler.Symbols;
+
+public enum SymbolKind
 {
-    public enum SymbolKind
-    {
-        Function,
-        BasicVariable,
-        NullVariable,
-        Parameter,
-        Property,
-        Type,
-    }
+    Function,
+    BasicVariable,
+    NullVariable,
+    Parameter,
+    Property,
+    Type,
 }

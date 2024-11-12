@@ -2,23 +2,22 @@
 using FanScript.Compiler;
 using FanScript.Utils;
 
-namespace FanScript.Documentation.DocElements.Links
+namespace FanScript.Documentation.DocElements.Links;
+
+public sealed class EventLink : DocLink
 {
-    public sealed class EventLink : DocLink
+    public EventLink(ImmutableArray<DocArg> arguments, DocString value, EventType @event)
+        : base(arguments, value)
     {
-        public EventLink(ImmutableArray<DocArg> arguments, DocString value, EventType @event)
-            : base(arguments, value)
-        {
-            Event = @event;
-        }
+        Event = @event;
+    }
 
-        public EventType Event { get; }
+    public EventType Event { get; }
 
-        public override (string DisplayString, string LinkString) GetStrings()
-        {
-            string eventName = Enum.GetName(Event)!;
+    public override (string DisplayString, string LinkString) GetStrings()
+    {
+        string eventName = Enum.GetName(Event)!;
 
-            return (eventName.ToLowerFirst(), eventName);
-        }
+        return (eventName.ToLowerFirst(), eventName);
     }
 }

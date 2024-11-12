@@ -1,12 +1,11 @@
 ﻿using FanScript.Compiler.Syntax;
 
-namespace FanScript.Compiler.Binding
+namespace FanScript.Compiler.Binding;
+
+internal abstract class BoundStatement : BoundNode
 {
-    internal abstract class BoundStatement : BoundNode
+    protected BoundStatement(SyntaxNode syntax)
+        : base(syntax)
     {
-        protected BoundStatement(SyntaxNode syntax)
-            : base(syntax)
-        {
-        }
     }
 }

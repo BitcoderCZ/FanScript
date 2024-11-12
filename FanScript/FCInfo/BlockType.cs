@@ -1,10 +1,9 @@
-﻿namespace FanScript.FCInfo
+﻿namespace FanScript.FCInfo;
+
+public enum BlockType
 {
-    public enum BlockType
-    {
-        NonScript,
-        Active,
-        Pasive,
-        Value,
-    }
+    NonScript,
+    Active,
+    Pasive,
+    Value,
 }

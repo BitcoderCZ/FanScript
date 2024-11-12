@@ -1,15 +1,14 @@
-﻿namespace FanScript.Compiler.Syntax
+﻿namespace FanScript.Compiler.Syntax;
+
+internal sealed partial class ContinueStatementSyntax : StatementSyntax
 {
-    internal sealed partial class ContinueStatementSyntax : StatementSyntax
+    internal ContinueStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keyword)
+        : base(syntaxTree)
     {
-        internal ContinueStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keyword)
-            : base(syntaxTree)
-        {
-            Keyword = keyword;
-        }
-
-        public override SyntaxKind Kind => SyntaxKind.ContinueStatement;
-
-        public SyntaxToken Keyword { get; }
+        Keyword = keyword;
     }
+
+    public override SyntaxKind Kind => SyntaxKind.ContinueStatement;
+
+    public SyntaxToken Keyword { get; }
 }

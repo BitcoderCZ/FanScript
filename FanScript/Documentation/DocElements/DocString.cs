@@ -1,13 +1,12 @@
-﻿namespace FanScript.Documentation.DocElements
-{
-    public sealed class DocString : DocElement
-    {
-        public DocString(string text)
-            : base([], null)
-        {
-            Text = text;
-        }
+﻿namespace FanScript.Documentation.DocElements;
 
-        public string Text { get; }
+public sealed class DocString : DocElement
+{
+    public DocString(string text)
+        : base([], null)
+    {
+        Text = text;
     }
+
+    public string Text { get; }
 }

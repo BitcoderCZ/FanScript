@@ -1,18 +1,17 @@
-﻿namespace FanScript.Compiler.Syntax
+﻿namespace FanScript.Compiler.Syntax;
+
+public sealed partial class PostfixExpressionSyntax : ExpressionSyntax
 {
-    public sealed partial class PostfixExpressionSyntax : ExpressionSyntax
+    internal PostfixExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken, SyntaxToken operatorToken)
+        : base(syntaxTree)
     {
-        internal PostfixExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken, SyntaxToken operatorToken)
-            : base(syntaxTree)
-        {
-            IdentifierToken = identifierToken;
-            OperatorToken = operatorToken;
-        }
-
-        public override SyntaxKind Kind => SyntaxKind.PostfixExpression;
-
-        public SyntaxToken IdentifierToken { get; }
-
-        public SyntaxToken OperatorToken { get; }
+        IdentifierToken = identifierToken;
+        OperatorToken = operatorToken;
     }
+
+    public override SyntaxKind Kind => SyntaxKind.PostfixExpression;
+
+    public SyntaxToken IdentifierToken { get; }
+
+    public SyntaxToken OperatorToken { get; }
 }

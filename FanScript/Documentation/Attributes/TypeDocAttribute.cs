@@ -1,12 +1,11 @@
-﻿namespace FanScript.Documentation.Attributes
-{
-    public sealed class TypeDocAttribute : DocumentationAttribute
-    {
-        public TypeDocAttribute()
-            : base()
-        {
-        }
+﻿namespace FanScript.Documentation.Attributes;
 
-        public string? HowToCreate { get; set; }
+public sealed class TypeDocAttribute : DocumentationAttribute
+{
+    public TypeDocAttribute()
+        : base()
+    {
     }
+
+    public string? HowToCreate { get; set; }
 }

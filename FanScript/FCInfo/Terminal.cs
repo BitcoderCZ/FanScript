@@ -1,42 +1,41 @@
 ﻿using MathUtils.Vectors;
 
-namespace FanScript.FCInfo
+namespace FanScript.FCInfo;
+
+public class Terminal
 {
-    public class Terminal
+    public readonly WireType WireType;
+    public readonly TerminalType Type;
+    public readonly string Name;
+
+    private bool _initialized;
+
+    public Terminal(WireType wireType, TerminalType type, string name)
     {
-        public readonly WireType WireType;
-        public readonly TerminalType Type;
-        public readonly string Name;
+        WireType = wireType;
+        Type = type;
+        Name = name;
+    }
 
-        private bool _initialized;
+    public Terminal(WireType wireType, TerminalType type)
+        : this(wireType, type, string.Empty)
+    {
+    }
 
-        public Terminal(WireType wireType, TerminalType type, string name)
+    public int Index { get; private set; }
+
+    public Vector3I Pos { get; private set; }
+
+    internal void Init(int index, Vector3I pos)
+    {
+        if (_initialized)
         {
-            WireType = wireType;
-            Type = type;
-            Name = name;
+            throw new InvalidOperationException("Already initialized.");
         }
 
-        public Terminal(WireType wireType, TerminalType type)
-            : this(wireType, type, string.Empty)
-        {
-        }
+        _initialized = true;
 
-        public int Index { get; private set; }
-
-        public Vector3I Pos { get; private set; }
-
-        internal void Init(int index, Vector3I pos)
-        {
-            if (_initialized)
-            {
-                throw new InvalidOperationException("Already initialized.");
-            }
-
-            _initialized = true;
-
-            Index = index;
-            Pos = pos;
-        }
+        Index = index;
+        Pos = pos;
     }
 }

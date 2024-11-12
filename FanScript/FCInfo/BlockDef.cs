@@ -3,155 +3,154 @@ using System.Runtime.CompilerServices;
 using FanScript.Utils;
 using MathUtils.Vectors;
 
-namespace FanScript.FCInfo
+namespace FanScript.FCInfo;
+
+/// <summary>
+/// Definition of a Fancade block
+/// </summary>
+public class BlockDef
 {
-    /// <summary>
-    /// Definition of a Fancade block
-    /// </summary>
-    public class BlockDef
+    public readonly string Name;
+    public readonly ushort Id;
+    public readonly BlockType Type;
+    public readonly Vector3I Size;
+
+    public readonly ImmutableArray<Terminal> TerminalArray;
+
+    public readonly Indexable<string, Terminal> Terminals;
+
+    public BlockDef(string name, ushort id, BlockType type, Vector3I size, params Terminal[] terminals)
     {
-        public readonly string Name;
-        public readonly ushort Id;
-        public readonly BlockType Type;
-        public readonly Vector3I Size;
+        Name = name;
+        Id = id;
+        Type = type;
+        Size = size;
 
-        public readonly ImmutableArray<Terminal> TerminalArray;
+        TerminalArray = terminals is null ? [] : [.. terminals];
 
-        public readonly Indexable<string, Terminal> Terminals;
+        InitTerminals();
 
-        public BlockDef(string name, ushort id, BlockType type, Vector3I size, params Terminal[] terminals)
+        Terminals = new Indexable<string, Terminal>(termName =>
         {
-            Name = name;
-            Id = id;
-            Type = type;
-            Size = size;
-
-            TerminalArray = terminals is null ? [] : [.. terminals];
-
-            InitTerminals();
-
-            Terminals = new Indexable<string, Terminal>(termName =>
+            for (int i = 0; i < TerminalArray.Length; i++)
             {
-                for (int i = 0; i < TerminalArray.Length; i++)
+                if (TerminalArray[i].Name == termName)
                 {
-                    if (TerminalArray[i].Name == termName)
-                    {
-                        return TerminalArray[i];
-                    }
+                    return TerminalArray[i];
                 }
+            }
 
-                throw new KeyNotFoundException($"Terminal '{termName}' wasn't found.");
-            });
+            throw new KeyNotFoundException($"Terminal '{termName}' wasn't found.");
+        });
+    }
+
+    public BlockDef(string name, ushort id, BlockType type, Vector2I size, params Terminal[] terminals)
+    {
+        Name = name;
+        Id = id;
+        Type = type;
+        Size = new Vector3I(size.X, 1, size.Y);
+
+        TerminalArray = terminals is null ? [] : [.. terminals];
+
+        InitTerminals();
+
+        Terminals = new Indexable<string, Terminal>(termName =>
+        {
+            for (int i = 0; i < TerminalArray.Length; i++)
+            {
+                if (TerminalArray[i].Name == termName)
+                {
+                    return TerminalArray[i];
+                }
+            }
+
+            throw new KeyNotFoundException($"Terminal '{termName}' wasn't found.");
+        });
+    }
+
+    public bool IsGroup => Size != Vector3I.One;
+
+    public Terminal Before => Type == BlockType.Active ? TerminalArray[^1] : throw new InvalidOperationException("Only active blocks have Before and After");
+
+    public Terminal After => Type == BlockType.Active ? TerminalArray[0] : throw new InvalidOperationException("Only active blocks have Before and After");
+
+    public static bool operator ==(BlockDef a, BlockDef b)
+        => a?.Equals(b) ?? b is null;
+
+    public static bool operator !=(BlockDef a, BlockDef b)
+        => !a?.Equals(b) ?? b is not null;
+
+    public Terminal GetTerminal(string name)
+    {
+        foreach (Terminal terminal in TerminalArray)
+        {
+            if (terminal.Name == name)
+            {
+                return terminal;
+            }
         }
 
-        public BlockDef(string name, ushort id, BlockType type, Vector2I size, params Terminal[] terminals)
+        throw new KeyNotFoundException($"Terminal with name '{name}' isn't on block '{Name}'");
+    }
+
+    public override string ToString()
+        => $"{{Name: {Name}, Id: {Id}, Type: {Type}, Size: {Size}}}";
+
+    public override int GetHashCode()
+        => Id;
+
+    public override bool Equals(object? obj)
+        => obj is BlockDef other && other.Id == Id;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool Equals(BlockDef other)
+        => other is not null && other.Id == Id;
+
+    private void InitTerminals()
+    {
+        int off = Type == BlockType.Active ? 1 : 0;
+
+        int countIn = 0;
+        int countOut = 0;
+
+        // count in and out terminals
+        for (int i = off; i < TerminalArray.Length - off; i++)
         {
-            Name = name;
-            Id = id;
-            Type = type;
-            Size = new Vector3I(size.X, 1, size.Y);
-
-            TerminalArray = terminals is null ? [] : [.. terminals];
-
-            InitTerminals();
-
-            Terminals = new Indexable<string, Terminal>(termName =>
+            if (TerminalArray[i].Type == TerminalType.In)
             {
-                for (int i = 0; i < TerminalArray.Length; i++)
-                {
-                    if (TerminalArray[i].Name == termName)
-                    {
-                        return TerminalArray[i];
-                    }
-                }
-
-                throw new KeyNotFoundException($"Terminal '{termName}' wasn't found.");
-            });
+                countIn++;
+            }
+            else
+            {
+                countOut++;
+            }
         }
 
-        public bool IsGroup => Size != Vector3I.One;
+        // if a block has less/more in/out terminals, one of the sides will start higher
+        countIn = Size.Z - countIn;
+        countOut = Size.Z - countOut;
 
-        public Terminal Before => Type == BlockType.Active ? TerminalArray[^1] : throw new InvalidOperationException("Only active blocks have Before and After");
+        int outXPos = (Size.X * 8) - 2;
 
-        public Terminal After => Type == BlockType.Active ? TerminalArray[0] : throw new InvalidOperationException("Only active blocks have Before and After");
-
-        public static bool operator ==(BlockDef a, BlockDef b)
-            => a?.Equals(b) ?? b is null;
-
-        public static bool operator !=(BlockDef a, BlockDef b)
-            => !a?.Equals(b) ?? b is not null;
-
-        public Terminal GetTerminal(string name)
+        for (int i = off; i < TerminalArray.Length - off; i++)
         {
-            foreach (Terminal terminal in TerminalArray)
-            {
-                if (terminal.Name == name)
-                {
-                    return terminal;
-                }
-            }
+            Terminal terminal = TerminalArray[i];
 
-            throw new KeyNotFoundException($"Terminal with name '{name}' isn't on block '{Name}'");
+            if (terminal.Type == TerminalType.In)
+            {
+                terminal.Init(i, new Vector3I(0, 1, (countIn++ * 8) + 3));
+            }
+            else
+            {
+                terminal.Init(i, new Vector3I(outXPos, 1, (countOut++ * 8) + 3));
+            }
         }
 
-        public override string ToString()
-            => $"{{Name: {Name}, Id: {Id}, Type: {Type}, Size: {Size}}}";
-
-        public override int GetHashCode()
-            => Id;
-
-        public override bool Equals(object? obj)
-            => obj is BlockDef other && other.Id == Id;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(BlockDef other)
-            => other is not null && other.Id == Id;
-
-        private void InitTerminals()
+        if (Type == BlockType.Active)
         {
-            int off = Type == BlockType.Active ? 1 : 0;
-
-            int countIn = 0;
-            int countOut = 0;
-
-            // count in and out terminals
-            for (int i = off; i < TerminalArray.Length - off; i++)
-            {
-                if (TerminalArray[i].Type == TerminalType.In)
-                {
-                    countIn++;
-                }
-                else
-                {
-                    countOut++;
-                }
-            }
-
-            // if a block has less/more in/out terminals, one of the sides will start higher
-            countIn = Size.Z - countIn;
-            countOut = Size.Z - countOut;
-
-            int outXPos = (Size.X * 8) - 2;
-
-            for (int i = off; i < TerminalArray.Length - off; i++)
-            {
-                Terminal terminal = TerminalArray[i];
-
-                if (terminal.Type == TerminalType.In)
-                {
-                    terminal.Init(i, new Vector3I(0, 1, (countIn++ * 8) + 3));
-                }
-                else
-                {
-                    terminal.Init(i, new Vector3I(outXPos, 1, (countOut++ * 8) + 3));
-                }
-            }
-
-            if (Type == BlockType.Active)
-            {
-                After.Init(0, new Vector3I(3, 1, 0));
-                Before.Init(TerminalArray.Length - 1, new Vector3I(3, 1, (Size.Z * 8) - 2));
-            }
+            After.Init(0, new Vector3I(3, 1, 0));
+            Before.Init(TerminalArray.Length - 1, new Vector3I(3, 1, (Size.Z * 8) - 2));
         }
     }
 }

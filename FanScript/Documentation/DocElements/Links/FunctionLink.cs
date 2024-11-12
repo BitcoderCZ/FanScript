@@ -2,47 +2,46 @@
 using System.Text;
 using FanScript.Compiler.Symbols.Functions;
 
-namespace FanScript.Documentation.DocElements.Links
+namespace FanScript.Documentation.DocElements.Links;
+
+public sealed class FunctionLink : DocLink
 {
-    public sealed class FunctionLink : DocLink
+    public FunctionLink(ImmutableArray<DocArg> arguments, DocString value, FunctionSymbol function)
+        : base(arguments, value)
     {
-        public FunctionLink(ImmutableArray<DocArg> arguments, DocString value, FunctionSymbol function)
-            : base(arguments, value)
+        Function = function;
+    }
+
+    public FunctionSymbol Function { get; }
+
+    public override (string DisplayString, string LinkString) GetStrings()
+    {
+        StringBuilder displayBuilder = new();
+        StringBuilder linkBuilder = new();
+
+        displayBuilder.Append(Function.Name);
+        linkBuilder.Append(Function.Namespace + Function.Name);
+        if (Function.IsGeneric)
         {
-            Function = function;
+            displayBuilder.Append("<>");
         }
 
-        public FunctionSymbol Function { get; }
-
-        public override (string DisplayString, string LinkString) GetStrings()
+        displayBuilder.Append('(');
+        linkBuilder.Append('.');
+        for (int i = 0; i < Function.Parameters.Length; i++)
         {
-            StringBuilder displayBuilder = new();
-            StringBuilder linkBuilder = new();
-
-            displayBuilder.Append(Function.Name);
-            linkBuilder.Append(Function.Namespace + Function.Name);
-            if (Function.IsGeneric)
+            if (i != 0)
             {
-                displayBuilder.Append("<>");
+                displayBuilder.Append(", ");
+                linkBuilder.Append('.');
             }
 
-            displayBuilder.Append('(');
-            linkBuilder.Append('.');
-            for (int i = 0; i < Function.Parameters.Length; i++)
-            {
-                if (i != 0)
-                {
-                    displayBuilder.Append(", ");
-                    linkBuilder.Append('.');
-                }
-
-                displayBuilder.Append(Function.Parameters[i].Type.ToString());
-                linkBuilder.Append(Function.Parameters[i].Type.Name);
-            }
-
-            displayBuilder.Append(')');
-
-            return (displayBuilder.ToString(), linkBuilder.ToString());
+            displayBuilder.Append(Function.Parameters[i].Type.ToString());
+            linkBuilder.Append(Function.Parameters[i].Type.Name);
         }
+
+        displayBuilder.Append(')');
+
+        return (displayBuilder.ToString(), linkBuilder.ToString());
     }
 }

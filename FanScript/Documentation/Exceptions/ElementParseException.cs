@@ -1,10 +1,9 @@
-﻿namespace FanScript.Documentation.Exceptions
+﻿namespace FanScript.Documentation.Exceptions;
+
+public sealed class ElementParseException : DocParseException
 {
-    public sealed class ElementParseException : DocParseException
+    public ElementParseException(string elementType, string message)
+        : base($"Error parsing element \"{elementType}\": " + message)
     {
-        public ElementParseException(string elementType, string message)
-            : base($"Error parsing element \"{elementType}\": " + message)
-        {
-        }
     }
 }

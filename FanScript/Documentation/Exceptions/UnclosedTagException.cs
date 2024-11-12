@@ -1,26 +1,25 @@
-﻿namespace FanScript.Documentation.Exceptions
+﻿namespace FanScript.Documentation.Exceptions;
+
+public abstract class UnclosedTagException : DocParseException
 {
-    public abstract class UnclosedTagException : DocParseException
+    protected UnclosedTagException(string message)
+        : base(message)
     {
-        protected UnclosedTagException(string message)
-            : base(message)
-        {
-        }
     }
+}
 
-    public sealed class UnclosedStartTagException : UnclosedTagException
+public sealed class UnclosedStartTagException : UnclosedTagException
+{
+    public UnclosedStartTagException(string elementName)
+        : base($"An element \"{elementName}\" has unclosed start tag.")
     {
-        public UnclosedStartTagException(string elementName)
-            : base($"An element \"{elementName}\" has unclosed start tag.")
-        {
-        }
     }
+}
 
-    public sealed class UnclosedEndTagException : UnclosedTagException
+public sealed class UnclosedEndTagException : UnclosedTagException
+{
+    public UnclosedEndTagException(string elementName)
+        : base($"An element \"{elementName}\" has unclosed end tag.")
     {
-        public UnclosedEndTagException(string elementName)
-            : base($"An element \"{elementName}\" has unclosed end tag.")
-        {
-        }
     }
 }

@@ -1,13 +1,12 @@
-﻿namespace FanScript.Compiler.Symbols.Variables
-{
-    public class CompilerVariableSymbol : BasicVariableSymbol
-    {
-        public CompilerVariableSymbol(string name, Modifiers modifiers, TypeSymbol type)
-            : base(name, modifiers, type)
-        {
-        }
+﻿namespace FanScript.Compiler.Symbols.Variables;
 
-        protected override string GetNameForResult()
-            => "^" + Name;
+public class CompilerVariableSymbol : BasicVariableSymbol
+{
+    public CompilerVariableSymbol(string name, Modifiers modifiers, TypeSymbol type)
+        : base(name, modifiers, type)
+    {
     }
+
+    protected override string GetNameForResult()
+        => "^" + Name;
 }

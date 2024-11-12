@@ -1,10 +1,9 @@
-﻿namespace FanScript.Documentation.Exceptions
+﻿namespace FanScript.Documentation.Exceptions;
+
+public sealed class UnknownElementException : DocParseException
 {
-    public sealed class UnknownElementException : DocParseException
+    public UnknownElementException(string elementName)
+        : base($"Unknown element \"{elementName}\".")
     {
-        public UnknownElementException(string elementName)
-            : base($"Unknown element \"{elementName}\".")
-        {
-        }
     }
 }

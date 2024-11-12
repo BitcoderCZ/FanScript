@@ -1,11 +1,10 @@
-﻿namespace FanScript.Cli
+﻿namespace FanScript.Cli;
+
+internal enum ErrorCode
 {
-    internal enum ErrorCode
-    {
-        None,
-        UnknownError,
-        CompilationErrors = 10,
-        FileNotFound = 20,
-        InvalidBuildPos,
-    }
+    None,
+    UnknownError,
+    CompilationErrors = 10,
+    FileNotFound = 20,
+    InvalidBuildPos,
 }

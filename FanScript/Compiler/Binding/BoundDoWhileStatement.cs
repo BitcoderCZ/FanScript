@@ -1,20 +1,19 @@
 ﻿using FanScript.Compiler.Syntax;
 
-namespace FanScript.Compiler.Binding
+namespace FanScript.Compiler.Binding;
+
+internal sealed class BoundDoWhileStatement : BoundLoopStatement
 {
-    internal sealed class BoundDoWhileStatement : BoundLoopStatement
+    public BoundDoWhileStatement(SyntaxNode syntax, BoundStatement body, BoundExpression condition, BoundLabel breakLabel, BoundLabel continueLabel)
+        : base(syntax, breakLabel, continueLabel)
     {
-        public BoundDoWhileStatement(SyntaxNode syntax, BoundStatement body, BoundExpression condition, BoundLabel breakLabel, BoundLabel continueLabel)
-            : base(syntax, breakLabel, continueLabel)
-        {
-            Body = body;
-            Condition = condition;
-        }
-
-        public override BoundNodeKind Kind => BoundNodeKind.DoWhileStatement;
-
-        public BoundStatement Body { get; }
-
-        public BoundExpression Condition { get; }
+        Body = body;
+        Condition = condition;
     }
+
+    public override BoundNodeKind Kind => BoundNodeKind.DoWhileStatement;
+
+    public BoundStatement Body { get; }
+
+    public BoundExpression Condition { get; }
 }

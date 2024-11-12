@@ -1,14 +1,13 @@
 ﻿using FanScript.Compiler.Syntax;
 
-namespace FanScript.Compiler.Binding
-{
-    internal sealed class BoundNopStatement : BoundStatement
-    {
-        public BoundNopStatement(SyntaxNode syntax)
-            : base(syntax)
-        {
-        }
+namespace FanScript.Compiler.Binding;
 
-        public override BoundNodeKind Kind => BoundNodeKind.NopStatement;
+internal sealed class BoundNopStatement : BoundStatement
+{
+    public BoundNopStatement(SyntaxNode syntax)
+        : base(syntax)
+    {
     }
+
+    public override BoundNodeKind Kind => BoundNodeKind.NopStatement;
 }

@@ -1,7 +1,6 @@
-﻿namespace FanScript.Utils
+﻿namespace FanScript.Utils;
+
+public interface ITextWritable
 {
-    public interface ITextWritable
-    {
-        void WriteTo(TextWriter writer);
-    }
+    void WriteTo(TextWriter writer);
 }

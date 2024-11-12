@@ -1,18 +1,17 @@
-﻿namespace FanScript.Compiler.Syntax
+﻿namespace FanScript.Compiler.Syntax;
+
+public sealed partial class ReturnStatementSyntax : StatementSyntax
 {
-    public sealed partial class ReturnStatementSyntax : StatementSyntax
+    internal ReturnStatementSyntax(SyntaxTree syntaxTree, SyntaxToken returnKeyword, ExpressionSyntax? expression)
+        : base(syntaxTree)
     {
-        internal ReturnStatementSyntax(SyntaxTree syntaxTree, SyntaxToken returnKeyword, ExpressionSyntax? expression)
-            : base(syntaxTree)
-        {
-            ReturnKeyword = returnKeyword;
-            Expression = expression;
-        }
-
-        public override SyntaxKind Kind => SyntaxKind.ReturnStatement;
-
-        public SyntaxToken ReturnKeyword { get; }
-
-        public ExpressionSyntax? Expression { get; }
+        ReturnKeyword = returnKeyword;
+        Expression = expression;
     }
+
+    public override SyntaxKind Kind => SyntaxKind.ReturnStatement;
+
+    public SyntaxToken ReturnKeyword { get; }
+
+    public ExpressionSyntax? Expression { get; }
 }

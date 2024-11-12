@@ -1,10 +1,9 @@
-﻿namespace FanScript.Compiler.Syntax
+﻿namespace FanScript.Compiler.Syntax;
+
+public abstract class AssignableExpressionSyntax : ExpressionSyntax
 {
-    public abstract class AssignableExpressionSyntax : ExpressionSyntax
+    private protected AssignableExpressionSyntax(SyntaxTree syntaxTree)
+        : base(syntaxTree)
     {
-        private protected AssignableExpressionSyntax(SyntaxTree syntaxTree)
-            : base(syntaxTree)
-        {
-        }
     }
 }

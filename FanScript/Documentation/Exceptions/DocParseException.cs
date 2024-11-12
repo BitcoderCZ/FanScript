@@ -1,10 +1,9 @@
-﻿namespace FanScript.Documentation.Exceptions
+﻿namespace FanScript.Documentation.Exceptions;
+
+public abstract class DocParseException : Exception
 {
-    public abstract class DocParseException : Exception
+    protected DocParseException(string message)
+        : base(message)
     {
-        protected DocParseException(string message)
-            : base(message)
-        {
-        }
     }
 }

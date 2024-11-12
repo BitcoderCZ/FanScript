@@ -1,18 +1,17 @@
 ﻿using FanScript.Compiler.Syntax;
 
-namespace FanScript.Compiler.Binding
+namespace FanScript.Compiler.Binding;
+
+internal abstract class BoundLoopStatement : BoundStatement
 {
-    internal abstract class BoundLoopStatement : BoundStatement
+    protected BoundLoopStatement(SyntaxNode syntax, BoundLabel breakLabel, BoundLabel continueLabel)
+        : base(syntax)
     {
-        protected BoundLoopStatement(SyntaxNode syntax, BoundLabel breakLabel, BoundLabel continueLabel)
-            : base(syntax)
-        {
-            BreakLabel = breakLabel;
-            ContinueLabel = continueLabel;
-        }
-
-        public BoundLabel BreakLabel { get; }
-
-        public BoundLabel ContinueLabel { get; }
+        BreakLabel = breakLabel;
+        ContinueLabel = continueLabel;
     }
+
+    public BoundLabel BreakLabel { get; }
+
+    public BoundLabel ContinueLabel { get; }
 }

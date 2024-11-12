@@ -1,18 +1,17 @@
-﻿namespace FanScript.Compiler.Syntax
+﻿namespace FanScript.Compiler.Syntax;
+
+public sealed partial class PrefixStatementSyntax : StatementSyntax
 {
-    public sealed partial class PrefixStatementSyntax : StatementSyntax
+    internal PrefixStatementSyntax(SyntaxTree syntaxTree, SyntaxToken operatorToken, SyntaxToken identifierToken)
+        : base(syntaxTree)
     {
-        internal PrefixStatementSyntax(SyntaxTree syntaxTree, SyntaxToken operatorToken, SyntaxToken identifierToken)
-            : base(syntaxTree)
-        {
-            OperatorToken = operatorToken;
-            IdentifierToken = identifierToken;
-        }
-
-        public override SyntaxKind Kind => SyntaxKind.PrefixStatement;
-
-        public SyntaxToken OperatorToken { get; }
-
-        public SyntaxToken IdentifierToken { get; }
+        OperatorToken = operatorToken;
+        IdentifierToken = identifierToken;
     }
+
+    public override SyntaxKind Kind => SyntaxKind.PrefixStatement;
+
+    public SyntaxToken OperatorToken { get; }
+
+    public SyntaxToken IdentifierToken { get; }
 }

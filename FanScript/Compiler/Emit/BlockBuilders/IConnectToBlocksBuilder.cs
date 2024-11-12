@@ -1,6 +1,5 @@
-﻿namespace FanScript.Compiler.Emit.BlockBuilders
+﻿namespace FanScript.Compiler.Emit.BlockBuilders;
+
+public interface IConnectToBlocksBuilder
 {
-    public interface IConnectToBlocksBuilder
-    {
-    }
 }

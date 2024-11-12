@@ -1,8 +1,7 @@
-﻿namespace FanScript.Cli
+﻿namespace FanScript.Cli;
+
+public enum BlockPlacerEnum
 {
-    public enum BlockPlacerEnum
-    {
-        Tower,
-        Ground,
-    }
+    Tower,
+    Ground,
 }

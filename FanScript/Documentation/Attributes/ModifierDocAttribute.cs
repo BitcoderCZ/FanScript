@@ -1,10 +1,9 @@
-﻿namespace FanScript.Documentation.Attributes
+﻿namespace FanScript.Documentation.Attributes;
+
+public sealed class ModifierDocAttribute : DocumentationAttribute
 {
-    public sealed class ModifierDocAttribute : DocumentationAttribute
+    public ModifierDocAttribute()
+        : base()
     {
-        public ModifierDocAttribute()
-            : base()
-        {
-        }
     }
 }

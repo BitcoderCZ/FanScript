@@ -1,8 +1,7 @@
-﻿namespace FanScript.Cli
+﻿namespace FanScript.Cli;
+
+public enum CodeBuilderEnum
 {
-    public enum CodeBuilderEnum
-    {
-        EditorScript,
-        GameFile,
-    }
+    EditorScript,
+    GameFile,
 }

@@ -1,15 +1,14 @@
-﻿namespace FanScript.Compiler.Syntax
+﻿namespace FanScript.Compiler.Syntax;
+
+internal sealed partial class BreakStatementSyntax : StatementSyntax
 {
-    internal sealed partial class BreakStatementSyntax : StatementSyntax
+    internal BreakStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keyword)
+        : base(syntaxTree)
     {
-        internal BreakStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keyword)
-            : base(syntaxTree)
-        {
-            Keyword = keyword;
-        }
-
-        public override SyntaxKind Kind => SyntaxKind.BreakStatement;
-
-        public SyntaxToken Keyword { get; }
+        Keyword = keyword;
     }
+
+    public override SyntaxKind Kind => SyntaxKind.BreakStatement;
+
+    public SyntaxToken Keyword { get; }
 }

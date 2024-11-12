@@ -1,8 +1,7 @@
-﻿namespace FanScript.Compiler.Emit
+﻿namespace FanScript.Compiler.Emit;
+
+public enum BuilderUnsupportedOperation
 {
-    public enum BuilderUnsupportedOperation
-    {
-        ConnectToBlock,
-        CreateCustomBlocks,
-    }
+    ConnectToBlock,
+    CreateCustomBlocks,
 }

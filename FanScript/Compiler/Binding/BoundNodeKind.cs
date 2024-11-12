@@ -1,46 +1,45 @@
-﻿namespace FanScript.Compiler.Binding
+﻿namespace FanScript.Compiler.Binding;
+
+internal enum BoundNodeKind
 {
-    internal enum BoundNodeKind
-    {
-        // Statements
-        BlockStatement,
-        EventStatement,
-        NopStatement,
-        VariableDeclarationStatement,
-        AssignmentStatement,
-        CompoundAssignmentStatement,
-        IfStatement,
-        WhileStatement,
-        DoWhileStatement,
-        ReturnStatement,
-        GotoStatement,
-        EventGotoStatement,
-        ConditionalGotoStatement,
-        LabelStatement,
-        PostfixStatement,
-        PrefixStatement,
-        CallStatement,
-        ExpressionStatement,
-        EmitterHintStatement,
+    // Statements
+    BlockStatement,
+    EventStatement,
+    NopStatement,
+    VariableDeclarationStatement,
+    AssignmentStatement,
+    CompoundAssignmentStatement,
+    IfStatement,
+    WhileStatement,
+    DoWhileStatement,
+    ReturnStatement,
+    GotoStatement,
+    EventGotoStatement,
+    ConditionalGotoStatement,
+    LabelStatement,
+    PostfixStatement,
+    PrefixStatement,
+    CallStatement,
+    ExpressionStatement,
+    EmitterHintStatement,
 
-        // Expressions
-        ErrorExpression,
-        LiteralExpression,
-        VariableExpression,
-        UnaryExpression,
-        BinaryExpression,
-        CallExpression,
-        ConversionExpression,
-        ConstructorExpression,
-        ArraySegmentExpression,
-        NopExpression,
-        PostfixExpression,
-        PrefixExpression,
-        AssignmentExpression,
-        CompoundAssignmentExpression,
+    // Expressions
+    ErrorExpression,
+    LiteralExpression,
+    VariableExpression,
+    UnaryExpression,
+    BinaryExpression,
+    CallExpression,
+    ConversionExpression,
+    ConstructorExpression,
+    ArraySegmentExpression,
+    NopExpression,
+    PostfixExpression,
+    PrefixExpression,
+    AssignmentExpression,
+    CompoundAssignmentExpression,
 
-        // Clauses
-        ArgumentClause,
-        ModifierClause,
-    }
+    // Clauses
+    ArgumentClause,
+    ModifierClause,
 }

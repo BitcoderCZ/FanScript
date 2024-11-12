@@ -1,8 +1,7 @@
-﻿namespace FanScript.FCInfo
+﻿namespace FanScript.FCInfo;
+
+public enum TerminalType
 {
-    public enum TerminalType
-    {
-        In,
-        Out,
-    }
+    In,
+    Out,
 }
