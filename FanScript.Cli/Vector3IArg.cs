@@ -24,4 +24,7 @@ public class Vector3IArg
         if (!int.TryParse(split[2], CultureInfo.InvariantCulture, out Z))
             throw new ArgumentException("Values must be valid integers, Z is not.");
     }
+
+    public override string ToString()
+        => $"{X},{Y},{Z}";
 }
