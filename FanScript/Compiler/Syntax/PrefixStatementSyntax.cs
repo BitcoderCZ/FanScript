@@ -1,17 +1,21 @@
-﻿namespace FanScript.Compiler.Syntax;
+﻿// <copyright file="PrefixStatementSyntax.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+namespace FanScript.Compiler.Syntax;
 
 public sealed partial class PrefixStatementSyntax : StatementSyntax
 {
-    internal PrefixStatementSyntax(SyntaxTree syntaxTree, SyntaxToken operatorToken, SyntaxToken identifierToken)
-        : base(syntaxTree)
-    {
-        OperatorToken = operatorToken;
-        IdentifierToken = identifierToken;
-    }
+	internal PrefixStatementSyntax(SyntaxTree syntaxTree, SyntaxToken operatorToken, SyntaxToken identifierToken)
+		: base(syntaxTree)
+	{
+		OperatorToken = operatorToken;
+		IdentifierToken = identifierToken;
+	}
 
-    public override SyntaxKind Kind => SyntaxKind.PrefixStatement;
+	public override SyntaxKind Kind => SyntaxKind.PrefixStatement;
 
-    public SyntaxToken OperatorToken { get; }
+	public SyntaxToken OperatorToken { get; }
 
-    public SyntaxToken IdentifierToken { get; }
+	public SyntaxToken IdentifierToken { get; }
 }

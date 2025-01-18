@@ -2,6 +2,6 @@
 
 public enum CodeBuilderEnum
 {
-    EditorScript,
-    GameFile,
+	EditorScript,
+	GameFile,
 }

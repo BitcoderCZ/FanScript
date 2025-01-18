@@ -1,72 +1,76 @@
-﻿using FanScript.Documentation.Attributes;
+﻿// <copyright file="BoundBinaryOperatorKind.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Documentation.Attributes;
 
 namespace FanScript.Compiler.Binding;
 
 internal enum BoundBinaryOperatorKind
 {
-    [BinaryOperatorDoc(
-        Info = """
+	[BinaryOperatorDoc(
+		Info = """
         Adds the value of a and b.
         """)]
-    Addition,
-    [BinaryOperatorDoc(
-        Info = """
+	Addition,
+	[BinaryOperatorDoc(
+		Info = """
         Substracts b from a.
         """)]
-    Subtraction,
-    [BinaryOperatorDoc(
-        Info = """
+	Subtraction,
+	[BinaryOperatorDoc(
+		Info = """
         Multiplies a and b.
         """)]
-    Multiplication,
-    [BinaryOperatorDoc(
-        Info = """
+	Multiplication,
+	[BinaryOperatorDoc(
+		Info = """
         Divides a by b.
         """)]
-    Division,
-    [BinaryOperatorDoc(
-        Info = """
+	Division,
+	[BinaryOperatorDoc(
+		Info = """
         Returns the remainder of division of a and b.
         """)]
-    Modulo,
-    [BinaryOperatorDoc(
-        Info = """
+	Modulo,
+	[BinaryOperatorDoc(
+		Info = """
         Returns true, only if both a and b are true.
         """)]
-    LogicalAnd,
-    [BinaryOperatorDoc(
-        Info = """
+	LogicalAnd,
+	[BinaryOperatorDoc(
+		Info = """
         Returns true, if a or b are true.
         """)]
-    LogicalOr,
-    [BinaryOperatorDoc(
-        Info = """
+	LogicalOr,
+	[BinaryOperatorDoc(
+		Info = """
         Returns if a and b have the same value.
         """)]
-    Equals,
-    [BinaryOperatorDoc(
-        Info = """
+	Equals,
+	[BinaryOperatorDoc(
+		Info = """
         Returns if the value of a is not equal to the value of b.
         """)]
-    NotEquals,
-    [BinaryOperatorDoc(
-        Info = """
+	NotEquals,
+	[BinaryOperatorDoc(
+		Info = """
         Returns if a is less than b.
         """)]
-    Less,
-    [BinaryOperatorDoc(
-        Info = """
+	Less,
+	[BinaryOperatorDoc(
+		Info = """
         Returns if a is less than b or equal to b.
         """)]
-    LessOrEquals,
-    [BinaryOperatorDoc(
-        Info = """
+	LessOrEquals,
+	[BinaryOperatorDoc(
+		Info = """
         Returns if a is greater than b.
         """)]
-    Greater,
-    [BinaryOperatorDoc(
-        Info = """
+	Greater,
+	[BinaryOperatorDoc(
+		Info = """
         Returns if a is greater than b or equal to b.
         """)]
-    GreaterOrEquals,
+	GreaterOrEquals,
 }

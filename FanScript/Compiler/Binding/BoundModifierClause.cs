@@ -1,36 +1,40 @@
-﻿using System.Collections.Immutable;
+﻿// <copyright file="BoundModifierClause.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
 using FanScript.Compiler.Syntax;
+using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Binding;
 
 internal sealed class BoundModifierClause : BoundNode
 {
-    public BoundModifierClause(SyntaxNode syntax, ImmutableArray<(SyntaxToken Token, Modifiers Modifiers)> tokens)
-        : base(syntax)
-    {
-        Tokens = tokens;
+	public BoundModifierClause(SyntaxNode syntax, ImmutableArray<(SyntaxToken Token, Modifiers Modifiers)> tokens)
+		: base(syntax)
+	{
+		Tokens = tokens;
 
-        Enum = 0;
-        foreach (var (_, mod) in Tokens)
-            Enum |= mod;
-    }
+		Enum = 0;
+		foreach (var (_, mod) in Tokens)
+			Enum |= mod;
+	}
 
-    public override BoundNodeKind Kind => BoundNodeKind.ModifierClause;
+	public override BoundNodeKind Kind => BoundNodeKind.ModifierClause;
 
-    public ImmutableArray<(SyntaxToken Token, Modifiers Modifiers)> Tokens { get; }
+	public ImmutableArray<(SyntaxToken Token, Modifiers Modifiers)> Tokens { get; }
 
-    public Modifiers Enum { get; }
+	public Modifiers Enum { get; }
 
-    public SyntaxToken GetTokenForModifier(Modifiers modifier)
-    {
-        foreach (var (token, mod) in Tokens)
-        {
-            if (mod == modifier)
-            {
-                return token;
-            }
-        }
+	public SyntaxToken GetTokenForModifier(Modifiers modifier)
+	{
+		foreach (var (token, mod) in Tokens)
+		{
+			if (mod == modifier)
+			{
+				return token;
+			}
+		}
 
-        throw new KeyNotFoundException($"Token for modifier \"{modifier}\".");
-    }
+		throw new KeyNotFoundException($"Token for modifier \"{modifier}\".");
+	}
 }

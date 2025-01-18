@@ -1,23 +1,27 @@
-﻿namespace FanScript.Compiler.Syntax;
+﻿// <copyright file="DoWhileStatementSyntax.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+namespace FanScript.Compiler.Syntax;
 
 public sealed partial class DoWhileStatementSyntax : StatementSyntax
 {
-    internal DoWhileStatementSyntax(SyntaxTree syntaxTree, SyntaxToken doKeyword, StatementSyntax body, SyntaxToken whileKeyword, ExpressionSyntax condition)
-        : base(syntaxTree)
-    {
-        DoKeyword = doKeyword;
-        Body = body;
-        WhileKeyword = whileKeyword;
-        Condition = condition;
-    }
+	internal DoWhileStatementSyntax(SyntaxTree syntaxTree, SyntaxToken doKeyword, StatementSyntax body, SyntaxToken whileKeyword, ExpressionSyntax condition)
+		: base(syntaxTree)
+	{
+		DoKeyword = doKeyword;
+		Body = body;
+		WhileKeyword = whileKeyword;
+		Condition = condition;
+	}
 
-    public override SyntaxKind Kind => SyntaxKind.DoWhileStatement;
+	public override SyntaxKind Kind => SyntaxKind.DoWhileStatement;
 
-    public SyntaxToken DoKeyword { get; }
+	public SyntaxToken DoKeyword { get; }
 
-    public StatementSyntax Body { get; }
+	public StatementSyntax Body { get; }
 
-    public SyntaxToken WhileKeyword { get; }
+	public SyntaxToken WhileKeyword { get; }
 
-    public ExpressionSyntax Condition { get; }
+	public ExpressionSyntax Condition { get; }
 }

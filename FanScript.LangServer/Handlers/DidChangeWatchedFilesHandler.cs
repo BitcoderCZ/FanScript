@@ -9,7 +9,7 @@ namespace FanScript.LangServer.Handlers;
 
 internal class DidChangeWatchedFilesHandler : IDidChangeWatchedFilesHandler
 {
-    public Task<Unit> Handle(DidChangeWatchedFilesParams request, CancellationToken cancellationToken) => Unit.Task;
+	public Task<Unit> Handle(DidChangeWatchedFilesParams request, CancellationToken cancellationToken) => Unit.Task;
 
-    public DidChangeWatchedFilesRegistrationOptions GetRegistrationOptions(DidChangeWatchedFilesCapability capability, ClientCapabilities clientCapabilities) => new DidChangeWatchedFilesRegistrationOptions();
+	public DidChangeWatchedFilesRegistrationOptions GetRegistrationOptions(DidChangeWatchedFilesCapability capability, ClientCapabilities clientCapabilities) => new DidChangeWatchedFilesRegistrationOptions();
 }

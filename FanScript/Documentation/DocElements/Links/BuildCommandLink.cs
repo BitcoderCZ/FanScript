@@ -1,22 +1,26 @@
-﻿using System.Collections.Immutable;
+﻿// <copyright file="BuildCommandLink.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
 using FanScript.Compiler;
 using FanScript.Utils;
+using System.Collections.Immutable;
 
 namespace FanScript.Documentation.DocElements.Links;
 
 public sealed class BuildCommandLink : DocLink
 {
-    public BuildCommandLink(ImmutableArray<DocArg> arguments, DocString value, BuildCommand command)
-        : base(arguments, value)
-    {
-        Command = command;
-    }
+	public BuildCommandLink(ImmutableArray<DocArg> arguments, DocString value, BuildCommand command)
+		: base(arguments, value)
+	{
+		Command = command;
+	}
 
-    public BuildCommand Command { get; }
+	public BuildCommand Command { get; }
 
-    public override (string DisplayString, string LinkString) GetStrings()
-    {
-        string commandName = Enum.GetName(Command)!;
-        return (commandName.ToLowerFirst(), commandName);
-    }
+	public override (string DisplayString, string LinkString) GetStrings()
+	{
+		string commandName = Enum.GetName(Command)!;
+		return (commandName.ToLowerFirst(), commandName);
+	}
 }

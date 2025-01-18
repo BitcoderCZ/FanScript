@@ -1,5 +1,7 @@
-﻿using System.Collections.Immutable;
-using System.Runtime.CompilerServices;
+﻿// <copyright file="Compilation.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Emit;
@@ -9,6 +11,8 @@ using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
+using System.Collections.Immutable;
+using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("FanScript.LangServer")]
 
@@ -16,83 +20,83 @@ namespace FanScript.Compiler;
 
 public sealed class Compilation
 {
-    private BoundGlobalScope? _globalScope;
+	private BoundGlobalScope? _globalScope;
 
-    private Compilation(Compilation? previous, params SyntaxTree[] syntaxTrees)
-    {
-        Previous = previous;
-        SyntaxTrees = [.. syntaxTrees];
-    }
+	private Compilation(Compilation? previous, params SyntaxTree[] syntaxTrees)
+	{
+		Previous = previous;
+		SyntaxTrees = [.. syntaxTrees];
+	}
 
-    public Compilation? Previous { get; }
+	public Compilation? Previous { get; }
 
-    public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
+	public ImmutableArray<SyntaxTree> SyntaxTrees { get; }
 
-    public ImmutableArray<FunctionSymbol> Functions => GlobalScope.Functions;
+	public ImmutableArray<FunctionSymbol> Functions => GlobalScope.Functions;
 
-    public ImmutableArray<VariableSymbol> Variables => GlobalScope.Variables;
+	public ImmutableArray<VariableSymbol> Variables => GlobalScope.Variables;
 
-    internal BoundGlobalScope GlobalScope
-    {
-        get
-        {
-            if (_globalScope is null)
-            {
-                BoundGlobalScope newGlobalScope = Binder.BindGlobalScope(Previous?.GlobalScope, SyntaxTrees);
-                Interlocked.CompareExchange(ref _globalScope, newGlobalScope, null);
-            }
+	internal BoundGlobalScope GlobalScope
+	{
+		get
+		{
+			if (_globalScope is null)
+			{
+				BoundGlobalScope newGlobalScope = Binder.BindGlobalScope(Previous?.GlobalScope, SyntaxTrees);
+				Interlocked.CompareExchange(ref _globalScope, newGlobalScope, null);
+			}
 
-            return _globalScope;
-        }
-    }
+			return _globalScope;
+		}
+	}
 
-    public static Compilation Create(Compilation? previous, params SyntaxTree[] syntaxTrees) => new Compilation(previous, syntaxTrees);
+	public static Compilation Create(Compilation? previous, params SyntaxTree[] syntaxTrees) => new Compilation(previous, syntaxTrees);
 
-    public IEnumerable<Symbol> GetSymbols()
-        => Enumerable.Concat<Symbol>(
-            GetFunctions(),
-            GetVariables());
+	public IEnumerable<Symbol> GetSymbols()
+		=> Enumerable.Concat<Symbol>(
+			GetFunctions(),
+			GetVariables());
 
-    public IEnumerable<FunctionSymbol> GetFunctions()
-    {
-        Compilation? submission = this;
+	public IEnumerable<FunctionSymbol> GetFunctions()
+	{
+		Compilation? submission = this;
 
-        foreach (FunctionSymbol builtin in BuiltinFunctions.GetAll())
-        {
-            yield return builtin;
-        }
+		foreach (FunctionSymbol builtin in BuiltinFunctions.GetAll())
+		{
+			yield return builtin;
+		}
 
-        while (submission is not null)
-        {
-            foreach (FunctionSymbol function in submission.Functions)
-            {
-                yield return function;
-            }
+		while (submission is not null)
+		{
+			foreach (FunctionSymbol function in submission.Functions)
+			{
+				yield return function;
+			}
 
-            submission = submission.Previous;
-        }
-    }
+			submission = submission.Previous;
+		}
+	}
 
-    public IEnumerable<VariableSymbol> GetVariables()
-    {
-        Compilation? submission = this;
-        HashSet<string> seenVariables = [];
+	public IEnumerable<VariableSymbol> GetVariables()
+	{
+		Compilation? submission = this;
+		HashSet<string> seenVariables = [];
 
-        while (submission is not null)
-        {
-            foreach (VariableSymbol variable in submission.Variables)
-            {
-                if (seenVariables.Add(variable.Name))
-                {
-                    yield return variable;
-                }
-            }
+		while (submission is not null)
+		{
+			foreach (VariableSymbol variable in submission.Variables)
+			{
+				if (seenVariables.Add(variable.Name))
+				{
+					yield return variable;
+				}
+			}
 
-            submission = submission.Previous;
-        }
-    }
+			submission = submission.Previous;
+		}
+	}
 
-    /*public EvaluationResult Evaluate(Dictionary<VariableSymbol, object> variables)
+	/*public EvaluationResult Evaluate(Dictionary<VariableSymbol, object> variables)
     {
         if (GlobalScope.Diagnostics.Any())
             return new EvaluationResult(GlobalScope.Diagnostics, null);
@@ -118,46 +122,46 @@ public sealed class Compilation
         return new EvaluationResult(program.Diagnostics, value);
     }*/
 
-    public IDictionary<FunctionSymbol, ScopeWSpan> GetScopes()
-    {
-        BoundProgram program = GetProgram();
+	public IDictionary<FunctionSymbol, ScopeWSpan> GetScopes()
+	{
+		BoundProgram program = GetProgram();
 
-        return program.FunctionScopes;
-    }
+		return program.FunctionScopes;
+	}
 
-    public void EmitTree(TextWriter writer)
-    {
-        if (GlobalScope.ScriptFunction is not null)
-        {
-            EmitTree(GlobalScope.ScriptFunction, writer);
-        }
-    }
+	public void EmitTree(TextWriter writer)
+	{
+		if (GlobalScope.ScriptFunction is not null)
+		{
+			EmitTree(GlobalScope.ScriptFunction, writer);
+		}
+	}
 
-    public void EmitTree(FunctionSymbol symbol, TextWriter writer)
-    {
-        BoundProgram program = GetProgram();
-        symbol.WriteTo(writer);
-        writer.WriteLine();
-        if (program.Functions.TryGetValue(symbol, out BoundBlockStatement? body))
-        {
-            body.WriteTo(writer);
-        }
-    }
+	public void EmitTree(FunctionSymbol symbol, TextWriter writer)
+	{
+		BoundProgram program = GetProgram();
+		symbol.WriteTo(writer);
+		writer.WriteLine();
+		if (program.Functions.TryGetValue(symbol, out BoundBlockStatement? body))
+		{
+			body.WriteTo(writer);
+		}
+	}
 
-    public ImmutableArray<Diagnostic> Emit(CodePlacer placer, BlockBuilder builder)
-    {
-        if (GlobalScope.Diagnostics.HasErrors())
-        {
-            return GlobalScope.Diagnostics;
-        }
+	public ImmutableArray<Diagnostic> Emit(CodePlacer placer, BlockBuilder builder)
+	{
+		if (GlobalScope.Diagnostics.HasErrors())
+		{
+			return GlobalScope.Diagnostics;
+		}
 
-        BoundProgram program = GetProgram();
-        return Emitter.Emit(program, placer, builder);
-    }
+		BoundProgram program = GetProgram();
+		return Emitter.Emit(program, placer, builder);
+	}
 
-    internal BoundProgram GetProgram()
-    {
-        BoundProgram? previous = Previous?.GetProgram();
-        return Binder.BindProgram(previous, GlobalScope);
-    }
+	internal BoundProgram GetProgram()
+	{
+		BoundProgram? previous = Previous?.GetProgram();
+		return Binder.BindProgram(previous, GlobalScope);
+	}
 }

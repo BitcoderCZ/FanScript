@@ -1,20 +1,24 @@
-﻿using FanScript.Compiler.Symbols.Variables;
+﻿// <copyright file="BoundVariableDeclarationStatement.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
 
 namespace FanScript.Compiler.Binding;
 
 internal sealed class BoundVariableDeclarationStatement : BoundStatement
 {
-    public BoundVariableDeclarationStatement(SyntaxNode syntax, VariableSymbol variable, BoundStatement? optionalAssignment)
-        : base(syntax)
-    {
-        Variable = variable;
-        OptionalAssignment = optionalAssignment;
-    }
+	public BoundVariableDeclarationStatement(SyntaxNode syntax, VariableSymbol variable, BoundStatement? optionalAssignment)
+		: base(syntax)
+	{
+		Variable = variable;
+		OptionalAssignment = optionalAssignment;
+	}
 
-    public override BoundNodeKind Kind => BoundNodeKind.VariableDeclarationStatement;
+	public override BoundNodeKind Kind => BoundNodeKind.VariableDeclarationStatement;
 
-    public VariableSymbol Variable { get; }
+	public VariableSymbol Variable { get; }
 
-    public BoundStatement? OptionalAssignment { get; }
+	public BoundStatement? OptionalAssignment { get; }
 }

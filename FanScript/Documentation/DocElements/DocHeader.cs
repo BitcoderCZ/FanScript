@@ -1,17 +1,21 @@
-﻿using System.Collections.Immutable;
+﻿// <copyright file="DocHeader.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using System.Collections.Immutable;
 
 namespace FanScript.Documentation.DocElements;
 
 public sealed class DocHeader : DocElement
 {
-    public DocHeader(ImmutableArray<DocArg> arguments, DocElement value, int level)
-        : base(arguments, value)
-    {
-        Value = value;
-        Level = level;
-    }
+	public DocHeader(ImmutableArray<DocArg> arguments, DocElement value, int level)
+		: base(arguments, value)
+	{
+		Value = value;
+		Level = level;
+	}
 
-    public override DocElement Value { get; }
+	public override DocElement Value { get; }
 
-    public int Level { get; }
+	public int Level { get; }
 }

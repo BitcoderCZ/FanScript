@@ -2,25 +2,25 @@
 
 internal struct ChannelTimeInfo
 {
-    public static readonly TimeSpan FrameLength = TimeSpan.FromSeconds(1d / 60d);
+	public static readonly TimeSpan FrameLength = TimeSpan.FromSeconds(1d / 60d);
 
-    public TimeSpan CurrentTime;
-    public long CurrentFrame;
+	public TimeSpan CurrentTime;
+	public long CurrentFrame;
 
-    private TimeSpan deltaLeftOver;
+	private TimeSpan deltaLeftOver;
 
-    public long AddDelta(TimeSpan deltaTime)
-    {
-        CurrentTime += deltaTime;
+	public long AddDelta(TimeSpan deltaTime)
+	{
+		CurrentTime += deltaTime;
 
-        double frameDelta = (deltaTime.Ticks + (double)deltaLeftOver.Ticks) / FrameLength.Ticks;
+		double frameDelta = (deltaTime.Ticks + (double)deltaLeftOver.Ticks) / FrameLength.Ticks;
 
-        deltaLeftOver = new TimeSpan((long)((frameDelta % 1d) * FrameLength.Ticks));
+		deltaLeftOver = new TimeSpan((long)((frameDelta % 1d) * FrameLength.Ticks));
 
-        long wholeFrameDelta = (long)frameDelta;
+		long wholeFrameDelta = (long)frameDelta;
 
-        CurrentFrame += wholeFrameDelta;
+		CurrentFrame += wholeFrameDelta;
 
-        return wholeFrameDelta;
-    }
+		return wholeFrameDelta;
+	}
 }

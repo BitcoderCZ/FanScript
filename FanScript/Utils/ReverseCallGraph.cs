@@ -1,45 +1,49 @@
-﻿using FanScript.Compiler.Symbols.Functions;
+﻿// <copyright file="ReverseCallGraph.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Compiler.Symbols.Functions;
 
 namespace FanScript.Utils;
 
 // a { b, c, d } b { c } c { d } d { } -> d, c, b, a
 internal sealed class ReverseCallGraph
 {
-    private readonly SetMultiValueDictionary<FunctionSymbol, FunctionSymbol> _callGraph;
+	private readonly SetMultiValueDictionary<FunctionSymbol, FunctionSymbol> _callGraph;
 
-    public ReverseCallGraph(SetMultiValueDictionary<FunctionSymbol, FunctionSymbol> callGraph)
-    {
-        _callGraph = callGraph;
-    }
+	public ReverseCallGraph(SetMultiValueDictionary<FunctionSymbol, FunctionSymbol> callGraph)
+	{
+		_callGraph = callGraph;
+	}
 
-    public IEnumerable<FunctionSymbol> GetCallOrder()
-    {
-        HashSet<FunctionSymbol> visited = [];
-        Stack<FunctionSymbol> stack = new();
+	public IEnumerable<FunctionSymbol> GetCallOrder()
+	{
+		HashSet<FunctionSymbol> visited = [];
+		Stack<FunctionSymbol> stack = new();
 
-        foreach (var function in _callGraph.Keys)
-        {
-            if (!visited.Contains(function))
-            {
-                Dfs(function, visited, stack);
-            }
-        }
+		foreach (var function in _callGraph.Keys)
+		{
+			if (!visited.Contains(function))
+			{
+				Dfs(function, visited, stack);
+			}
+		}
 
-        return stack.Reverse();
-    }
+		return stack.Reverse();
+	}
 
-    private void Dfs(FunctionSymbol function, HashSet<FunctionSymbol> visited, Stack<FunctionSymbol> stack)
-    {
-        visited.Add(function);
+	private void Dfs(FunctionSymbol function, HashSet<FunctionSymbol> visited, Stack<FunctionSymbol> stack)
+	{
+		visited.Add(function);
 
-        foreach (var func in _callGraph.Where(kvp => kvp.Value.Contains(function)).Select(kvp => kvp.Key))
-        {
-            if (!visited.Contains(func))
-            {
-                Dfs(func, visited, stack);
-            }
-        }
+		foreach (var func in _callGraph.Where(kvp => kvp.Value.Contains(function)).Select(kvp => kvp.Key))
+		{
+			if (!visited.Contains(func))
+			{
+				Dfs(func, visited, stack);
+			}
+		}
 
-        stack.Push(function);
-    }
+		stack.Push(function);
+	}
 }

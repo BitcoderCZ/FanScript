@@ -1,22 +1,26 @@
-﻿using FanScript.Documentation.Attributes;
+﻿// <copyright file="BoundUnaryOperatorKind.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Documentation.Attributes;
 
 namespace FanScript.Compiler.Binding;
 
 internal enum BoundUnaryOperatorKind
 {
-    [UnaryOperatorDoc(
-        Info = """
+	[UnaryOperatorDoc(
+		Info = """
         Returns a.
         """)]
-    Identity,
-    [UnaryOperatorDoc(
-        Info = """
+	Identity,
+	[UnaryOperatorDoc(
+		Info = """
         Returns the negation of a (5 -> -5, vec3(3, 0, -2) -> vec3(-3, 0, 2)).
         """)]
-    Negation,
-    [UnaryOperatorDoc(
-        Info = """
+	Negation,
+	[UnaryOperatorDoc(
+		Info = """
         If a is true, returns false, otherwise returns true.
         """)]
-    LogicalNegation,
+	LogicalNegation,
 }

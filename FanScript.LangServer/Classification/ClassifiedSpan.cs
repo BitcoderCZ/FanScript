@@ -5,12 +5,12 @@ namespace FanScript.LangServer.Classification;
 
 public readonly struct ClassifiedSpan
 {
-    public readonly TextSpan Span;
-    public readonly SemanticTokenType Classification;
+	public readonly TextSpan Span;
+	public readonly SemanticTokenType Classification;
 
-    public ClassifiedSpan(TextSpan span, SemanticTokenType classification)
-    {
-        Span = span;
-        Classification = classification;
-    }
+	public ClassifiedSpan(TextSpan span, SemanticTokenType classification)
+	{
+		Span = span;
+		Classification = classification;
+	}
 }

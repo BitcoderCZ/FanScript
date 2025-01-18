@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -37,7 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="StyleCop.Analyzers.Unstable" Version="1.2.0.556">
+    <PackageReference Include="hamarb123.Analyzers" Version="1.2.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
@@ -53,9 +53,6 @@
     </Reference>
     <Reference Include="MathUtils">
       <HintPath>..\Dlls\MathUtils.dll</HintPath>
-    </Reference>
-    <Reference Include="zlib.net">
-      <HintPath>..\Dlls\zlib.net.dll</HintPath>
     </Reference>
   </ItemGroup>
 

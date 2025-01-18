@@ -1,20 +1,24 @@
-﻿namespace FanScript.Compiler.Syntax;
+﻿// <copyright file="PropertyExpressionSyntax.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+namespace FanScript.Compiler.Syntax;
 
 public sealed partial class PropertyExpressionSyntax : AssignableExpressionSyntax
 {
-    internal PropertyExpressionSyntax(SyntaxTree syntaxTree, ExpressionSyntax baseExpression, SyntaxToken dotToken, ExpressionSyntax expression)
-        : base(syntaxTree)
-    {
-        BaseExpression = baseExpression;
-        DotToken = dotToken;
-        Expression = expression;
-    }
+	internal PropertyExpressionSyntax(SyntaxTree syntaxTree, ExpressionSyntax baseExpression, SyntaxToken dotToken, ExpressionSyntax expression)
+		: base(syntaxTree)
+	{
+		BaseExpression = baseExpression;
+		DotToken = dotToken;
+		Expression = expression;
+	}
 
-    public override SyntaxKind Kind => SyntaxKind.PropertyExpression;
+	public override SyntaxKind Kind => SyntaxKind.PropertyExpression;
 
-    public ExpressionSyntax BaseExpression { get; }
+	public ExpressionSyntax BaseExpression { get; }
 
-    public SyntaxToken DotToken { get; }
+	public SyntaxToken DotToken { get; }
 
-    public ExpressionSyntax Expression { get; }
+	public ExpressionSyntax Expression { get; }
 }

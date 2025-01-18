@@ -1,23 +1,27 @@
-﻿using System.Collections.Immutable;
+﻿// <copyright file="EventLink.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
 using FanScript.Compiler;
 using FanScript.Utils;
+using System.Collections.Immutable;
 
 namespace FanScript.Documentation.DocElements.Links;
 
 public sealed class EventLink : DocLink
 {
-    public EventLink(ImmutableArray<DocArg> arguments, DocString value, EventType @event)
-        : base(arguments, value)
-    {
-        Event = @event;
-    }
+	public EventLink(ImmutableArray<DocArg> arguments, DocString value, EventType @event)
+		: base(arguments, value)
+	{
+		Event = @event;
+	}
 
-    public EventType Event { get; }
+	public EventType Event { get; }
 
-    public override (string DisplayString, string LinkString) GetStrings()
-    {
-        string eventName = Enum.GetName(Event)!;
+	public override (string DisplayString, string LinkString) GetStrings()
+	{
+		string eventName = Enum.GetName(Event)!;
 
-        return (eventName.ToLowerFirst(), eventName);
-    }
+		return (eventName.ToLowerFirst(), eventName);
+	}
 }

@@ -1,20 +1,24 @@
-﻿using System.Collections.Immutable;
+﻿// <copyright file="UrlLink.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using System.Collections.Immutable;
 
 namespace FanScript.Documentation.DocElements.Links;
 
 public sealed class UrlLink : DocLink
 {
-    public UrlLink(ImmutableArray<DocArg> arguments, DocString value, string displayString, string url)
-        : base(arguments, value)
-    {
-        DisplayString = displayString;
-        Url = url;
-    }
+	public UrlLink(ImmutableArray<DocArg> arguments, DocString value, string displayString, string url)
+		: base(arguments, value)
+	{
+		DisplayString = displayString;
+		Url = url;
+	}
 
-    public string DisplayString { get; }
+	public string DisplayString { get; }
 
-    public string Url { get; }
+	public string Url { get; }
 
-    public override (string DisplayString, string LinkString) GetStrings()
-        => (DisplayString, Url);
+	public override (string DisplayString, string LinkString) GetStrings()
+		=> (DisplayString, Url);
 }

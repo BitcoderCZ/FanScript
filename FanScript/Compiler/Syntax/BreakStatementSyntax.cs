@@ -1,14 +1,18 @@
-﻿namespace FanScript.Compiler.Syntax;
+﻿// <copyright file="BreakStatementSyntax.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+namespace FanScript.Compiler.Syntax;
 
 internal sealed partial class BreakStatementSyntax : StatementSyntax
 {
-    internal BreakStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keyword)
-        : base(syntaxTree)
-    {
-        Keyword = keyword;
-    }
+	internal BreakStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keyword)
+		: base(syntaxTree)
+	{
+		Keyword = keyword;
+	}
 
-    public override SyntaxKind Kind => SyntaxKind.BreakStatement;
+	public override SyntaxKind Kind => SyntaxKind.BreakStatement;
 
-    public SyntaxToken Keyword { get; }
+	public SyntaxToken Keyword { get; }
 }

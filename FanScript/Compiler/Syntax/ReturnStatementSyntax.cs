@@ -1,17 +1,21 @@
-﻿namespace FanScript.Compiler.Syntax;
+﻿// <copyright file="ReturnStatementSyntax.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+namespace FanScript.Compiler.Syntax;
 
 public sealed partial class ReturnStatementSyntax : StatementSyntax
 {
-    internal ReturnStatementSyntax(SyntaxTree syntaxTree, SyntaxToken returnKeyword, ExpressionSyntax? expression)
-        : base(syntaxTree)
-    {
-        ReturnKeyword = returnKeyword;
-        Expression = expression;
-    }
+	internal ReturnStatementSyntax(SyntaxTree syntaxTree, SyntaxToken returnKeyword, ExpressionSyntax? expression)
+		: base(syntaxTree)
+	{
+		ReturnKeyword = returnKeyword;
+		Expression = expression;
+	}
 
-    public override SyntaxKind Kind => SyntaxKind.ReturnStatement;
+	public override SyntaxKind Kind => SyntaxKind.ReturnStatement;
 
-    public SyntaxToken ReturnKeyword { get; }
+	public SyntaxToken ReturnKeyword { get; }
 
-    public ExpressionSyntax? Expression { get; }
+	public ExpressionSyntax? Expression { get; }
 }
