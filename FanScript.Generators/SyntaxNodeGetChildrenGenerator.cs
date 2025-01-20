@@ -61,7 +61,6 @@ public class SyntaxNodeGetChildrenGenerator : IIncrementalGenerator
 				{
 					foreach (var property in model.Properties)
 					{
-						//indentedTextWriter.WriteLine(property.Name + " " + property.Nullable + " " + property.Type + "node: " + property.IsSyntaxNode);
 						if (property.Type == "FanScript.Compiler.Syntax.ModifierClauseSyntax")
 						{
 							indentedTextWriter.WriteLine($"foreach (var child in {property.Name}.Modifiers)");
