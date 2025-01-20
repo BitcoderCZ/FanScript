@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class VariableDeclarationExpressionSyntax : ExpressionSyntax
 {
 	internal VariableDeclarationExpressionSyntax(SyntaxTree syntaxTree, ModifierClauseSyntax modifierClause, TypeClauseSyntax typeClause, SyntaxToken identifierToken)

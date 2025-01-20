@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class ReturnStatementSyntax : StatementSyntax
 {
 	internal ReturnStatementSyntax(SyntaxTree syntaxTree, SyntaxToken returnKeyword, ExpressionSyntax? expression)

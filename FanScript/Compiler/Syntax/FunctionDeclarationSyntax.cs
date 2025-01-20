@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class FunctionDeclarationSyntax : MemberSyntax
 {
 	internal FunctionDeclarationSyntax(SyntaxTree syntaxTree, ModifierClauseSyntax modifiers, SyntaxToken keyword, TypeClauseSyntax? typeClause, SyntaxToken identifier, SyntaxToken openParenthesisToken, SeparatedSyntaxList<ParameterSyntax> parameters, SyntaxToken closeParenthesisToken, BlockStatementSyntax body)

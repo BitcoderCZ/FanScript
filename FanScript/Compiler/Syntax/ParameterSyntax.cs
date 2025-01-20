@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class ParameterSyntax : SyntaxNode
 {
 	internal ParameterSyntax(SyntaxTree syntaxTree, ModifierClauseSyntax modifiers, TypeClauseSyntax typeClause, SyntaxToken identifier)

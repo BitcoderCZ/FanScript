@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class ArgumentClauseSyntax : SyntaxNode
 {
 	internal ArgumentClauseSyntax(SyntaxTree syntaxTree, SyntaxToken openParenthesisToken, SeparatedSyntaxList<ModifiersWExpressionSyntax> arguments, SyntaxToken closeParenthesisToken)

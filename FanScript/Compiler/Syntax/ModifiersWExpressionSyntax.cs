@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class ModifiersWExpressionSyntax : SyntaxNode
 {
 	internal ModifiersWExpressionSyntax(SyntaxTree syntaxTree, ModifierClauseSyntax modifiers, ExpressionSyntax expression)

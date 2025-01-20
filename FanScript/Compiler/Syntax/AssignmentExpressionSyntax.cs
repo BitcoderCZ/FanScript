@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class AssignmentExpressionSyntax : ExpressionSyntax
 {
 	internal AssignmentExpressionSyntax(SyntaxTree syntaxTree, AssignableExpressionSyntax destination, SyntaxToken assignmentToken, ExpressionSyntax expression)

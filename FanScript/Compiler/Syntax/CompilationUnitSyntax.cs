@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class CompilationUnitSyntax : SyntaxNode
 {
 	internal CompilationUnitSyntax(SyntaxTree syntaxTree, ImmutableArray<MemberSyntax> members, SyntaxToken endOfFileToken)

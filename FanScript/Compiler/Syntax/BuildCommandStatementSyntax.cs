@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class BuildCommandStatementSyntax : StatementSyntax
 {
 	public BuildCommandStatementSyntax(SyntaxTree syntaxTree, SyntaxToken hashtagToken, SyntaxToken identifier)

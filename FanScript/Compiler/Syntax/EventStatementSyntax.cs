@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class EventStatementSyntax : StatementSyntax
 {
 	internal EventStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keywordToken, SyntaxToken identifier, ArgumentClauseSyntax? argumentClause, BlockStatementSyntax block)

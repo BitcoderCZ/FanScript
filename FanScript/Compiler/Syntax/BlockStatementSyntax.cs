@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class BlockStatementSyntax : StatementSyntax
 {
 	internal BlockStatementSyntax(SyntaxTree syntaxTree, SyntaxToken openBraceToken, ImmutableArray<StatementSyntax> statements, SyntaxToken closeBraceToken)

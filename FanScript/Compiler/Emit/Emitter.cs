@@ -342,7 +342,7 @@ internal sealed class Emitter : IEmitContext
 				}
 		}
 
-		ConnectToLabel(statement.Label.Name, BasicEmitStore.COut(block, block.Type.TerminalArray.Get (^ 2)));
+		ConnectToLabel(statement.Label.Name, BasicEmitStore.COut(block, block.Type.TerminalArray.Get(^2)));
 
 		return new BasicEmitStore(block);
 

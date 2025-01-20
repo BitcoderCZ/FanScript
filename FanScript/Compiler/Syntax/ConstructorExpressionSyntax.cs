@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class ConstructorExpressionSyntax : ExpressionSyntax
 {
 	internal ConstructorExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken keywordToken, SyntaxToken openParenthesisToken, ExpressionSyntax expressionX, SyntaxToken comma0Token, ExpressionSyntax expressionY, SyntaxToken comma1Token, ExpressionSyntax expressionZ, SyntaxToken closeParenthesisToken)

@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class GlobalStatementSyntax : MemberSyntax
 {
 	internal GlobalStatementSyntax(SyntaxTree syntaxTree, StatementSyntax statement)

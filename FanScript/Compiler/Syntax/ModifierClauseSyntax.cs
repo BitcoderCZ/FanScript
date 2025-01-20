@@ -6,6 +6,7 @@ using System.Collections.Immutable;
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class ModifierClauseSyntax : SyntaxNode
 {
 	public ModifierClauseSyntax(SyntaxTree syntaxTree, ImmutableArray<SyntaxToken> modifiers)

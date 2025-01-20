@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class PostfixExpressionSyntax : ExpressionSyntax
 {
 	internal PostfixExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken, SyntaxToken operatorToken)

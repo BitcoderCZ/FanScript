@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class ArraySegmentExpressionSyntax : ExpressionSyntax
 {
 	internal ArraySegmentExpressionSyntax(SyntaxTree syntaxTree, SyntaxToken openSquareToken, SeparatedSyntaxList<ExpressionSyntax> elements, SyntaxToken closeSquareToken)

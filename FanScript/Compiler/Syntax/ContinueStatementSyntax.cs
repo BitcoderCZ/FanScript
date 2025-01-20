@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 internal sealed partial class ContinueStatementSyntax : StatementSyntax
 {
 	internal ContinueStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keyword)

@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 public sealed partial class PostfixStatementSyntax : StatementSyntax
 {
 	internal PostfixStatementSyntax(SyntaxTree syntaxTree, SyntaxToken identifierToken, SyntaxToken operatorToken)

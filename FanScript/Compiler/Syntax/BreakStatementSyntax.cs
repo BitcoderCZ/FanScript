@@ -4,6 +4,7 @@
 
 namespace FanScript.Compiler.Syntax;
 
+[GeneratedGetChildren]
 internal sealed partial class BreakStatementSyntax : StatementSyntax
 {
 	internal BreakStatementSyntax(SyntaxTree syntaxTree, SyntaxToken keyword)

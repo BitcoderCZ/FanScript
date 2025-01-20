@@ -1,49 +1,50 @@
 ﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
+using System;
 using System.CodeDom.Compiler;
-using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace FanScript.Generators
+namespace FanScript.Generators;
+
+[Generator]
+public class SyntaxNodeGetChildrenGenerator : IIncrementalGenerator
 {
-	// TODO: switch to incremental generator
-#pragma warning disable RS1035 // Do not use APIs banned for analyzers
-	[Generator]
-	public class SyntaxNodeGetChildrenGenerator : ISourceGenerator
+	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-		public void Initialize(GeneratorInitializationContext context)
+		context.RegisterPostInitializationOutput(static postInitializationContext =>
 		{
-		}
+			postInitializationContext.AddSource("GeneratedGetChildrenAttribute.g.cs", SourceText.From("""
+                using System;
+                using Microsoft.CodeAnalysis;
 
-		public void Execute(GeneratorExecutionContext context)
+                namespace FanScript.Compiler.Syntax
+                {
+                    [AttributeUsage(AttributeTargets.Class)]
+                    internal sealed class GeneratedGetChildrenAttribute : Attribute
+                    {
+                    }
+                }
+                """, Encoding.UTF8));
+		});
+
+		var pipeline = context.SyntaxProvider.ForAttributeWithMetadataName(
+		   fullyQualifiedMetadataName: "FanScript.Compiler.Syntax.GeneratedGetChildrenAttribute",
+		   predicate: static (syntaxNode, cancellationToken) => true,
+		   transform: static (context, cancellationToken) =>
+		   {
+			   var @class = (INamedTypeSymbol)context.TargetSymbol;
+			   var properties = @class.GetMembers().OfType<IPropertySymbol>().Select(prop => new Property(prop.Name, prop.Type.ToDisplayString(), prop.Type.NullableAnnotation == NullableAnnotation.Annotated, IsDerivedFrom(prop.Type, "SyntaxNode")));
+			   return new Model(
+				   ClassName: @class.Name,
+				   Properties: properties.ToImmutableArray());
+		   }
+		);
+
+		context.RegisterSourceOutput(pipeline, static (context, model) =>
 		{
-			HashSet<string> typesToSkip = new HashSet<string>()
-			{
-				"CallExpressionSyntax",
-				"CallStatementSyntax",
-				"TypeClauseSyntax",
-				"VariableDeclarationStatementSyntax",
-			};
-
-			SourceText sourceText;
-
-			var compilation = (CSharpCompilation)context.Compilation;
-
-			var immutableArrayType = compilation.GetTypeByMetadataName("System.Collections.Immutable.ImmutableArray`1");
-			var separatedSyntaxListType = compilation.GetTypeByMetadataName("FanScript.Compiler.Syntax.SeparatedSyntaxList`1");
-			var syntaxNodeType = compilation.GetTypeByMetadataName("FanScript.Compiler.Syntax.SyntaxNode");
-			var modifierClauseSyntaxType = compilation.GetTypeByMetadataName("FanScript.Compiler.Syntax.ModifierClauseSyntax");
-
-			if (immutableArrayType == null || separatedSyntaxListType == null || syntaxNodeType == null)
-				return;
-
-			var types = GetAllTypes(compilation.Assembly);
-			var syntaxNodeTypes = types.Where(t => !t.IsAbstract && IsPartial(t) && IsDerivedFrom(t, syntaxNodeType));
-
 			string indentString = "    ";
 			using (var stringWriter = new StringWriter())
 			using (var indentedTextWriter = new IndentedTextWriter(stringWriter, indentString))
@@ -53,66 +54,43 @@ namespace FanScript.Generators
 				indentedTextWriter.WriteLine("using System.Collections.Generic;");
 				indentedTextWriter.WriteLine("using System.Collections.Immutable;");
 				indentedTextWriter.WriteLine();
-				using (var nameSpaceCurly = new CurlyIndenter(indentedTextWriter, "namespace FanScript.Compiler.Syntax"))
+
+				using (indentedTextWriter.CurlyIndent("namespace FanScript.Compiler.Syntax"))
+				using (indentedTextWriter.CurlyIndent($"partial class {model.ClassName}"))
+				using (indentedTextWriter.CurlyIndent("public override IEnumerable<SyntaxNode> GetChildren()"))
 				{
-					foreach (var type in syntaxNodeTypes)
+					foreach (var property in model.Properties)
 					{
-						if (typesToSkip.Contains(type.Name))
-							continue;
-
-						using (var classCurly = new CurlyIndenter(indentedTextWriter, $"partial class {type.Name}"))
-						using (var getChildCurly = new CurlyIndenter(indentedTextWriter, "public override IEnumerable<SyntaxNode> GetChildren()"))
+						//indentedTextWriter.WriteLine(property.Name + " " + property.Nullable + " " + property.Type + "node: " + property.IsSyntaxNode);
+						if (property.Type == "FanScript.Compiler.Syntax.ModifierClauseSyntax")
 						{
-							var properties = type.GetMembers().OfType<IPropertySymbol>();
-
-							HashSet<string> processedProperties = new HashSet<string>();
-
-							foreach (var property in properties)
+							indentedTextWriter.WriteLine($"foreach (var child in {property.Name}.Modifiers)");
+							indentedTextWriter.WriteLine($"{indentString}yield return child;");
+						}
+						else if (property.IsSyntaxNode)
+						{
+							if (property.Nullable)
 							{
-								if (property.Type is INamedTypeSymbol propertyType)
-								{
-									if (SymbolEqualityComparer.Default.Equals(propertyType.OriginalDefinition, modifierClauseSyntaxType))
-									{
-										indentedTextWriter.WriteLine($"foreach (var child in {property.Name}.Modifiers)");
-										indentedTextWriter.WriteLine($"{indentString}yield return child;");
-
-										processedProperties.Add(property.Name);
-									}
-									else if (IsDerivedFrom(propertyType, syntaxNodeType))
-									{
-										bool canBeNull = property.NullableAnnotation == NullableAnnotation.Annotated;
-										if (canBeNull)
-										{
-											indentedTextWriter.WriteLine($"if ({property.Name} is not null)");
-											indentedTextWriter.Indent++;
-										}
-
-										indentedTextWriter.WriteLine($"yield return {property.Name};");
-
-										if (canBeNull)
-											indentedTextWriter.Indent--;
-
-										processedProperties.Add(property.Name);
-									}
-									else if (propertyType.TypeArguments.Length == 1 &&
-											 IsDerivedFrom(propertyType.TypeArguments[0], syntaxNodeType) &&
-											 SymbolEqualityComparer.Default.Equals(propertyType.OriginalDefinition, immutableArrayType))
-									{
-										indentedTextWriter.WriteLine($"foreach (var child in {property.Name})");
-										indentedTextWriter.WriteLine($"{indentString}yield return child;");
-
-										processedProperties.Add(property.Name);
-									}
-									else if (SymbolEqualityComparer.Default.Equals(propertyType.OriginalDefinition, separatedSyntaxListType) &&
-											 IsDerivedFrom(propertyType.TypeArguments[0], syntaxNodeType))
-									{
-										indentedTextWriter.WriteLine($"foreach (var child in {property.Name}.GetWithSeparators())");
-										indentedTextWriter.WriteLine($"{indentString}yield return child;");
-
-										processedProperties.Add(property.Name);
-									}
-								}
+								indentedTextWriter.WriteLine($"if ({property.Name} is not null)");
+								indentedTextWriter.Indent++;
 							}
+
+							indentedTextWriter.WriteLine($"yield return {property.Name};");
+
+							if (property.Nullable)
+							{
+								indentedTextWriter.Indent--;
+							}
+						}
+						else if (property.Type.StartsWith("System.Collections.Immutable.ImmutableArray"))
+						{
+							indentedTextWriter.WriteLine($"foreach (var child in {property.Name})");
+							indentedTextWriter.WriteLine($"{indentString}yield return child;");
+						}
+						else if (property.Type.StartsWith("IsSeperatedSyntaxList", StringComparison.Ordinal))
+						{
+							indentedTextWriter.WriteLine($"foreach (var child in {property.Name}.GetWithSeparators())");
+							indentedTextWriter.WriteLine($"{indentString}yield return child;");
 						}
 					}
 				}
@@ -120,62 +98,29 @@ namespace FanScript.Generators
 				indentedTextWriter.Flush();
 				stringWriter.Flush();
 
-				sourceText = SourceText.From(stringWriter.ToString(), Encoding.UTF8);
+				context.AddSource($"{model.ClassName}_GetChildren.g.cs", SourceText.From(stringWriter.ToString(), Encoding.UTF8));
 			}
-
-			context.AddSource("SyntaxNode_GetChildren.g.cs", sourceText);
-		}
-
-		private IReadOnlyList<INamedTypeSymbol> GetAllTypes(IAssemblySymbol symbol)
-		{
-			var result = new List<INamedTypeSymbol>();
-			GetAllTypes(result, symbol.GlobalNamespace);
-			result.Sort((x, y) => string.CompareOrdinal(x.MetadataName, y.MetadataName));
-			return result;
-		}
-
-		private void GetAllTypes(List<INamedTypeSymbol> result, INamespaceOrTypeSymbol symbol)
-		{
-			if (symbol is INamedTypeSymbol type)
-				result.Add(type);
-
-			foreach (var child in symbol.GetMembers())
-				if (child is INamespaceOrTypeSymbol nsChild)
-					GetAllTypes(result, nsChild);
-		}
-
-		private bool IsDerivedFrom(ITypeSymbol type, INamedTypeSymbol baseType)
-		{
-			var current = type;
-
-			while (current != null)
-			{
-				if (SymbolEqualityComparer.Default.Equals(current, baseType))
-					return true;
-
-				current = current.BaseType;
-			}
-
-			return false;
-		}
-
-		private bool IsPartial(INamedTypeSymbol type)
-		{
-			foreach (var declaration in type.DeclaringSyntaxReferences)
-			{
-				var syntax = declaration.GetSyntax();
-				if (syntax is TypeDeclarationSyntax typeDeclaration)
-				{
-					foreach (var modifer in typeDeclaration.Modifiers)
-					{
-						if (modifer.ValueText == "partial")
-							return true;
-					}
-				}
-			}
-
-			return false;
-		}
+		});
 	}
-#pragma warning restore RS1035 // Do not use APIs banned for analyzers
+
+	private static bool IsDerivedFrom(ITypeSymbol typeSymbol, string baseTypeName)
+	{
+		var currentBaseType = typeSymbol.BaseType;
+
+		while (currentBaseType != null)
+		{
+			if (currentBaseType.Name == baseTypeName)
+			{
+				return true;
+			}
+
+			currentBaseType = currentBaseType.BaseType;
+		}
+
+		return false;
+	}
+
+	private record Model(string ClassName, ImmutableArray<Property> Properties);
+
+	private record struct Property(string Name, string Type, bool Nullable, bool IsSyntaxNode);
 }
