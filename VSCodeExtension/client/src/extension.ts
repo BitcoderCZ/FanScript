@@ -17,7 +17,7 @@ import {
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-	const serverExecutable = path.join(context.extensionPath, os.platform() === 'win32' ? 'FanScript.LangServer.exe' : 'FanScript.LangServer');
+	const serverExecutable = path.join(context.extensionPath, os.platform() === 'win32' ? '..\\FanScript.LangServer\\bin\\Debug\\net9.0\\FanScript.LangServer.exe' : '../FanScript.LangServer/bin/Debug/net9.0/FanScript.LangServer');
 
     // Configure the server options to use stdio
     const serverOptions: ServerOptions = {
