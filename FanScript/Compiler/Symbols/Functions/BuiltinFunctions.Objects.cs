@@ -2,13 +2,13 @@
 // Copyright (c) BitcoderCZ. All rights reserved.
 // </copyright>
 
+using FancadeLoaderLib.Editing;
+using FancadeLoaderLib.Editing.Scripting.Terminals;
+using FancadeLoaderLib.Editing.Scripting.TerminalStores;
 using FanScript.Compiler.Binding;
-using FanScript.Compiler.Emit;
-using FanScript.Compiler.Emit.BlockBuilders;
 using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Documentation.Attributes;
-using FanScript.FCInfo;
 using MathUtils.Vectors;
 
 namespace FanScript.Compiler.Symbols;
@@ -48,24 +48,25 @@ internal static partial class BuiltinFunctions
 				  if (constant is null)
 				  {
 					  context.Diagnostics.ReportValueMustBeConstant(call.Arguments[0].Syntax.Location);
-					  return NopEmitStore.Instance;
+					  return NopTerminalStore.Instance;
 				  }
 
 				  int3 pos = (int3)(float3)constant.GetValueOrDefault(TypeSymbol.Vector3); // unbox, then cast
 
-				  if (context.Builder is not IConnectToBlocksBuilder)
-				  {
-					  context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
+				  // TODO
+				  //if (context.Builder is not IConnectToBlocksBuilder)
+				  //{
+				  // context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
 
-					  using (context.ExpressionBlock())
-					  {
-						  context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
-					  }
+				  // using (context.ExpressionBlock())
+				  // {
+				  //  context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
+				  // }
 
-					  return NopEmitStore.Instance;
-				  }
+				  // return NopTerminalStore.Instance;
+				  //}
 
-				  return new AbsoluteEmitStore(pos, null);
+				  return new TerminalStore(NopTerminal.Instance, [new AbsolutePositionTerminal(pos)]);
 			  });
 
 		[FunctionDoc(
@@ -106,24 +107,25 @@ internal static partial class BuiltinFunctions
 				  object?[]? args = context.ValidateConstants(call.Arguments.AsMemory(), true);
 				  if (args is null)
 				  {
-					  return NopEmitStore.Instance;
+					  return NopTerminalStore.Instance;
 				  }
 
 				  int3 pos = new int3((int)((float?)args[0] ?? 0f), (int)((float?)args[1] ?? 0f), (int)((float?)args[2] ?? 0f)); // unbox, then cast
 
-				  if (context.Builder is not IConnectToBlocksBuilder)
-				  {
-					  context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
+				  // TODO
+				  //if (context.Builder is not IConnectToBlocksBuilder)
+				  //{
+				  // context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
 
-					  using (context.ExpressionBlock())
-					  {
-						  context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
-					  }
+				  // using (context.ExpressionBlock())
+				  // {
+				  //  context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
+				  // }
 
-					  return NopEmitStore.Instance;
-				  }
+				  // return NopTerminalStore.Instance;
+				  //}
 
-				  return new AbsoluteEmitStore(pos, null);
+				  return new TerminalStore(NopTerminal.Instance, [new AbsolutePositionTerminal(pos)]);
 			  });
 
 		[FunctionDoc(
@@ -147,7 +149,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("position", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Objects.SetPos, argumentOffset: 1))
+				(call, context) => EmitAX0(call, context, StockBlocks.Objects.SetPos, argumentOffset: 1))
 			{
 				IsMethod = true,
 			};
@@ -174,7 +176,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("rotation", TypeSymbol.Rotation),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Objects.SetPos))
+				(call, context) => EmitAX0(call, context, StockBlocks.Objects.SetPos))
 			{
 				IsMethod = true,
 			};
@@ -210,7 +212,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("rotation", Modifiers.Out, TypeSymbol.Rotation),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitXX(call, context, 2, Blocks.Objects.GetPos))
+				(call, context) => EmitXX(call, context, 2, StockBlocks.Objects.GetPos))
 			{
 				IsMethod = true,
 			};
@@ -244,7 +246,7 @@ internal static partial class BuiltinFunctions
                 Won't detect object created on the same frame as the raycast is performed.
                 """,
 				"""
-                Won't detect objects without collion or script blocks.
+                Won't detect objects without collion or script StockBlocks.
                 """,
 				"""
                 If the raycast hits the floor, <link type="param">hitObj</> will be equal to null.
@@ -262,7 +264,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("hitObj", Modifiers.Out, TypeSymbol.Object),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitXX(call, context, 3, Blocks.Objects.Raycast));
+				(call, context) => EmitXX(call, context, 3, StockBlocks.Objects.Raycast));
 
 		[FunctionDoc(
 			Info = """
@@ -300,7 +302,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("max", Modifiers.Out, TypeSymbol.Vector3),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitXX(call, context, 2, Blocks.Objects.GetSize))
+				(call, context) => EmitXX(call, context, 2, StockBlocks.Objects.GetSize))
 			{
 				IsMethod = true,
 			};
@@ -334,7 +336,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("visible", TypeSymbol.Bool),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Objects.SetVisible))
+				(call, context) => EmitAX0(call, context, StockBlocks.Objects.SetVisible))
 			{
 				IsMethod = true,
 			};
@@ -370,7 +372,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("copy", Modifiers.Out, TypeSymbol.Object),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAXX(call, context, 1, Blocks.Objects.CreateObject))
+				(call, context) => EmitAXX(call, context, 1, StockBlocks.Objects.CreateObject))
 			{
 				IsMethod = true,
 			};
@@ -402,7 +404,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("object", TypeSymbol.Object),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Objects.DestroyObject))
+				(call, context) => EmitAX0(call, context, StockBlocks.Objects.DestroyObject))
 			{
 				IsMethod = true,
 			};

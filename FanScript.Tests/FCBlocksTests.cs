@@ -1,9 +1,11 @@
-﻿using FanScript.Compiler;
-using FanScript.Compiler.Emit;
-using FanScript.Compiler.Emit.BlockBuilders;
-using FanScript.Compiler.Emit.CodePlacers;
-using FanScript.Compiler.Emit.Utils;
-using FanScript.FCInfo;
+﻿using FancadeLoaderLib;
+using FancadeLoaderLib.Editing;
+using FancadeLoaderLib.Editing.Scripting;
+using FancadeLoaderLib.Editing.Scripting.Builders;
+using FancadeLoaderLib.Editing.Scripting.Placers;
+using FancadeLoaderLib.Editing.Scripting.Terminals;
+using FancadeLoaderLib.Editing.Scripting.TerminalStores;
+using FancadeLoaderLib.Editing.Scripting.Utils;
 using MathUtils.Vectors;
 using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
@@ -19,50 +21,57 @@ public class FCBlocksTests
 		HashSet<ushort> ids = [];
 
 		foreach (var def in GetBlockDefs())
-			if (!ids.Add(def.Id))
-				Assert.Fail($"Id {def.Id} has been encountered multiple times");
+		{
+			if (!ids.Add(def.Prefab.Id))
+			{
+				Assert.Fail($"Id {def.Prefab.Id} has been encountered multiple times");
+			}
+		}
 	}
+
 	[Fact]
 	public void Manual_TerminalsAreCorrect()
 	{
 		var defBlocks = GetBlockDefs().ToArray();
-		var active = defBlocks.Where(def => def.Type == BlockType.Active);
-		var pasive = defBlocks.Where(def => def.Type != BlockType.Active);
+		var active = defBlocks.Where(def => def.BlockType == BlockType.Active);
+		var pasive = defBlocks.Where(def => def.BlockType != BlockType.Active);
 
-		FrozenDictionary<(TerminalType, WireType), (BlockDef, Terminal)> terminalDict = new Dictionary<(TerminalType, WireType), (BlockDef, Terminal)>(generateTerminalDict()).ToFrozenDictionary();
+		FrozenDictionary<(TerminalType, WireType), (BlockDef, TerminalDef)> terminalDict = new Dictionary<(TerminalType, WireType), (BlockDef, TerminalDef)>(generateTerminalDict()).ToFrozenDictionary();
 
-		BlockBuilder builder = new GameFileBlockBuilder();
-		CodePlacer placer = new GroundCodePlacer(builder);
+		BlockBuilder builder = new GameFileBlockBuilder(null, "Test level", PrefabType.Level);
+		GroundCodePlacer placer = new GroundCodePlacer(builder);
 
 		using (placer.StatementBlock())
 		{
-			EmitConnector connector = new EmitConnector(builder.Connect);
+			TerminalConnector connector = new TerminalConnector(builder.Connect);
 
 			foreach (var def in active)
 			{
 				Block block = placeAndConnectAllTerminals(def);
 
-				connector.Add(new BasicEmitStore(block));
+				connector.Add(new TerminalStore(block));
 			}
 
 			foreach (var def in pasive)
 				placeAndConnectAllTerminals(def);
 		}
 
-		FancadeLoaderLib.Game game = (FancadeLoaderLib.Game)builder.Build(int3.Zero);
+		Game game = (Game)builder.Build(int3.Zero);
 
 		using (var stream = new FileStream("correct_terminals_output_check_manually", FileMode.Create, FileAccess.Write))
+		{
 			game.SaveCompressed(stream);
+		}
 
 		Block placeAndConnectAllTerminals(BlockDef def)
 		{
-			int off = def.Type == BlockType.Active ? 1 : 0;
-			if (def.TerminalArray.Length - off * 2 <= 0)
+			int off = def.BlockType == BlockType.Active ? 1 : 0;
+			if (def.Terminals.Length - off * 2 <= 0)
 				return placer.PlaceBlock(def);
 
-			ReadOnlySpan<Terminal> terminals = def.TerminalArray.AsSpan(off..^off);
+			ReadOnlySpan<TerminalDef> terminals = def.Terminals.AsSpan(off..^off);
 
-			(Block, Terminal)[] connectToTerminals = new (Block, Terminal)[terminals.Length];
+			(Block, TerminalDef)[] connectToTerminals = new (Block, TerminalDef)[terminals.Length];
 
 			Block block = placer.PlaceBlock(def);
 
@@ -70,7 +79,7 @@ public class FCBlocksTests
 			{
 				for (int i = terminals.Length - 1; i >= 0; i--)
 				{
-					Terminal terminal = terminals[i];
+					TerminalDef terminal = terminals[i];
 
 					WireType type = terminal.WireType;
 
@@ -85,15 +94,15 @@ public class FCBlocksTests
 				if (terminals[i].Type == TerminalType.In)
 				{
 					builder.Connect(
-						new BlockConnectTarget(_block, _terminal),
-						new BlockConnectTarget(block, terminals[i])
+						new BlockTerminal(_block, _terminal),
+						new BlockTerminal(block, terminals[i])
 					);
 				}
 				else
 				{
 					builder.Connect(
-						new BlockConnectTarget(block, terminals[i]),
-						new BlockConnectTarget(_block, _terminal)
+						new BlockTerminal(block, terminals[i]),
+						new BlockTerminal(_block, _terminal)
 					);
 				}
 			}
@@ -101,20 +110,20 @@ public class FCBlocksTests
 			return block;
 		}
 
-		IEnumerable<KeyValuePair<(TerminalType, WireType), (BlockDef, Terminal)>> generateTerminalDict()
+		IEnumerable<KeyValuePair<(TerminalType, WireType), (BlockDef, TerminalDef)>> generateTerminalDict()
 		{
 			foreach (var type in Enum.GetValues<WireType>())
 			{
 				if (type == WireType.Error)
 					continue;
 
-				BlockDef def = type == WireType.Void ? Blocks.Variables.Set_Variable_Num : Blocks.Variables.VariableByType(type);
+				BlockDef def = type == WireType.Void ? StockBlocks.Variables.Set_Variable_Num : StockBlocks.Variables.GetVariableByType(type);
 
 				WireType ptrType = type.ToPointer();
 
-				var terminal = def.TerminalArray.First(term => term.Type == TerminalType.Out && term.WireType == ptrType);
+				var terminal = def.Terminals.First(term => term.Type == TerminalType.Out && term.WireType == ptrType);
 
-				yield return new KeyValuePair<(TerminalType, WireType), (BlockDef, Terminal)>((TerminalType.In, type), (def, terminal));
+				yield return new KeyValuePair<(TerminalType, WireType), (BlockDef, TerminalDef)>((TerminalType.In, type), (def, terminal));
 			}
 
 			// this *could* be names "type", but for some fuckinf reason if it is, it's always WireType.Error
@@ -123,13 +132,13 @@ public class FCBlocksTests
 				if (type == WireType.Error)
 					continue;
 
-				BlockDef def = type == WireType.Void ? Blocks.Variables.Set_Variable_Num : Blocks.Variables.Set_VariableByType(type);
+				BlockDef def = type == WireType.Void ? StockBlocks.Variables.Set_Variable_Num : StockBlocks.Variables.SetVariableByType(type);
 
-				WireType nonPtrType = type.ToNormal();
+				WireType nonPtrType = type.ToNotPointer();
 
-				var terminal = def.TerminalArray.First(term => term.Type == TerminalType.In && term.WireType == nonPtrType);
+				var terminal = def.Terminals.First(term => term.Type == TerminalType.In && term.WireType == nonPtrType);
 
-				yield return new KeyValuePair<(TerminalType, WireType), (BlockDef, Terminal)>((TerminalType.Out, type), (def, terminal));
+				yield return new KeyValuePair<(TerminalType, WireType), (BlockDef, TerminalDef)>((TerminalType.Out, type), (def, terminal));
 			}
 		}
 	}
@@ -141,8 +150,8 @@ public class FCBlocksTests
 
 		foreach (FieldInfo? field in
 			Enumerable.Concat(
-				typeof(Blocks).GetFields(bindingFlags),
-				typeof(Blocks).GetNestedTypes(bindingFlags)
+				typeof(StockBlocks).GetFields(bindingFlags),
+				typeof(StockBlocks).GetNestedTypes(bindingFlags)
 					.Aggregate(new List<FieldInfo>(), (list, [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)] type) =>
 					{
 						list.AddRange(type.GetFields(bindingFlags));

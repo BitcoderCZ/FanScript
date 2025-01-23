@@ -4,16 +4,16 @@
 
 using FancadeLoaderLib;
 using FancadeLoaderLib.Editing;
+using FancadeLoaderLib.Editing.Scripting.Terminals;
+using FancadeLoaderLib.Editing.Scripting.TerminalStores;
+using FancadeLoaderLib.Editing.Scripting.Utils;
 using FancadeLoaderLib.Partial;
 using FancadeLoaderLib.Raw;
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Emit;
-using FanScript.Compiler.Emit.BlockBuilders;
-using FanScript.Compiler.Emit.Utils;
 using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Documentation.Attributes;
-using FanScript.FCInfo;
 using FanScript.Utils;
 using MathUtils.Vectors;
 using System.Diagnostics;
@@ -52,16 +52,16 @@ internal static partial class BuiltinFunctions
 		   [TypeSymbol.Bool, TypeSymbol.Float, TypeSymbol.Vector3, TypeSymbol.Rotation, TypeSymbol.Object],
 		   (call, context) =>
 		   {
-			   Block inspect = context.AddBlock(Blocks.Values.InspectByType(call.GenericType!.ToWireType()));
+			   Block inspect = context.AddBlock(StockBlocks.Values.InspectByType(call.GenericType!.ToWireType()));
 
 			   using (context.ExpressionBlock())
 			   {
-				   IEmitStore store = context.EmitExpression(call.Arguments[0]);
+				   ITerminalStore store = context.EmitExpression(call.Arguments[0]);
 
-				   context.Connect(store, BasicEmitStore.CIn(inspect, inspect.Type.TerminalArray[1]));
+				   context.Connect(store, TerminalStore.CIn(inspect, inspect.Type.Terminals[1]));
 			   }
 
-			   return new BasicEmitStore(inspect);
+			   return new TerminalStore(inspect);
 		   });
 
 	[FunctionDoc(
@@ -97,18 +97,18 @@ internal static partial class BuiltinFunctions
 					return context.EmitExpression(call.Arguments[0]);
 				}
 
-				Block list = context.AddBlock(Blocks.Variables.ListByType(call.GenericType!.ToWireType()));
+				Block list = context.AddBlock(StockBlocks.Variables.ListByType(call.GenericType!.ToWireType()));
 
 				using (context.ExpressionBlock())
 				{
-					IEmitStore array = context.EmitExpression(call.Arguments[0]);
-					IEmitStore index = context.EmitExpression(call.Arguments[1]);
+					ITerminalStore array = context.EmitExpression(call.Arguments[0]);
+					ITerminalStore index = context.EmitExpression(call.Arguments[1]);
 
-					context.Connect(array, BasicEmitStore.CIn(list, list.Type.Terminals["Variable"]));
-					context.Connect(index, BasicEmitStore.CIn(list, list.Type.Terminals["Index"]));
+					context.Connect(array, TerminalStore.CIn(list, list.Type["Variable"]));
+					context.Connect(index, TerminalStore.CIn(list, list.Type["Index"]));
 				}
 
-				return BasicEmitStore.COut(list, list.Type.Terminals["Element"]);
+				return TerminalStore.COut(list, list.Type["Element"]);
 			})
 		{
 			IsMethod = true,
@@ -155,28 +155,28 @@ internal static partial class BuiltinFunctions
 					});
 				}
 
-				Block setPtr = context.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));
+				Block setPtr = context.AddBlock(StockBlocks.Variables.SetPtrByType(call.GenericType!.ToWireType()));
 
 				using (context.ExpressionBlock())
 				{
-					Block list = context.AddBlock(Blocks.Variables.ListByType(call.GenericType!.ToWireType()));
+					Block list = context.AddBlock(StockBlocks.Variables.ListByType(call.GenericType!.ToWireType()));
 
 					using (context.ExpressionBlock())
 					{
-						IEmitStore array = context.EmitExpression(call.Arguments[0]);
-						IEmitStore index = context.EmitExpression(call.Arguments[1]);
+						ITerminalStore array = context.EmitExpression(call.Arguments[0]);
+						ITerminalStore index = context.EmitExpression(call.Arguments[1]);
 
-						context.Connect(array, BasicEmitStore.CIn(list, list.Type.Terminals["Variable"]));
-						context.Connect(index, BasicEmitStore.CIn(list, list.Type.Terminals["Index"]));
+						context.Connect(array, TerminalStore.CIn(list, list.Type["Variable"]));
+						context.Connect(index, TerminalStore.CIn(list, list.Type["Index"]));
 					}
 
-					IEmitStore value = context.EmitExpression(call.Arguments[2]);
+					ITerminalStore value = context.EmitExpression(call.Arguments[2]);
 
-					context.Connect(BasicEmitStore.COut(list, list.Type.Terminals["Element"]), BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals["Variable"]));
-					context.Connect(value, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals["Value"]));
+					context.Connect(TerminalStore.COut(list, list.Type["Element"]), TerminalStore.CIn(setPtr, setPtr.Type["Variable"]));
+					context.Connect(value, TerminalStore.CIn(setPtr, setPtr.Type["Value"]));
 				}
 
-				return new BasicEmitStore(setPtr);
+				return new TerminalStore(setPtr);
 			})
 		{
 			IsMethod = true,
@@ -252,23 +252,23 @@ internal static partial class BuiltinFunctions
 			TypeSymbol.BuiltInNonGenericTypes,
 			(call, context) =>
 			{
-				Block setPtr = context.AddBlock(Blocks.Variables.Set_PtrByType(call.GenericType!.ToWireType()));
+				Block setPtr = context.AddBlock(StockBlocks.Variables.SetPtrByType(call.GenericType!.ToWireType()));
 
 				using (context.ExpressionBlock())
 				{
-					IEmitStore ptr = context.EmitExpression(call.Arguments[0]);
-					IEmitStore value = context.EmitExpression(call.Arguments[1]);
+					ITerminalStore ptr = context.EmitExpression(call.Arguments[0]);
+					ITerminalStore value = context.EmitExpression(call.Arguments[1]);
 
-					context.Connect(ptr, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals["Variable"]));
-					context.Connect(value, BasicEmitStore.CIn(setPtr, setPtr.Type.Terminals["Value"]));
+					context.Connect(ptr, TerminalStore.CIn(setPtr, setPtr.Type["Variable"]));
+					context.Connect(value, TerminalStore.CIn(setPtr, setPtr.Type["Value"]));
 				}
 
-				return new BasicEmitStore(setPtr);
+				return new TerminalStore(setPtr);
 			});
 
 	[FunctionDoc(
 		Info = """
-        Creates a comment, that gets emitted into fancade as comment blocks.
+        Creates a comment, that gets emitted into fancade as comment StockBlocks.
         """,
 		ParameterInfos = [
 			"""
@@ -298,7 +298,7 @@ internal static partial class BuiltinFunctions
 					context.WriteComment(text);
 				}
 
-				return NopEmitStore.Instance;
+				return NopTerminalStore.Instance;
 			});
 
 	[FunctionDoc(
@@ -340,7 +340,7 @@ internal static partial class BuiltinFunctions
 
 				if (constants is null)
 				{
-					return NopEmitStore.Instance;
+					return NopTerminalStore.Instance;
 				}
 
 				ushort id = (ushort)System.Math.Clamp((int)((constants[0] as float?) ?? 0f), ushort.MinValue, ushort.MaxValue);
@@ -348,34 +348,34 @@ internal static partial class BuiltinFunctions
 				BlockDef def;
 				if (id < RawGame.CurrentNumbStockPrefabs)
 				{
-					var groupEnumerable = StockPrefabs.Instance.List.GetGroupEnumerable(id);
+					var groupEnumerable = StockBlocks.PrefabList.GetGroupEnumerable(id);
 
 					if (groupEnumerable.Any())
 					{
 						PartialPrefabGroup group = new PartialPrefabGroup(groupEnumerable);
 						PartialPrefab mainPrefab = group[byte3.Zero];
 
-						def = new BlockDef(mainPrefab.Name, id, BlockType.NonScript, group.Size, []);
+						def = new BlockDef(group, BlockType.NonScript, TerminalBuilder.Empty);
 					}
 					else
 					{
-						def = new BlockDef(string.Empty, id, BlockType.NonScript, new int2(1, 1));
+						def = new BlockDef(string.Empty, id, BlockType.NonScript, PrefabType.Normal, new int3(1, 1, 1), TerminalBuilder.Empty);
 					}
 				}
 				else
 				{
-					def = new BlockDef(string.Empty, id, BlockType.NonScript, new int2(1, 1));
+					def = new BlockDef(string.Empty, id, BlockType.NonScript, PrefabType.Normal, new int3(1, 1, 1), TerminalBuilder.Empty);
 				}
 
 				Block block = context.AddBlock(def);
 
-				if (context.Builder is not IConnectToBlocksBuilder)
-				{
-					context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
-					return NopEmitStore.Instance;
-				}
+				//if (context.Builder is not IConnectToBlocksBuilder)
+				//{
+				//	context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
+				//	return NopTerminalStore.Instance;
+				//}
 
-				return new BasicEmitStore(NopConnectTarget.Instance, [new BlockVoxelConnectTarget(block)]);
+				return new TerminalStore(NopTerminal.Instance, [new BlockVoxelTerminal(block)]);
 			});
 
 	[FunctionDoc(
@@ -398,26 +398,26 @@ internal static partial class BuiltinFunctions
 			   {
 				   float3 vec = (constants[0] as float3?) ?? float3.Zero;
 
-				   Block block = context.AddBlock(Blocks.Values.Rotation);
+				   Block block = context.AddBlock(StockBlocks.Values.Rotation);
 
-				   context.SetBlockValue(block, 0, new Rotation(vec));
+				   context.SetSetting(block, 0, new Rotation(vec));
 
-				   return BasicEmitStore.COut(block, block.Type.Terminals["Rotation"]);
+				   return TerminalStore.COut(block, block.Type["Rotation"]);
 			   }
 			   else
 			   {
-				   Block make = context.AddBlock(Blocks.Math.Make_Rotation);
+				   Block make = context.AddBlock(StockBlocks.Math.Make_Rotation);
 
 				   using (context.ExpressionBlock())
 				   {
 					   var (x, y, z) = context.BreakVector(call.Arguments[0]);
 
-					   context.Connect(x, BasicEmitStore.CIn(make, make.Type.Terminals["X angle"]));
-					   context.Connect(y, BasicEmitStore.CIn(make, make.Type.Terminals["Y angle"]));
-					   context.Connect(z, BasicEmitStore.CIn(make, make.Type.Terminals["Z angle"]));
+					   context.Connect(x, TerminalStore.CIn(make, make.Type["X angle"]));
+					   context.Connect(y, TerminalStore.CIn(make, make.Type["Y angle"]));
+					   context.Connect(z, TerminalStore.CIn(make, make.Type["Z angle"]));
 				   }
 
-				   return BasicEmitStore.COut(make, make.Type.Terminals["Rotation"]);
+				   return TerminalStore.COut(make, make.Type["Rotation"]);
 			   }
 		   })
 	   {
@@ -444,26 +444,26 @@ internal static partial class BuiltinFunctions
 			   {
 				   Rotation rot = constants[0] is Rotation r ? r : new Rotation(float3.Zero);
 
-				   Block block = context.AddBlock(Blocks.Values.Vector);
+				   Block block = context.AddBlock(StockBlocks.Values.Vector);
 
-				   context.SetBlockValue(block, 0, rot);
+				   context.SetSetting(block, 0, rot);
 
-				   return BasicEmitStore.COut(block, block.Type.Terminals["Vector"]);
+				   return TerminalStore.COut(block, block.Type["Vector"]);
 			   }
 			   else
 			   {
-				   Block make = context.AddBlock(Blocks.Math.Make_Vector);
+				   Block make = context.AddBlock(StockBlocks.Math.Make_Vector);
 
 				   using (context.ExpressionBlock())
 				   {
 					   var (x, y, z) = context.BreakVector(call.Arguments[0]);
 
-					   context.Connect(x, BasicEmitStore.CIn(make, make.Type.Terminals["X"]));
-					   context.Connect(y, BasicEmitStore.CIn(make, make.Type.Terminals["Y"]));
-					   context.Connect(z, BasicEmitStore.CIn(make, make.Type.Terminals["Z"]));
+					   context.Connect(x, TerminalStore.CIn(make, make.Type["X"]));
+					   context.Connect(y, TerminalStore.CIn(make, make.Type["Y"]));
+					   context.Connect(z, TerminalStore.CIn(make, make.Type["Z"]));
 				   }
 
-				   return BasicEmitStore.COut(make, make.Type.Terminals["Vector"]);
+				   return TerminalStore.COut(make, make.Type["Vector"]);
 			   }
 		   })
 	   {
@@ -479,7 +479,7 @@ internal static partial class BuiltinFunctions
 	//            object?[]? constants = context.ValidateConstants(call.Arguments.AsMemory(), true);
 
 	//            if (constants is null)
-	//                return NopEmitStore.Instance;
+	//                return NopTerminalStore.Instance;
 
 	//            string? path = constants[0] as string;
 
@@ -498,7 +498,7 @@ internal static partial class BuiltinFunctions
 	//            FcSong song = converter.Convert();
 	//            var (blocksSize, blocks) = song.ToBlocks();
 
-	//            EmitConnector connector = new EmitConnector(context.Connect);
+	//            TerminalConnector connector = new TerminalConnector(context.Connect);
 
 	//            // channel event structure:
 	//            // t - type
@@ -658,7 +658,7 @@ internal static partial class BuiltinFunctions
 
 	//            context.Builder.AddBlockSegments(
 	//                new Block[] { originBlock }
-	//                    .Concat(blocks.Select(pos => new Block(pos, Blocks.Shrub)))
+	//                    .Concat(StockBlocks.Select(pos => new Block(pos, StockBlocks.Shrub)))
 	//            );
 
 	//            return connector.Store;
@@ -717,7 +717,7 @@ internal static partial class BuiltinFunctions
 	#region Helper functions
 
 	// (A) - active block (has before and after), num - numb inputs, num - number outputs
-	private static IEmitStore EmitAX0(BoundCallExpression call, IEmitContext context, BlockDef blockDef, int argumentOffset = 0, Type[]? constantTypes = null)
+	private static ITerminalStore EmitAX0(BoundCallExpression call, IEmitContext context, BlockDef blockDef, int argumentOffset = 0, Type[]? constantTypes = null)
 	{
 		constantTypes ??= [];
 
@@ -732,7 +732,7 @@ internal static partial class BuiltinFunctions
 			{
 				for (int i = 0; i < argLength; i++)
 				{
-					context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.TerminalArray[argLength - i + argumentOffset]));
+					context.Connect(context.EmitExpression(call.Arguments[i]), TerminalStore.CIn(block, block.Type.Terminals[argLength - i + argumentOffset]));
 				}
 			}
 		}
@@ -743,7 +743,7 @@ internal static partial class BuiltinFunctions
 
 			if (constants is null)
 			{
-				return NopEmitStore.Instance;
+				return NopTerminalStore.Instance;
 			}
 
 			for (int i = 0; i < constantTypes.Length; i++)
@@ -772,14 +772,14 @@ internal static partial class BuiltinFunctions
 					val = Convert.ChangeType(val, type);
 				}
 
-				context.SetBlockValue(block, i, val);
+				context.SetSetting(block, i, val);
 			}
 		}
 
-		return new BasicEmitStore(block);
+		return new TerminalStore(block);
 	}
 
-	private static IEmitStore EmitAXX(BoundCallExpression call, IEmitContext context, int numbReturnArgs, BlockDef blockDef)
+	private static ITerminalStore EmitAXX(BoundCallExpression call, IEmitContext context, int numbReturnArgs, BlockDef blockDef)
 	{
 		if (numbReturnArgs <= 0)
 		{
@@ -794,8 +794,8 @@ internal static partial class BuiltinFunctions
 
 		Block? block = context.AddBlock(blockDef);
 
-		EmitConnector connector = new EmitConnector(context.Connect);
-		connector.Add(new BasicEmitStore(block));
+		TerminalConnector connector = new TerminalConnector(context.Connect);
+		connector.Add(new TerminalStore(block));
 
 		if (retArgStart != 0)
 		{
@@ -803,7 +803,7 @@ internal static partial class BuiltinFunctions
 			{
 				for (int i = 0; i < retArgStart; i++)
 				{
-					context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.TerminalArray[retArgStart - i + numbReturnArgs]));
+					context.Connect(context.EmitExpression(call.Arguments[i]), TerminalStore.CIn(block, block.Type.Terminals[retArgStart - i + numbReturnArgs]));
 				}
 			}
 		}
@@ -814,7 +814,7 @@ internal static partial class BuiltinFunctions
 			{
 				VariableSymbol variable = ((BoundVariableExpression)call.Arguments[i]).Variable;
 
-				IEmitStore varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.TerminalArray[call.Arguments.Length - i]));
+				ITerminalStore varStore = context.EmitSetVariable(variable, () => TerminalStore.COut(block, block.Type.Terminals[call.Arguments.Length - i]));
 
 				connector.Add(varStore);
 			}
@@ -823,7 +823,7 @@ internal static partial class BuiltinFunctions
 		return connector.Store;
 	}
 
-	private static IEmitStore EmitXX(BoundCallExpression call, IEmitContext context, int numbReturnArgs, BlockDef blockDef)
+	private static ITerminalStore EmitXX(BoundCallExpression call, IEmitContext context, int numbReturnArgs, BlockDef blockDef)
 	{
 		if (numbReturnArgs <= 0)
 		{
@@ -836,7 +836,7 @@ internal static partial class BuiltinFunctions
 
 		int retArgStart = call.Arguments.Length - numbReturnArgs;
 
-		EmitConnector connector = new EmitConnector(context.Connect);
+		TerminalConnector connector = new TerminalConnector(context.Connect);
 
 		Block? block = null;
 
@@ -844,7 +844,7 @@ internal static partial class BuiltinFunctions
 		{
 			VariableSymbol variable = ((BoundVariableExpression)call.Arguments[i]).Variable;
 
-			IEmitStore varStore;
+			ITerminalStore varStore;
 
 #pragma warning disable IDE0045 // Convert to conditional expression - why here ???
 			if (block is null)
@@ -861,18 +861,18 @@ internal static partial class BuiltinFunctions
 							{
 								for (int i = 0; i < retArgStart; i++)
 								{
-									context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.TerminalArray[(retArgStart - 1) - i + numbReturnArgs]));
+									context.Connect(context.EmitExpression(call.Arguments[i]), TerminalStore.CIn(block, block.Type.Terminals[(retArgStart - 1) - i + numbReturnArgs]));
 								}
 							}
 						}
 					}
 
-					return BasicEmitStore.COut(block, block.Type.TerminalArray[(call.Arguments.Length - 1) - i]);
+					return TerminalStore.COut(block, block.Type.Terminals[(call.Arguments.Length - 1) - i]);
 				});
 			}
 			else
 			{
-				varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(block, block.Type.TerminalArray[(call.Arguments.Length - 1) - i]));
+				varStore = context.EmitSetVariable(variable, () => TerminalStore.COut(block, block.Type.Terminals[(call.Arguments.Length - 1) - i]));
 			}
 #pragma warning restore IDE0045 // Convert to conditional expression
 
@@ -882,7 +882,7 @@ internal static partial class BuiltinFunctions
 		return connector.Store;
 	}
 
-	private static BasicEmitStore EmitX1(BoundCallExpression call, IEmitContext context, BlockDef blockDef)
+	private static TerminalStore EmitX1(BoundCallExpression call, IEmitContext context, BlockDef blockDef)
 	{
 		Block block = context.AddBlock(blockDef);
 
@@ -892,12 +892,12 @@ internal static partial class BuiltinFunctions
 			{
 				for (int i = 0; i < call.Arguments.Length; i++)
 				{
-					context.Connect(context.EmitExpression(call.Arguments[i]), BasicEmitStore.CIn(block, block.Type.TerminalArray[call.Arguments.Length - i]));
+					context.Connect(context.EmitExpression(call.Arguments[i]), TerminalStore.CIn(block, block.Type.Terminals[call.Arguments.Length - i]));
 				}
 			}
 		}
 
-		return BasicEmitStore.COut(block, block.Type.TerminalArray[0]);
+		return TerminalStore.COut(block, block.Type.Terminals[0]);
 	}
 	#endregion
 }

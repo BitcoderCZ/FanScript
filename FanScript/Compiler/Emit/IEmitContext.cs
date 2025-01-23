@@ -2,11 +2,13 @@
 // Copyright (c) BitcoderCZ. All rights reserved.
 // </copyright>
 
+using FancadeLoaderLib.Editing;
+using FancadeLoaderLib.Editing.Scripting;
+using FancadeLoaderLib.Editing.Scripting.Terminals;
+using FancadeLoaderLib.Editing.Scripting.TerminalStores;
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
-using FanScript.Compiler.Emit.BlockBuilders;
 using FanScript.Compiler.Symbols.Variables;
-using FanScript.FCInfo;
 
 namespace FanScript.Compiler.Emit;
 
@@ -16,9 +18,9 @@ internal interface IEmitContext
 
 	BlockBuilder Builder { get; }
 
-	IEmitStore EmitStatement(BoundStatement statement);
+	ITerminalStore EmitStatement(BoundStatement statement);
 
-	IEmitStore EmitExpression(BoundExpression expression);
+	ITerminalStore EmitExpression(BoundExpression expression);
 
 	IDisposable StatementBlock();
 
@@ -26,13 +28,15 @@ internal interface IEmitContext
 
 	Block AddBlock(BlockDef def);
 
-	void Connect(IEmitStore from, IEmitStore to);
+	void Connect(ITerminal from, ITerminal to);
 
-	void SetBlockValue(Block block, int valueIndex, object value);
+	void Connect(ITerminalStore from, ITerminalStore to);
 
-	IEmitStore EmitLiteralExpression(object? value);
+	void SetSetting(Block block, int valueIndex, object value);
 
-	IEmitStore EmitGetVariable(VariableSymbol variable);
+	ITerminalStore EmitLiteralExpression(object? value);
+
+	ITerminalStore EmitGetVariable(VariableSymbol variable);
 
 	/// <summary>
 	/// Emits setting <paramref name="expression"/> to <paramref name="getValueStore"/>
@@ -43,7 +47,7 @@ internal interface IEmitContext
 	/// <param name="expression"></param>
 	/// <param name="getValueStore"></param>
 	/// <returns></returns>
-	IEmitStore EmitSetExpression(BoundExpression expression, Func<IEmitStore> getValueStore);
+	ITerminalStore EmitSetExpression(BoundExpression expression, Func<ITerminalStore> getValueStore);
 
 	/// <summary>
 	/// Emits setting <paramref name="variable"/> to <paramref name="getValueStore"/>
@@ -54,15 +58,15 @@ internal interface IEmitContext
 	/// <param name="expression"></param>
 	/// <param name="getValueStore"></param>
 	/// <returns></returns>
-	IEmitStore EmitSetVariable(VariableSymbol variable, Func<IEmitStore> getValueStore);
+	ITerminalStore EmitSetVariable(VariableSymbol variable, Func<ITerminalStore> getValueStore);
 
-	(IEmitStore X, IEmitStore Y, IEmitStore Z) BreakVector(BoundExpression expression);
+	(ITerminalStore X, ITerminalStore Y, ITerminalStore Z) BreakVector(BoundExpression expression);
 
-	IEmitStore?[] BreakVectorAny(BoundExpression expression, bool[] useComponent);
+	ITerminalStore?[] BreakVectorAny(BoundExpression expression, bool[] useComponent);
 
 	object?[]? ValidateConstants(ReadOnlyMemory<BoundExpression> expressions, bool mustBeConstant);
 
 	void WriteComment(string text);
 
-	IEmitStore EmitSetArraySegment(BoundArraySegmentExpression segment, BoundExpression arrayVariable, BoundExpression startIndex);
+	ITerminalStore EmitSetArraySegment(BoundArraySegmentExpression segment, BoundExpression arrayVariable, BoundExpression startIndex);
 }

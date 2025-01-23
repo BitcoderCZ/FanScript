@@ -1,7 +1,8 @@
-﻿using FanScript.Compiler;
+﻿using FancadeLoaderLib.Editing.Scripting;
+using FancadeLoaderLib.Editing.Scripting.Builders;
+using FancadeLoaderLib.Editing.Scripting.Placers;
+using FanScript.Compiler;
 using FanScript.Compiler.Diagnostics;
-using FanScript.Compiler.Emit.BlockBuilders;
-using FanScript.Compiler.Emit.CodePlacers;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
@@ -719,14 +720,14 @@ public class EmitterTests
 	[Fact]
 	public void Variable_Name_Too_Long()
 	{
-		string name = new string('x', FCInfo.FancadeConstants.MaxVariableNameLength + 1);
+		string name = new string('x', FancadeConstants.MaxVariableNameLength + 1);
 
 		string text = $"""
             float $[{name}]$
             """;
 
 		string diagnostics = $"""
-            Variable name '{name}' is too long, maximum allowed length is {FCInfo.FancadeConstants.MaxVariableNameLength}
+            Variable name '{name}' is too long, maximum allowed length is {FancadeConstants.MaxVariableNameLength}
             """;
 
 		AssertDiagnostics(text, diagnostics);
@@ -1050,7 +1051,7 @@ public class EmitterTests
 		Compilation compilation = Compilation.Create(null, syntaxTree);
 
 		BlockBuilder builder = new EditorScriptBlockBuilder();
-		CodePlacer placer = new TowerCodePlacer(builder);
+		IScopedCodePlacer placer = new TowerCodePlacer(builder);
 
 		ImmutableArray<Diagnostic> diagnostics = compilation.Emit(placer, builder);
 
@@ -1077,7 +1078,7 @@ public class EmitterTests
 	{
 		foreach (var mod in GetModifiersForTarget(valid, target, type))
 		{
-			yield return valid ? ([mod.ToSyntaxString()]) : ([mod.ToSyntaxString(), string.Join(", ", mod.GetTargets())]);
+			yield return valid ? [mod.ToSyntaxString()] : [mod.ToSyntaxString(), string.Join(", ", mod.GetTargets())];
 		}
 	}
 

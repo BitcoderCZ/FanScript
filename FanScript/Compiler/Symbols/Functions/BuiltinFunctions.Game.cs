@@ -2,11 +2,11 @@
 // Copyright (c) BitcoderCZ. All rights reserved.
 // </copyright>
 
-using FanScript.Compiler.Emit;
+using FancadeLoaderLib.Editing;
+using FancadeLoaderLib.Editing.Scripting.TerminalStores;
 using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Documentation.Attributes;
-using FanScript.FCInfo;
 
 namespace FanScript.Compiler.Symbols;
 
@@ -28,7 +28,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("DELAY", Modifiers.Constant, TypeSymbol.Float),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Game.Win, constantTypes: [typeof(byte)]));
+				(call, context) => EmitAX0(call, context, StockBlocks.Game.Win, constantTypes: [typeof(byte)]));
 
 		[FunctionDoc(
 			ParameterInfos = [
@@ -44,7 +44,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("DELAY", Modifiers.Constant, TypeSymbol.Float),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Game.Lose, constantTypes: [typeof(byte)]));
+				(call, context) => EmitAX0(call, context, StockBlocks.Game.Lose, constantTypes: [typeof(byte)]));
 
 		[FunctionDoc(
 			Info = """
@@ -71,7 +71,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("RANKING", Modifiers.Constant, TypeSymbol.Float),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Game.SetScore, constantTypes: [typeof(byte)]));
+				(call, context) => EmitAX0(call, context, StockBlocks.Game.SetScore, constantTypes: [typeof(byte)]));
 
 		[FunctionDoc(
 			Info = """
@@ -105,7 +105,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("PERSPECTIVE", Modifiers.Constant, TypeSymbol.Bool),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Game.SetCamera, constantTypes: [typeof(byte)]));
+				(call, context) => EmitAX0(call, context, StockBlocks.Game.SetCamera, constantTypes: [typeof(byte)]));
 
 		[FunctionDoc(
 			Info = """
@@ -133,7 +133,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("rotation", TypeSymbol.Rotation),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Game.SetLight));
+				(call, context) => EmitAX0(call, context, StockBlocks.Game.SetLight));
 
 		[FunctionDoc(
 			Info = """
@@ -156,7 +156,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("height", Modifiers.Out, TypeSymbol.Float),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitXX(call, context, 2, Blocks.Game.ScreenSize));
+				(call, context) => EmitXX(call, context, 2, StockBlocks.Game.ScreenSize));
 
 		[FunctionDoc(
 			NameOverwrite = "GetScreenSize",
@@ -166,17 +166,17 @@ internal static partial class BuiltinFunctions
 		public static readonly FunctionSymbol GetScreenSize2
 		   = new BuiltinFunctionSymbol(GameNamespace, "getScreenSize", [], TypeSymbol.Vector3, (call, context) =>
 		   {
-			   Block make = context.AddBlock(Blocks.Math.Make_Vector);
+			   Block make = context.AddBlock(StockBlocks.Math.Make_Vector);
 
 			   using (context.ExpressionBlock())
 			   {
-				   Block ss = context.AddBlock(Blocks.Game.ScreenSize);
+				   Block ss = context.AddBlock(StockBlocks.Game.ScreenSize);
 
-				   context.Connect(BasicEmitStore.COut(ss, ss.Type.Terminals["Width"]), BasicEmitStore.CIn(make, make.Type.Terminals["X"]));
-				   context.Connect(BasicEmitStore.COut(ss, ss.Type.Terminals["Height"]), BasicEmitStore.CIn(make, make.Type.Terminals["Y"]));
+				   context.Connect(TerminalStore.COut(ss, ss.Type["Width"]), TerminalStore.CIn(make, make.Type["X"]));
+				   context.Connect(TerminalStore.COut(ss, ss.Type["Height"]), TerminalStore.CIn(make, make.Type["Y"]));
 			   }
 
-			   return BasicEmitStore.COut(make, make.Type.Terminals["Vector"]);
+			   return TerminalStore.COut(make, make.Type["Vector"]);
 		   });
 
 		[FunctionDoc(
@@ -194,7 +194,7 @@ internal static partial class BuiltinFunctions
             </>
             """)]
 		public static readonly FunctionSymbol GetAccelerometer
-			= new BuiltinFunctionSymbol(GameNamespace, "getAccelerometer", [], TypeSymbol.Vector3, (call, context) => EmitX1(call, context, Blocks.Game.Accelerometer));
+			= new BuiltinFunctionSymbol(GameNamespace, "getAccelerometer", [], TypeSymbol.Vector3, (call, context) => EmitX1(call, context, StockBlocks.Game.Accelerometer));
 
 		[FunctionDoc(
 			Info = """
@@ -212,7 +212,7 @@ internal static partial class BuiltinFunctions
                 """
 			])]
 		public static readonly FunctionSymbol GetCurrentFrame
-			= new BuiltinFunctionSymbol(GameNamespace, "getCurrentFrame", [], TypeSymbol.Float, (call, context) => EmitX1(call, context, Blocks.Game.CurrentFrame));
+			= new BuiltinFunctionSymbol(GameNamespace, "getCurrentFrame", [], TypeSymbol.Float, (call, context) => EmitX1(call, context, StockBlocks.Game.CurrentFrame));
 
 		[FunctionDoc(
 			Info = """
@@ -242,14 +242,14 @@ internal static partial class BuiltinFunctions
 
 					if (constants is null)
 					{
-						return NopEmitStore.Instance;
+						return NopTerminalStore.Instance;
 					}
 
-					Block block = context.AddBlock(Blocks.Game.MenuItem);
+					Block block = context.AddBlock(StockBlocks.Game.MenuItem);
 
-					context.SetBlockValue(block, 0, constants[0] ?? string.Empty);
+					context.SetSetting(block, 0, constants[0] ?? string.Empty);
 
-					return new BasicEmitStore(block);
+					return new TerminalStore(block);
 				});
 
 		[FunctionDoc(
@@ -290,7 +290,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("PRICE_INCREASE", Modifiers.Constant, TypeSymbol.Float),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Game.MenuItem, constantTypes: [typeof(string), typeof(byte), typeof(byte)]));
+				(call, context) => EmitAX0(call, context, StockBlocks.Game.MenuItem, constantTypes: [typeof(string), typeof(byte), typeof(byte)]));
 
 		private static readonly Namespace GameNamespace = BuiltinNamespace + "game";
 	}

@@ -2,12 +2,13 @@
 // Copyright (c) BitcoderCZ. All rights reserved.
 // </copyright>
 
+using FancadeLoaderLib.Editing;
+using FancadeLoaderLib.Editing.Scripting.TerminalStores;
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Emit;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
 using FanScript.Documentation.Attributes;
-using FanScript.FCInfo;
 using FanScript.Utils;
 using System.Collections.Frozen;
 using System.Collections.Immutable;
@@ -229,14 +230,14 @@ public sealed class TypeSymbol : Symbol
 			["y"] = new PropertyDefinitionSymbol("y", Float, (context, expression) => GetVectorComponent(context, expression, 1), (context, expression, getStore) => SetVectorComponent(context, expression, getStore, 1)),
 			["z"] = new PropertyDefinitionSymbol("z", Float, (context, expression) => GetVectorComponent(context, expression, 2), (context, expression, getStore) => SetVectorComponent(context, expression, getStore, 2)),
 		}.ToFrozenDictionary();
-		IEmitStore GetVectorComponent(IEmitContext context, BoundExpression expression, int index)
+		ITerminalStore GetVectorComponent(IEmitContext context, BoundExpression expression, int index)
 		{
 			bool[] arr = new bool[3];
 			arr[index] = true;
 			return context.BreakVectorAny(expression, arr)[index]!;
 		}
 
-		IEmitStore SetVectorComponent(IEmitContext context, BoundExpression expression, Func<IEmitStore> getStore, int index)
+		ITerminalStore SetVectorComponent(IEmitContext context, BoundExpression expression, Func<ITerminalStore> getStore, int index)
 		{
 			WireType varType = expression.Type.ToWireType();
 
@@ -246,37 +247,37 @@ public sealed class TypeSymbol : Symbol
 
 				using (context.ExpressionBlock())
 				{
-					make = context.AddBlock(Blocks.Math.MakeByType(varType));
+					make = context.AddBlock(StockBlocks.Math.MakeByType(varType));
 
 					using (context.ExpressionBlock())
 					{
-						Block @break = context.AddBlock(Blocks.Math.BreakByType(varType));
+						Block @break = context.AddBlock(StockBlocks.Math.BreakByType(varType));
 
 						using (context.ExpressionBlock())
 						{
-							IEmitStore expressionStore = context.EmitExpression(expression);
+							ITerminalStore expressionStore = context.EmitExpression(expression);
 
-							context.Connect(expressionStore, BasicEmitStore.CIn(@break, @break.Type.TerminalArray[3]));
+							context.Connect(expressionStore, TerminalStore.CIn(@break, @break.Type.Terminals[3]));
 						}
 
 						for (int i = 0; i < 3; i++)
 						{
 							if (i != index)
 							{
-								context.Connect(BasicEmitStore.COut(@break, @break.Type.TerminalArray[2 - i]), BasicEmitStore.CIn(make, make.Type.TerminalArray[(2 - i) + 1]));
+								context.Connect(TerminalStore.COut(@break, @break.Type.Terminals[2 - i]), TerminalStore.CIn(make, make.Type.Terminals[(2 - i) + 1]));
 							}
 						}
 					}
 
 					using (context.ExpressionBlock())
 					{
-						IEmitStore store = getStore();
+						ITerminalStore store = getStore();
 
-						context.Connect(store, BasicEmitStore.CIn(make, make.Type.TerminalArray[(2 - index) + 1]));
+						context.Connect(store, TerminalStore.CIn(make, make.Type.Terminals[(2 - index) + 1]));
 					}
 				}
 
-				return BasicEmitStore.COut(make, make.Type.TerminalArray[0]);
+				return TerminalStore.COut(make, make.Type.Terminals[0]);
 			});
 		}
 	}

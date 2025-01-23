@@ -2,11 +2,11 @@
 // Copyright (c) BitcoderCZ. All rights reserved.
 // </copyright>
 
-using FanScript.Compiler.Emit;
+using FancadeLoaderLib.Editing;
+using FancadeLoaderLib.Editing.Scripting.TerminalStores;
 using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Documentation.Attributes;
-using FanScript.FCInfo;
 using MathUtils.Vectors;
 
 namespace FanScript.Compiler.Symbols;
@@ -31,7 +31,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("exponent", TypeSymbol.Float),
 				],
 				TypeSymbol.Float,
-				(call, context) => EmitX1(call, context, Blocks.Math.Power),
+				(call, context) => EmitX1(call, context, StockBlocks.Math.Power),
 				args => [MathF.Pow((float)args[0].GetValueOrDefault(TypeSymbol.Float), (float)args[1].GetValueOrDefault(TypeSymbol.Float))]);
 
 		[FunctionDoc(
@@ -63,7 +63,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("max", TypeSymbol.Float),
 				],
 				TypeSymbol.Float,
-				(call, context) => EmitX1(call, context, Blocks.Math.Random));
+				(call, context) => EmitX1(call, context, StockBlocks.Math.Random));
 
 		[FunctionDoc(
 			Info = """
@@ -82,7 +82,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("seed", TypeSymbol.Float),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Math.RandomSeed));
+				(call, context) => EmitAX0(call, context, StockBlocks.Math.RandomSeed));
 
 		[FunctionDoc(
 			Info = """
@@ -100,7 +100,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("num2", TypeSymbol.Float),
 				],
 				TypeSymbol.Float,
-				(call, context) => EmitX1(call, context, Blocks.Math.Min),
+				(call, context) => EmitX1(call, context, StockBlocks.Math.Min),
 				args => [System.Math.Min((float)args[0].GetValueOrDefault(TypeSymbol.Float), (float)args[1].GetValueOrDefault(TypeSymbol.Float))]);
 
 		[FunctionDoc(
@@ -119,7 +119,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("num2", TypeSymbol.Float),
 				],
 				TypeSymbol.Float,
-				(call, context) => EmitX1(call, context, Blocks.Math.Max),
+				(call, context) => EmitX1(call, context, StockBlocks.Math.Max),
 				args => [System.Math.Max((float)args[0].GetValueOrDefault(TypeSymbol.Float), (float)args[1].GetValueOrDefault(TypeSymbol.Float))]);
 
 		[FunctionDoc(
@@ -147,7 +147,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("num", TypeSymbol.Float),
 				],
 				TypeSymbol.Float,
-				(call, context) => EmitX1(call, context, Blocks.Math.Sin),
+				(call, context) => EmitX1(call, context, StockBlocks.Math.Sin),
 				args => [(float)System.Math.Sin(System.Math.PI * (float)args[0].GetValueOrDefault(TypeSymbol.Float) / 180.0)]);
 
 		[FunctionDoc(
@@ -175,7 +175,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("num", TypeSymbol.Float),
 				],
 				TypeSymbol.Float,
-				(call, context) => EmitX1(call, context, Blocks.Math.Cos),
+				(call, context) => EmitX1(call, context, StockBlocks.Math.Cos),
 				args => [(float)System.Math.Cos(System.Math.PI * (float)args[0].GetValueOrDefault(TypeSymbol.Float) / 180.0)]);
 
 		[FunctionDoc(
@@ -193,7 +193,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("num", TypeSymbol.Float),
 				],
 				TypeSymbol.Float,
-				(call, context) => EmitX1(call, context, Blocks.Math.Round),
+				(call, context) => EmitX1(call, context, StockBlocks.Math.Round),
 				args => [MathF.Round((float)args[0].GetValueOrDefault(TypeSymbol.Float))]);
 
 		[FunctionDoc(
@@ -211,7 +211,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("num", TypeSymbol.Float),
 				],
 				TypeSymbol.Float,
-				(call, context) => EmitX1(call, context, Blocks.Math.Floor),
+				(call, context) => EmitX1(call, context, StockBlocks.Math.Floor),
 				args => [MathF.Floor((float)args[0].GetValueOrDefault(TypeSymbol.Float))]);
 
 		[FunctionDoc(
@@ -229,7 +229,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("num", TypeSymbol.Float),
 				],
 				TypeSymbol.Float,
-				(call, context) => EmitX1(call, context, Blocks.Math.Ceiling),
+				(call, context) => EmitX1(call, context, StockBlocks.Math.Ceiling),
 				args => [MathF.Ceiling((float)args[0].GetValueOrDefault(TypeSymbol.Float))]);
 
 		[FunctionDoc(
@@ -247,7 +247,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("num", TypeSymbol.Float),
 				],
 				TypeSymbol.Float,
-				(call, context) => EmitX1(call, context, Blocks.Math.Absolute),
+				(call, context) => EmitX1(call, context, StockBlocks.Math.Absolute),
 				args => [MathF.Abs((float)args[0].GetValueOrDefault(TypeSymbol.Float))]);
 
 		[FunctionDoc(
@@ -263,7 +263,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("base", TypeSymbol.Float),
 				],
 				TypeSymbol.Float,
-				(call, context) => EmitX1(call, context, Blocks.Math.Logarithm),
+				(call, context) => EmitX1(call, context, StockBlocks.Math.Logarithm),
 				args => [MathF.Log((float)args[0].GetValueOrDefault(TypeSymbol.Float), (float)args[1].GetValueOrDefault(TypeSymbol.Float))]);
 
 		[FunctionDoc(
@@ -281,7 +281,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("vector", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Vector3,
-				(call, context) => EmitX1(call, context, Blocks.Math.Normalize),
+				(call, context) => EmitX1(call, context, StockBlocks.Math.Normalize),
 				args => [((float3)args[0].GetValueOrDefault(TypeSymbol.Vector3)).Normalized()]);
 
 		[FunctionDoc(
@@ -308,7 +308,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("vector2", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Float,
-				(call, context) => EmitX1(call, context, Blocks.Math.DotProduct),
+				(call, context) => EmitX1(call, context, StockBlocks.Math.DotProduct),
 				args => [float3.Dot((float3)args[0].GetValueOrDefault(TypeSymbol.Vector3), (float3)args[1].GetValueOrDefault(TypeSymbol.Vector3))]);
 
 		[FunctionDoc(
@@ -335,7 +335,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("vector2", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Vector3,
-				(call, context) => EmitX1(call, context, Blocks.Math.CrossProduct),
+				(call, context) => EmitX1(call, context, StockBlocks.Math.CrossProduct),
 				args => [float3.Cross((float3)args[0].GetValueOrDefault(TypeSymbol.Vector3), (float3)args[1].GetValueOrDefault(TypeSymbol.Vector3))]);
 
 		[FunctionDoc(
@@ -362,7 +362,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("vector2", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Float,
-				(call, context) => EmitX1(call, context, Blocks.Math.Distance),
+				(call, context) => EmitX1(call, context, StockBlocks.Math.Distance),
 				args => [(float)float3.Distance((float3)args[0].GetValueOrDefault(TypeSymbol.Vector3), (float3)args[1].GetValueOrDefault(TypeSymbol.Vector3))]);
 
 		[FunctionDoc(
@@ -408,7 +408,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("amount", TypeSymbol.Float),
 				],
 				TypeSymbol.Rotation,
-				(call, context) => EmitX1(call, context, Blocks.Math.Lerp));
+				(call, context) => EmitX1(call, context, StockBlocks.Math.Lerp));
 
 		[FunctionDoc(
 			NameOverwrite = "Lerp",
@@ -464,39 +464,39 @@ internal static partial class BuiltinFunctions
 						float to = (constants[1] as float?) ?? 0f;
 						float amount = (constants[2] as float?) ?? 0f;
 
-						Block numb = context.AddBlock(Blocks.Values.Number);
-						context.SetBlockValue(numb, 0, from + (amount * (to - from)));
+						Block numb = context.AddBlock(StockBlocks.Values.Number);
+						context.SetSetting(numb, 0, from + (amount * (to - from)));
 
-						return BasicEmitStore.COut(numb, numb.Type.Terminals["Number"]);
+						return TerminalStore.COut(numb, numb.Type["Number"]);
 					}
 
-					Block add = context.AddBlock(Blocks.Math.Add_Number);
+					Block add = context.AddBlock(StockBlocks.Math.Add_Number);
 
 					using (context.ExpressionBlock())
 					{
-						context.Connect(context.EmitExpression(call.Arguments[0]), BasicEmitStore.CIn(add, add.Type.Terminals["Num1"]));
+						context.Connect(context.EmitExpression(call.Arguments[0]), TerminalStore.CIn(add, add.Type["Num1"]));
 
-						Block mult = context.AddBlock(Blocks.Math.Multiply_Number);
+						Block mult = context.AddBlock(StockBlocks.Math.Multiply_Number);
 
 						using (context.ExpressionBlock())
 						{
-							context.Connect(context.EmitExpression(call.Arguments[2]), BasicEmitStore.CIn(mult, mult.Type.Terminals["Num1"]));
+							context.Connect(context.EmitExpression(call.Arguments[2]), TerminalStore.CIn(mult, mult.Type["Num1"]));
 
-							Block sub = context.AddBlock(Blocks.Math.Subtract_Number);
+							Block sub = context.AddBlock(StockBlocks.Math.Subtract_Number);
 
 							using (context.ExpressionBlock())
 							{
-								context.Connect(context.EmitExpression(call.Arguments[1]), BasicEmitStore.CIn(sub, sub.Type.Terminals["Num1"]));
-								context.Connect(context.EmitExpression(call.Arguments[0]), BasicEmitStore.CIn(sub, sub.Type.Terminals["Num2"]));
+								context.Connect(context.EmitExpression(call.Arguments[1]), TerminalStore.CIn(sub, sub.Type["Num1"]));
+								context.Connect(context.EmitExpression(call.Arguments[0]), TerminalStore.CIn(sub, sub.Type["Num2"]));
 							}
 
-							context.Connect(BasicEmitStore.COut(sub, sub.Type.Terminals["Num1 - Num2"]), BasicEmitStore.CIn(mult, mult.Type.Terminals["Num2"]));
+							context.Connect(TerminalStore.COut(sub, sub.Type["Num1 - Num2"]), TerminalStore.CIn(mult, mult.Type["Num2"]));
 						}
 
-						context.Connect(BasicEmitStore.COut(mult, mult.Type.Terminals["Num1 * Num2"]), BasicEmitStore.CIn(add, add.Type.Terminals["Num2"]));
+						context.Connect(TerminalStore.COut(mult, mult.Type["Num1 * Num2"]), TerminalStore.CIn(add, add.Type["Num2"]));
 					}
 
-					return BasicEmitStore.COut(add, add.Type.Terminals["Num1 + Num2"]);
+					return TerminalStore.COut(add, add.Type["Num1 + Num2"]);
 				},
 				args =>
 				{
@@ -563,39 +563,39 @@ internal static partial class BuiltinFunctions
 						float3 to = (constants[1] as float3?) ?? float3.Zero;
 						float amount = (constants[2] as float?) ?? 0f;
 
-						Block vec = context.AddBlock(Blocks.Values.Vector);
-						context.SetBlockValue(vec, 0, from + ((to - from) * amount));
+						Block vec = context.AddBlock(StockBlocks.Values.Vector);
+						context.SetSetting(vec, 0, from + ((to - from) * amount));
 
-						return BasicEmitStore.COut(vec, vec.Type.Terminals["Vector"]);
+						return TerminalStore.COut(vec, vec.Type["Vector"]);
 					}
 
-					Block add = context.AddBlock(Blocks.Math.Add_Vector);
+					Block add = context.AddBlock(StockBlocks.Math.Add_Vector);
 
 					using (context.ExpressionBlock())
 					{
-						context.Connect(context.EmitExpression(call.Arguments[0]), BasicEmitStore.CIn(add, add.Type.Terminals["Vec1"]));
+						context.Connect(context.EmitExpression(call.Arguments[0]), TerminalStore.CIn(add, add.Type["Vec1"]));
 
-						Block mult = context.AddBlock(Blocks.Math.Multiply_Vector);
+						Block mult = context.AddBlock(StockBlocks.Math.Multiply_Vector);
 
 						using (context.ExpressionBlock())
 						{
-							Block sub = context.AddBlock(Blocks.Math.Subtract_Vector);
+							Block sub = context.AddBlock(StockBlocks.Math.Subtract_Vector);
 
 							using (context.ExpressionBlock())
 							{
-								context.Connect(context.EmitExpression(call.Arguments[1]), BasicEmitStore.CIn(sub, sub.Type.Terminals["Vec1"]));
-								context.Connect(context.EmitExpression(call.Arguments[0]), BasicEmitStore.CIn(sub, sub.Type.Terminals["Vec2"]));
+								context.Connect(context.EmitExpression(call.Arguments[1]), TerminalStore.CIn(sub, sub.Type["Vec1"]));
+								context.Connect(context.EmitExpression(call.Arguments[0]), TerminalStore.CIn(sub, sub.Type["Vec2"]));
 							}
 
-							context.Connect(BasicEmitStore.COut(sub, sub.Type.Terminals["Vec1 - Vec2"]), BasicEmitStore.CIn(mult, mult.Type.Terminals["Vec"]));
+							context.Connect(TerminalStore.COut(sub, sub.Type["Vec1 - Vec2"]), TerminalStore.CIn(mult, mult.Type["Vec"]));
 
-							context.Connect(context.EmitExpression(call.Arguments[2]), BasicEmitStore.CIn(mult, mult.Type.Terminals["Num"]));
+							context.Connect(context.EmitExpression(call.Arguments[2]), TerminalStore.CIn(mult, mult.Type["Num"]));
 						}
 
-						context.Connect(BasicEmitStore.COut(mult, mult.Type.Terminals["Vec * Num"]), BasicEmitStore.CIn(add, add.Type.Terminals["Vec2"]));
+						context.Connect(TerminalStore.COut(mult, mult.Type["Vec * Num"]), TerminalStore.CIn(add, add.Type["Vec2"]));
 					}
 
-					return BasicEmitStore.COut(add, add.Type.Terminals["Vec1 + Vec2"]);
+					return TerminalStore.COut(add, add.Type["Vec1 + Vec2"]);
 				},
 				args =>
 				{
@@ -636,7 +636,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("angle", TypeSymbol.Float),
 				],
 				TypeSymbol.Rotation,
-				(call, context) => EmitX1(call, context, Blocks.Math.AxisAngle));
+				(call, context) => EmitX1(call, context, StockBlocks.Math.AxisAngle));
 
 		[FunctionDoc(
 			Info = """
@@ -680,7 +680,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("worldFar", Modifiers.Out, TypeSymbol.Vector3),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitXX(call, context, 2, Blocks.Math.ScreenToWorld));
+				(call, context) => EmitXX(call, context, 2, StockBlocks.Math.ScreenToWorld));
 
 		[FunctionDoc(
 			Info = """
@@ -709,7 +709,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("screenY", Modifiers.Out, TypeSymbol.Float),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitXX(call, context, 2, Blocks.Math.WorldToScreen));
+				(call, context) => EmitXX(call, context, 2, StockBlocks.Math.WorldToScreen));
 
 		[FunctionDoc(
 			Info = """
@@ -741,23 +741,23 @@ internal static partial class BuiltinFunctions
 				TypeSymbol.Vector3,
 				(call, context) =>
 				{
-					Block make = context.AddBlock(Blocks.Math.Make_Vector);
+					Block make = context.AddBlock(StockBlocks.Math.Make_Vector);
 
 					using (context.ExpressionBlock())
 					{
-						Block wts = context.AddBlock(Blocks.Math.WorldToScreen);
+						Block wts = context.AddBlock(StockBlocks.Math.WorldToScreen);
 
 						using (context.ExpressionBlock())
 						{
-							IEmitStore store = context.EmitExpression(call.Arguments[0]);
-							context.Connect(store, BasicEmitStore.CIn(wts, wts.Type.Terminals["World Pos"]));
+							ITerminalStore store = context.EmitExpression(call.Arguments[0]);
+							context.Connect(store, TerminalStore.CIn(wts, wts.Type["World Pos"]));
 						}
 
-						context.Connect(BasicEmitStore.COut(wts, wts.Type.Terminals["Screen X"]), BasicEmitStore.CIn(make, make.Type.Terminals["X"]));
-						context.Connect(BasicEmitStore.COut(wts, wts.Type.Terminals["Screen Y"]), BasicEmitStore.CIn(make, make.Type.Terminals["Y"]));
+						context.Connect(TerminalStore.COut(wts, wts.Type["Screen X"]), TerminalStore.CIn(make, make.Type["X"]));
+						context.Connect(TerminalStore.COut(wts, wts.Type["Screen Y"]), TerminalStore.CIn(make, make.Type["Y"]));
 					}
 
-					return BasicEmitStore.COut(make, make.Type.Terminals["Vector"]);
+					return TerminalStore.COut(make, make.Type["Vector"]);
 				});
 
 		[FunctionDoc(
@@ -784,7 +784,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("up", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Rotation,
-				(call, context) => EmitX1(call, context, Blocks.Math.LookRotation));
+				(call, context) => EmitX1(call, context, StockBlocks.Math.LookRotation));
 
 		[FunctionDoc(
 			Info = """
@@ -823,7 +823,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("planeNormal", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Vector3,
-				(call, context) => EmitX1(call, context, Blocks.Math.LineVsPlane));
+				(call, context) => EmitX1(call, context, StockBlocks.Math.LineVsPlane));
 
 		private static readonly Namespace MathNamespace = BuiltinNamespace + "math";
 	}

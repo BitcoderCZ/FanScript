@@ -2,12 +2,12 @@
 // Copyright (c) BitcoderCZ. All rights reserved.
 // </copyright>
 
+using FancadeLoaderLib.Editing;
+using FancadeLoaderLib.Editing.Scripting.TerminalStores;
 using FanScript.Compiler.Binding;
-using FanScript.Compiler.Emit;
 using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Documentation.Attributes;
-using FanScript.FCInfo;
 using FanScript.Utils;
 
 namespace FanScript.Compiler.Symbols;
@@ -62,34 +62,34 @@ internal static partial class BuiltinFunctions
 					object?[]? values = context.ValidateConstants(call.Arguments.AsMemory(^2..), true);
 					if (values is null)
 					{
-						return NopEmitStore.Instance;
+						return NopTerminalStore.Instance;
 					}
 
-					Block playSound = context.AddBlock(Blocks.Sound.PlaySound);
+					Block playSound = context.AddBlock(StockBlocks.Sound.PlaySound);
 
-					context.SetBlockValue(playSound, 0, (byte)(((bool?)values[0] ?? false) ? 1 : 0)); // loop
-					context.SetBlockValue(playSound, 1, (ushort)((float?)values[1] ?? 0f)); // sound
+					context.SetSetting(playSound, 0, (byte)(((bool?)values[0] ?? false) ? 1 : 0)); // loop
+					context.SetSetting(playSound, 1, (ushort)((float?)values[1] ?? 0f)); // sound
 
 					using (context.ExpressionBlock())
 					{
-						IEmitStore volume = context.EmitExpression(call.Arguments[0]);
-						IEmitStore pitch = context.EmitExpression(call.Arguments[1]);
+						ITerminalStore volume = context.EmitExpression(call.Arguments[0]);
+						ITerminalStore pitch = context.EmitExpression(call.Arguments[1]);
 
-						context.Connect(volume, BasicEmitStore.CIn(playSound, playSound.Type.Terminals["Volume"]));
-						context.Connect(pitch, BasicEmitStore.CIn(playSound, playSound.Type.Terminals["Pitch"]));
+						context.Connect(volume, TerminalStore.CIn(playSound, playSound.Type["Volume"]));
+						context.Connect(pitch, TerminalStore.CIn(playSound, playSound.Type["Pitch"]));
 					}
 
-					IEmitStore varStore;
+					ITerminalStore varStore;
 					using (context.StatementBlock())
 					{
 						VariableSymbol variable = ((BoundVariableExpression)call.Arguments[2]).Variable;
 
-						varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(playSound, playSound.Type.Terminals["Channel"]));
+						varStore = context.EmitSetVariable(variable, () => TerminalStore.COut(playSound, playSound.Type["Channel"]));
 
-						context.Connect(BasicEmitStore.COut(playSound), varStore);
+						context.Connect(TerminalStore.COut(playSound), varStore);
 					}
 
-					return new MultiEmitStore(BasicEmitStore.CIn(playSound), varStore is NopEmitStore ? BasicEmitStore.COut(playSound) : varStore);
+					return new MultiTerminalStore(TerminalStore.CIn(playSound), varStore is NopTerminalStore ? TerminalStore.COut(playSound) : varStore);
 				});
 
 		[FunctionDoc(
@@ -117,7 +117,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("channel", TypeSymbol.Float),
 				 ],
 				 TypeSymbol.Void,
-				 (call, context) => EmitAX0(call, context, Blocks.Sound.StopSound));
+				 (call, context) => EmitAX0(call, context, StockBlocks.Sound.StopSound));
 
 		[FunctionDoc(
 			Info = """
@@ -152,7 +152,7 @@ internal static partial class BuiltinFunctions
 					 new ParameterSymbol("pitch", TypeSymbol.Float),
 				 ],
 				 TypeSymbol.Void,
-				 (call, context) => EmitAX0(call, context, Blocks.Sound.VolumePitch));
+				 (call, context) => EmitAX0(call, context, StockBlocks.Sound.VolumePitch));
 
 		private static readonly Namespace SoundNamespace = BuiltinNamespace + "sound";
 	}

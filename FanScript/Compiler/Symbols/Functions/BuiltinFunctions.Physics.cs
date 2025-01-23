@@ -2,10 +2,10 @@
 // Copyright (c) BitcoderCZ. All rights reserved.
 // </copyright>
 
+using FancadeLoaderLib.Editing;
 using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Documentation.Attributes;
-using FanScript.FCInfo;
 
 namespace FanScript.Compiler.Symbols;
 
@@ -50,7 +50,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("torque", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Physics.AddForce))
+				(call, context) => EmitAX0(call, context, StockBlocks.Physics.AddForce))
 			{
 				IsMethod = true,
 			};
@@ -86,7 +86,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("spin", Modifiers.Out, TypeSymbol.Vector3),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitXX(call, context, 2, Blocks.Physics.GetVelocity))
+				(call, context) => EmitXX(call, context, 2, StockBlocks.Physics.GetVelocity))
 			{
 				IsMethod = true,
 			};
@@ -122,7 +122,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("spin", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Physics.SetVelocity))
+				(call, context) => EmitAX0(call, context, StockBlocks.Physics.SetVelocity))
 			{
 				IsMethod = true,
 			};
@@ -155,7 +155,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("rotation", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Physics.SetLocked))
+				(call, context) => EmitAX0(call, context, StockBlocks.Physics.SetLocked))
 			{
 				IsMethod = true,
 			};
@@ -179,7 +179,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("mass", TypeSymbol.Float),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Physics.SetMass))
+				(call, context) => EmitAX0(call, context, StockBlocks.Physics.SetMass))
 			{
 				IsMethod = true,
 			};
@@ -203,7 +203,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("friction", TypeSymbol.Float),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Physics.SetFriction))
+				(call, context) => EmitAX0(call, context, StockBlocks.Physics.SetFriction))
 			{
 				IsMethod = true,
 			};
@@ -227,7 +227,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("bounciness", TypeSymbol.Float),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Physics.SetBounciness))
+				(call, context) => EmitAX0(call, context, StockBlocks.Physics.SetBounciness))
 			{
 				IsMethod = true,
 			};
@@ -249,7 +249,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("gravity", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Physics.SetGravity));
+				(call, context) => EmitAX0(call, context, StockBlocks.Physics.SetGravity));
 
 		[FunctionDoc(
 			Info = """
@@ -300,7 +300,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("constraint", Modifiers.Out, TypeSymbol.Constraint),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAXX(call, context, 1, Blocks.Physics.AddConstraint))
+				(call, context) => EmitAXX(call, context, 1, StockBlocks.Physics.AddConstraint))
 			{
 				IsMethod = true,
 			};
@@ -333,7 +333,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("upper", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Physics.LinearLimits))
+				(call, context) => EmitAX0(call, context, StockBlocks.Physics.LinearLimits))
 			{
 				IsMethod = true,
 			};
@@ -366,7 +366,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("upper", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Physics.AngularLimits))
+				(call, context) => EmitAX0(call, context, StockBlocks.Physics.AngularLimits))
 			{
 				IsMethod = true,
 			};
@@ -399,7 +399,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("damping", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Physics.LinearSpring))
+				(call, context) => EmitAX0(call, context, StockBlocks.Physics.LinearSpring))
 			{
 				IsMethod = true,
 			};
@@ -432,7 +432,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("damping", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Physics.AngularSpring))
+				(call, context) => EmitAX0(call, context, StockBlocks.Physics.AngularSpring))
 			{
 				IsMethod = true,
 			};
@@ -465,7 +465,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("force", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Physics.LinearMotor))
+				(call, context) => EmitAX0(call, context, StockBlocks.Physics.LinearMotor))
 			{
 				IsMethod = true,
 			};
@@ -498,7 +498,7 @@ internal static partial class BuiltinFunctions
 					new ParameterSymbol("force", TypeSymbol.Vector3),
 				],
 				TypeSymbol.Void,
-				(call, context) => EmitAX0(call, context, Blocks.Physics.AngularMotor))
+				(call, context) => EmitAX0(call, context, StockBlocks.Physics.AngularMotor))
 			{
 				IsMethod = true,
 			};

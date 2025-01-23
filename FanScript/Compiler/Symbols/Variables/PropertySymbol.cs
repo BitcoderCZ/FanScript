@@ -2,6 +2,7 @@
 // Copyright (c) BitcoderCZ. All rights reserved.
 // </copyright>
 
+using FancadeLoaderLib.Editing.Scripting.TerminalStores;
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Emit;
 
@@ -46,9 +47,9 @@ public sealed class PropertyDefinitionSymbol : BasicVariableSymbol
 		EmitGet = (context, _) => context.EmitLiteralExpression(Constant!.Value);
 	}
 
-	internal delegate IEmitStore GetDelegate(IEmitContext context, BoundExpression expression);
+	internal delegate ITerminalStore GetDelegate(IEmitContext context, BoundExpression expression);
 
-	internal delegate IEmitStore SetDelegate(IEmitContext context, BoundExpression expression, Func<IEmitStore> getStore);
+	internal delegate ITerminalStore SetDelegate(IEmitContext context, BoundExpression expression, Func<ITerminalStore> getStore);
 
 	public override SymbolKind Kind => SymbolKind.Property;
 

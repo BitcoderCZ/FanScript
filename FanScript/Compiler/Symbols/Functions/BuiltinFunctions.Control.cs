@@ -2,12 +2,12 @@
 // Copyright (c) BitcoderCZ. All rights reserved.
 // </copyright>
 
+using FancadeLoaderLib.Editing;
+using FancadeLoaderLib.Editing.Scripting.TerminalStores;
 using FanScript.Compiler.Binding;
-using FanScript.Compiler.Emit;
 using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Documentation.Attributes;
-using FanScript.FCInfo;
 using FanScript.Utils;
 
 namespace FanScript.Compiler.Symbols;
@@ -42,24 +42,24 @@ internal static partial class BuiltinFunctions
 					object?[]? values = context.ValidateConstants(call.Arguments.AsMemory(Range.StartAt(1)), true);
 					if (values is null)
 					{
-						return NopEmitStore.Instance;
+						return NopTerminalStore.Instance;
 					}
 
-					Block joystick = context.AddBlock(Blocks.Control.Joystick);
+					Block joystick = context.AddBlock(StockBlocks.Control.Joystick);
 
-					context.SetBlockValue(joystick, 0, (byte)((float?)values[0] ?? 0f)); // unbox, then cast
+					context.SetSetting(joystick, 0, (byte)((float?)values[0] ?? 0f)); // unbox, then cast
 
-					IEmitStore varStore;
+					ITerminalStore varStore;
 					using (context.StatementBlock())
 					{
 						VariableSymbol variable = ((BoundVariableExpression)call.Arguments[0]).Variable;
 
-						varStore = context.EmitSetVariable(variable, () => BasicEmitStore.COut(joystick, joystick.Type.Terminals["Joy Dir"]));
+						varStore = context.EmitSetVariable(variable, () => TerminalStore.COut(joystick, joystick.Type["Joy Dir"]));
 
-						context.Connect(BasicEmitStore.COut(joystick), varStore);
+						context.Connect(TerminalStore.COut(joystick), varStore);
 					}
 
-					return new MultiEmitStore(BasicEmitStore.CIn(joystick), varStore is NopEmitStore ? BasicEmitStore.COut(joystick) : varStore);
+					return new MultiTerminalStore(TerminalStore.CIn(joystick), varStore is NopTerminalStore ? TerminalStore.COut(joystick) : varStore);
 				});
 
 		private static readonly Namespace ControlNamespace = BuiltinNamespace + "control";

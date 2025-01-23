@@ -22,12 +22,16 @@ internal static class Log
 		StringBuilder builder = new StringBuilder();
 
 		if (msg.ErrCode != ErrorCode.None)
+		{
 			builder.Append($"Err: {msg.ErrCode}, ErrCode: {(int)msg.ErrCode}, ");
+		}
 
 		builder.Append(msg.Value);
 
 		if (msg.Exception is not null)
+		{
 			builder.Append(", Exception: " + msg.Exception);
+		}
 
 		Console.WriteLine($"[{msg.CreatedAt:dd.MM.yy HH:mm:ss}] [{msg.LogLevel,-5}] {builder}");
 	}

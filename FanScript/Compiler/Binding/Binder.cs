@@ -3,6 +3,7 @@
 // </copyright>
 
 using FancadeLoaderLib;
+using FancadeLoaderLib.Editing.Scripting;
 using FanScript.Compiler.Binding.Rewriters;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Exceptions;
@@ -11,7 +12,6 @@ using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
-using FanScript.FCInfo;
 using MathUtils.Vectors;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;

@@ -2,11 +2,10 @@
 // Copyright (c) BitcoderCZ. All rights reserved.
 // </copyright>
 
+using FancadeLoaderLib.Editing.Scripting;
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Diagnostics;
 using FanScript.Compiler.Emit;
-using FanScript.Compiler.Emit.BlockBuilders;
-using FanScript.Compiler.Emit.CodePlacers;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
@@ -148,7 +147,7 @@ public sealed class Compilation
 		}
 	}
 
-	public ImmutableArray<Diagnostic> Emit(CodePlacer placer, BlockBuilder builder)
+	public ImmutableArray<Diagnostic> Emit(ICodePlacer placer, BlockBuilder builder)
 	{
 		if (GlobalScope.Diagnostics.HasErrors())
 		{

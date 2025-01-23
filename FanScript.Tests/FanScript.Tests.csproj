@@ -42,6 +42,9 @@
     <Reference Include="FancadeLoaderLib">
       <HintPath>..\Dlls\FancadeLoaderLib.dll</HintPath>
     </Reference>
+    <Reference Include="FancadeLoaderLib.Editing">
+      <HintPath>..\Dlls\FancadeLoaderLib.Editing.dll</HintPath>
+    </Reference>
     <Reference Include="MathUtils">
       <HintPath>..\Dlls\MathUtils.dll</HintPath>
     </Reference>

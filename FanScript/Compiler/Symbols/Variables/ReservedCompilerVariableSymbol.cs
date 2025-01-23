@@ -2,8 +2,8 @@
 // Copyright (c) BitcoderCZ. All rights reserved.
 // </copyright>
 
+using FancadeLoaderLib.Editing.Scripting;
 using FanScript.Compiler.Symbols.Functions;
-using FanScript.FCInfo;
 using System.Diagnostics;
 
 namespace FanScript.Compiler.Symbols.Variables;

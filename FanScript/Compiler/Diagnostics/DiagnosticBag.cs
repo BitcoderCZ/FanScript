@@ -2,14 +2,13 @@
 // Copyright (c) BitcoderCZ. All rights reserved.
 // </copyright>
 
+using FancadeLoaderLib.Editing.Scripting;
 using FanScript.Compiler.Emit;
-using FanScript.Compiler.Emit.BlockBuilders;
 using FanScript.Compiler.Exceptions;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
-using FanScript.FCInfo;
 using System.Collections;
 
 namespace FanScript.Compiler.Diagnostics;
@@ -212,7 +211,7 @@ public sealed class DiagnosticBag : IEnumerable<Diagnostic>
 		=> ReportError(location, $"Circular calls (recursion) aren't allowed ({string.Join(" -> ", cycle.Select(func => func.ToString()))}).");
 
 	public void ReportTooManyInlineVariableUses(TextLocation location, string variableName)
-		=> ReportError(location, $"Inline variable '{variableName}' has been used to many times (max is {FancadeConstants.WireSplitLimit}), either use it less times or remove the inline modifier.");
+		=> ReportError(location, $"Inline variable '{variableName}' has been used to many times (max is {FancadeConstants.MaxWireSplits}), either use it less times or remove the inline modifier.");
 
 	public void ReportUnreachableCode(TextLocation location)
 	  => ReportWarning(location, $"Unreachable code detected.");
@@ -225,7 +224,7 @@ public sealed class DiagnosticBag : IEnumerable<Diagnostic>
 			case BlockStatementSyntax blockStatement:
 				StatementSyntax? firstStatement = blockStatement.Statements.FirstOrDefault();
 
-				// Report just for non empty blocks.
+				// Report just for non empty StockBlocks.
 				if (firstStatement is not null)
 				{
 					ReportUnreachableCode(firstStatement);
@@ -283,7 +282,7 @@ public sealed class DiagnosticBag : IEnumerable<Diagnostic>
 		string msg = unsupportedOperation switch
 		{
 			BuilderUnsupportedOperation.ConnectToBlock => $"Current {nameof(BlockBuilder)} cannot connect object wires to blocks, you will have to connect it manually.",
-			BuilderUnsupportedOperation.CreateCustomBlocks => $"Current {nameof(BlockBuilder)} cannot create custom blocks.",
+			BuilderUnsupportedOperation.CreateCustomBlocks => $"Current {nameof(BlockBuilder)} cannot create custom StockBlocks.",
 			_ => throw new UnknownEnumValueException<BuilderUnsupportedOperation>(unsupportedOperation),
 		};
 

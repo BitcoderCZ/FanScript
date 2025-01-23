@@ -4,11 +4,12 @@ using TextCopy;
 using CommandLineParser.Attributes;
 using CommandLineParser.Commands;
 using CommandLineParser;
-using FanScript.Compiler.Emit.CodePlacers;
 using FanScript.Compiler;
 using FanScript.Compiler.Syntax;
-using FanScript.Compiler.Emit.BlockBuilders;
 using FanScript.Utils;
+using FancadeLoaderLib.Editing.Scripting;
+using FancadeLoaderLib.Editing.Scripting.Placers;
+using FancadeLoaderLib.Editing.Scripting.Builders;
 
 #if DEBUG
 using System.Diagnostics;
@@ -68,7 +69,7 @@ internal class Program
 		[DependsOn(nameof(UseExistingPrefab), false)]
 		[HelpText("Type of the new prefab, in which code will get placed.")]
 		[Option("prefabType")]
-		public PrefabType PrefabType { get; set; } = PrefabType.Physics;
+		public PrefabType PrefabType { get; set; } = PrefabType.Script;
 
 		[DependsOn(nameof(Builder), CodeBuilderEnum.GameFile)]
 		[DependsOn(nameof(UseExistingPrefab), true)]
@@ -79,7 +80,9 @@ internal class Program
 		public override int Run()
 		{
 			if (!File.Exists(Src))
+			{
 				return Log.Error($"Source file '{Src}' wasn't found.", ErrorCode.FileNotFound);
+			}
 
 			SyntaxTree tree = SyntaxTree.Load(Src);
 
@@ -105,13 +108,44 @@ internal class Program
 				Console.WriteLine();
 			}
 
-			BlockBuilder builder = Builder switch
+			BlockBuilder builder;
+			switch (Builder)
 			{
-				CodeBuilderEnum.EditorScript => new EditorScriptBlockBuilder(),
-				CodeBuilderEnum.GameFile => new GameFileBlockBuilder(),
-				_ => throw new InvalidDataException($"Unknown CodeBuilder '{Builder}'"),
-			};
-			CodePlacer placer = Placer switch
+				case CodeBuilderEnum.EditorScript:
+					builder = new EditorScriptBlockBuilder();
+					break;
+				case CodeBuilderEnum.GameFile:
+					Game? inGame = null;
+
+					if (!string.IsNullOrEmpty(InGameFile))
+					{
+						if (!File.Exists(InGameFile))
+						{
+							return Log.Error($"In game file '{Src}' wasn't found.", ErrorCode.FileNotFound);
+						}
+
+						try
+						{
+							using (FileStream fs = File.OpenRead(InGameFile))
+							{
+								inGame = Game.LoadCompressed(fs);
+							}
+						}
+						catch (Exception ex)
+						{
+							return Log.Error($"Failed to load in game.", ErrorCode.UnknownError, ex);
+						}
+					}
+
+					builder = UseExistingPrefab && inGame is not null
+						? new GameFileBlockBuilder(inGame, PrefabIndex)
+						: (BlockBuilder)new GameFileBlockBuilder(inGame, PrefabName, PrefabType);
+					break;
+				default:
+					throw new InvalidDataException($"Unknown CodeBuilder '{Builder}'");
+			}
+
+			ICodePlacer placer = Placer switch
 			{
 				BlockPlacerEnum.Tower => new TowerCodePlacer(builder),
 				BlockPlacerEnum.Ground => new GroundCodePlacer(builder),
@@ -131,7 +165,9 @@ internal class Program
 			int3 pos = Pos is null ? int3.Zero : new int3(Pos.X, Pos.Y, Pos.Z);
 
 			if (pos.X < 0 || pos.Y < 0 || pos.Z < 0)
+			{
 				return Log.Error($"Build position ({pos}) cannot be negative.", ErrorCode.InvalidBuildPos);
+			}
 
 			switch (Builder)
 			{
@@ -150,8 +186,7 @@ internal class Program
 					break;
 				case CodeBuilderEnum.GameFile:
 					{
-						GameFileBlockBuilder.Args args = UseExistingPrefab ? new(InGameFile, PrefabIndex) : new(InGameFile, PrefabName, PrefabType);
-						Game game = (Game)builder.Build(pos, args);
+						Game game = (Game)builder.Build(pos);
 
 						game.TrimPrefabs();
 
