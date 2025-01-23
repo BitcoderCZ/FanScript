@@ -1116,12 +1116,6 @@ internal sealed class Emitter : IEmitContext
 			Block block = AddBlock(Blocks.Values.Comment);
 			SetBlockValue(block, 0, line);
 		}
-
-		//for (int i = 0; i < text.Length; i += FancadeConstants.MaxCommentLength)
-		//{
-		//    Block block = addBlock(Blocks.Values.Comment);
-		//    setBlockValue(block, 0, text.Substring(i, Math.Min(FancadeConstants.MaxCommentLength, text.Length - i)));
-		//}
 	}
 
 	public IEmitStore EmitSetArraySegment(BoundArraySegmentExpression segment, BoundExpression arrayVariable, BoundExpression startIndex)
