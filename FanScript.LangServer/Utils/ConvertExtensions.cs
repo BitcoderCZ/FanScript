@@ -1,4 +1,8 @@
-﻿using FanScript.Compiler.Text;
+﻿// <copyright file="ConvertExtensions.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Compiler.Text;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using Range = OmniSharp.Extensions.LanguageServer.Protocol.Models.Range;
 
@@ -12,11 +16,10 @@ internal static class ConvertExtensions
 	public static TextSpan ToSpan(this Position position, SourceText text)
 		=> new TextSpan(
 			text.Lines[position.Line].Start + position.Character,
-			1
-		);
+			1);
+
 	public static TextSpan ToSpan(this Range range, SourceText text)
 		=> TextSpan.FromBounds(
 			text.Lines[range.Start.Line].Start + range.Start.Character,
-			text.Lines[range.End.Line].Start + range.End.Character
-		);
+			text.Lines[range.End.Line].Start + range.End.Character);
 }

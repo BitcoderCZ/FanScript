@@ -1,4 +1,8 @@
-﻿using FancadeLoaderLib.Editing.Scripting;
+﻿// <copyright file="EmitterTests.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FancadeLoaderLib.Editing.Scripting;
 using FancadeLoaderLib.Editing.Scripting.Builders;
 using FancadeLoaderLib.Editing.Scripting.Placers;
 using FanScript.Compiler;
@@ -34,14 +38,13 @@ public class EmitterTests
             i++
         } while (i < 10)
         """)]
-	// code is reachable
 	[InlineData("""
         float i = 0
         do
         {
             i++
         } while (false)
-        """)]
+        """)] // code is reachable
 	[InlineData("on Touch(out float x, out float y, 0, 0) { }")]
 	[InlineData("""
         float x = 1
@@ -179,21 +182,21 @@ public class EmitterTests
 		AssertDiagnostics(text, diagnostics);
 	}
 
-	//[Fact]
-	//public void FunctionReturn_Missing()
-	//{
-	//    string text = @"
-	//        function [add](a: int, b: int): int
-	//        {
-	//        }
-	//    ";
+	[Fact]
+	public void FunctionReturn_Missing()
+	{
+		string text = @"
+	        func float $[add]$(float a, float b)
+	        {
+	        }
+	    ";
 
-	//    string diagnostics = @"
-	//        Not all code paths return a value.
-	//    ";
+		string diagnostics = @"
+	        Not all code paths return a value.
+	    ";
 
-	//    AssertDiagnostics(text, diagnostics);
-	//}
+		AssertDiagnostics(text, diagnostics);
+	}
 
 	[Fact]
 	public void IfStatement_Reports_CannotConvert()
@@ -252,41 +255,41 @@ public class EmitterTests
 		AssertDiagnostics(text, diagnostics);
 	}
 
-	//[Fact]
-	//public void ForStatement_Reports_CannotConvert_LowerBound()
-	//{
-	//    string text = @"
-	//        {
-	//            string result = 0
-	//            for i = [false] to 10
-	//                result = result + i
-	//        }
-	//    ";
+	/*[Fact]
+	public void ForStatement_Reports_CannotConvert_LowerBound()
+	{
+		string text = @"
+	        {
+	            string result = 0
+	            for i = [false] to 10
+	                result = result + i
+	        }
+	    ";
 
-	//    string diagnostics = @"
-	//        Cannot convert type 'bool' to 'int'.
-	//    ";
+		string diagnostics = @"
+	        Cannot convert type 'bool' to 'int'.
+	    ";
 
-	//    AssertDiagnostics(text, diagnostics);
-	//}
+		AssertDiagnostics(text, diagnostics);
+	}*/
 
-	//[Fact]
-	//public void ForStatement_Reports_CannotConvert_UpperBound()
-	//{
-	//    string text = @"
-	//        {
-	//            string result = 0
-	//            for i = 1 to [true]
-	//                result = result + i
-	//        }
-	//    ";
+	/*[Fact]
+	public void ForStatement_Reports_CannotConvert_UpperBound()
+	{
+		string text = @"
+	        {
+	            string result = 0
+	            for i = 1 to [true]
+	                result = result + i
+	        }
+	    ";
 
-	//    string diagnostics = @"
-	//        Cannot convert type 'bool' to 'int'.
-	//    ";
+		string diagnostics = @"
+	        Cannot convert type 'bool' to 'int'.
+	    ";
 
-	//    AssertDiagnostics(text, diagnostics);
-	//}
+		AssertDiagnostics(text, diagnostics);
+	}*/
 
 	[Fact]
 	public void NameExpression_Reports_Undefined()
@@ -922,20 +925,20 @@ public class EmitterTests
 	}
 
 	// TODO: uncomment when a modifier uses required modifiers
-	//[Theory]
-	//[MemberData(nameof(GetModifiersWithMissingRequiredFor), ModifierTarget.Variable)]
-	//public void Missign_Required_Modifiers(string modifier, string requiredModifiers)
-	//{
-	//    string text = $"""
-	//        $[{modifier}]$ float x = 0
-	//        """;
+	/*[Theory]
+	[MemberData(nameof(GetModifiersWithMissingRequiredFor), ModifierTarget.Variable)]
+	public void Missign_Required_Modifiers(string modifier, string requiredModifiers)
+	{
+		string text = $"""
+	        $[{modifier}]$ float x = 0
+	        """;
 
-	//    string diagnostics = $"""
-	//        Modifier '{modifier}' requires that one of <{requiredModifiers}> is present.
-	//        """;
+		string diagnostics = $"""
+	        Modifier '{modifier}' requires that one of <{requiredModifiers}> is present.
+	        """;
 
-	//    AssertDiagnostics(text, diagnostics);
-	//}
+		AssertDiagnostics(text, diagnostics);
+	}*/
 
 	[Fact]
 	public void Parameter_Already_Declared()
@@ -990,21 +993,21 @@ public class EmitterTests
 		AssertDiagnostics(text, diagnostics);
 	}
 
-	//[Fact]
-	//public void Bad_Type()
-	//{
-	//    string text = @"
-	//        func test($[invalidtype]$ n)
-	//        {
-	//        }
-	//    ";
+	/*[Fact]
+	public void Bad_Type()
+	{
+		string text = @"
+	        func test($[invalidtype]$ n)
+	        {
+	        }
+	    ";
 
-	//    string diagnostics = @"
-	//        Type 'invalidtype' doesn't exist.
-	//    ";
+		string diagnostics = @"
+	        Type 'invalidtype' doesn't exist.
+	    ";
 
-	//    AssertDiagnostics(text, diagnostics);
-	//}
+		AssertDiagnostics(text, diagnostics);
+	}*/
 
 	[Fact]
 	public void Circular_Call()
@@ -1022,6 +1025,7 @@ public class EmitterTests
 
 		AssertDiagnostics(text, diagnostics, noLocationDiagnostic: true);
 	}
+
 	[Fact]
 	public void Circular_Call2()
 	{
@@ -1058,7 +1062,9 @@ public class EmitterTests
 		string[] expectedDiagnostics = AnnotatedText.UnindentLines(diagnosticText);
 
 		if (annotatedText.Spans.Length != expectedDiagnostics.Length)
+		{
 			throw new Exception("ERROR: Must mark as many spans as there are expected diagnostics");
+		}
 
 		Assert.Equal(expectedDiagnostics.Length, diagnostics.Length);
 
@@ -1074,7 +1080,9 @@ public class EmitterTests
 		}
 	}
 
+#pragma warning disable SA1202 // Elements should be ordered by access
 	public static IEnumerable<object[]> GetModifiersFor(bool valid, ModifierTarget target, TypeSymbol? type = null)
+#pragma warning restore SA1202
 	{
 		foreach (var mod in GetModifiersForTarget(valid, target, type))
 		{
@@ -1098,23 +1106,25 @@ public class EmitterTests
 					if (mod1.GetConflictingModifiers().Contains(mod2) && mod2.GetTargets().Contains(validTarget) &&
 						(required1.Count == 0 || required1.Contains(mod2)) &&
 						(required2.Count == 0 || required2.Contains(mod1)))
+					{
 						yield return [mod1.ToSyntaxString(), mod2.ToSyntaxString()];
+					}
 				}
 			}
 		}
 	}
 
 	// currently not used by anything
-	//public static IEnumerable<object[]> GetModifiersWithMissingRequiredFor(ModifierTarget target)
-	//{
-	//    Modifiers validMods = ModifiersE.GetValidModifiersFor(target, null);
+	/*public static IEnumerable<object[]> GetModifiersWithMissingRequiredFor(ModifierTarget target)
+	{
+		Modifiers validMods = ModifiersE.GetValidModifiersFor(target, null);
 
-	//    foreach (var mod in Enum.GetValues<Modifiers>())
-	//    {
-	//        if (validMods.HasFlag(mod) && mod.GetRequiredModifiers().Count != 0)
-	//            yield return [mod.ToSyntaxString(), string.Join(", ", mod.GetRequiredModifiers().Select(mod => mod.ToSyntaxString()))];
-	//    }
-	//}
+		foreach (var mod in Enum.GetValues<Modifiers>())
+		{
+			if (validMods.HasFlag(mod) && mod.GetRequiredModifiers().Count != 0)
+				yield return [mod.ToSyntaxString(), string.Join(", ", mod.GetRequiredModifiers().Select(mod => mod.ToSyntaxString()))];
+		}
+	}*/
 
 	public static IEnumerable<object[]> GetVariableDeclarations()
 	{
@@ -1141,11 +1151,15 @@ public class EmitterTests
 				string declaration = mods.ToSyntaxString() + " " + type + " x";
 
 				if (!mods.HasFlag(Modifiers.Constant) && !mods.HasFlag(Modifiers.Readonly))
+				{
 					yield return [declaration];
+				}
 
 				string? initializer = initializers[type];
 				if (!string.IsNullOrEmpty(initializer))
+				{
 					yield return [declaration + " = " + initializer];
+				}
 			}
 		}
 
@@ -1160,11 +1174,15 @@ public class EmitterTests
 					string declaration = mods.ToSyntaxString() + " " + type + " x";
 
 					if (!mods.HasFlag(Modifiers.Constant) && !mods.HasFlag(Modifiers.Readonly))
+					{
 						yield return [declaration];
+					}
 
 					string? initializer = initializers[type];
 					if (!string.IsNullOrEmpty(initializer))
+					{
 						yield return [declaration + " = " + initializer];
+					}
 				}
 			}
 		}
@@ -1178,9 +1196,12 @@ public class EmitterTests
 		foreach (var mod in Enum.GetValues<Modifiers>())
 		{
 			if (valid == validMods.HasFlag(mod) && (!valid || mod == ValidateModifiers(mod, target, type)))
+			{
 				yield return mod;
+			}
 		}
 	}
+
 	private static IEnumerable<Modifiers> GetModifierCombinationsFor(ModifierTarget target, TypeSymbol? type = null)
 	{
 		HashSet<Modifiers> returnedMods = [];
@@ -1189,8 +1210,12 @@ public class EmitterTests
 		for (int i = 0; i <= max; i++)
 		{
 			Modifiers mods = ValidateModifiers((Modifiers)i, target, type);
-			if (returnedMods.Add(mods)) // don't return the same modifiers multiple times
+
+			// don't return the same modifiers multiple times
+			if (returnedMods.Add(mods))
+			{
 				yield return mods;
+			}
 		}
 	}
 
@@ -1198,9 +1223,12 @@ public class EmitterTests
 	{
 		Modifiers? validMods = null;
 		if (target is not null)
+		{
 			validMods = ModifiersE.GetValidModifiersFor(target.Value, type);
+		}
 
 		foreach (var mod in Enum.GetValues<Modifiers>())
+		{
 			if (mods.HasFlag(mod))
 			{
 				if (validMods is not null && !validMods.Value.HasFlag(mod))
@@ -1210,8 +1238,12 @@ public class EmitterTests
 				}
 
 				foreach (var conflict in mod.GetConflictingModifiers())
+				{
 					if (mods.HasFlag(conflict))
+					{
 						mods ^= conflict; // toggle conflict bit (remove)
+					}
+				}
 
 				var requiredMods = mod.GetRequiredModifiers();
 				if (requiredMods.Count != 0)
@@ -1219,16 +1251,21 @@ public class EmitterTests
 					bool found = false;
 
 					foreach (var required in requiredMods)
+					{
 						if (mods.HasFlag(required))
 						{
 							found = true;
 							break;
 						}
+					}
 
 					if (!found)
+					{
 						mods |= requiredMods.First();
+					}
 				}
 			}
+		}
 
 		return mods;
 	}

@@ -4,7 +4,7 @@ Compiler based on [Minsk](https://github.com/terrajobst/minsk)
 Documentation can be found [here](https://github.com/BitcoderCZ/FanScript-Documentation/blob/main/MdDocs/README.md)
 
 ## Building
-- Make sure you have installed [dotnet 8 sdk](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
+- Make sure you have installed [dotnet 9 sdk](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
 - Run `dotnet build -c Release`
 
 ## VSCode Extension

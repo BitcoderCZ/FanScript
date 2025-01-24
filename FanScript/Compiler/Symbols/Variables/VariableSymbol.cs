@@ -29,8 +29,9 @@ public abstract class VariableSymbol : Symbol
 	public TypeSymbol Type { get; private set; }
 
 	/// <summary>
-	/// Used to know if a Read-Only variable has been assigned
+	/// Gets a value indicating whether a Read-Only variable has been assigned.
 	/// </summary>
+	/// <value><see langword="true"/> if a Read-Only variable has been assigned; otherwise, <see langword="false"/>.</value>
 	public bool Initialized { get; private set; }
 
 	public string ResultName

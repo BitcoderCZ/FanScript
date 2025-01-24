@@ -1,4 +1,8 @@
-﻿using FanScript.Compiler;
+﻿// <copyright file="HoverHandler.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Compiler;
 using FanScript.Compiler.Binding;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Functions;
@@ -23,36 +27,42 @@ namespace FanScript.LangServer.Handlers;
 
 internal class HoverHandler : HoverHandlerBase
 {
-	private readonly ILanguageServerFacade facade;
+	private readonly ILanguageServerFacade _facade;
 
-	private TextDocumentHandler? documentHandler;
+	private TextDocumentHandler? _documentHandler;
 
 	public HoverHandler(ILanguageServerFacade facade)
 	{
-		this.facade = facade;
+		_facade = facade;
 	}
 
 	public override async Task<Hover?> Handle(HoverParams request, CancellationToken cancellationToken)
 	{
-		documentHandler ??= facade.Workspace.GetService(typeof(TextDocumentHandler)) as TextDocumentHandler;
+		_documentHandler ??= _facade.Workspace.GetService(typeof(TextDocumentHandler)) as TextDocumentHandler;
 
-		if (documentHandler is null)
+		if (_documentHandler is null)
+		{
 			return null;
+		}
 
 		await Task.Yield();
 
-		Document document = documentHandler.GetDocument(request.TextDocument.Uri);
+		Document document = _documentHandler.GetDocument(request.TextDocument.Uri);
 		SyntaxTree? tree = document.Tree;
 		Compilation? compilation = document.Compilation;
 
 		if (tree is null || compilation is null)
+		{
 			return null;
+		}
 
 		var requestSpan = request.Position.ToSpan(tree.Text);
 		object? syntax = tree.FindSyntax(requestSpan);
 
 		if (syntax is not SyntaxNode node)
+		{
 			return null;
+		}
 
 		ScopeWSpan? scope = null;
 		foreach (var (func, funcScope) in compilation
@@ -69,12 +79,16 @@ internal class HoverHandler : HoverHandlerBase
 		if (node is SyntaxToken sToken)
 		{
 			if (sToken.Kind.IsModifier())
+			{
 				return GetHoverForModifier(ModifiersE.FromKind(sToken.Kind), sToken.Location);
+			}
 
 			TypeSymbol? type = sToken.Text == TypeSymbol.Null.Name ? TypeSymbol.Null : TypeSymbol.GetType(sToken.Text);
 
 			if (type != TypeSymbol.Error)
+			{
 				return GetHoverForType(type, sToken.Location);
+			}
 		}
 
 		switch (node.Parent)
@@ -82,23 +96,32 @@ internal class HoverHandler : HoverHandlerBase
 			case NameExpressionSyntax name:
 				{
 					if (scope is null)
+					{
 						break;
+					}
 
 					if (name.Parent is PropertyExpressionSyntax propEx && name == propEx.Expression)
 					{
-						PropertySymbol? prop = ResolveProperty(compilation, propEx,
-						[
-							.. scope.GetAllVariables(),
-							.. compilation.GetVariables().Where(var => var.IsGlobal),
-						], out _) as PropertySymbol;
+						PropertySymbol? prop = ResolveProperty(
+							compilation,
+							propEx,
+							[
+								.. scope.GetAllVariables(),
+								.. compilation.GetVariables().Where(var => var.IsGlobal),
+							],
+							out _) as PropertySymbol;
 
 						if (prop is not null)
+						{
 							return GetHoverForProperty(prop, node.Location);
+						}
 					}
 					else
 					{
 						if (node is not SyntaxToken token)
+						{
 							break;
+						}
 
 						VariableSymbol? varSymbol = scope
 							.GetAllVariables()
@@ -106,7 +129,9 @@ internal class HoverHandler : HoverHandlerBase
 							.FirstOrDefault(var => var.Name == token.Text);
 
 						if (varSymbol is not null)
+						{
 							return GetHoverForVariable(varSymbol, node.Location);
+						}
 					}
 				}
 
@@ -115,7 +140,9 @@ internal class HoverHandler : HoverHandlerBase
 			case AssignmentStatementSyntax assignment when node == assignment.Destination:
 				{
 					if (scope is null || node is not SyntaxToken token)
+					{
 						break;
+					}
 
 					VariableSymbol? varSymbol = scope
 						.GetAllVariables()
@@ -123,7 +150,9 @@ internal class HoverHandler : HoverHandlerBase
 						.FirstOrDefault(var => var.Name == token.Text);
 
 					if (varSymbol is not null)
+					{
 						return GetHoverForVariable(varSymbol, node.Location);
+					}
 				}
 
 				break;
@@ -134,14 +163,21 @@ internal class HoverHandler : HoverHandlerBase
 						IEnumerable<FunctionSymbol>? funcs = null;
 						TypeSymbol? baseType = null;
 						if (scope is not null)
-							funcs = ResolveProperty(compilation, propEx,
-							[
-								.. scope.GetAllVariables(),
-								.. compilation.GetVariables().Where(var => var.IsGlobal),
-							], out baseType) as IEnumerable<FunctionSymbol>;
+						{
+							funcs = ResolveProperty(
+								compilation,
+								propEx,
+								[
+									.. scope.GetAllVariables(),
+									.. compilation.GetVariables().Where(var => var.IsGlobal),
+								],
+								out baseType) as IEnumerable<FunctionSymbol>;
+						}
 
 						if (funcs is not null && baseType is not null)
+						{
 							return GetHoverForMethods(funcs.ToArray(), baseType, node.Location);
+						}
 					}
 					else
 					{
@@ -162,10 +198,13 @@ internal class HoverHandler : HoverHandlerBase
 
 					return GetHoverForFunctions(functions.ToArray(), node.Location);
 				}
+
 			case EventStatementSyntax sb when node == sb.Identifier:
 				{
 					if (!Enum.TryParse(sb.Identifier.Text, out EventType type))
+					{
 						break;
+					}
 
 					var info = type.GetInfo();
 					var doc = DocUtils.GetAttribute<EventType, EventDocAttribute>(type);
@@ -173,23 +212,28 @@ internal class HoverHandler : HoverHandlerBase
 					string val = info.ToString();
 
 					if (!string.IsNullOrEmpty(doc.Info))
+					{
 						val += " - " + doc.Info;
+					}
 
 					return new Hover()
 					{
 						Contents = new MarkedStringsOrMarkupContent(new MarkupContent()
 						{
 							Kind = MarkupKind.Markdown,
-							Value = val
+							Value = val,
 						}),
 						Range = node.Location.ToRange(),
 					};
 				}
+
 			case PostfixExpressionSyntax pe when node == pe.IdentifierToken:
 			case PostfixStatementSyntax ps when node == ps.IdentifierToken:
 				{
 					if (scope is null || node is not SyntaxToken token)
+					{
 						break;
+					}
 
 					VariableSymbol? varSymbol = scope
 						   .GetAllVariables()
@@ -197,7 +241,9 @@ internal class HoverHandler : HoverHandlerBase
 						   .FirstOrDefault(var => var.Name == token.Text);
 
 					if (varSymbol is not null)
+					{
 						return GetHoverForVariable(varSymbol, node.Location);
+					}
 				}
 
 				break;
@@ -206,7 +252,9 @@ internal class HoverHandler : HoverHandlerBase
 					BuildCommand? command = BuildCommandE.Parse(bc.Identifier.Text);
 
 					if (command is null)
+					{
 						break;
+					}
 
 					return GetHoverForBuildCommand(command.Value, node.Location);
 				}
@@ -239,7 +287,9 @@ internal class HoverHandler : HoverHandlerBase
 		}
 
 		if (baseVar is null)
+		{
 			return null;
+		}
 
 		baseType = baseVar.Type;
 
@@ -279,7 +329,9 @@ internal class HoverHandler : HoverHandlerBase
 							string info = doc.Info is null ? string.Empty : DocUtils.ParseAndBuild(doc.Info, null);
 
 							if (doc.ValueInfos is not null && !string.IsNullOrEmpty(doc.ValueInfos[i]))
+							{
 								info += "\n" + DocUtils.ParseAndBuild(doc.ValueInfos[i], null);
+							}
 
 							return info.Length == 0
 								? null
@@ -329,7 +381,9 @@ internal class HoverHandler : HoverHandlerBase
 
 		TypeSymbol baseType = property.Expression.Type;
 		if (baseType.IsGenericInstance)
+		{
 			baseType = TypeSymbol.GetGenericDefinition(baseType);
+		}
 
 		property.Modifiers.ToSyntaxString(builder);
 		builder.Append(' ');
@@ -359,7 +413,9 @@ internal class HoverHandler : HoverHandlerBase
 	private static Hover? GetHoverForFunctions(FunctionSymbol[] functions, TextLocation location)
 	{
 		if (functions.Length == 0)
+		{
 			return null;
+		}
 
 		StringBuilder builder = new StringBuilder();
 		MarkedString[] results = new MarkedString[functions.Length];
@@ -393,7 +449,9 @@ internal class HoverHandler : HoverHandlerBase
 	private static Hover? GetHoverForMethods(FunctionSymbol[] methods, TypeSymbol baseType, TextLocation location)
 	{
 		if (methods.Length == 0)
+		{
 			return null;
+		}
 
 		StringBuilder builder = new StringBuilder();
 		MarkedString[] results = new MarkedString[methods.Length];
@@ -406,7 +464,9 @@ internal class HoverHandler : HoverHandlerBase
 			using StringWriter writer = new StringWriter(builder);
 
 			if (baseType.IsGenericInstance)
+			{
 				baseType = TypeSymbol.GetGenericDefinition(baseType);
+			}
 
 			method.Modifiers.ToSyntaxString(builder);
 			builder.Append(' ');

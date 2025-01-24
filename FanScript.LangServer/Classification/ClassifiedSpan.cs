@@ -1,4 +1,8 @@
-﻿using FanScript.Compiler.Text;
+﻿// <copyright file="ClassifiedSpan.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Compiler.Text;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 
 namespace FanScript.LangServer.Classification;

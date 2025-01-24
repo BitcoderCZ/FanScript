@@ -1,4 +1,8 @@
-﻿using FanScript.Compiler.Syntax;
+﻿// <copyright file="ParserTests.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Compiler.Syntax;
 using System.Diagnostics;
 
 namespace FanScript.Tests.Syntax;
@@ -16,8 +20,10 @@ public class ParserTests
 		string text = $"a {op1Text} b {op2Text} c";
 		ExpressionSyntax expression = ParseExpression(text);
 
+#pragma warning disable SA1405 // Debug.Assert should provide message text
 		Debug.Assert(op1Text != null);
 		Debug.Assert(op2Text != null);
+#pragma warning restore SA1405
 
 		if (op1Precedence >= op2Precedence)
 		{
@@ -26,7 +32,6 @@ public class ParserTests
 			//   op1   c
 			//  /   \
 			// a     b
-
 			using (var e = new AssertingEnumerator(expression))
 			{
 				e.AssertNode(SyntaxKind.BinaryExpression);
@@ -48,7 +53,6 @@ public class ParserTests
 			// a    op2
 			//     /   \
 			//    b     c
-
 			using (var e = new AssertingEnumerator(expression))
 			{
 				e.AssertNode(SyntaxKind.BinaryExpression);
@@ -76,8 +80,10 @@ public class ParserTests
 		string text = $"{unaryText} a {binaryText} b";
 		ExpressionSyntax expression = ParseExpression(text);
 
+#pragma warning disable SA1405 // Debug.Assert should provide message text
 		Debug.Assert(unaryText != null);
 		Debug.Assert(binaryText != null);
+#pragma warning restore SA1405
 
 		if (unaryPrecedence >= binaryPrecedence)
 		{
@@ -86,7 +92,6 @@ public class ParserTests
 			// unary   b
 			//   |
 			//   a
-
 			using (var e = new AssertingEnumerator(expression))
 			{
 				e.AssertNode(SyntaxKind.BinaryExpression);
@@ -106,7 +111,6 @@ public class ParserTests
 			//  binary
 			//  /   \
 			// a     b
-
 			using (var e = new AssertingEnumerator(expression))
 			{
 				e.AssertNode(SyntaxKind.UnaryExpression);
@@ -130,12 +134,16 @@ public class ParserTests
 		return Assert.IsType<ExpressionStatementSyntax>(globalStatement.Statement).Expression;
 	}
 
+#pragma warning disable SA1202 // Elements should be ordered by access
 	public static IEnumerable<object[]> GetBinaryOperatorPairsData()
+#pragma warning restore SA1202
 	{
 		foreach (var op1 in SyntaxFacts.GetBinaryOperatorKinds())
 		{
 			foreach (var op2 in SyntaxFacts.GetBinaryOperatorKinds())
+			{
 				yield return new object[] { op1, op2 };
+			}
 		}
 	}
 
@@ -144,7 +152,9 @@ public class ParserTests
 		foreach (var unary in SyntaxFacts.GetUnaryOperatorKinds())
 		{
 			foreach (var binary in SyntaxFacts.GetBinaryOperatorKinds())
+			{
 				yield return new object[] { unary, binary };
+			}
 		}
 	}
 }

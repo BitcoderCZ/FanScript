@@ -1,4 +1,8 @@
-﻿using System;
+﻿// <copyright file="Extensions.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using System;
 using System.Text;
 
 namespace FanScript.LangServer.Utils;
@@ -11,7 +15,9 @@ internal static class Extensions
 
 		StringBuilder builder = new StringBuilder(s.Length * count);
 		for (int i = 0; i < count; i++)
+		{
 			builder.Append(s);
+		}
 
 		return builder.ToString();
 	}

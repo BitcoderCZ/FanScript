@@ -1,10 +1,14 @@
-﻿using FancadeLoaderLib.Editing.Scripting.Terminals;
+﻿// <copyright file="RollbackTerminalStore.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FancadeLoaderLib.Editing.Scripting.Terminals;
 using FancadeLoaderLib.Editing.Scripting.TerminalStores;
 
 namespace FanScript.Compiler.Emit.TerminalStores;
 
 /// <summary>
-/// Used by goto rollback, neccesary because special block blocks (play sensor, late update) execute after even if they execute the body, so the after would get executed twice
+/// Used by goto rollback, neccesary because special block blocks (play sensor, late update) execute after even if they execute the body, so the after would get executed twice.
 /// </summary>
 internal class RollbackTerminalStore : ITerminalStore
 {

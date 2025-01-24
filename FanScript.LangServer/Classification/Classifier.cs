@@ -1,4 +1,8 @@
-﻿using FanScript.Compiler.Symbols;
+﻿// <copyright file="Classifier.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
@@ -19,23 +23,33 @@ public static class Classifier
 	private static void ClassifyNode(SyntaxNode node, TextSpan span, ImmutableArray<ClassifiedSpan>.Builder result)
 	{
 		if (node is null || !node.FullSpan.OverlapsWith(span))
+		{
 			return;
+		}
 
 		if (node is SyntaxToken token)
+		{
 			ClassifyToken(token, span, result);
+		}
 
 		foreach (var child in node.GetChildren())
+		{
 			ClassifyNode(child, span, result);
+		}
 	}
 
 	private static void ClassifyToken(SyntaxToken token, TextSpan span, ImmutableArray<ClassifiedSpan>.Builder result)
 	{
 		foreach (var leadingTrivia in token.LeadingTrivia)
+		{
 			ClassifyTrivia(leadingTrivia, span, result);
+		}
 
 		SyntaxNode? node = token;
 		if (node.Parent is NameExpressionSyntax)
+		{
 			node = node.Parent;
+		}
 
 		switch (node.Parent)
 		{
@@ -54,16 +68,22 @@ public static class Classifier
 			default:
 				{
 					if (token.Kind == SyntaxKind.IdentifierToken && TypeSymbol.GetType(token.Text) != TypeSymbol.Error)
+					{
 						AddClassification(SemanticTokenType.Type, token.Span, span, result);
+					}
 					else
+					{
 						AddClassification(token.Kind, token.Span, span, result);
+					}
 				}
 
 				break;
 		}
 
 		foreach (var trailingTrivia in token.TrailingTrivia)
+		{
 			ClassifyTrivia(trailingTrivia, span, result);
+		}
 	}
 
 	private static void ClassifyTrivia(SyntaxTrivia trivia, TextSpan span, ImmutableArray<ClassifiedSpan>.Builder result)
@@ -72,11 +92,15 @@ public static class Classifier
 	private static void AddClassification(SyntaxKind elementKind, TextSpan elementSpan, TextSpan span, ImmutableArray<ClassifiedSpan>.Builder result)
 	{
 		if (!elementSpan.OverlapsWith(span))
+		{
 			return;
+		}
 
 		SemanticTokenType? classification = GetClassification(elementKind);
 		if (classification is null)
+		{
 			return;
+		}
 
 		int adjustedStart = Math.Max(elementSpan.Start, span.Start);
 		int adjustedEnd = Math.Min(elementSpan.End, span.End);
@@ -84,10 +108,13 @@ public static class Classifier
 
 		result.Add(new ClassifiedSpan(adjustedSpan, classification.Value));
 	}
+
 	private static void AddClassification(SemanticTokenType classification, TextSpan elementSpan, TextSpan span, ImmutableArray<ClassifiedSpan>.Builder result)
 	{
 		if (!elementSpan.OverlapsWith(span))
+		{
 			return;
+		}
 
 		int adjustedStart = Math.Max(elementSpan.Start, span.Start);
 		int adjustedEnd = Math.Min(elementSpan.End, span.End);

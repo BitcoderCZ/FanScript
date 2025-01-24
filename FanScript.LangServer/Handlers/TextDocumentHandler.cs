@@ -1,3 +1,7 @@
+// <copyright file="TextDocumentHandler.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
 using FanScript.Compiler;
 using FanScript.LangServer.Utils;
 using MediatR;
@@ -24,26 +28,25 @@ namespace FanScript.LangServer.Handlers;
 
 internal class TextDocumentHandler : TextDocumentSyncHandlerBase
 {
-	private readonly ILanguageServerFacade facade;
-	private readonly ILogger<TextDocumentHandler> logger;
-	private readonly ILanguageServerConfiguration configuration;
+	private readonly ILanguageServerFacade _facade;
+	private readonly ILogger<TextDocumentHandler> _logger;
+	private readonly ILanguageServerConfiguration _configuration;
 
-	private readonly Dictionary<DocumentUri, Document> documentCache = [];
+	private readonly Dictionary<DocumentUri, Document> _documentCache = [];
 
-	private readonly ConcurrentDictionary<DocumentUri, DelayedRunner> findErrorsDict = new();
+	private readonly ConcurrentDictionary<DocumentUri, DelayedRunner> _findErrorsDict = new();
 
-	private readonly TextDocumentSelector textDocumentSelector = new TextDocumentSelector(
+	private readonly TextDocumentSelector _textDocumentSelector = new TextDocumentSelector(
 		new TextDocumentFilter
 		{
-			Pattern = "**/*.fcs"
-		}
-	);
+			Pattern = "**/*.fcs",
+		});
 
 	public TextDocumentHandler(ILanguageServerFacade facade, ILogger<TextDocumentHandler> logger, ILanguageServerConfiguration configuration)
 	{
-		this.facade = facade;
-		this.logger = logger;
-		this.configuration = configuration;
+		_facade = facade;
+		_logger = logger;
+		_configuration = configuration;
 	}
 
 	// TODO: use Incremental, and make textCache use StringBuilder or wrapper over List<char/byte> (implement ToString()!!!)
@@ -51,15 +54,19 @@ internal class TextDocumentHandler : TextDocumentSyncHandlerBase
 
 	public override Task<Unit> Handle(DidChangeTextDocumentParams notification, CancellationToken token)
 	{
-		logger.LogInformation("Changed file: " + notification.TextDocument.Uri);
+		_logger.LogInformation("Changed file: " + notification.TextDocument.Uri);
 
 		// if delete, start - first char deleted, RangeLength - numb chars deleted
 		TextDocumentContentChangeEvent? first = notification.ContentChanges.FirstOrDefault();
 		if (Change == TextDocumentSyncKind.Full && first is not null)
-			documentCache[notification.TextDocument.Uri].SetContent(first.Text, notification.TextDocument.Version);
+		{
+			_documentCache[notification.TextDocument.Uri].SetContent(first.Text, notification.TextDocument.Version);
+		}
 
-		if (findErrorsDict.TryGetValue(notification.TextDocument.Uri, out var runner))
+		if (_findErrorsDict.TryGetValue(notification.TextDocument.Uri, out var runner))
+		{
 			runner.Invoke();
+		}
 
 		return Unit.Task;
 	}
@@ -69,7 +76,7 @@ internal class TextDocumentHandler : TextDocumentSyncHandlerBase
 		await Task.Yield();
 
 		var runner = new DelayedRunner(() => FindErrors(notification.TextDocument.Uri), TimeSpan.FromSeconds(0.75), TimeSpan.FromSeconds(4));
-		findErrorsDict.AddOrUpdate(notification.TextDocument.Uri, runner, (uri, oldRunner) =>
+		_findErrorsDict.AddOrUpdate(notification.TextDocument.Uri, runner, (uri, oldRunner) =>
 		{
 			oldRunner.Stop();
 			return runner;
@@ -77,19 +84,23 @@ internal class TextDocumentHandler : TextDocumentSyncHandlerBase
 
 		runner.Invoke();
 
-		await configuration.GetScopedConfiguration(notification.TextDocument.Uri, token).ConfigureAwait(false);
-		logger.LogInformation("Opened file: " + notification.TextDocument.Uri);
+		await _configuration.GetScopedConfiguration(notification.TextDocument.Uri, token).ConfigureAwait(false);
+		_logger.LogInformation("Opened file: " + notification.TextDocument.Uri);
 
 		return Unit.Value;
 	}
 
 	public override Task<Unit> Handle(DidCloseTextDocumentParams notification, CancellationToken token)
 	{
-		if (configuration.TryGetScopedConfiguration(notification.TextDocument.Uri, out var disposable))
+		if (_configuration.TryGetScopedConfiguration(notification.TextDocument.Uri, out var disposable))
+		{
 			disposable.Dispose();
+		}
 
-		if (findErrorsDict.TryRemove(notification.TextDocument.Uri, out var runner))
+		if (_findErrorsDict.TryRemove(notification.TextDocument.Uri, out var runner))
+		{
 			runner.Stop();
+		}
 
 		return Unit.Task;
 	}
@@ -97,25 +108,27 @@ internal class TextDocumentHandler : TextDocumentSyncHandlerBase
 	public override Task<Unit> Handle(DidSaveTextDocumentParams notification, CancellationToken token)
 		=> Unit.Task;
 
-	protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities) => new TextDocumentSyncRegistrationOptions()
-	{
-		DocumentSelector = textDocumentSelector,
-		Change = Change,
-		Save = new SaveOptions() { IncludeText = true }
-	};
-
 	public override TextDocumentAttributes GetTextDocumentAttributes(DocumentUri uri) => new TextDocumentAttributes(uri, "fanscript");
 
 	public Document GetDocument(DocumentUri uri)
 	{
-		if (documentCache.TryGetValue(uri, out Document? document))
+		if (_documentCache.TryGetValue(uri, out Document? document))
+		{
 			return document;
+		}
 
 		document = new Document(uri);
-		documentCache.Add(uri, document);
+		_documentCache.Add(uri, document);
 
 		return document;
 	}
+
+	protected override TextDocumentSyncRegistrationOptions CreateRegistrationOptions(TextSynchronizationCapability capability, ClientCapabilities clientCapabilities) => new TextDocumentSyncRegistrationOptions()
+	{
+		DocumentSelector = _textDocumentSelector,
+		Change = Change,
+		Save = new SaveOptions() { IncludeText = true },
+	};
 
 	private void FindErrors(DocumentUri uri)
 	{
@@ -123,28 +136,32 @@ internal class TextDocumentHandler : TextDocumentSyncHandlerBase
 		Compilation? compilation = document.Compilation;
 
 		if (compilation is null)
+		{
 			return;
+		}
 
 		var program = compilation.GetProgram();
 
-		facade.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams()
+		_facade.TextDocument.PublishDiagnostics(new PublishDiagnosticsParams()
 		{
 			Uri = uri,
 			Version = document.ContentVersion,
-			Diagnostics = new Container<Diagnostic>(convert(program.Diagnostics))
+			Diagnostics = new Container<Diagnostic>(Convert(program.Diagnostics)),
 		});
 
-		List<Diagnostic> convert(ImmutableArray<Compiler.Diagnostics.Diagnostic> diagnostics)
+		List<Diagnostic> Convert(ImmutableArray<Compiler.Diagnostics.Diagnostic> diagnostics)
 		{
 			List<Diagnostic> result = [];
 
 			foreach (var diagnostic in diagnostics)
+			{
 				result.Add(new Diagnostic()
 				{
 					Severity = diagnostic.IsError ? DiagnosticSeverity.Error : DiagnosticSeverity.Warning,
 					Message = diagnostic.Message,
-					Range = diagnostic.Location.ToRange()
+					Range = diagnostic.Location.ToRange(),
 				});
+			}
 
 			return result;
 		}
@@ -153,10 +170,7 @@ internal class TextDocumentHandler : TextDocumentSyncHandlerBase
 
 internal class MyDocumentSymbolHandler : IDocumentSymbolHandler
 {
-	public async Task<SymbolInformationOrDocumentSymbolContainer?> Handle(
-		DocumentSymbolParams request,
-		CancellationToken cancellationToken
-	)
+	public async Task<SymbolInformationOrDocumentSymbolContainer?> Handle(DocumentSymbolParams request, CancellationToken cancellationToken)
 	{
 		// you would normally get this from a common source that is managed by current open editor, current active editor, etc.
 		await Task.Yield();
@@ -207,122 +221,121 @@ internal class MyDocumentSymbolHandler : IDocumentSymbolHandler
 
 	public DocumentSymbolRegistrationOptions GetRegistrationOptions(DocumentSymbolCapability capability, ClientCapabilities clientCapabilities) => new DocumentSymbolRegistrationOptions
 	{
-		DocumentSelector = TextDocumentSelector.ForLanguage("fanscript")
+		DocumentSelector = TextDocumentSelector.ForLanguage("fanscript"),
 	};
 }
 
 internal class MyWorkspaceSymbolsHandler : IWorkspaceSymbolsHandler
 {
-	private readonly IServerWorkDoneManager serverWorkDoneManager;
-	private readonly IProgressManager progressManager;
-	private readonly ILogger<MyWorkspaceSymbolsHandler> logger;
+	private readonly IServerWorkDoneManager _serverWorkDoneManager;
+	private readonly IProgressManager _progressManager;
+	private readonly ILogger<MyWorkspaceSymbolsHandler> _logger;
 
 	public MyWorkspaceSymbolsHandler(IServerWorkDoneManager serverWorkDoneManager, IProgressManager progressManager, ILogger<MyWorkspaceSymbolsHandler> logger)
 	{
-		this.serverWorkDoneManager = serverWorkDoneManager;
-		this.progressManager = progressManager;
-		this.logger = logger;
+		_serverWorkDoneManager = serverWorkDoneManager;
+		_progressManager = progressManager;
+		_logger = logger;
 	}
 
-	public async Task<Container<WorkspaceSymbol>?> Handle(
-		WorkspaceSymbolParams request,
-		CancellationToken cancellationToken
-	)
+	public async Task<Container<WorkspaceSymbol>?> Handle(WorkspaceSymbolParams request, CancellationToken cancellationToken)
 	{
-		//using var reporter = serverWorkDoneManager.For(
-		//    request, new WorkDoneProgressBegin
-		//    {
-		//        Cancellable = true,
-		//        Message = "This might take a while...",
-		//        Title = "Some long task....",
-		//        Percentage = 0
-		//    }
-		//);
-		//using var partialResults = progressManager.For(request, cancellationToken);
-		//if (partialResults != null)
-		//{
-		//    await Task.Delay(2000, cancellationToken).ConfigureAwait(false);
+		/*using var reporter = serverWorkDoneManager.For(
+		    request, new WorkDoneProgressBegin
+		    {
+		        Cancellable = true,
+		        Message = "This might take a while...",
+		        Title = "Some long task....",
+		        Percentage = 0
+		    }
+		);
+		using var partialResults = progressManager.For(request, cancellationToken);
+		if (partialResults != null)
+		{
+		    await Task.Delay(2000, cancellationToken).ConfigureAwait(false);
 
-		//    reporter.OnNext(
-		//        new WorkDoneProgressReport
-		//        {
-		//            Cancellable = true,
-		//            Percentage = 20
-		//        }
-		//    );
-		//    await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+		    reporter.OnNext(
+		        new WorkDoneProgressReport
+		        {
+		            Cancellable = true,
+		            Percentage = 20
+		        }
+		    );
+		    await Task.Delay(500, cancellationToken).ConfigureAwait(false);
 
-		//    reporter.OnNext(
-		//        new WorkDoneProgressReport
-		//        {
-		//            Cancellable = true,
-		//            Percentage = 40
-		//        }
-		//    );
-		//    await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+		    reporter.OnNext(
+		        new WorkDoneProgressReport
+		        {
+		            Cancellable = true,
+		            Percentage = 40
+		        }
+		    );
+		    await Task.Delay(500, cancellationToken).ConfigureAwait(false);
 
-		//    reporter.OnNext(
-		//        new WorkDoneProgressReport
-		//        {
-		//            Cancellable = true,
-		//            Percentage = 50
-		//        }
-		//    );
-		//    await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+		    reporter.OnNext(
+		        new WorkDoneProgressReport
+		        {
+		            Cancellable = true,
+		            Percentage = 50
+		        }
+		    );
+		    await Task.Delay(500, cancellationToken).ConfigureAwait(false);
 
-		//    partialResults.OnNext(
-		//        new[] {
-		//            new WorkspaceSymbol {
-		//                ContainerName = "Partial Container",
-		//                Kind = SymbolKind.Constant,
-		//                Location = new Location {
-		//                    Range = new Range(
-		//                        new Position(2, 1),
-		//                        new Position(2, 10)
-		//                    )
-		//                },
-		//                Name = "Partial name"
-		//            }
-		//        }
-		//    );
+		    partialResults.OnNext(
+		        new[] {
+		            new WorkspaceSymbol {
+		                ContainerName = "Partial Container",
+		                Kind = SymbolKind.Constant,
+		                Location = new Location {
+		                    Range = new Range(
+		                        new Position(2, 1),
+		                        new Position(2, 10)
+		                    )
+		                },
+		                Name = "Partial name"
+		            }
+		        }
+		    );
 
-		//    reporter.OnNext(
-		//        new WorkDoneProgressReport
-		//        {
-		//            Cancellable = true,
-		//            Percentage = 70
-		//        }
-		//    );
-		//    await Task.Delay(500, cancellationToken).ConfigureAwait(false);
+		    reporter.OnNext(
+		        new WorkDoneProgressReport
+		        {
+		            Cancellable = true,
+		            Percentage = 70
+		        }
+		    );
+		    await Task.Delay(500, cancellationToken).ConfigureAwait(false);
 
-		//    reporter.OnNext(
-		//        new WorkDoneProgressReport
-		//        {
-		//            Cancellable = true,
-		//            Percentage = 90
-		//        }
-		//    );
+		    reporter.OnNext(
+		        new WorkDoneProgressReport
+		        {
+		            Cancellable = true,
+		            Percentage = 90
+		        }
+		    );
 
-		//    partialResults.OnCompleted();
-		//    return new WorkspaceSymbol[] { };
-		//}
+		    partialResults.OnCompleted();
+		    return new WorkspaceSymbol[] { };
+		}*/
 
 		await Task.Yield();
 
 		try
 		{
-			return new[] {
-				new WorkspaceSymbol {
+			return new[]
+			{
+				new WorkspaceSymbol
+				{
 					ContainerName = "Container",
 					Kind = SymbolKind.Constant,
-					Location = new Location {
+					Location = new Location
+					{
 						Range = new Range(
 							new Position(1, 1),
-							new Position(1, 10)
-						)
+							new Position(1, 10)),
 					},
-					Name = "name"
-				}
+					Name = "name",
+				},
 			};
 		}
 		finally

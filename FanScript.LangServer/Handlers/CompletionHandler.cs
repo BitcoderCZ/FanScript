@@ -1,4 +1,8 @@
-﻿using FanScript.Compiler;
+﻿// <copyright file="CompletionHandler.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Compiler;
 using FanScript.Compiler.Symbols;
 using FanScript.Compiler.Symbols.Functions;
 using FanScript.Compiler.Symbols.Variables;
@@ -21,8 +25,8 @@ namespace FanScript.LangServer.Handlers;
 
 internal class CompletionHandler : CompletionHandlerBase
 {
-	#region data
-	private static readonly ImmutableArray<CompletionItem> keywords = Enum.GetValues<SyntaxKind>()
+	#region Data
+	private static readonly ImmutableArray<CompletionItem> Keywords = Enum.GetValues<SyntaxKind>()
 		.Where(kind => kind.IsKeyword())
 		.Select(kind => kind.GetText()!)
 		.Where(text => TypeSymbol.GetType(text) == TypeSymbol.Error) // remove types
@@ -32,7 +36,8 @@ internal class CompletionHandler : CompletionHandlerBase
 			Kind = CompletionItemKind.Keyword,
 		})
 		.ToImmutableArray();
-	private static readonly ImmutableArray<CompletionItem> modifiers = Enum.GetValues<SyntaxKind>()
+
+	private static readonly ImmutableArray<CompletionItem> Modifiers = Enum.GetValues<SyntaxKind>()
 		.Where(kind => kind.IsModifier())
 		.Select(kind => new CompletionItem()
 		{
@@ -40,14 +45,16 @@ internal class CompletionHandler : CompletionHandlerBase
 			Kind = CompletionItemKind.Keyword,
 		})
 		.ToImmutableArray();
-	private static readonly ImmutableArray<CompletionItem> types = TypeSymbol.BuiltInTypes
+
+	private static readonly ImmutableArray<CompletionItem> Types = TypeSymbol.BuiltInTypes
 		.Select(type => new CompletionItem()
 		{
 			Label = type.Name,
 			Kind = CompletionItemKind.Class, // use Struct instead?
 		})
 		.ToImmutableArray();
-	private static readonly ImmutableArray<CompletionItem> eventTypes = Enum.GetValues<EventType>()
+
+	private static readonly ImmutableArray<CompletionItem> EventTypes = Enum.GetValues<EventType>()
 		.Select(sbt =>
 		{
 			var info = sbt.GetInfo();
@@ -63,19 +70,26 @@ internal class CompletionHandler : CompletionHandlerBase
 					var param = info.Parameters[i];
 
 					if (i != 0)
+					{
 						builder.Append(", ");
+					}
 
-					if (param.Modifiers.HasFlag(Modifiers.Ref))
+					if (param.Modifiers.HasFlag(Compiler.Modifiers.Ref))
+					{
 						builder.Append("ref ");
-					if (param.Modifiers.HasFlag(Modifiers.Out))
+					}
+
+					if (param.Modifiers.HasFlag(Compiler.Modifiers.Out))
 					{
 						builder.Append("out ");
 						builder.Append(param.Type);
 						builder.Append(' ');
 					}
 
-					if (param.Modifiers.HasFlag(Modifiers.Constant))
+					if (param.Modifiers.HasFlag(Compiler.Modifiers.Constant))
+					{
 						builder.Append(param.Name);
+					}
 				}
 
 				builder.Append(')');
@@ -98,7 +112,8 @@ internal class CompletionHandler : CompletionHandlerBase
 			};
 		})
 		.ToImmutableArray();
-	private static readonly ImmutableArray<CompletionItem> values =
+
+	private static readonly ImmutableArray<CompletionItem> Values =
 		new List<string>() { "true", "false" }
 		.Select(text => new CompletionItem()
 		{
@@ -106,7 +121,8 @@ internal class CompletionHandler : CompletionHandlerBase
 			Kind = CompletionItemKind.Value,
 		})
 		.ToImmutableArray();
-	private static readonly ImmutableArray<CompletionItem> buildCommands =
+
+	private static readonly ImmutableArray<CompletionItem> BuildCommands =
 		Enum.GetNames<BuildCommand>()
 		.Select(name => new CompletionItem()
 		{
@@ -116,17 +132,14 @@ internal class CompletionHandler : CompletionHandlerBase
 		.ToImmutableArray();
 	#endregion
 
-	private readonly ILanguageServerFacade facade;
+	private readonly ILanguageServerFacade _facade;
 
-	private TextDocumentHandler? documentHandler;
+	private TextDocumentHandler? _documentHandler;
 
 	public CompletionHandler(ILanguageServerFacade facade)
 	{
-		this.facade = facade;
+		_facade = facade;
 	}
-
-	public override Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)
-		=> new Task<CompletionItem>(() => request, cancellationToken);
 
 	[Flags]
 	private enum CurrentRecomendations : ushort
@@ -147,16 +160,22 @@ internal class CompletionHandler : CompletionHandlerBase
 		UnknownSituation = Keywords | Modifiers | Types | Values | Variables | Functions,
 		All = ushort.MaxValue,
 	}
+
+	public override Task<CompletionItem> Handle(CompletionItem request, CancellationToken cancellationToken)
+		=> new Task<CompletionItem>(() => request, cancellationToken);
+
 	public override async Task<CompletionList> Handle(CompletionParams request, CancellationToken cancellationToken)
 	{
-		documentHandler ??= facade.Workspace.GetService(typeof(TextDocumentHandler)) as TextDocumentHandler;
+		_documentHandler ??= _facade.Workspace.GetService(typeof(TextDocumentHandler)) as TextDocumentHandler;
 
-		if (documentHandler is null)
+		if (_documentHandler is null)
+		{
 			return new CompletionList();
+		}
 
 		await Task.Yield();
 
-		Document document = documentHandler.GetDocument(request.TextDocument.Uri);
+		Document document = _documentHandler.GetDocument(request.TextDocument.Uri);
 		SyntaxTree? tree = document.Tree;
 		Compilation? compilation = document.Compilation;
 
@@ -168,7 +187,9 @@ internal class CompletionHandler : CompletionHandlerBase
 		TextSpan? requestSpan = null;
 
 		if (tree is null)
+		{
 			recomendations = CurrentRecomendations.All;
+		}
 		else
 		{
 			requestSpan = request.Position.ToSpan(tree.Text) - 1;
@@ -186,24 +207,45 @@ internal class CompletionHandler : CompletionHandlerBase
 		}
 
 		if (recomendations == 0 && recomendationsList is null)
+		{
 			return new CompletionList();
+		}
 
 		int length = 0;
 		if (recomendationsList is not null)
+		{
 			length += recomendationsList.Count;
+		}
 
 		if (recomendations.HasFlag(CurrentRecomendations.Keywords))
-			length += keywords.Length;
+		{
+			length += Keywords.Length;
+		}
+
 		if (recomendations.HasFlag(CurrentRecomendations.Modifiers))
-			length += modifiers.Length;
+		{
+			length += Modifiers.Length;
+		}
+
 		if (recomendations.HasFlag(CurrentRecomendations.Types))
-			length += types.Length;
+		{
+			length += Types.Length;
+		}
+
 		if (recomendations.HasFlag(CurrentRecomendations.Events))
-			length += eventTypes.Length;
+		{
+			length += EventTypes.Length;
+		}
+
 		if (recomendations.HasFlag(CurrentRecomendations.Values))
-			length += values.Length;
+		{
+			length += Values.Length;
+		}
+
 		if (recomendations.HasFlag(CurrentRecomendations.BuildCommand))
-			length += buildCommands.Length;
+		{
+			length += BuildCommands.Length;
+		}
 
 		VariableSymbol[]? variables = null;
 		FunctionSymbol[]? functions = null;
@@ -229,7 +271,9 @@ internal class CompletionHandler : CompletionHandlerBase
 			if (recomendations.HasFlag(CurrentRecomendations.Variables))
 			{
 				if (scope is null)
+				{
 					length += (variables = compilation.GetVariables().ToArray()).Length;
+				}
 				else
 				{
 					TextLocation loc = new TextLocation(document.Tree!.Text, scope.Span);
@@ -243,30 +287,55 @@ internal class CompletionHandler : CompletionHandlerBase
 			}
 
 			if (recomendations.HasFlag(CurrentRecomendations.Functions))
+			{
 				length += (functions = compilation.GetFunctions().Where(func => !func.IsMethod).ToArray()).Length;
+			}
+
 			if (recomendations.HasFlag(CurrentRecomendations.Methods))
+			{
 				length += (methods = compilation.GetFunctions().Where(func => func.IsMethod).ToArray()).Length;
+			}
 		}
 
 		List<CompletionItem> result = new List<CompletionItem>(length);
 
 		if (recomendationsList is not null)
+		{
 			result.AddRange(recomendationsList);
+		}
 
 		if (recomendations.HasFlag(CurrentRecomendations.Keywords))
-			result.AddRange(keywords);
+		{
+			result.AddRange(Keywords);
+		}
+
 		if (recomendations.HasFlag(CurrentRecomendations.Modifiers))
-			result.AddRange(modifiers);
+		{
+			result.AddRange(Modifiers);
+		}
+
 		if (recomendations.HasFlag(CurrentRecomendations.Types))
-			result.AddRange(types);
+		{
+			result.AddRange(Types);
+		}
+
 		if (recomendations.HasFlag(CurrentRecomendations.Events))
-			result.AddRange(eventTypes);
+		{
+			result.AddRange(EventTypes);
+		}
+
 		if (recomendations.HasFlag(CurrentRecomendations.Values))
-			result.AddRange(values);
+		{
+			result.AddRange(Values);
+		}
+
 		if (recomendations.HasFlag(CurrentRecomendations.BuildCommand))
-			result.AddRange(buildCommands);
+		{
+			result.AddRange(BuildCommands);
+		}
 
 		if (variables is not null)
+		{
 			result.AddRange(variables
 				.Select(var => new CompletionItem()
 				{
@@ -280,15 +349,17 @@ internal class CompletionHandler : CompletionHandlerBase
 								string.Empty :
 								var.Modifiers.ToString()),
 					},
-					Kind = var.Modifiers.HasFlag(Modifiers.Constant) ?
+					Kind = var.Modifiers.HasFlag(Compiler.Modifiers.Constant) ?
 						CompletionItemKind.Constant :
 						CompletionItemKind.Variable,
 					SortText = var.Name,
 					FilterText = var.Name,
 					InsertText = var.Name,
-				})
-			);
+				}));
+		}
+
 		if (functions is not null)
+		{
 			result.AddRange(functions
 				.Select(fun => new CompletionItem()
 				{
@@ -301,9 +372,11 @@ internal class CompletionHandler : CompletionHandlerBase
 					SortText = fun.Name,
 					FilterText = fun.Name,
 					InsertText = CompletionForFunction(fun, false),
-				})
-			);
+				}));
+		}
+
 		if (methods is not null)
+		{
 			result.AddRange(methods
 				.Select(fun => new CompletionItem()
 				{
@@ -316,8 +389,8 @@ internal class CompletionHandler : CompletionHandlerBase
 					SortText = fun.Name,
 					FilterText = fun.Name,
 					InsertText = CompletionForFunction(fun, inProp),
-				})
-			);
+				}));
+		}
 
 		return new CompletionList(result);
 	}
@@ -342,15 +415,21 @@ internal class CompletionHandler : CompletionHandlerBase
 		{
 			SyntaxNode? missing = FistMissing(node);
 			if (missing is not null)
+			{
 				node = missing;
+			}
 			else
+			{
 				return CurrentRecomendations.UnknownSituation;
+			}
 		}
 
 		SyntaxNode? parent = node.Parent;
 
 		if (parent is null)
+		{
 			return CurrentRecomendations.UnknownSituation;
+		}
 
 		CurrentRecomendations? recomendation = GetRecomendationsWithParent(node, parent, out recomendationsList, out inProp);
 
@@ -369,7 +448,9 @@ internal class CompletionHandler : CompletionHandlerBase
 			case NameExpressionSyntax:
 				{
 					if (parent.Parent is not null)
+					{
 						return GetRecomendationsWithParent(parent, parent.Parent, out recomendationsList, out inProp);
+					}
 				}
 
 				break;
@@ -397,7 +478,9 @@ internal class CompletionHandler : CompletionHandlerBase
 			case CallExpressionSyntax call:
 				{
 					if (node == call.Identifier)
+					{
 						return CurrentRecomendations.Functions | CurrentRecomendations.Methods;
+					}
 				}
 
 				break;
@@ -406,7 +489,9 @@ internal class CompletionHandler : CompletionHandlerBase
 			case EventStatementSyntax @event:
 				{
 					if (node == @event.Identifier)
+					{
 						return CurrentRecomendations.Events;
+					}
 				}
 
 				break;
@@ -437,11 +522,15 @@ internal class CompletionHandler : CompletionHandlerBase
 			ParameterSymbol param = function.Parameters[i];
 
 			if (i != start)
+			{
 				builder.Append(", ");
+			}
 
-			if (param.Modifiers.HasFlag(Modifiers.Ref))
+			if (param.Modifiers.HasFlag(Compiler.Modifiers.Ref))
+			{
 				builder.Append("ref ");
-			else if (param.Modifiers.HasFlag(Modifiers.Out))
+			}
+			else if (param.Modifiers.HasFlag(Compiler.Modifiers.Out))
 			{
 				builder.Append("out ");
 				builder.Append(param.Type);
@@ -472,10 +561,14 @@ internal class CompletionHandler : CompletionHandlerBase
 			{
 				SyntaxNode? res = FistMissing(child);
 				if (res is not null)
+				{
 					return res;
+				}
 			}
 			else if (token.IsMissing)
+			{
 				return token;
+			}
 		}
 
 		return null;

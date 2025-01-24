@@ -1,4 +1,8 @@
-﻿using FanScript.Compiler.Text;
+﻿// <copyright file="AnnotatedText.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Compiler.Text;
 using System.Collections.Immutable;
 using System.Text;
 
@@ -13,6 +17,7 @@ internal sealed class AnnotatedText
 	}
 
 	public string Text { get; }
+
 	public ImmutableArray<TextSpan> Spans { get; }
 
 	public static AnnotatedText Parse(string text, bool noLocationDiagnostic)
@@ -24,7 +29,9 @@ internal sealed class AnnotatedText
 		var startStack = new Stack<int>();
 
 		if (noLocationDiagnostic)
+		{
 			spanBuilder.Add(default);
+		}
 
 		int position = 0;
 
@@ -41,7 +48,9 @@ internal sealed class AnnotatedText
 			else if (c == ']' && nextC == '$')
 			{
 				if (startStack.Count == 0)
+				{
 					throw new ArgumentException("Too many ']$' in text", nameof(text));
+				}
 
 				int start = startStack.Pop();
 				int end = position;
@@ -61,9 +70,6 @@ internal sealed class AnnotatedText
 			: new AnnotatedText(textBuilder.ToString(), spanBuilder.ToImmutable());
 	}
 
-	private static string Unindent(string text)
-		=> string.Join(Environment.NewLine, UnindentLines(text));
-
 	public static string[] UnindentLines(string text)
 	{
 		var lines = new List<string>();
@@ -72,7 +78,9 @@ internal sealed class AnnotatedText
 		{
 			string? line;
 			while ((line = reader.ReadLine()) != null)
+			{
 				lines.Add(line);
+			}
 		}
 
 		int minIndentation = int.MaxValue;
@@ -93,17 +101,26 @@ internal sealed class AnnotatedText
 		for (int i = 0; i < lines.Count; i++)
 		{
 			if (lines[i].Length == 0)
+			{
 				continue;
+			}
 
 			lines[i] = lines[i][minIndentation..];
 		}
 
 		while (lines.Count > 0 && lines[0].Length == 0)
+		{
 			lines.RemoveAt(0);
+		}
 
 		while (lines.Count > 0 && lines[^1].Length == 0)
+		{
 			lines.RemoveAt(lines.Count - 1);
+		}
 
 		return [.. lines];
 	}
+
+	private static string Unindent(string text)
+		=> string.Join(Environment.NewLine, UnindentLines(text));
 }

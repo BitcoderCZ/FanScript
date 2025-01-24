@@ -1,29 +1,58 @@
-﻿using FanScript.Compiler.Syntax;
+﻿// <copyright file="AssertingEnumerator.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Compiler.Syntax;
 
 namespace FanScript.Tests.Syntax;
 
 internal sealed class AssertingEnumerator : IDisposable
 {
-	private readonly IEnumerator<SyntaxNode> enumerator;
-	private bool hasErrors;
+	private readonly IEnumerator<SyntaxNode> _enumerator;
+	private bool _hasErrors;
 
 	public AssertingEnumerator(SyntaxNode node)
 	{
-		enumerator = Flatten(node).GetEnumerator();
-	}
-
-	private bool MarkFailed()
-	{
-		hasErrors = true;
-		return false;
+		_enumerator = Flatten(node).GetEnumerator();
 	}
 
 	public void Dispose()
 	{
-		if (!hasErrors)
-			Assert.False(enumerator.MoveNext());
+		if (!_hasErrors)
+		{
+			Assert.False(_enumerator.MoveNext());
+		}
 
-		enumerator.Dispose();
+		_enumerator.Dispose();
+	}
+
+	public void AssertNode(SyntaxKind kind)
+	{
+		try
+		{
+			Assert.True(_enumerator.MoveNext());
+			Assert.Equal(kind, _enumerator.Current.Kind);
+			Assert.IsNotType<SyntaxToken>(_enumerator.Current);
+		}
+		catch when (MarkFailed())
+		{
+			throw;
+		}
+	}
+
+	public void AssertToken(SyntaxKind kind, string text)
+	{
+		try
+		{
+			Assert.True(_enumerator.MoveNext());
+			Assert.Equal(kind, _enumerator.Current.Kind);
+			SyntaxToken token = Assert.IsType<SyntaxToken>(_enumerator.Current);
+			Assert.Equal(text, token.Text);
+		}
+		catch when (MarkFailed())
+		{
+			throw;
+		}
 	}
 
 	private static IEnumerable<SyntaxNode> Flatten(SyntaxNode node)
@@ -37,36 +66,15 @@ internal sealed class AssertingEnumerator : IDisposable
 			yield return n;
 
 			foreach (var child in n.GetChildren().Reverse())
+			{
 				stack.Push(child);
+			}
 		}
 	}
 
-	public void AssertNode(SyntaxKind kind)
+	private bool MarkFailed()
 	{
-		try
-		{
-			Assert.True(enumerator.MoveNext());
-			Assert.Equal(kind, enumerator.Current.Kind);
-			Assert.IsNotType<SyntaxToken>(enumerator.Current);
-		}
-		catch when (MarkFailed())
-		{
-			throw;
-		}
-	}
-
-	public void AssertToken(SyntaxKind kind, string text)
-	{
-		try
-		{
-			Assert.True(enumerator.MoveNext());
-			Assert.Equal(kind, enumerator.Current.Kind);
-			SyntaxToken token = Assert.IsType<SyntaxToken>(enumerator.Current);
-			Assert.Equal(text, token.Text);
-		}
-		catch when (MarkFailed())
-		{
-			throw;
-		}
+		_hasErrors = true;
+		return false;
 	}
 }

@@ -1,4 +1,8 @@
-﻿using FanScript.Compiler.Text;
+﻿// <copyright file="SourceTextTests.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Compiler.Text;
 
 namespace FanScript.Tests.Text;
 

@@ -1,4 +1,8 @@
-﻿using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
+﻿// <copyright file="FoldingRangeHandler.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using OmniSharp.Extensions.LanguageServer.Protocol.Client.Capabilities;
 using OmniSharp.Extensions.LanguageServer.Protocol.Document;
 using OmniSharp.Extensions.LanguageServer.Protocol.Models;
 using System.Threading;
@@ -17,13 +21,11 @@ internal class FoldingRangeHandler : IFoldingRangeHandler
 					EndLine = 20,
 					Kind = FoldingRangeKind.Region,
 					EndCharacter = 0,
-					StartCharacter = 0
-				}
-			)
-		);
+					StartCharacter = 0,
+				}));
 
 	public FoldingRangeRegistrationOptions GetRegistrationOptions(FoldingRangeCapability capability, ClientCapabilities clientCapabilities) => new FoldingRangeRegistrationOptions
 	{
-		DocumentSelector = TextDocumentSelector.ForLanguage("fanscript")
+		DocumentSelector = TextDocumentSelector.ForLanguage("fanscript"),
 	};
 }

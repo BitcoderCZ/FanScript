@@ -1,4 +1,8 @@
-﻿namespace FanScript.Compiler.Emit.TerminalStores;
+﻿// <copyright file="ReturnTerminalStore.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+namespace FanScript.Compiler.Emit.TerminalStores;
 
 internal sealed class ReturnTerminalStore : RollbackTerminalStore
 {

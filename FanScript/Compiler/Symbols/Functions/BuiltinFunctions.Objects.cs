@@ -54,17 +54,17 @@ internal static partial class BuiltinFunctions
 				  int3 pos = (int3)(float3)constant.GetValueOrDefault(TypeSymbol.Vector3); // unbox, then cast
 
 				  // TODO
-				  //if (context.Builder is not IConnectToBlocksBuilder)
-				  //{
-				  // context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
+				  /*if (context.Builder is not IConnectToBlocksBuilder)
+				  {
+					  context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
 
-				  // using (context.ExpressionBlock())
-				  // {
-				  //  context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
-				  // }
+					  using (context.ExpressionBlock())
+					  {
+						  context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
+					  }
 
-				  // return NopTerminalStore.Instance;
-				  //}
+					  return NopTerminalStore.Instance;
+				  }*/
 
 				  return new TerminalStore(NopTerminal.Instance, [new AbsolutePositionTerminal(pos)]);
 			  });
@@ -113,17 +113,17 @@ internal static partial class BuiltinFunctions
 				  int3 pos = new int3((int)((float?)args[0] ?? 0f), (int)((float?)args[1] ?? 0f), (int)((float?)args[2] ?? 0f)); // unbox, then cast
 
 				  // TODO
-				  //if (context.Builder is not IConnectToBlocksBuilder)
-				  //{
-				  // context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
+				  /*if (context.Builder is not IConnectToBlocksBuilder)
+				  {
+					  context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
 
-				  // using (context.ExpressionBlock())
-				  // {
-				  //  context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
-				  // }
+					  using (context.ExpressionBlock())
+					  {
+						  context.WriteComment($"Connect to ({pos.X}, {pos.Y}, {pos.Z})");
+					  }
 
-				  // return NopTerminalStore.Instance;
-				  //}
+					  return NopTerminalStore.Instance;
+				  }*/
 
 				  return new TerminalStore(NopTerminal.Instance, [new AbsolutePositionTerminal(pos)]);
 			  });

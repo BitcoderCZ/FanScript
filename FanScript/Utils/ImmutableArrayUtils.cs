@@ -1,4 +1,4 @@
-﻿// <copyright file="ImmutableArrayExtensions.cs" company="BitcoderCZ">
+﻿// <copyright file="ImmutableArrayUtils.cs" company="BitcoderCZ">
 // Copyright (c) BitcoderCZ. All rights reserved.
 // </copyright>
 

@@ -1,4 +1,8 @@
-﻿namespace FanScript.Cli;
+﻿// <copyright file="ErrorCode.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+namespace FanScript.Cli;
 
 internal enum ErrorCode
 {

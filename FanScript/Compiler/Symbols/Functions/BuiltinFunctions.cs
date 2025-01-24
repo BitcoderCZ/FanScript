@@ -369,11 +369,12 @@ internal static partial class BuiltinFunctions
 
 				Block block = context.AddBlock(def);
 
-				//if (context.Builder is not IConnectToBlocksBuilder)
-				//{
-				//	context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
-				//	return NopTerminalStore.Instance;
-				//}
+				// TODO
+				/*if (context.Builder is not IConnectToBlocksBuilder)
+				{
+					context.Diagnostics.ReportOpeationNotSupportedOnBuilder(call.Syntax.Location, BuilderUnsupportedOperation.ConnectToBlock);
+					return NopTerminalStore.Instance;
+				}*/
 
 				return new TerminalStore(NopTerminal.Instance, [new BlockVoxelTerminal(block)]);
 			});

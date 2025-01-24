@@ -1,9 +1,20 @@
-﻿using System.Text;
+﻿// <copyright file="Log.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using System.Text;
 
 namespace FanScript.Cli;
 
 internal static class Log
 {
+	public enum Level
+	{
+		Debug,
+		Info,
+		Error,
+	}
+
 	public static void Debug(string msg)
 		=> LogInternal(new Message(msg, Level.Debug));
 
@@ -36,13 +47,6 @@ internal static class Log
 		Console.WriteLine($"[{msg.CreatedAt:dd.MM.yy HH:mm:ss}] [{msg.LogLevel,-5}] {builder}");
 	}
 
-	public enum Level
-	{
-		Debug,
-		Info,
-		Error,
-	}
-
 	private readonly struct Message
 	{
 		public readonly string Value;
@@ -56,6 +60,7 @@ internal static class Log
 			: this(value, logLevel, ErrorCode.None)
 		{
 		}
+
 		public Message(string value, Level logLevel, ErrorCode errCode)
 		{
 			Value = value;
@@ -64,6 +69,7 @@ internal static class Log
 
 			CreatedAt = DateTime.UtcNow;
 		}
+
 		public Message(string value, ErrorCode errCode, Exception ex)
 		{
 			ArgumentNullException.ThrowIfNull(ex);

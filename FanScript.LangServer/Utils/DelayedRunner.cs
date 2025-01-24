@@ -1,88 +1,56 @@
-﻿using System;
+﻿// <copyright file="DelayedRunner.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 
 namespace FanScript.LangServer.Utils;
 
-internal class DelayedRunner
+internal sealed class DelayedRunner
 {
-	private Action action;
-	public Action Action
-	{
-		get => action;
-		set
-		{
-			ArgumentNullException.ThrowIfNull(value);
-			action = value;
-		}
-	}
+	private static readonly List<DelayedRunner> ScheduledList = [];
 
-	[MemberNotNullWhen(true, nameof(firstInvoke), nameof(lastInvoke))]
-	public bool Scheduled { get; private set; }
+	private static Thread? _thread;
 
-	public TimeSpan RunAfter { get; set; }
-	public TimeSpan ForceRunAfter { get; set; }
+	private readonly Lock _lock = new Lock();
 
-	private DateTime? firstInvoke;
-	private DateTime? lastInvoke;
+	private Action _action;
 
-	private readonly object lockObj = new object();
+	private DateTime? _firstInvoke;
+
+	private DateTime? _lastInvoke;
 
 	public DelayedRunner(Action action, TimeSpan runAfter, TimeSpan forceRunAfter)
 	{
 		ArgumentNullException.ThrowIfNull(action);
-		this.action = action;
+		_action = action;
 		RunAfter = runAfter;
 		ForceRunAfter = forceRunAfter;
 	}
 
-	private static Thread? thread;
-	private static readonly List<DelayedRunner> scheduled = [];
-
-	private static void StartThread()
+	public Action Action
 	{
-		if (thread is not null && thread.IsAlive)
-			return;
-
-		thread = new Thread(() =>
+		get => _action;
+		set
 		{
-			int index = 0;
-
-			while (true)
-			{
-				Thread.Sleep(1);
-
-				List<DelayedRunner> toRemove = [];
-				lock (scheduled)
-				{
-					if (scheduled.Count == 0)
-						continue;
-
-					DateTime now = DateTime.UtcNow;
-
-					for (int i = 0; i < 10; i++)
-					{
-						if (scheduled[index].CheckTimers(now))
-							toRemove.Add(scheduled[index]);
-
-						index++;
-
-						if (index >= scheduled.Count)
-							index = 0;
-					}
-				}
-
-				for (int i = 0; i < toRemove.Count; i++)
-					toRemove[i].InvokeInternal();
-			}
-		});
-
-		thread.Start();
+			ArgumentNullException.ThrowIfNull(value);
+			_action = value;
+		}
 	}
+
+	[MemberNotNullWhen(true, nameof(_firstInvoke), nameof(_lastInvoke))]
+	public bool Scheduled { get; private set; }
+
+	public TimeSpan RunAfter { get; set; }
+
+	public TimeSpan ForceRunAfter { get; set; }
 
 	public void Invoke()
 		=> Invoke(false);
+
 	public void Invoke(bool forceRun)
 	{
 		if (forceRun)
@@ -95,57 +63,124 @@ internal class DelayedRunner
 
 		DateTime now = DateTime.UtcNow;
 
-		lock (lockObj)
+		lock (_lock)
 		{
 			if (!Scheduled)
 			{
 				Scheduled = true;
-				firstInvoke = now;
-				lastInvoke = now;
+				_firstInvoke = now;
+				_lastInvoke = now;
 
-				lock (scheduled)
-					scheduled.Add(this);
+				lock (ScheduledList)
+				{
+					ScheduledList.Add(this);
+				}
 			}
 			else
-				lastInvoke = now;
+			{
+				_lastInvoke = now;
+			}
 		}
+	}
+
+	public void Stop()
+	{
+		lock (_lock)
+		{
+			lock (ScheduledList)
+			{
+				ScheduledList.Remove(this);
+			}
+
+			Scheduled = false;
+			_firstInvoke = null;
+			_lastInvoke = null;
+		}
+	}
+
+	private static void StartThread()
+	{
+		if (_thread is not null && _thread.IsAlive)
+		{
+			return;
+		}
+
+		_thread = new Thread(() =>
+		{
+			int index = 0;
+
+			while (true)
+			{
+				Thread.Sleep(1);
+
+				List<DelayedRunner> toRemove = [];
+				lock (ScheduledList)
+				{
+					if (ScheduledList.Count == 0)
+					{
+						continue;
+					}
+
+					DateTime now = DateTime.UtcNow;
+
+					for (int i = 0; i < 10; i++)
+					{
+						if (ScheduledList[index].CheckTimers(now))
+						{
+							toRemove.Add(ScheduledList[index]);
+						}
+
+						index++;
+
+						if (index >= ScheduledList.Count)
+						{
+							index = 0;
+						}
+					}
+				}
+
+				for (int i = 0; i < toRemove.Count; i++)
+				{
+					toRemove[i].InvokeInternal();
+				}
+			}
+		});
+
+		_thread.Start();
 	}
 
 	private void InvokeInternal()
 	{
 		bool wasScheduled;
-		lock (lockObj)
+		lock (_lock)
+		{
 			wasScheduled = Scheduled;
+		}
 
 		Stop();
 
-		lock (lockObj)
+		lock (_lock)
+		{
 			if (!wasScheduled)
+			{
 				return;
+			}
+		}
 
 		try
 		{
-			action();
+			_action();
 		}
-		catch { }
-	}
-
-	public void Stop()
-	{
-		lock (lockObj)
+		catch
 		{
-			lock (scheduled)
-				scheduled.Remove(this);
-
-			Scheduled = false;
-			firstInvoke = null;
-			lastInvoke = null;
 		}
 	}
 
 	private bool CheckTimers(DateTime now)
 	{
-		lock (lockObj)
-			return now - lastInvoke > RunAfter || now - firstInvoke > ForceRunAfter;
+		lock (_lock)
+		{
+			return now - _lastInvoke > RunAfter || now - _firstInvoke > ForceRunAfter;
+		}
 	}
 }

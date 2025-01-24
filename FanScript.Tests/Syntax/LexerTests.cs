@@ -1,4 +1,8 @@
-﻿using FanScript.Compiler.Syntax;
+﻿// <copyright file="LexerTests.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 using System.Collections.Immutable;
 
@@ -31,7 +35,7 @@ public class LexerTests
 
 		IEnumerable<SyntaxKind> testedTokenKinds = GetTokens()
 			.Concat(GetSeparators())
-			.Select(t => t.kind);
+			.Select(t => t.Kind);
 
 		var untestedTokenKinds = new SortedSet<SyntaxKind>(tokenKinds);
 
@@ -118,31 +122,41 @@ public class LexerTests
 		Assert.Equal(name, token.Text);
 	}
 
+#pragma warning disable SA1204 // Static elements should appear before instance elements
 	public static IEnumerable<object[]> GetTokensData()
+#pragma warning restore SA1204
 	{
 		foreach (var t in GetTokens())
-			yield return [t.kind, t.text];
+		{
+			yield return [t.Kind, t.Text];
+		}
 	}
 
 	public static IEnumerable<object[]> GetSeparatorsData()
 	{
 		foreach (var t in GetSeparators())
-			yield return [t.kind, t.text];
+		{
+			yield return [t.Kind, t.Text];
+		}
 	}
 
 	public static IEnumerable<object[]> GetTokenPairsData()
 	{
 		foreach (var t in GetTokenPairs())
-			yield return [t.t1Kind, t.t1Text, t.t2Kind, t.t2Text];
+		{
+			yield return [t.T1Kind, t.T1Text, t.T2Kind, t.T2Text];
+		}
 	}
 
 	public static IEnumerable<object[]> GetTokenPairsWithSeparatorData()
 	{
 		foreach (var t in GetTokenPairsWithSeparator())
-			yield return [t.t1Kind, t.t1Text, t.separatorKind, t.separatorText, t.t2Kind, t.t2Text];
+		{
+			yield return [t.T1Kind, t.T1Text, t.SeparatorKind, t.SeparatorText, t.T2Kind, t.T2Text];
+		}
 	}
 
-	private static IEnumerable<(SyntaxKind kind, string text)> GetTokens()
+	private static IEnumerable<(SyntaxKind Kind, string Text)> GetTokens()
 	{
 		var fixedTokens = Enum.GetValues<SyntaxKind>()
 			.Select(k => (k, text: SyntaxFacts.GetText(k)))
@@ -162,7 +176,7 @@ public class LexerTests
 		return fixedTokens.Concat(dynamicTokens);
 	}
 
-	private static IEnumerable<(SyntaxKind kind, string text)> GetSeparators()
+	private static IEnumerable<(SyntaxKind Kind, string Text)> GetSeparators()
 		=> [
 			(SyntaxKind.WhitespaceTrivia, " "),
 			(SyntaxKind.WhitespaceTrivia, "  "),
@@ -180,33 +194,45 @@ public class LexerTests
 
 		// aa
 		if (t1Kind == SyntaxKind.IdentifierToken && t2Kind == SyntaxKind.IdentifierToken)
+		{
 			return true;
+		}
 
 		// floatfloat
 		if (t1IsKeyword && t2IsKeyword)
+		{
 			return true;
+		}
 
 		// floata
 		if (t1IsKeyword && t2Kind == SyntaxKind.IdentifierToken)
+		{
 			return true;
+		}
 
 		// afloat
 		if (t1Kind == SyntaxKind.IdentifierToken && t2IsKeyword)
+		{
 			return true;
+		}
 
 		// a1
 		if (t1Kind == SyntaxKind.IdentifierToken && t2Kind == SyntaxKind.FloatToken)
+		{
 			return true;
+		}
 
 		if (t1Kind == SyntaxKind.FloatToken)
 		{
-			char? _fc = SyntaxFacts.GetText(t2Kind)?[0];
-			if (_fc is char fc)
+			char? fcNullable = SyntaxFacts.GetText(t2Kind)?[0];
+			if (fcNullable is char fc)
 			{
 				fc = char.ToLowerInvariant(fc);
 
 				if ((fc >= 'a' && fc <= 'f') || fc == 'x')
+				{
 					return true;
+				}
 			}
 
 			switch (t2Kind)
@@ -218,89 +244,158 @@ public class LexerTests
 
 		// float1
 		if (t1IsKeyword && t2Kind == SyntaxKind.FloatToken)
+		{
 			return true;
+		}
 
 		// 11
 		if (t1Kind == SyntaxKind.FloatToken && t2Kind == SyntaxKind.FloatToken)
+		{
 			return true;
+		}
 
 		// .1
 		if (t1Kind == SyntaxKind.DotToken && t2Kind == SyntaxKind.FloatToken)
+		{
 			return true;
+		}
 
 		// 1.
 		if (t1Kind == SyntaxKind.FloatToken && t2Kind == SyntaxKind.DotToken)
+		{
 			return true;
+		}
 
 		// ==
 		if (t1Kind == SyntaxKind.EqualsToken && t2Kind == SyntaxKind.EqualsToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.EqualsToken && t2Kind == SyntaxKind.EqualsEqualsToken)
+		{
 			return true;
+		}
 
 		// !=
 		if (t1Kind == SyntaxKind.BangToken && t2Kind == SyntaxKind.EqualsToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.BangToken && t2Kind == SyntaxKind.EqualsEqualsToken)
+		{
 			return true;
+		}
 
 		// +=
 		if (t1Kind == SyntaxKind.PlusToken && t2Kind == SyntaxKind.EqualsToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.PlusToken && t2Kind == SyntaxKind.EqualsEqualsToken)
+		{
 			return true;
+		}
 
 		// ++
 		if (t1Kind == SyntaxKind.PlusToken && t2Kind == SyntaxKind.PlusToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.PlusToken && t2Kind == SyntaxKind.PlusPlusToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.PlusToken && t2Kind == SyntaxKind.PlusEqualsToken)
+		{
 			return true;
+		}
 
 		// -=
 		if (t1Kind == SyntaxKind.MinusToken && t2Kind == SyntaxKind.EqualsToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.MinusToken && t2Kind == SyntaxKind.EqualsEqualsToken)
+		{
 			return true;
+		}
 
 		// --
 		if (t1Kind == SyntaxKind.MinusToken && t2Kind == SyntaxKind.MinusToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.MinusToken && t2Kind == SyntaxKind.MinusMinusToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.MinusToken && t2Kind == SyntaxKind.MinusEqualsToken)
+		{
 			return true;
+		}
 
 		// *=
 		if (t1Kind == SyntaxKind.StarToken && t2Kind == SyntaxKind.EqualsToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.StarToken && t2Kind == SyntaxKind.EqualsEqualsToken)
+		{
 			return true;
+		}
 
 		// /=
 		if (t1Kind == SyntaxKind.SlashToken && t2Kind == SyntaxKind.EqualsToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.SlashToken && t2Kind == SyntaxKind.EqualsEqualsToken)
+		{
 			return true;
+		}
 
 		// %=
 		if (t1Kind == SyntaxKind.PercentToken && t2Kind == SyntaxKind.EqualsToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.PercentToken && t2Kind == SyntaxKind.EqualsEqualsToken)
+		{
 			return true;
+		}
 
 		// <=
 		if (t1Kind == SyntaxKind.LessToken && t2Kind == SyntaxKind.EqualsToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.LessToken && t2Kind == SyntaxKind.EqualsEqualsToken)
+		{
 			return true;
+		}
 
 		// >=
 		if (t1Kind == SyntaxKind.GreaterToken && t2Kind == SyntaxKind.EqualsToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.GreaterToken && t2Kind == SyntaxKind.EqualsEqualsToken)
+		{
 			return true;
+		}
 
 		//if (t1Kind == SyntaxKind.AmpersandToken && t2Kind == SyntaxKind.AmpersandToken)
 		//    return true;
@@ -340,47 +435,67 @@ public class LexerTests
 
 		// //
 		if (t1Kind == SyntaxKind.SlashToken && t2Kind == SyntaxKind.SlashToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.SlashToken && t2Kind == SyntaxKind.SlashEqualsToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.SlashToken && t2Kind == SyntaxKind.SingleLineCommentTrivia)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.SlashToken && t2Kind == SyntaxKind.MultiLineCommentTrivia)
+		{
 			return true;
+		}
 
 		// /*
 		if (t1Kind == SyntaxKind.SlashToken && t2Kind == SyntaxKind.StarToken)
+		{
 			return true;
+		}
+
 		if (t1Kind == SyntaxKind.SlashToken && t2Kind == SyntaxKind.StarEqualsToken)
+		{
 			return true;
+		}
 
 		return false;
 	}
 
-	private static IEnumerable<(SyntaxKind t1Kind, string t1Text, SyntaxKind t2Kind, string t2Text)> GetTokenPairs()
+	private static IEnumerable<(SyntaxKind T1Kind, string T1Text, SyntaxKind T2Kind, string T2Text)> GetTokenPairs()
 	{
 		foreach (var t1 in GetTokens())
 		{
 			foreach (var t2 in GetTokens())
 			{
-				if (!RequiresSeparator(t1.kind, t2.kind))
-					yield return (t1.kind, t1.text, t2.kind, t2.text);
+				if (!RequiresSeparator(t1.Kind, t2.Kind))
+				{
+					yield return (t1.Kind, t1.Text, t2.Kind, t2.Text);
+				}
 			}
 		}
 	}
 
-	private static IEnumerable<(SyntaxKind t1Kind, string t1Text, SyntaxKind separatorKind, string separatorText, SyntaxKind t2Kind, string t2Text)> GetTokenPairsWithSeparator()
+	private static IEnumerable<(SyntaxKind T1Kind, string T1Text, SyntaxKind SeparatorKind, string SeparatorText, SyntaxKind T2Kind, string T2Text)> GetTokenPairsWithSeparator()
 	{
 		foreach (var t1 in GetTokens())
 		{
 			foreach (var t2 in GetTokens())
 			{
-				if (RequiresSeparator(t1.kind, t2.kind))
+				if (RequiresSeparator(t1.Kind, t2.Kind))
 				{
 					foreach (var s in GetSeparators())
 					{
-						if (!RequiresSeparator(t1.kind, s.kind) && !RequiresSeparator(s.kind, t2.kind))
-							yield return (t1.kind, t1.text, s.kind, s.text, t2.kind, t2.text);
+						if (!RequiresSeparator(t1.Kind, s.Kind) && !RequiresSeparator(s.Kind, t2.Kind))
+						{
+							yield return (t1.Kind, t1.Text, s.Kind, s.Text, t2.Kind, t2.Text);
+						}
 					}
 				}
 			}

@@ -1,4 +1,8 @@
-﻿using FancadeLoaderLib.Editing.Scripting.Terminals;
+﻿// <copyright file="LabelTerminalStore.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FancadeLoaderLib.Editing.Scripting.Terminals;
 using FancadeLoaderLib.Editing.Scripting.TerminalStores;
 
 namespace FanScript.Compiler.Emit.TerminalStores;

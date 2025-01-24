@@ -1,15 +1,19 @@
-﻿using FancadeLoaderLib;
-using MathUtils.Vectors;
-using TextCopy;
+﻿// <copyright file="Program.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using CommandLineParser;
 using CommandLineParser.Attributes;
 using CommandLineParser.Commands;
-using CommandLineParser;
+using FancadeLoaderLib;
+using FancadeLoaderLib.Editing.Scripting;
+using FancadeLoaderLib.Editing.Scripting.Builders;
+using FancadeLoaderLib.Editing.Scripting.Placers;
 using FanScript.Compiler;
 using FanScript.Compiler.Syntax;
 using FanScript.Utils;
-using FancadeLoaderLib.Editing.Scripting;
-using FancadeLoaderLib.Editing.Scripting.Placers;
-using FancadeLoaderLib.Editing.Scripting.Builders;
+using MathUtils.Vectors;
+using TextCopy;
 
 #if DEBUG
 using System.Diagnostics;
@@ -19,6 +23,14 @@ namespace FanScript.Cli;
 
 internal class Program
 {
+	private static int Main(string[] args)
+	{
+#if DEBUG
+		Debugger.Launch();
+#endif
+		return CommandParser.ParseAndRun(args, new ParseOptions(), null, [typeof(BuildCommand)]);
+	}
+
 	[HelpText("Compiles a single fcs file.")]
 	[CommandName("build")]
 	public class BuildCommand : ConsoleCommand
@@ -38,7 +50,7 @@ internal class Program
 
 		[HelpText("Position the generated blocks will be placed at.")]
 		[Option("buildPos")]
-		public int3Arg Pos { get; set; } = new int3Arg("0,0,0");
+		public Int3Arg Pos { get; set; } = new Int3Arg("0,0,0");
 
 		[HelpText("If the syntax tree should be displayed.")]
 		[Option("showTree")]
@@ -159,7 +171,9 @@ internal class Program
 				Console.Out.WriteDiagnostics(diagnostics);
 
 				if (diagnostics.HasErrors())
+				{
 					return (int)ErrorCode.CompilationErrors;
+				}
 			}
 
 			int3 pos = Pos is null ? int3.Zero : new int3(Pos.X, Pos.Y, Pos.Z);
@@ -191,7 +205,9 @@ internal class Program
 						game.TrimPrefabs();
 
 						using (FileStream fs = File.OpenWrite("GAME.fcg"))
+						{
 							game.SaveCompressed(fs);
+						}
 
 						Log.Info($"Built code to file '{Path.GetFullPath("GAME.fcg")}'");
 					}
@@ -205,13 +221,5 @@ internal class Program
 
 			return 0;
 		}
-	}
-
-	private static int Main(string[] args)
-	{
-#if DEBUG
-		Debugger.Launch();
-#endif
-		return CommandParser.ParseAndRun(args, new ParseOptions(), null, [typeof(BuildCommand)]);
 	}
 }

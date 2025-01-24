@@ -1,4 +1,8 @@
-﻿using FancadeLoaderLib;
+﻿// <copyright file="FCBlocksTests.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FancadeLoaderLib;
 using FancadeLoaderLib.Editing;
 using FancadeLoaderLib.Editing.Scripting;
 using FancadeLoaderLib.Editing.Scripting.Builders;
@@ -36,7 +40,7 @@ public class FCBlocksTests
 		var active = defBlocks.Where(def => def.BlockType == BlockType.Active);
 		var pasive = defBlocks.Where(def => def.BlockType != BlockType.Active);
 
-		FrozenDictionary<(TerminalType, WireType), (BlockDef, TerminalDef)> terminalDict = new Dictionary<(TerminalType, WireType), (BlockDef, TerminalDef)>(generateTerminalDict()).ToFrozenDictionary();
+		FrozenDictionary<(TerminalType, WireType), (BlockDef, TerminalDef)> terminalDict = new Dictionary<(TerminalType, WireType), (BlockDef, TerminalDef)>(GenerateTerminalDict()).ToFrozenDictionary();
 
 		BlockBuilder builder = new GameFileBlockBuilder(null, "Test level", PrefabType.Level);
 		GroundCodePlacer placer = new GroundCodePlacer(builder);
@@ -47,13 +51,15 @@ public class FCBlocksTests
 
 			foreach (var def in active)
 			{
-				Block block = placeAndConnectAllTerminals(def);
+				Block block = PlaceAndConnectAllTerminals(def);
 
 				connector.Add(new TerminalStore(block));
 			}
 
 			foreach (var def in pasive)
-				placeAndConnectAllTerminals(def);
+			{
+				PlaceAndConnectAllTerminals(def);
+			}
 		}
 
 		Game game = (Game)builder.Build(int3.Zero);
@@ -63,59 +69,61 @@ public class FCBlocksTests
 			game.SaveCompressed(stream);
 		}
 
-		Block placeAndConnectAllTerminals(BlockDef def)
+		Block PlaceAndConnectAllTerminals(BlockDef blockDef)
 		{
-			int off = def.BlockType == BlockType.Active ? 1 : 0;
-			if (def.Terminals.Length - off * 2 <= 0)
-				return placer.PlaceBlock(def);
+			int off = blockDef.BlockType == BlockType.Active ? 1 : 0;
+			if (blockDef.Terminals.Length - (off * 2) <= 0)
+			{
+				return placer.PlaceBlock(blockDef);
+			}
 
-			ReadOnlySpan<TerminalDef> terminals = def.Terminals.AsSpan(off..^off);
+			ReadOnlySpan<TerminalDef> terminals = blockDef.Terminals.AsSpan(off..^off);
 
 			(Block, TerminalDef)[] connectToTerminals = new (Block, TerminalDef)[terminals.Length];
 
-			Block block = placer.PlaceBlock(def);
+			Block block = placer.PlaceBlock(blockDef);
 
 			using (placer.ExpressionBlock())
 			{
 				for (int i = terminals.Length - 1; i >= 0; i--)
 				{
-					TerminalDef terminal = terminals[i];
+					TerminalDef item = terminals[i];
 
-					WireType type = terminal.WireType;
+					WireType type = item.WireType;
 
-					var (_def, _terminal) = terminalDict[(terminal.Type, type)];
-					connectToTerminals[i] = (placer.PlaceBlock(_def), _terminal);
+					var (def, terminal) = terminalDict[(item.Type, type)];
+					connectToTerminals[i] = (placer.PlaceBlock(def), terminal);
 				}
 			}
 
 			for (int i = 0; i < connectToTerminals.Length; i++)
 			{
-				var (_block, _terminal) = connectToTerminals[i];
+				var item = connectToTerminals[i];
 				if (terminals[i].Type == TerminalType.In)
 				{
 					builder.Connect(
-						new BlockTerminal(_block, _terminal),
-						new BlockTerminal(block, terminals[i])
-					);
+						new BlockTerminal(item.Item1, item.Item2),
+						new BlockTerminal(block, terminals[i]));
 				}
 				else
 				{
 					builder.Connect(
 						new BlockTerminal(block, terminals[i]),
-						new BlockTerminal(_block, _terminal)
-					);
+						new BlockTerminal(item.Item1, item.Item2));
 				}
 			}
 
 			return block;
 		}
 
-		IEnumerable<KeyValuePair<(TerminalType, WireType), (BlockDef, TerminalDef)>> generateTerminalDict()
+		IEnumerable<KeyValuePair<(TerminalType, WireType), (BlockDef, TerminalDef)>> GenerateTerminalDict()
 		{
 			foreach (var type in Enum.GetValues<WireType>())
 			{
 				if (type == WireType.Error)
+				{
 					continue;
+				}
 
 				BlockDef def = type == WireType.Void ? StockBlocks.Variables.Set_Variable_Num : StockBlocks.Variables.GetVariableByType(type);
 
@@ -130,7 +138,9 @@ public class FCBlocksTests
 			foreach (var type in Enum.GetValues<WireType>())
 			{
 				if (type == WireType.Error)
+				{
 					continue;
+				}
 
 				BlockDef def = type == WireType.Void ? StockBlocks.Variables.Set_Variable_Num : StockBlocks.Variables.SetVariableByType(type);
 
@@ -156,8 +166,7 @@ public class FCBlocksTests
 					{
 						list.AddRange(type.GetFields(bindingFlags));
 						return list;
-					})
-			)
+					}))
 			.Where(field => field.FieldType == typeof(BlockDef)))
 		{
 			yield return (BlockDef)field.GetValue(null)!;

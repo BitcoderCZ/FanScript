@@ -1,4 +1,8 @@
-﻿using FancadeLoaderLib.Editing;
+﻿// <copyright file="ConditionalGotoTerminalStore.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FancadeLoaderLib.Editing;
 using FancadeLoaderLib.Editing.Scripting.Terminals;
 using FancadeLoaderLib.Editing.Scripting.TerminalStores;
 

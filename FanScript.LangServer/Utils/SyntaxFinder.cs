@@ -1,4 +1,8 @@
-﻿using FanScript.Compiler.Syntax;
+﻿// <copyright file="SyntaxFinder.cs" company="BitcoderCZ">
+// Copyright (c) BitcoderCZ. All rights reserved.
+// </copyright>
+
+using FanScript.Compiler.Syntax;
 using FanScript.Compiler.Text;
 
 namespace FanScript.LangServer.Utils;
@@ -10,7 +14,9 @@ internal static class SyntaxFinder
 		SyntaxNode current = tree.Root;
 
 		if (!current.FullSpan.OverlapsWith(span))
+		{
 			return null;
+		}
 
 		while (true)
 		{
@@ -22,13 +28,17 @@ internal static class SyntaxFinder
 					for (int i = 0; i < token.LeadingTrivia.Length; i++)
 					{
 						if (token.LeadingTrivia[i].Span.OverlapsWith(span))
+						{
 							return token.LeadingTrivia[i];
+						}
 					}
 
 					for (int i = 0; i < token.TrailingTrivia.Length; i++)
 					{
 						if (token.TrailingTrivia[i].Span.OverlapsWith(span))
+						{
 							return token.TrailingTrivia[i];
+						}
 					}
 				}
 
@@ -41,7 +51,9 @@ internal static class SyntaxFinder
 			}
 
 			if (!overlapingChild)
+			{
 				return current;
+			}
 		}
 	}
 }
